@@ -1,0 +1,217 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gcp-credentials
+type: Opaque
+stringData:
+  credentials.json: |
+    {
+      "type": "service_account",
+      "project_id": "onsel-akin-playground",
+      "private_key_id": "7288ed7a584ed36094ac35fe714568d993c875d1",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQCnGfzs0qr1saTR\nlPDAvdRr9gqP4RWLdI2Gy1Nck1aoX3VaHDm8nMjJKPP0GNc5uQGahdXS1ilX5a7C\nMcVKzxBelZxkvJJHZtLiQp6wNdS6KetMSI+fiQxIm3V5CYQLlX6AgAHjRG39nxTC\n1FKhtGub9GGuxoz6wWtgOWTOttvHoUEn/gA84qXkyIh3pdM+2tITyTgUVJDUHOyh\nsC1wDF/OiWtZ3eEdwIjg/X9wgdhUJ3GeklYO2q0S0i5iATPBFnP4uD9ZttpcCHDp\nqs1bgcznu7lyE/vjXUbPqMcsfgb+e36dX7bf7kCdV8pstqw/5QknCg7W4GBP07DH\ntCCldO1fAgMBAAECgf9wrfHaB9XbYLNeZMN81dJ59Ksqodi1wAwyXAcWDLvCD5bF\nPqKGqwMNkOlbbx1TjbsV+tZewRFzS990hQltSuZTw9C9+XyShaACKGdQsvAe+DFZ\ngMoi/7J4bT5YuVlpKOityetMVWF21EwH60ijkn0VrQjAnM9uPBE36ZOrZdK2fHy9\nABwsLnve7cStOiP6qPswWFuHp8Uw4a8qh9Ql2VjXffAJ5Z0iVxbK6FpHl4eqJwCn\nkLiRQ5JH8Kpee5jvjUZDkRq55kKRTrQy+0VR/CQjJlq+Asoq+l4KZU4uJv190vUB\nrGFFFWpykkpG8yOOzemZPsIwKp+BTInq2I0gu+ECgYEA51HWp2EtYooU89KAhmJ/\neI3Q1YAF2Fm9kGJFz//u9GXLJ28G0rAv8H3bWoBSRwxBek4scPnLXwuxB16uhNdL\nl0Uvop3ZHGgyQem7+LQ2lplpi+mOZpKmOc4/M2/VjYEN8oEjv6XF3M3eNQaLlbej\ns+vUUtReQgT+rWFanDmq2S8CgYEAuO4fmv1rCdISO2P4qzA3KYixkLyALcGWhLMc\nz3taWWHpfqfekptLW8S0BHvWqlohZgdxVu9sAgmCYfnt7SDsYexlt3DihZAM/ss4\nSB49stTFDOVWX9YK/h0lkngKByzUlfLy+BHym3qEUZ1Ngp8rh3fYrNBEj/eOoOSx\nYszcwtECgYEAy4NyAiL6JhbsJjQORa1FDxBeKmiPO/CAWhZL65r1ZeplGRWSgCzo\nkIJ6SZ5aRQ3gUbWTXfY3WjDUGHLRwigU5krFhSGxEVAO33S/nykWWdsxRBpA4bem\nLXdqnVuIHA3t8mxxwjwb3470L9zJU/iUO0iBrjoPj7ALTQk5Cfeme5sCgYAFajuU\nrzz2IaeVA51hbdz/o1gHs+1Q6a09n30Fekgv+9T5d3Ll+hQf0MewpeuoO1FlCmzA\nLeyMtriRo97apa8mQuTLlUucu5YV09+HBROra92FPiXkUoEp5bKW8lrg0Og8p8uD\nhgsDkHfVZ/TAEWcV5WV70fFgAdC0V132VadVMQKBgFwwYwRur2FHgUv8ZxuKAem8\nB5q7ks2Wmq6e+W7fwUlHIahd6KUEakHzPLgd+x2+e7F5BCvxzZ9OfyFxWErIWa6x\nKahtIUn34pqS+HvuJzhKSxr1hhS5sIdO1qqi3deFPUY7UUEVGqZQseH6X3MP4d3Q\niLxX7JC3zD/eHu96g0V4\n-----END PRIVATE KEY-----\n",
+      "client_email": "manual-test-eso@onsel-akin-playground.iam.gserviceaccount.com",
+      "client_id": "100699816525174374131",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token",
+      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/manual-test-eso%40onsel-akin-playground.iam.gserviceaccount.com",
+      "universe_domain": "googleapis.com"
+    }
+---
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: gcp-store
+spec:
+  provider:
+    gcpsm:
+      projectID: "onsel-akin-playground"  # Replace with your GCP Project ID
+      auth:
+        secretRef:
+          secretAccessKeySecretRef:
+            name: gcp-credentials
+            key: credentials.json
+---
+# Secret containing AWS credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+type: Opaque
+stringData:
+  access-key-id: "AKIA3S5CRAB6VCLO2HVP"
+  secret-access-key: "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"
+---
+# SecretStore for AWS Secrets Manager authentication
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-store
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+      auth:
+        secretRef:
+          accessKeyIDSecretRef:
+            name: aws-credentials
+            key: access-key-id
+          secretAccessKeySecretRef:
+            name: aws-credentials
+            key: secret-access-key
+---
+# RBAC for the workflow to access secrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workflow-secret-role
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["secretstores", "externalsecrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["workflows.external-secrets.io"]
+    resources: ["workflows", "workflowtemplates", "workflowruns"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+# RoleBinding for the workflow
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workflow-secret-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: workflow-sa
+    namespace: default
+roleRef:
+  kind: Role
+  name: workflow-secret-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ServiceAccount for the workflow
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workflow-sa
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: push-to-multiple-stores-template
+  annotations:
+    workflows.external-secrets.io/description: "Template for pushing generated secrets to multiple stores"
+spec:
+  version: v1
+  name: "Push to Multiple Stores"
+  parameters:
+    - name: passwordLength
+      description: "Length of the generated password"
+      default: "42"
+    - name: digitCount
+      description: "Number of digits in the password"
+      default: "5"
+    - name: symbolCount
+      description: "Number of symbols in the password"
+      default: "5"
+    - name: symbolCharacters
+      description: "Characters to use for symbols"
+      default: "-_$@"
+    - name: targetStores
+      description: "JSON array of target store names"
+      default: '["gcp-store", "aws-store"]'
+    - name: remoteKey
+      description: "Remote key to store the secret under"
+      default: "new-secret"
+  jobs:
+    generateSecret:
+      standard:
+        steps:
+          - name: generateApiKey
+            generator:
+              kind: Password
+              spec:
+                passwordSpec:
+                  length: "{{ .global.variables.passwordLength }}"
+                  digits: "{{ .global.variables.digitCount }}"
+                  symbols: "{{ .global.variables.symbolCount }}"
+                  symbolCharacters: "{{ .global.variables.symbolCharacters }}"
+                  noUpper: false
+                  allowRepeat: true
+            outputs:
+              - name: password
+                type: string
+                sensitive: true
+          - name: printApiKey
+            debug:
+              message: "Secret value: {{ .global.jobs.generateSecret.generateApiKey.password }}"
+
+    createSecret:
+      dependsOn:
+        - generateSecret
+      standard:
+        steps:
+          # Create a transform to act as the secret source
+          - name: createSecret
+            transform:
+              mappings:
+                api_key: "{{ .global.jobs.generateSecret.generateApiKey.password }}"
+            outputs:
+              - name: api_key
+                type: string
+                sensitive: true
+
+          - name: createTargets
+            javascript:
+              script: |
+                // Parse the JSON array of target stores from parameters
+                const targetStores = JSON.parse('{{ .global.variables.targetStores }}');
+                setArray('targetStores', targetStores);
+            outputs:
+              - name: targetStores
+                type: map
+
+    pushToStores:
+      dependsOn:
+        - createSecret
+      loop:
+        concurrency: 0
+        range: "{{ .global.jobs.createSecret.createTargets.targetStores }}"
+        steps:
+          - name: print
+            debug:
+              message: "Store: {{ .range.value }}"
+          - name: push
+            push:
+              secretSource: ".global.jobs.createSecret.createSecret"
+              destination:
+                storeRef:
+                  name: "{{ .range.value }}"
+                  kind: SecretStore
+              data:
+                - match:
+                    secretKey: "api_key"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "api_key"
+---
+# The workflow run instance
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: push-to-multiple-stores-run
+spec:
+  templateRef:
+    name: push-to-multiple-stores-template
+  arguments:
+    passwordLength: "42"
+    digitCount: "5"
+    symbolCount: "5"
+    symbolCharacters: "-_$@"
+    targetStores: '["gcp-store", "aws-store"]'
+    remoteKey: "new-secret"

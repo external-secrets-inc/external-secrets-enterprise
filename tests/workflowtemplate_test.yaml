@@ -1,0 +1,65 @@
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: rotate-database-credentials
+spec:
+  version: v1
+  name: "Database Credentials Rotation"
+  parameters:
+    - name: databaseName
+      description: "Name of the database to rotate credentials for"
+      required: true
+    - name: secretStoreName
+      description: "Name of the SecretStore to use"
+      default: "vault-store"
+    - name: notificationChannel
+      description: "Slack channel for notifications"
+      default: "#security-alerts"
+  jobs:
+    fetch-current:
+      standard:
+        steps:
+          - name: get-current-credentials
+            pull:
+              source:
+                name: "{{ .global.variables.secretStoreName }}"
+                kind: SecretStore
+              data:
+                - remoteRef:
+                    key: "databases/{{ .global.variables.databaseName }}/credentials"
+                  secretKey: current-credentials
+    rotate:
+      dependsOn: ["fetch-current"]
+      standard:
+        steps:
+          - name: generate-new-credentials
+            generator:
+              kind: Password
+              spec:
+                length: 32
+                symbols: true
+                digits: true
+          - name: update-database
+            javascript:
+              script: |
+                // Update database with new credentials
+                console.log("Updating credentials for {{ .global.variables.databaseName }}");
+                return { success: true };
+    notify:
+      dependsOn: ["rotate"]
+      standard:
+        steps:
+          - name: send-notification
+            debug:
+              message: "Credentials rotated for {{ .global.variables.databaseName }}"
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: rotate-production-db
+spec:
+  templateRef:
+    name: rotate-database-credentials
+  arguments:
+    databaseName: "production-postgres"
+    notificationChannel: "#prod-alerts"

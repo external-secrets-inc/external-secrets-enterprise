@@ -44,6 +44,7 @@ const (
 // of a client (due to limitations in GCP / see mutexlock there)
 // If the controller requests another instance of a given client
 // we will close the old client first and then construct a new one.
+// Manager implements the ManagerInterface.
 type Manager struct {
 	log             logr.Logger
 	client          client.Client

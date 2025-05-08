@@ -42,6 +42,7 @@ For Batch permissions read the following post https://aws.amazon.com/about-aws/w
         "secretsmanager:GetSecretValue",
         "secretsmanager:DescribeSecret",
         "secretsmanager:ListSecretVersionIds"
+        "secretsmanager:BatchGetSecretValue"
       ],
       "Resource": [
         "arn:aws:secretsmanager:us-west-2:111122223333:secret:dev-*"

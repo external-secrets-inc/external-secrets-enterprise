@@ -1,0 +1,179 @@
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: pull-example-store
+spec:
+  provider:
+    fake:
+      data:
+        - key: "database-credentials"
+          value: '{"username":"db_user","password":"db_password","host":"db.example.com","port":5432,"database":"mydb"}'
+        - key: "api-credentials"
+          value: '{"api_key":"1234567890abcdef","endpoint":"https://api.example.com","rate_limit":100}'
+        - key: "app-config"
+          value: '{"log_level":"info","debug":false,"cache_ttl":3600,"features":{"search":true,"export":true,"import":false}}'
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: pull-step-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating pull step usage"
+spec:
+  version: v1
+  name: "Pull Step Workflow"
+  parameters:
+    - name: environment
+      description: "Target environment (production, staging, development)"
+      default: "development"
+  jobs:
+    pullDemo:
+      standard:
+        steps:
+          # Pull specific properties from a secret
+          - name: pullDatabaseCredentials
+            pull:
+              source:
+                storeRef:
+                  name: pull-example-store
+                  kind: SecretStore
+              data:
+                - secretKey: db_username
+                  remoteRef:
+                    key: database-credentials
+                    property: username
+                - secretKey: db_password
+                  remoteRef:
+                    key: database-credentials
+                    property: password
+                - secretKey: db_host
+                  remoteRef:
+                    key: database-credentials
+                    property: host
+                - secretKey: db_port
+                  remoteRef:
+                    key: database-credentials
+                    property: port
+                - secretKey: db_name
+                  remoteRef:
+                    key: database-credentials
+                    property: database
+            outputs:
+              - name: db_username
+                type: string
+              - name: db_password
+                type: string
+                sensitive: true
+              - name: db_host
+                type: string
+              - name: db_port
+                type: number
+              - name: db_name
+                type: string
+          
+          # Pull an entire secret as JSON
+          - name: pullApiCredentials
+            pull:
+              source:
+                storeRef:
+                  name: pull-example-store
+                  kind: SecretStore
+              dataFrom:
+                - extract:
+                    key: api-credentials
+            outputs:
+              - name: api_key
+                type: string
+                sensitive: true
+              - name: endpoint
+                type: string
+              - name: rate_limit
+                type: number
+          
+          # Pull and process app configuration
+          - name: pullAppConfig
+            pull:
+              source:
+                storeRef:
+                  name: pull-example-store
+                  kind: SecretStore
+              dataFrom:
+                - extract:
+                    key: app-config
+            outputs:
+              - name: log_level
+                type: string
+              - name: debug
+                type: bool
+              - name: cache_ttl
+                type: number
+              - name: features
+                type: map
+          
+          # Debug the pulled values
+          - name: debugPulledValues
+            debug:
+              message: "Database connection: {{ .global.jobs.pullDemo.pullDatabaseCredentials.db_username }}@{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_host }}:{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_port }}/{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_name }}"
+          
+          # Create a connection string using pulled values
+          - name: createConnectionString
+            javascript:
+              script: |
+                // Get database credentials from previous step
+                const username = '{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_username }}';
+                const password = '{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_password }}';
+                const host = '{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_host }}';
+                const port = {{ .global.jobs.pullDemo.pullDatabaseCredentials.db_port }};
+                const dbName = '{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_name }}';
+                
+                // Create PostgreSQL connection string
+                const pgConnString = `postgresql://${username}:${password}@${host}:${port}/${dbName}`;
+                setString('pg_connection_string', pgConnString);
+                
+                // Create MySQL connection string
+                const mysqlConnString = `mysql://${username}:${password}@${host}:${port}/${dbName}`;
+                setString('mysql_connection_string', mysqlConnString);
+            outputs:
+              - name: pg_connection_string
+                type: string
+                sensitive: true
+              - name: mysql_connection_string
+                type: string
+                sensitive: true
+          
+          # Create application configuration using pulled values
+          - name: createAppConfig
+            transform:
+              mappings:
+                "database.host": "{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_host }}"
+                "database.port": "{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_port }}"
+                "database.username": "{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_username }}"
+                "database.password": "{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_password }}"
+                "database.database": "{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_name }}"
+                "database.connection_string": "{{ .global.jobs.pullDemo.createConnectionString.pg_connection_string }}"
+                "api.endpoint": "{{ .global.jobs.pullDemo.pullApiCredentials.endpoint }}"
+                "api.key": "{{ .global.jobs.pullDemo.pullApiCredentials.api_key }}"
+                "api.rate_limit": "{{ .global.jobs.pullDemo.pullApiCredentials.rate_limit }}"
+                "settings.log_level": "{{ .global.jobs.pullDemo.pullAppConfig.log_level }}"
+                "settings.debug": "{{ .global.jobs.pullDemo.pullAppConfig.debug }}"
+                "settings.cache_ttl": "{{ .global.jobs.pullDemo.pullAppConfig.cache_ttl }}"
+                "settings.environment": "{{ .global.variables.environment }}"
+            outputs:
+              - name: database
+                type: map
+                sensitive: true
+              - name: api
+                type: map
+                sensitive: true
+              - name: settings
+                type: map
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: pull-step-run
+spec:
+  templateRef:
+    name: pull-step-template
+  arguments:
+    environment: "production"

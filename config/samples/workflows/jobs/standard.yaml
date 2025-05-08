@@ -1,0 +1,101 @@
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: standard-example-store
+spec:
+  provider:
+    fake:
+      data:
+        - key: "app-config"
+          value: '{"api_key":"initial-key","environment":"dev"}'
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: standard-job-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating standard job execution"
+spec:
+  version: v1
+  name: "Standard Job Workflow"
+  parameters:
+    - name: environment
+      description: "Target environment (production, staging, development)"
+      default: "development"
+    - name: logLevel
+      description: "Log level for the application"
+      default: "info"
+  jobs:
+    # Standard job that generates a password and creates a configuration
+    configureApp:
+      standard:
+        steps:
+          - name: generateApiKey
+            generator:
+              kind: Password
+              spec:
+                passwordSpec:
+                  length: 20
+                  digits: 4
+                  symbols: 4
+                  symbolCharacters: "-_$@"
+                  noUpper: false
+                  allowRepeat: true
+            outputs:
+              - name: password
+                type: string
+                sensitive: true
+          
+          - name: createConfig
+            transform:
+              mappings:
+                api_key: "{{ .global.jobs.configureApp.generateApiKey.password }}"
+                environment: "{{ .global.variables.environment }}"
+                log_level: "{{ .global.variables.logLevel }}"
+                retention_days: "30"
+            outputs:
+              - name: api_key
+                type: string
+                sensitive: true
+              - name: environment
+                type: string
+              - name: log_level
+                type: string
+              - name: retention_days
+                type: string
+          
+          - name: debug
+            debug:
+              message: "Created configuration for {{ .global.variables.environment }} environment with log level {{ .global.variables.logLevel }}"
+          
+          - name: pushConfig
+            push:
+              secretSource: ".global.jobs.configureApp.createConfig"
+              destination:
+                storeRef:
+                  name: "standard-example-store"
+                  kind: SecretStore
+              data:
+                - match:
+                    secretKey: "api_key"
+                    remoteRef:
+                      remoteKey: "app-config-new"
+                      property: "api_key"
+                - match:
+                    secretKey: "environment"
+                    remoteRef:
+                      remoteKey: "app-config-new"
+                      property: "environment"
+---
+# The workflow run instance
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: standard-job-run
+spec:
+  templateRef:
+    name: standard-job-template
+  arguments:
+    environment: "production"
+    logLevel: "error"

@@ -1,0 +1,83 @@
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: generator-step-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating generator step usage"
+spec:
+  version: v1
+  name: "Generator Step Workflow"
+  parameters:
+    - name: passwordLength
+      description: "Length of the generated password"
+      default: "16"
+    - name: digitCount
+      description: "Number of digits in the password"
+      default: "4"
+    - name: symbolCount
+      description: "Number of symbols in the password"
+      default: "4"
+    - name: symbolCharacters
+      description: "Characters to use for symbols"
+      default: "-_$@!*"
+  jobs:
+    generatorDemo:
+      standard:
+        steps:
+          # Password generator
+          - name: generatePassword
+            generator:
+              kind: Password
+              spec:
+                passwordSpec:
+                  length: 16
+                  digits: 4
+                  symbols: 4
+                  symbolCharacters: "{{ .global.variables.symbolCharacters }}"
+                  noUpper: false
+                  allowRepeat: true
+            outputs:
+              - name: password
+                type: string
+                sensitive: true
+          
+          # UUID generator
+          - name: generateUUID
+            generator:
+              kind: UUID
+              spec:
+                uuidSpec: {}
+            outputs:
+              - name: uuid
+                type: string
+          
+          # Debug the generated values (only non-sensitive ones)
+          - name: debugGeneratedValues
+            debug:
+              message: "Generated UUID: {{ .global.jobs.generatorDemo.generateUUID.uuid }}"
+          
+          # Transform the generated values into a configuration
+          - name: createConfig
+            transform:
+              mappings:
+                uuid: "{{ .global.jobs.generatorDemo.generateUUID.uuid }}"
+                "credentials.password": "{{ .global.jobs.generatorDemo.generatePassword.password }}"
+            outputs:
+              - name: uuid
+                type: string
+              - name: credentials
+                type: map
+                sensitive: true
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: generator-step-run
+spec:
+  templateRef:
+    name: generator-step-template
+  arguments:
+    passwordLength: "24"
+    digitCount: "6"
+    symbolCount: "6"
+    symbolCharacters: "-_$@!*#"

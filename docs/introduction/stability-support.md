@@ -18,10 +18,15 @@ As of version 0.14.x , this is the only kubernetes version that we will guarante
 
 | ESO Version | Kubernetes Version | Release Date | End of Life     |
 | ----------- | ------------------ | ------------ | --------------- |
+<<<<<<< HEAD
+| 0.12.x      | 1.19 → 1.31        | Dec 24, 2024 | Release of 0.14 |
+| 0.11.x      | 1.19 → 1.31        | Dec 2, 2024  | Release of 0.13 |
+=======
 | 0.14.x      | 1.32               | Feb 4, 2025  | Release of 0.14 |
 | 0.13.x      | 1.19 → 1.31        | Jan 21, 2025 | Feb 4, 2025     |
 | 0.12.x      | 1.19 → 1.31        | Dec 24, 2024 | Jan 21, 2025    |
 | 0.11.x      | 1.19 → 1.31        | Dec 2, 2024  | Dec 24, 2024    |
+>>>>>>> oss/main
 | 0.10.x      | 1.19 → 1.31        | Aug 3, 2024  | Dec 24, 2024    |
 | 0.9.x       | 1.19 → 1.30        | Jun 22, 2023 | Dec 2, 2024     |
 | 0.8.x       | 1.19 → 1.28        | Mar 16, 2023 | Aug 3, 2024     |
@@ -35,6 +40,38 @@ As of version 0.14.x , this is the only kubernetes version that we will guarante
 
 The following table describes the stability level of each provider and who's responsible.
 
+<<<<<<< HEAD
+| Provider                                                                                                   | Stability |                                                                                                                                                                              Maintainer |
+| ---------------------------------------------------------------------------------------------------------- | :-------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| [AWS Secrets Manager](https://external-secrets.io/latest/provider/aws-secrets-manager/)                    |  stable   |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [AWS Parameter Store](https://external-secrets.io/latest/provider/aws-parameter-store/)                    |  stable   |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [Hashicorp Vault](https://external-secrets.io/latest/provider/hashicorp-vault/)                            |  stable   |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [GCP Secret Manager](https://external-secrets.io/latest/provider/google-secrets-manager/)                  |  stable   |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [Azure Keyvault](https://external-secrets.io/latest/provider/azure-key-vault/)                             |  stable   |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [IBM Cloud Secrets Manager](https://external-secrets.io/latest/provider/ibm-secrets-manager/)              |  stable   | [@knelasevero](https://github.com/knelasevero) [@sebagomez](https://github.com/sebagomez) [@ricardoptcosta](https://github.com/ricardoptcosta) [@IdanAdar](https://github.com/IdanAdar) |
+| [Kubernetes](https://external-secrets.io/latest/provider/kubernetes)                                       |   beta    |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [Yandex Lockbox](https://external-secrets.io/latest/provider/yandex-lockbox/)                              |   alpha   |                                                                                     [@AndreyZamyslov](https://github.com/AndreyZamyslov) [@knelasevero](https://github.com/knelasevero) |
+| [GitLab Variables](https://external-secrets.io/latest/provider/gitlab-variables/)                          |   alpha   |                                                                                                                                                  [@Jabray5](https://github.com/Jabray5) |
+| Alibaba Cloud KMS                                                                                          |   alpha   |                                                                                                                                          [@ElsaChelala](https://github.com/ElsaChelala) |
+| [Oracle Vault](https://external-secrets.io/latest/provider/oracle-vault)                                   |   alpha   |                                                                                                 [@KianTigger](https://github.com/KianTigger) [@EladGabay](https://github.com/EladGabay) |
+| [Akeyless](https://external-secrets.io/latest/provider/akeyless)                                           |  stable   |                                                                                                                                 [external-secrets](https://github.com/external-secrets) |
+| [1Password](https://external-secrets.io/latest/provider/1password-automation)                              |   alpha   |                                                                                       [@SimSpaceCorp](https://github.com/Simspace) [@snarlysodboxer](https://github.com/snarlysodboxer) |
+| [Generic Webhook](https://external-secrets.io/latest/provider/webhook)                                     |   alpha   |                                                                                                                                                  [@willemm](https://github.com/willemm) |
+| [senhasegura DevOps Secrets Management (DSM)](https://external-secrets.io/latest/provider/senhasegura-dsm) |   alpha   |                                                                                                                                                    [@lfraga](https://github.com/lfraga) |
+| [Doppler SecretOps Platform](https://external-secrets.io/latest/provider/doppler)                          |   alpha   |                                                                                         [@ryan-blunden](https://github.com/ryan-blunden/) [@nmanoogian](https://github.com/nmanoogian/) |
+| [Keeper Security](https://www.keepersecurity.com/)                                                         |   alpha   |                                                                                                                                              [@ppodevlab](https://github.com/ppodevlab) |
+| [Scaleway](https://external-secrets.io/latest/provider/scaleway)                                           |   alpha   |                                                                                                                                                   [@azert9](https://github.com/azert9/) |
+| [Conjur](https://external-secrets.io/latest/provider/conjur)                                               |  stable   |                                                                                                  [@davidh-cyberark](https://github.com/davidh-cyberark/) [@szh](https://github.com/szh) |
+| [Delinea](https://external-secrets.io/latest/provider/delinea)                                             |   alpha   |                                                                                                                                     [@michaelsauter](https://github.com/michaelsauter/) |
+| [Beyondtrust](https://external-secrets.io/latest/provider/beyondtrust)                                     |   alpha   |                                                                                                                                       [@btfhernandez](https://github.com/btfhernandez/) |
+| [SecretServer](https://external-secrets.io/latest/provider/secretserver)                                   |   alpha   |                                                                                                                                        [@billhamilton](https://github.com/pacificcode/) |
+| [Pulumi ESC](https://external-secrets.io/latest/provider/pulumi)                                           |   alpha   |                                                                                                                                                    [@dirien](https://github.com/dirien) |
+| [Passbolt](https://external-secrets.io/latest/provider/passbolt)                                           |   alpha   |                                                                                                                                                                                         |
+| [Infisical](https://external-secrets.io/latest/provider/infisical)                                         |   alpha   |                                                                                                                                              [@akhilmhdh](https://github.com/akhilmhdh) |
+| [Device42](https://external-secrets.io/latest/provider/device42)                                           |   alpha   |                                                                                                                                                                                         |
+| [Bitwarden Secrets Manager](https://external-secrets.io/latest/provider/bitwarden-secrets-manager)         |   alpha   |                                                                                                                                                  [@skarlso](https://github.com/Skarlso) |
+| [Previder](https://external-secrets.io/latest/provider/previder)                                           |  stable   |                                                                                                                                                [@previder](https://github.com/previder) |
+=======
 | Provider                                                                                                   | Stability | Maintainer                                                                                          |
 |------------------------------------------------------------------------------------------------------------|-:-:-------|--:--------------------------------------------------------------------------------------------------|
 | [AWS Secrets Manager](https://external-secrets.io/latest/provider/aws-secrets-manager/)                    | stable    | [external-secrets](https://github.com/external-secrets)                                             |
@@ -67,6 +104,7 @@ The following table describes the stability level of each provider and who's res
 | [Previder](https://external-secrets.io/latest/provider/previder)                                           | stable    | [@previder](https://github.com/previder)                                                            |
 | [Cloud.ru](https://external-secrets.io/latest/provider/cloudru)                                            | alpha     | [@default23](https://github.com/default23)                                                          |
 
+>>>>>>> oss/main
 
 ## Provider Feature Support
 

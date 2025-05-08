@@ -1,0 +1,203 @@
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: example-store
+spec:
+  provider:
+    fake:
+      data:
+        - key: "environment"
+          value: '{"username":"some_user"}'
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: switch-job-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating switch job execution"
+spec:
+  version: v1
+  name: "Environment Configuration Workflow"
+  parameters:
+    - name: environment
+      description: "Target environment (production, staging, development)"
+      default: "production"
+    - name: symbolCharacters
+      description: "Characters to use for symbols"
+      default: "-_$@"
+    - name: remoteKey
+      description: "Remote key to store the configuration under"
+      default: "app-config"
+  jobs:
+    # First job: Generate a secret
+    generateSecret:
+      standard:
+        steps:
+          - name: generateApiKey
+            generator:
+              kind: Password
+              spec:
+                passwordSpec:
+                  length: 16
+                  digits: 5
+                  symbols: 5
+                  symbolCharacters: "{{ .global.variables.symbolCharacters }}"
+                  noUpper: false
+                  allowRepeat: true
+            outputs:
+              - name: password
+                type: string
+                sensitive: true
+
+    # Second job: Set environment variables
+    setEnvironment:
+      dependsOn:
+        - generateSecret
+      standard:
+        steps:
+          - name: setEnvVars
+            javascript:
+              script: |
+                // Set environment variable from parameter
+                setString('environment', '{{ .global.variables.environment }}');
+
+                // Set a flag for testing
+                setBool('isProduction', '{{ .global.variables.environment }}' === 'production');
+            outputs:
+              - name: environment
+                type: string
+              - name: isProduction
+                type: bool
+
+    # Third job: Switch job that executes different steps based on environment
+    configureEnvironment:
+      dependsOn:
+        - setEnvironment
+      switch:
+        cases:
+          # Production case
+          - condition: "{{ eq .global.jobs.setEnvironment.setEnvVars.environment \"production\" }}"
+            steps:
+              - name: envConfig
+                transform:
+                  mappings:
+                    retention_days: "90"
+                    log_level: "error"
+                    api_key: "{{ .global.jobs.generateSecret.generateApiKey.password }}"
+                    environment: "production"
+                outputs:
+                  - name: retention_days
+                    type: string
+                  - name: log_level
+                    type: string
+                  - name: api_key
+                    type: string
+                    sensitive: true
+                  - name: environment
+                    type: string
+
+              - name: debug
+                debug:
+                  message: "Configured for production environment"
+
+          # Staging case
+          - condition: "{{ eq .global.jobs.setEnvironment.setEnvVars.environment \"staging\" }}"
+            steps:
+              - name: envConfig
+                transform:
+                  mappings:
+                    retention_days: "30"
+                    log_level: "info"
+                    api_key: "{{ .global.jobs.generateSecret.generateApiKey.password }}"
+                    environment: "staging"
+                outputs:
+                  - name: retention_days
+                    type: string
+                  - name: log_level
+                    type: string
+                  - name: api_key
+                    type: string
+                    sensitive: true
+                  - name: environment
+                    type: string
+
+              - name: debug
+                debug:
+                  message: "Configured for staging environment"
+
+          # Development case
+          - condition: "{{ eq .global.jobs.setEnvironment.setEnvVars.environment \"development\" }}"
+            steps:
+              - name: envConfig
+                transform:
+                  mappings:
+                    retention_days: "7"
+                    log_level: "debug"
+                    api_key: "{{ .global.jobs.generateSecret.generateApiKey.password }}"
+                    environment: "development"
+                outputs:
+                  - name: retention_days
+                    type: string
+                  - name: log_level
+                    type: string
+                  - name: api_key
+                    type: string
+                    sensitive: true
+                  - name: environment
+                    type: string
+
+              - name: debug
+                debug:
+                  message: "Configured for development environment"
+
+    # Fourth job: Use the configuration from the switch job
+    useConfig:
+      dependsOn:
+        - configureEnvironment
+      standard:
+        steps:
+          - name: printConfig
+            debug:
+              message: "Using configuration for {{ .global.jobs.setEnvironment.setEnvVars.environment }} environment"
+
+          # This step will use the appropriate configuration based on which case was executed
+          - name: pushConfig
+            push:
+              secretSource: ".global.jobs.configureEnvironment.envConfig"
+              destination:
+                storeRef:
+                  name: "example-store"
+                  kind: SecretStore
+              data:
+                - match:
+                    secretKey: "api_key"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "api_key"
+---
+# The workflow run instance for production
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: switch-job-production
+spec:
+  templateRef:
+    name: switch-job-template
+  arguments:
+    environment: "production"
+    passwordLength: "32"
+    remoteKey: "app-config-prod"
+---
+# The workflow run instance for staging
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: switch-job-staging
+spec:
+  templateRef:
+    name: switch-job-template
+  arguments:
+    environment: "staging"
+    passwordLength: "24"
+    remoteKey: "app-config-staging"

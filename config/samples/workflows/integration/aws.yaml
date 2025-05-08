@@ -1,0 +1,196 @@
+---
+# SecretStore for AWS Secrets Manager authentication
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-store
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+      auth:
+        secretRef:
+          accessKeyIDSecretRef:
+            name: aws-credentials
+            key: access-key-id
+          secretAccessKeySecretRef:
+            name: aws-credentials
+            key: secret-access-key
+
+---
+# Secret containing AWS credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+type: Opaque
+stringData:
+  access-key-id: "AKIA3S5CRAB6QM4CORZK"
+  secret-access-key: "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"
+
+---
+# RBAC for the workflow to access secrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workflow-secret-role
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["secretstores", "externalsecrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["workflows.external-secrets.io"]
+    resources: ["workflows", "workflowtemplates", "workflowruns"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+---
+# RoleBinding for the workflow
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workflow-secret-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: workflow-sa
+    namespace: default
+roleRef:
+  kind: Role
+  name: workflow-secret-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ServiceAccount for the workflow
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workflow-sa
+
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: aws-secrets-workflow-template
+  annotations:
+    workflows.external-secrets.io/description: "Template for pulling, generating, and combining secrets in AWS Secrets Manager"
+spec:
+  version: v1
+  name: "AWS Secrets Workflow"
+  parameters:
+    - name: inputValue
+      description: "Optional input value for script processing"
+      required: false
+    - name: concurrency
+      description: "Concurrency for loop operations"
+      default: "0"
+  jobs:
+    testScript:
+      standard:
+        steps:
+          - name: runScript
+            javascript:
+              script: |
+                console.log("script step running...");
+
+                // Set a string value
+                setString("name", "Alice");
+
+                // Set a boolean value
+                setBool("active", true);
+
+                // Set a numeric value
+                setNumber("score", 42);
+
+                // Set a date value
+                setDate("createdAt", "2025-02-11T15:04:05Z");
+                setJSON("callConfig", '{"retry":3,"timeout":30}');
+
+                // Set a JSON object
+                setJSON("config", {
+                 "environment": "production",
+                  "features": {
+                    "analytics": true
+                  }
+                });
+
+                // Create and modify an array
+                scores = [1, 100, 98];
+                setArray("scores", scores);
+
+                // Create and modify a map
+                setMap("user", "name", "John Doe");
+                setMap("user", "age", 30);
+
+                // Example of processing input data (if provided)
+                if (input.someValue) {
+                  set("processedInput", "Input value: " + input.someValue);
+                }
+            outputs:
+              - name: name
+                type: string
+              - name: active
+                type: bool
+              - name: score
+                type: number
+              - name: createdAt
+                type: time
+              - name: callConfig
+                type: map
+              - name: config
+                type: map
+              - name: scores
+                type: map
+              - name: user
+                type: map
+              - name: processedInput
+                type: string
+          - name: calculateScores
+            transform:
+              template: |
+                totalScore: {{ index .global.jobs.testScript.runScript.scores 0 }}
+    
+    dumpScores:
+      dependsOn:
+        - testScript
+      loop:
+        concurrency: "{{ .global.variables.concurrency }}"
+        range: "{{ .global.jobs.testScript.runScript.scores }}"
+        steps:
+          - name: print
+            debug:
+              message: "range: {{ .range.key }}: {{ .range.value }}"
+
+    generateData:
+      standard:
+        steps:
+          - name: message
+            debug:
+              message: "some debug message"
+          - name: processMessage
+            javascript:
+              script: |
+                console.log("script step running...");
+                
+                // Process any input value if provided
+                if ('{{ .global.variables.inputValue }}') {
+                  setString("processedValue", "Processed: {{ .global.variables.inputValue }}");
+                }
+            outputs:
+              - name: processedValue
+                type: string
+
+---
+# The workflow run instance
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: aws-secrets-workflow-run
+spec:
+  templateRef:
+    name: aws-secrets-workflow-template
+  arguments:
+    concurrency: "0"
+

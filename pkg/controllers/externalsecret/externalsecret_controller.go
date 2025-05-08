@@ -136,6 +136,7 @@ type Reconciler struct {
 	RequeueInterval           time.Duration
 	ClusterSecretStoreEnabled bool
 	EnableFloodGate           bool
+	ShouldRefreshOnZero       bool
 	recorder                  record.EventRecorder
 }
 

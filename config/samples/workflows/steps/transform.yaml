@@ -1,0 +1,161 @@
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: transform-step-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating transform step usage"
+spec:
+  version: v1
+  name: "Transform Step Workflow"
+  parameters:
+    - name: environment
+      description: "Target environment (production, staging, development)"
+      default: "development"
+    - name: region
+      description: "Deployment region"
+      default: "us-west-1"
+    - name: appName
+      description: "Application name"
+      default: "my-app"
+    - name: dbConfig
+      description: "Database configuration as JSON"
+      default: '{"host":"db.example.com","port":5432,"username":"db_user","database":"app_db"}'
+  jobs:
+    transformDemo:
+      standard:
+        steps:
+          # Generate some data to transform
+          - name: generateCredentials
+            generator:
+              kind: Password
+              spec:
+                passwordSpec:
+                  length: 24
+                  digits: 4
+                  symbols: 4
+                  symbolCharacters: "-_$@"
+                  noUpper: false
+                  allowRepeat: true
+            outputs:
+              - name: password
+                type: string
+                sensitive: true
+          
+          # Simple key-value transform
+          - name: basicTransform
+            transform:
+              mappings:
+                environment: "{{ .global.variables.environment }}"
+                region: "{{ .global.variables.region }}"
+                app_name: "{{ .global.variables.appName }}"
+                deployment_id: "{{ uuidv4 }}"
+                timestamp: "{{ now | date \"2006-01-02T15:04:05Z07:00\" }}"
+            outputs:
+              - name: environment
+                type: string
+              - name: region
+                type: string
+              - name: app_name
+                type: string
+              - name: deployment_id
+                type: string
+              - name: timestamp
+                type: string
+          
+          # Transform with conditional logic
+          - name: conditionalTransform
+            transform:
+              mappings:
+                log_level: "{{ if eq .global.variables.environment \"production\" }}error{{ else if eq .global.variables.environment \"staging\" }}info{{ else }}debug{{ end }}"
+                debug_mode: "{{ if eq .global.variables.environment \"development\" }}true{{ else }}false{{ end }}"
+                metrics_enabled: "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
+                retention_days: "{{ if eq .global.variables.environment \"production\" }}90{{ else if eq .global.variables.environment \"staging\" }}30{{ else }}7{{ end }}"
+            outputs:
+              - name: log_level
+                type: string
+              - name: debug_mode
+                type: string
+              - name: metrics_enabled
+                type: string
+              - name: retention_days
+                type: string
+          
+          # Transform with nested objects
+          - name: nestedTransform
+            transform:
+              mappings:
+                "app.name": "{{ .global.variables.appName }}"
+                "app.environment": "{{ .global.variables.environment }}"
+                "app.region": "{{ .global.variables.region }}"
+                "database.host": "{{ fromJson .global.variables.dbConfig | get \"host\" }}"
+                "database.port": "{{ fromJson .global.variables.dbConfig | get \"port\" }}"
+                "database.username": "{{ fromJson .global.variables.dbConfig | get \"username\" }}"
+                "database.password": "{{ .global.jobs.transformDemo.generateCredentials.password }}"
+                "database.database": "{{ fromJson .global.variables.dbConfig | get \"database\" }}"
+                "database.ssl_enabled": "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
+                "features.audit_logging": "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
+                "features.multi_region": "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
+                "features.caching": "true"
+                "features.rate_limiting": "{{ if eq .global.variables.environment \"development\" }}false{{ else }}true{{ end }}"
+            outputs:
+              - name: app
+                type: map
+              - name: database
+                type: map
+                sensitive: true
+              - name: features
+                type: map
+          
+          # Transform with template
+          - name: templateTransform
+            transform:
+              template: |
+                {
+                  "apiVersion": "v1",
+                  "kind": "ConfigMap",
+                  "metadata": {
+                    "name": "{{ .global.variables.appName }}-config",
+                    "namespace": "{{ .global.variables.environment }}",
+                    "labels": {
+                      "app": "{{ .global.variables.appName }}",
+                      "environment": "{{ .global.variables.environment }}",
+                      "region": "{{ .global.variables.region }}"
+                    }
+                  },
+                  "data": {
+                    "APP_NAME": "{{ .global.variables.appName }}",
+                    "ENVIRONMENT": "{{ .global.variables.environment }}",
+                    "REGION": "{{ .global.variables.region }}",
+                    "LOG_LEVEL": "{{ .global.jobs.transformDemo.conditionalTransform.log_level }}",
+                    "DEBUG_MODE": "{{ .global.jobs.transformDemo.conditionalTransform.debug_mode }}",
+                    "METRICS_ENABLED": "{{ .global.jobs.transformDemo.conditionalTransform.metrics_enabled }}",
+                    "RETENTION_DAYS": "{{ .global.jobs.transformDemo.conditionalTransform.retention_days }}",
+                    "DATABASE_HOST": "{{ fromJson .global.variables.dbConfig | get \"host\" }}",
+                    "DATABASE_PORT": "{{ fromJson .global.variables.dbConfig | get \"port\" }}",
+                    "DATABASE_NAME": "{{ fromJson .global.variables.dbConfig | get \"database\" }}",
+                    "DATABASE_USER": "{{ fromJson .global.variables.dbConfig | get \"username\" }}",
+                    "DEPLOYMENT_ID": "{{ .global.jobs.transformDemo.basicTransform.deployment_id }}",
+                    "TIMESTAMP": "{{ .global.jobs.transformDemo.basicTransform.timestamp }}"
+                  }
+                }
+            outputs:
+              - name: config
+                type: map
+          
+          # Debug the transformed values
+          - name: debugTransformedValues
+            debug:
+              message: "Transformed app configuration for {{ .global.jobs.transformDemo.basicTransform.app_name }} in {{ .global.jobs.transformDemo.basicTransform.environment }} environment ({{ .global.jobs.transformDemo.basicTransform.region }})"
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: transform-step-run
+spec:
+  templateRef:
+    name: transform-step-template
+  arguments:
+    environment: "production"
+    region: "eu-west-1"
+    appName: "payment-service"
+    dbConfig: '{"host":"db-prod.example.com","port":5432,"username":"payment_svc","database":"payments"}'

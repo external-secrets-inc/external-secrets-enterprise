@@ -1,0 +1,109 @@
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: loop-example-store
+spec:
+  provider:
+    fake:
+      data:
+        - key: "user-1"
+          value: '{"username":"user1","role":"admin"}'
+        - key: "user-2"
+          value: '{"username":"user2","role":"viewer"}'
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: loop-job-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating loop job execution"
+spec:
+  version: v1
+  name: "User Configuration Workflow"
+  parameters:
+    - name: users
+      description: "List of users to configure"
+      default: '["user1", "user2", "user3"]'
+    - name: defaultRole
+      description: "Default role for users"
+      default: "viewer"
+  jobs:
+    processUsers:
+      loop:
+        concurrency: 1
+        range: |
+          {
+            "admin": {
+              "username": "admin",
+              "role": "reader",
+              "created": "2025-03-29T13:32:00Z"
+            },
+            "operator": {
+              "username": "operator",
+              "role": "reader",
+              "created": "2025-03-29T13:32:00Z"
+            },
+            "viewer": {
+              "username": "viewer",
+              "role": "reader",
+              "created": "2025-03-29T13:32:00Z"
+            }
+          }
+        steps:
+          - name: configureUser
+            transform:
+              mappings:
+                username: "{{ .range.value.username }}"
+                role: "{{ .range.value.role }}"
+                password: "Password123!"
+                created: "{{ .range.value.created }}"
+            outputs:
+              - name: username
+                type: string
+              - name: role
+                type: string
+              - name: password
+                type: string
+                sensitive: true
+              - name: created
+                type: string
+
+          - name: debug
+            debug:
+              message: "Configured user {{ .range.value.username }} with role {{ .range.value.role }}"
+
+          - name: debugWithPreviousOutput
+            debug:
+              message: "Using output from previous step: {{ .configureUser.username }} with password {{ .configureUser.password }}"
+
+          - name: pushUserConfig
+            push:
+              secretSource: ".configureUser"
+              destination:
+                storeRef:
+                  name: "loop-example-store"
+                  kind: SecretStore
+              data:
+                - match:
+                    secretKey: "username"
+                    remoteRef:
+                      remoteKey: "user-{{ .range.key }}"
+                      property: "username"
+                - match:
+                    secretKey: "role"
+                    remoteRef:
+                      remoteKey: "user-{{ .range.key }}"
+                      property: "role"
+---
+# The workflow run instance
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: loop-job-run
+spec:
+  templateRef:
+    name: loop-job-template
+  arguments:
+    users: '["admin", "operator", "viewer"]'
+    defaultRole: "reader"

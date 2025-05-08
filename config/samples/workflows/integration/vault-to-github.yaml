@@ -1,0 +1,158 @@
+# Github Store
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: github-store
+spec:
+  provider:
+    github:
+      organization: external-secrets-inc
+      repository: external-secrets
+      installationID: 61574588
+      appID: 1156152
+      auth:
+        privateKey:
+          name: github-credentials
+          key: private-key
+---
+# Vault Store
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: vault-store
+spec:
+  provider:
+    vault:
+       server: "http://vault.vault:8200"
+       path: "secret"
+       version: v2
+       auth:
+        tokenSecretRef:
+          name: vault-token
+          key: token
+---
+# 1Password Store
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: 1password-store
+spec:
+  provider:
+    onepassword:
+      connectHost: http://onepassword-connect:8080
+      vaults:
+        connect-server-example: 1  # look in this vault first
+      auth:
+        secretRef:
+          connectTokenSecretRef:
+            name: connect-server
+            key: token
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: sync-secrets-template
+spec:
+  version: v1
+  name: "Sync Secrets Across Providers"
+  parameters:
+    - name: onePasswordGithubTag
+      description: "Tag to filter 1Password secrets for GitHub"
+      default: "github-actions"
+    - name: onePasswordVaultTag
+      description: "Tag to filter 1Password secrets for Vault"
+      default: "vault"
+    - name: scheduleInterval
+      description: "How often to run the workflow"
+      default: "1h"
+    - name: concurrency
+      description: "Number of concurrent operations (0 for unlimited)"
+      default: "0"
+  jobs:
+    onePasswordToGithub:
+      standard:
+        steps:
+          - name: getData
+            pull:
+              source:
+                storeRef:
+                  name: 1password-store
+              dataFrom:
+              - find:
+                  tags:
+                    "{{ .global.variables.onePasswordGithubTag }}": "true"
+            outputs:
+              - name: data
+                type: map
+                sensitive: true
+    
+    pushToGithub:
+      dependsOn:
+        - onePasswordToGithub
+      loop:
+        concurrency: "{{ .global.variables.concurrency }}"
+        range: "{{ .global.jobs.onePasswordToGithub.getData | toJson }}"
+        steps:
+          - name: push-to-github
+            push:
+              secretSource: ".global.jobs.onePasswordToGithub.getData"
+              data:
+              - match:
+                  secretKey: "{{ .range.key }}"
+                  remoteRef:
+                    remoteKey: "{{ .range.key }}"
+              destination:
+                storeRef:
+                  name: github-store
+    
+    onePasswordToVault:
+      standard:
+        steps:
+          - name: getData
+            pull:
+              source:
+                storeRef:
+                  name: 1password-store
+              dataFrom:
+              - find:
+                  tags:
+                    "{{ .global.variables.onePasswordVaultTag }}": "true"
+            outputs:
+              - name: data
+                type: map
+                sensitive: true
+    
+    pushToVault:
+      dependsOn:
+        - onePasswordToVault
+      loop:
+        concurrency: "{{ .global.variables.concurrency }}"
+        range: "{{ .global.jobs.onePasswordToVault.getData | toJson }}"
+        steps:
+          - name: push-to-vault
+            push:
+              secretSource: ".global.jobs.onePasswordToVault.getData"
+              data:
+              - match:
+                  secretKey: "{{ .range.key }}"
+                  remoteRef:
+                    remoteKey: "1password-secrets"
+                    property: "{{ .range.key }}"
+              destination:
+                storeRef:
+                  name: vault-store
+---
+# The workflow run instance
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: sync-secrets-hourly
+spec:
+  templateRef:
+    name: sync-secrets-template
+  arguments:
+    scheduleInterval: "1h"
+    onePasswordGithubTag: "github-actions"
+    onePasswordVaultTag: "vault"
+    concurrency: "0"

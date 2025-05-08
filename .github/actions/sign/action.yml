@@ -11,6 +11,21 @@ inputs:
     description: "image tag"
     required: true
     default: ""
+  GHCR_USERNAME:
+    description: "ghcr username"
+    required: true
+  GHCR_TOKEN:
+    description: "ghcr token"
+    required: true
+  GITHUB_TOKEN:
+    description: "gh token"
+    required: true
+  IDENTITY_POOL:
+    description: "identity pool"
+    required: true
+  SERVICE_ACCOUNT:
+    description: "service account"
+    required: true
 
 runs:
   using: "composite"
@@ -29,12 +44,22 @@ runs:
       shell: bash
       run: cosign version
 
-    - name: Login to ghcr.io
-      uses: docker/login-action@v1.14.1
+    - name: Set up Google Cloud authentication
+      id: auth
+      uses: google-github-actions/auth@v2
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
+        token_format: access_token
+        workload_identity_provider: ${{ inputs.IDENTITY_POOL }}
+        service_account: ${{ inputs.SERVICE_ACCOUNT }}
+        access_token_lifetime: 1800s
+
+
+    - name: Login to Artifact Registry
+      uses: docker/login-action@v1
+      with:
+        registry: us-central1-docker.pkg.dev
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
 
     - name: Setup Go
       uses: actions/setup-go@v3
@@ -63,7 +88,7 @@ runs:
         COSIGN_EXPERIMENTAL: "1"
       run: |
         syft "${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }}" -o spdx-json=sbom.${{ inputs.image-tag }}.spdx.json
-        cosign attest --predicate sbom.${{ inputs.image-tag }}.spdx.json --type spdx "${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }}"
+        cosign attest --force --predicate sbom.${{ inputs.image-tag }}.spdx.json --type spdx "${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }}"
         cosign verify-attestation --type spdx ${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson'
 
     - name: Generate provenance
@@ -83,5 +108,5 @@ runs:
         COSIGN_EXPERIMENTAL: "1"
       run: |
         jq '.predicate' provenance.${{ inputs.image-tag }}.intoto.jsonl > provenance-predicate.att
-        cosign attest --predicate provenance-predicate.att --type slsaprovenance "${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }}"
+        cosign attest --force --predicate provenance-predicate.att --type slsaprovenance "${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }}"
         cosign verify-attestation --type slsaprovenance ${{ inputs.image-name }}@${{ steps.container_info.outputs.digest }}

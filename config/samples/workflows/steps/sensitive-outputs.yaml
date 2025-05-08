@@ -1,0 +1,245 @@
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: sensitive-example-store
+spec:
+  provider:
+    fake:
+      data:
+        - key: "user-credentials"
+          value: '{"username":"admin","password":"supersecret"}'
+        - key: "api-config"
+          value: '{"url":"https://api.example.com","api_key":"1234567890abcdef"}'
+---
+# The workflow template definition
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: sensitive-outputs-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating sensitive outputs handling"
+spec:
+  version: v1
+  name: "Sensitive Data Handling Workflow"
+  parameters:
+    - name: passwordLength
+      description: "Length of the generated password"
+      default: "32"
+    - name: digitCount
+      description: "Number of digits in the password"
+      default: "5"
+    - name: symbolCount
+      description: "Number of symbols in the password"
+      default: "5"
+    - name: symbolCharacters
+      description: "Characters to use for symbols"
+      default: "-_$@"
+    - name: remoteKey
+      description: "Remote key to store the configuration under"
+      default: "user-config"
+  jobs:
+    # First job: Pull existing secrets from the store
+    pullSecrets:
+      standard:
+        steps:
+          - name: getUserCredentials
+            pull:
+              source:
+                storeRef:
+                  name: sensitive-example-store
+              data:
+                - secretKey: username
+                  remoteRef:
+                    key: user-credentials
+                    property: username
+                - secretKey: password
+                  remoteRef:
+                    key: user-credentials
+                    property: password
+            # Define outputs with their types and sensitivity
+            outputs:
+              - name: username
+                type: string
+              - name: password
+                type: string
+                sensitive: true
+
+    # Second job: Generate new sensitive data
+    generateSecrets:
+      dependsOn:
+        - pullSecrets
+      standard:
+        steps:
+          - name: generateApiKey
+            generator:
+              kind: Password
+              spec:
+                passwordSpec:
+                  length: 32
+                  digits: 5
+                  symbols: 5
+                  symbolCharacters: "-_$@"
+                  noUpper: false
+                  allowRepeat: true
+            # Define outputs with their types and sensitivity
+            outputs:
+              - name: password
+                type: string
+                sensitive: true
+
+          - name: generateAccessToken
+            javascript:
+              script: |
+                // Simple function to create a mock JWT without using btoa
+                function createMockJWT() {
+                  // Create random strings to simulate JWT parts
+                  const randomString = () => Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+
+                  // Create three parts of a JWT-like token
+                  const header = randomString();
+                  const payload = randomString();
+                  const signature = randomString();
+
+                  return `${header}.${payload}.${signature}`;
+                }
+
+                // Set the access token (will be automatically masked due to name)
+                setString('access_token', createMockJWT());
+
+                // Set a refresh token (will be automatically masked due to name)
+                setString('refresh_token', 'refresh-token-value-' + Math.random().toString(36).substring(2));
+
+                // Set an API key (will be automatically masked due to name)
+                setString('api_key', 'api-key-' + Math.random().toString(36).substring(2));
+            outputs:
+              - name: access_token
+                type: string
+                sensitive: true
+              - name: refresh_token
+                type: string
+                sensitive: true
+              - name: api_key
+                type: string
+                sensitive: true
+
+    # Third job: Transform and combine secrets
+    transformSecrets:
+      dependsOn:
+        - pullSecrets
+        - generateSecrets
+      standard:
+        steps:
+          - name: combineSecrets
+            transform:
+              mappings:
+                username: "{{ .global.jobs.pullSecrets.getUserCredentials.username }}"
+                password: "{{ .global.jobs.pullSecrets.getUserCredentials.password }}"
+                api_key: "{{ .global.jobs.generateSecrets.generateAccessToken.api_key }}"
+                access_token: "{{ .global.jobs.generateSecrets.generateAccessToken.access_token }}"
+                refresh_token: "{{ .global.jobs.generateSecrets.generateAccessToken.refresh_token }}"
+                generated_password: "{{ .global.jobs.generateSecrets.generateApiKey.password }}"
+            # Define outputs with their types and sensitivity
+            outputs:
+              - name: username
+                type: string
+              - name: password
+                type: string
+                sensitive: true
+              - name: api_key
+                type: string
+                sensitive: true
+              - name: access_token
+                type: string
+                sensitive: true
+              - name: refresh_token
+                type: string
+                sensitive: true
+              - name: generated_password
+                type: string
+                sensitive: true
+
+          - name: createConfig
+            transform:
+              mappings:
+                config: |
+                  {
+                    "auth": {
+                      "username": "{{ .global.jobs.pullSecrets.getUserCredentials.username }}",
+                      "api_key": "{{ .global.jobs.generateSecrets.generateAccessToken.api_key }}",
+                      "access_token": "{{ .global.jobs.generateSecrets.generateAccessToken.access_token }}"
+                    },
+                    "settings": {
+                      "endpoint": "https://api.example.com/v2",
+                      "timeout": 30,
+                      "retry": 3
+                    }
+                  }
+            # Define outputs with their types and sensitivity
+            outputs:
+              - name: config
+                type: map
+                sensitive: true
+
+    # Fourth job: Debug and push the secrets
+    useSecrets:
+      dependsOn:
+        - transformSecrets
+      standard:
+        steps:
+          - name: debugSecrets
+            debug:
+              message: "Processed secrets for user: {{ .global.jobs.pullSecrets.getUserCredentials.username }}"
+
+          - name: pushSecrets
+            push:
+              secretSource: ".global.jobs.transformSecrets.combineSecrets"
+              destination:
+                storeRef:
+                  name: "sensitive-example-store"
+                  kind: SecretStore
+              data:
+                - match:
+                    secretKey: "username"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "username"
+                - match:
+                    secretKey: "password"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "password"
+                - match:
+                    secretKey: "api_key"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "api_key"
+                - match:
+                    secretKey: "access_token"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "access_token"
+                - match:
+                    secretKey: "refresh_token"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "refresh_token"
+                - match:
+                    secretKey: "generated_password"
+                    remoteRef:
+                      remoteKey: "{{ .global.variables.remoteKey }}"
+                      property: "generated_password"
+---
+# The workflow run instance
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: sensitive-outputs-run
+spec:
+  templateRef:
+    name: sensitive-outputs-template
+  arguments:
+    passwordLength: "32"
+    digitCount: "5"
+    symbolCount: "5"
+    symbolCharacters: "-_$@"
+    remoteKey: "user-config"

@@ -204,6 +204,10 @@ type SecretStoreProvider struct {
 	// CloudruSM configures this store to sync secrets using the Cloud.ru Secret Manager provider
 	// +optional
 	CloudruSM *CloudruSMProvider `json:"cloudrusm,omitempty"`
+
+	// ExternalSecrets configures this store to sync secrets using the ExternalSecrets provider
+	// +optional
+	ExternalSecrets *ExternalSecretsProvider `json:"externalsecrets,omitempty"`
 }
 
 type CAProviderType string

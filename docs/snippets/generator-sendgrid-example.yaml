@@ -1,0 +1,14 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: "sendgrid"
+spec:
+  refreshInterval: "30m"
+  target:
+    name: sendgrid-credentials
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: SendgridAuthorizationToken
+          name: "my-sendgrid-generator"

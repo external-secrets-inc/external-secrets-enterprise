@@ -1,0 +1,77 @@
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: debug-step-template
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating debug step usage"
+spec:
+  version: v1
+  name: "Debug Step Workflow"
+  parameters:
+    - name: environment
+      description: "Target environment (production, staging, development)"
+      default: "development"
+    - name: logLevel
+      description: "Log level for the application"
+      default: "info"
+  jobs:
+    debugDemo:
+      standard:
+        steps:
+          - name: simpleDebug
+            debug:
+              message: "This is a simple debug message"
+          
+          - name: debugWithVariables
+            debug:
+              message: "Current environment: {{ .global.variables.environment }}, log level: {{ .global.variables.logLevel }}"
+          
+          - name: debugWithTimestamp
+            javascript:
+              script: |
+                // Get current timestamp
+                const now = new Date();
+                setString('timestamp', now.toISOString());
+                setString('formatted_time', now.toLocaleString());
+            outputs:
+              - name: timestamp
+                type: string
+              - name: formatted_time
+                type: string
+          
+          - name: debugTimestamp
+            debug:
+              message: "Current time: {{ .global.jobs.debugDemo.debugWithTimestamp.formatted_time }}"
+          
+          - name: conditionalDebug
+            javascript:
+              script: |
+                // Set some values for demonstration
+                setString('status', 'success');
+                setNumber('error_count', 0);
+                setNumber('warning_count', 2);
+                setBool('has_errors', false);
+            outputs:
+              - name: status
+                type: string
+              - name: error_count
+                type: number
+              - name: warning_count
+                type: number
+              - name: has_errors
+                type: bool
+          
+          - name: debugConditionalResults
+            debug:
+              message: "Operation completed with status: {{ .global.jobs.debugDemo.conditionalDebug.status }}, errors: {{ .global.jobs.debugDemo.conditionalDebug.error_count }}, warnings: {{ .global.jobs.debugDemo.conditionalDebug.warning_count }}"
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: debug-step-run
+spec:
+  templateRef:
+    name: debug-step-template
+  arguments:
+    environment: "production"
+    logLevel: "error"

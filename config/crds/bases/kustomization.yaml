@@ -8,7 +8,10 @@ resources:
   - external-secrets.io_externalsecrets.yaml
   - external-secrets.io_pushsecrets.yaml
   - external-secrets.io_secretstores.yaml
+  - federation.external-secrets.io_authorizations.yaml
+  - federation.external-secrets.io_kubernetesfederations.yaml
   - generators.external-secrets.io_acraccesstokens.yaml
+  - generators.external-secrets.io_awsiamkeys.yaml
   - generators.external-secrets.io_clustergenerators.yaml
   - generators.external-secrets.io_ecrauthorizationtokens.yaml
   - generators.external-secrets.io_fakes.yaml
@@ -18,7 +21,12 @@ resources:
   - generators.external-secrets.io_grafanas.yaml
   - generators.external-secrets.io_passwords.yaml
   - generators.external-secrets.io_quayaccesstokens.yaml
+  - generators.external-secrets.io_rabbitmqs.yaml
+  - generators.external-secrets.io_sendgridauthorizationtokens.yaml
   - generators.external-secrets.io_stssessiontokens.yaml
   - generators.external-secrets.io_uuids.yaml
   - generators.external-secrets.io_vaultdynamicsecrets.yaml
   - generators.external-secrets.io_webhooks.yaml
+  - workflows.external-secrets.io_workflowruns.yaml
+  - workflows.external-secrets.io_workflows.yaml
+  - workflows.external-secrets.io_workflowtemplates.yaml

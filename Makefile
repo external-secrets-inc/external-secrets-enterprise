@@ -16,8 +16,8 @@ DOCKER ?= docker
 all: $(addprefix build-,$(ARCH))
 
 # Image registry for build/push image targets
-export IMAGE_REGISTRY ?= ghcr.io
-export IMAGE_REPO     ?= external-secrets/external-secrets
+export IMAGE_REGISTRY ?= us-central1-docker.pkg.dev/external-secrets-inc-registry/external
+export IMAGE_REPO     ?= external-secrets
 export IMAGE_NAME ?= $(IMAGE_REGISTRY)/$(IMAGE_REPO)
 
 BUNDLE_DIR     ?= deploy/crds
@@ -376,8 +376,22 @@ tilt: $(TILT) ## Download tilt locally if necessary. Architecture is locked at x
 $(TILT): $(LOCALBIN)
 	test -s $(LOCALBIN)/tilt || curl -fsSL https://github.com/tilt-dev/tilt/releases/download/v$(TILT_VERSION)/tilt.$(TILT_VERSION).$(detected_OS).$(arch).tar.gz | tar -xz -C $(LOCALBIN) tilt
 
+
+ARTIFACT_REG:=us-central1-docker.pkg.dev
+CHARTS_REPO := oci://$(ARTIFACT_REG)/external-secrets-inc-registry/external/charts
+
+.PHONY: helm.login
+helm.login:
+	gcloud auth print-access-token | helm registry login -u oauth2accesstoken \
+		--password-stdin https://$(ARTIFACT_REG)
+
+.PHONY: helm.push
+helm.push: helm.login ## Push helm chart to the repository
+	@helm dependency build deploy/charts/external-secrets
+	@helm package deploy/charts/external-secrets
+	@helm push *.tgz $(CHARTS_REPO)
+
 .PHONY: cty
-.PHONY: $(CTY)
 cty: $(CTY) ## Download cty locally if necessary. Architecture is locked at x86_64.
 $(CTY): $(LOCALBIN)
 	test -s $(LOCALBIN)/cty || curl -fsSL https://github.com/Skarlso/crd-to-sample-yaml/releases/download/v$(CTY_VERSION)/cty_$(real_OS)_amd64.tar.gz | tar -xz -C $(LOCALBIN) cty

@@ -1,0 +1,7 @@
+{
+  "templateName": "rotate-database-credentials",
+  "arguments": {
+    "databaseName": "production-postgres",
+    "notificationChannel": "#prod-alerts"
+  }
+}

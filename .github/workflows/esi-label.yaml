@@ -1,0 +1,98 @@
+name: Label PR based on size
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  label-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Get PR diff stats
+        id: diff
+        uses: actions/github-script@v7
+        env:
+          IGNORE_LIST: 'package-lock.json, go.mod, go.sum, README.md'
+          IGNORE_DIRS: 'docs/'
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            let totalChanges = 0;
+      
+            // Access environment variables
+            const ignoreList = process.env.IGNORE_LIST ? process.env.IGNORE_LIST.split(',').map(s => s.trim()) : [];
+            const ignoreDirs = process.env.IGNORE_DIRS ? process.env.IGNORE_DIRS.split(',').map(s => s.trim()) : [];
+      
+            for (const file of files) {
+              const filename = file.filename;
+      
+              const isIgnoredFile = ignoreList.includes(filename);
+              const isIgnoredDir = ignoreDirs.some(dir => filename.startsWith(dir));
+      
+              if (!isIgnoredFile && !isIgnoredDir) {
+                totalChanges += file.changes;
+              }
+            }
+      
+            core.setOutput('changes', totalChanges);
+
+      - name: Determine size label
+        id: size
+        run: |
+          echo "Total changes: ${{ steps.diff.outputs.changes }}"
+          changes=${{ steps.diff.outputs.changes }}
+          if [ "$changes" -lt 50 ]; then
+            label="size/XXS"
+          elif [ "$changes" -lt 100 ]; then
+            label="size/XS"
+          elif [ "$changes" -lt 200 ]; then
+            label="size/S"
+          elif [ "$changes" -lt 500 ]; then
+            label="size/M"
+          elif [ "$changes" -lt 1000 ]; then
+            label="size/L"
+          elif [ "$changes" -lt 2000 ]; then
+            label="size/XL"
+          else
+            label="size/XXL"
+          fi
+          echo "label=$label" >> $GITHUB_OUTPUT
+
+      - name: Remove existing size labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const labelsToRemove = ['size/XXS', 'size/XS', 'size/S', 'size/M', 'size/L', 'size/XL', 'size/XXL'];
+            const currentLabels = context.payload.pull_request.labels.map(label => label.name);
+            for (const label of labelsToRemove) {
+              if (currentLabels.includes(label)) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  name: label,
+                });
+              }
+            }
+
+      - name: Add size label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const label = '${{ steps.size.outputs.label }}';
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: [label],
+            });

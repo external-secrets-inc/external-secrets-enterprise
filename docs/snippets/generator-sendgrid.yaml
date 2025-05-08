@@ -1,0 +1,13 @@
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: SendgridAuthorizationToken
+metadata:
+  name: my-sendgrid-generator
+spec:
+  scopes:
+    - alerts.create
+    - alerts.read
+  auth: 
+    secretRef:
+      apiKeySecretRef:
+        name: sendgrid-api-key
+        key: apiKey

@@ -35,7 +35,9 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esv1alpha1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1alpha1"
+	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/federation/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	wfv1alpha1 "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterexternalsecret"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterexternalsecret/cesmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterpushsecret"
@@ -43,6 +45,7 @@ import (
 	ctrlcommon "github.com/external-secrets/external-secrets/pkg/controllers/common"
 	"github.com/external-secrets/external-secrets/pkg/controllers/externalsecret"
 	"github.com/external-secrets/external-secrets/pkg/controllers/externalsecret/esmetrics"
+	"github.com/external-secrets/external-secrets/pkg/controllers/federation"
 	"github.com/external-secrets/external-secrets/pkg/controllers/generatorstate"
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/pushsecret"
@@ -50,7 +53,11 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
+	"github.com/external-secrets/external-secrets/pkg/controllers/workflow"
+	workflowapi "github.com/external-secrets/external-secrets/pkg/controllers/workflow/api"
+	workflowcommon "github.com/external-secrets/external-secrets/pkg/controllers/workflow/common"
 	"github.com/external-secrets/external-secrets/pkg/feature"
+	federationserver "github.com/external-secrets/external-secrets/pkg/federation/server"
 
 	// To allow using gcp auth.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -64,11 +71,14 @@ var (
 	metricsAddr                           string
 	healthzAddr                           string
 	controllerClass                       string
+	serverPort                            string
+	workflowAPIPort                       string
 	enableLeaderElection                  bool
 	enableSecretsCache                    bool
 	enableConfigMapsCache                 bool
 	enableManagedSecretsCache             bool
 	enablePartialCache                    bool
+	enableWorkflowAPI                     bool
 	concurrent                            int
 	port                                  int
 	clientQPS                             float32
@@ -91,6 +101,7 @@ var (
 	certLookaheadInterval                 time.Duration
 	tlsCiphers                            string
 	tlsMinVersion                         string
+	sensitivePatterns                     []string
 )
 
 const (
@@ -106,6 +117,10 @@ func init() {
 	utilruntime.Must(esv1.AddToScheme(scheme))
 	utilruntime.Must(esv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(genv1alpha1.AddToScheme(scheme))
+
+	// external-secrets-enterprise schemes
+	utilruntime.Must(fedv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(wfv1alpha1.AddToScheme(scheme))
 }
 
 var rootCmd = &cobra.Command{
@@ -114,6 +129,11 @@ var rootCmd = &cobra.Command{
 	Long:  `For more information visit https://external-secrets.io`,
 	Run: func(cmd *cobra.Command, args []string) {
 		setupLogger()
+
+		// Configure workflow sensitive patterns
+		if len(sensitivePatterns) > 0 {
+			workflowcommon.SetSensitivePatterns(sensitivePatterns)
+		}
 
 		ctrlmetrics.SetUpLabelNames(enableExtendedMetricLabels)
 		esmetrics.SetUpMetrics()
@@ -217,7 +237,7 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "GeneratorState")
 			os.Exit(1)
 		}
-		if err = (&externalsecret.Reconciler{
+		externalSecretReconciler := &externalsecret.Reconciler{
 			Client:                    mgr.GetClient(),
 			SecretClient:              secretClient,
 			Log:                       ctrl.Log.WithName("controllers").WithName("ExternalSecret"),
@@ -227,7 +247,8 @@ var rootCmd = &cobra.Command{
 			RequeueInterval:           time.Hour,
 			ClusterSecretStoreEnabled: enableClusterStoreReconciler,
 			EnableFloodGate:           enableFloodGate,
-		}).SetupWithManager(mgr, controller.Options{
+		}
+		if err = externalSecretReconciler.SetupWithManager(mgr, controller.Options{
 			MaxConcurrentReconciles: concurrent,
 			RateLimiter:             ctrlcommon.BuildRateLimiter(),
 		}); err != nil {
@@ -251,6 +272,35 @@ var rootCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
+		if err = (&workflow.Reconciler{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("Workflow"),
+			Scheme:   mgr.GetScheme(),
+			Recorder: mgr.GetEventRecorderFor("workflow-controller"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "Workflow")
+			os.Exit(1)
+		}
+
+		if err = (&workflow.WorkflowTemplateReconciler{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowTemplate"),
+			Scheme:   mgr.GetScheme(),
+			Recorder: mgr.GetEventRecorderFor("workflowtemplate-controller"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "WorkflowTemplate")
+			os.Exit(1)
+		}
+
+		if err = (&workflow.WorkflowRunReconciler{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowRun"),
+			Scheme:   mgr.GetScheme(),
+			Recorder: mgr.GetEventRecorderFor("workflowrun-controller"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "WorkflowRun")
+			os.Exit(1)
+		}
 		if enableClusterExternalSecretReconciler {
 			cesmetrics.SetUpMetrics()
 
@@ -266,6 +316,37 @@ var rootCmd = &cobra.Command{
 				setupLog.Error(err, errCreateController, "controller", "ClusterExternalSecret")
 				os.Exit(1)
 			}
+		}
+		// Federation
+		if err = (&federation.AuthorizationController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("Authorization"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "Authorization")
+			os.Exit(1)
+		}
+		if err = (&federation.KubernetesFederationController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("KubernetesFederation"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "KubernetesFederation")
+			os.Exit(1)
+		}
+		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort)
+		go handler.SetupEcho(cmd.Context())
+
+		// Start the workflow API server if enabled
+		if enableWorkflowAPI {
+			apiServer := workflowapi.NewServer(mgr.GetClient(), ctrl.Log.WithName("api").WithName("Workflow"))
+			go func() {
+				setupLog.Info("starting workflow API server", "port", workflowAPIPort)
+				if err := apiServer.Start(workflowAPIPort); err != nil {
+					setupLog.Error(err, "unable to start workflow API server")
+					os.Exit(1)
+				}
+			}()
 		}
 
 		if enableClusterPushSecretReconciler {
@@ -314,6 +395,9 @@ func init() {
 	rootCmd.Flags().Float32Var(&clientQPS, "client-qps", 50, "QPS configuration to be passed to rest.Client")
 	rootCmd.Flags().IntVar(&clientBurst, "client-burst", 100, "Maximum Burst allowed to be passed to rest.Client")
 	rootCmd.Flags().StringVar(&loglevel, "loglevel", "info", "loglevel to use, one of: debug, info, warn, error, dpanic, panic, fatal")
+	rootCmd.Flags().StringVar(&serverPort, "server-port", ":8000", "federation server port")
+	rootCmd.Flags().StringVar(&workflowAPIPort, "workflow-api-port", ":8080", "workflow API server port")
+	rootCmd.Flags().BoolVar(&enableWorkflowAPI, "enable-workflow-api", false, "Enable workflow API server")
 	rootCmd.Flags().StringVar(&zapTimeEncoding, "zap-time-encoding", "epoch", "Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')")
 	rootCmd.Flags().StringVar(&namespace, "namespace", "", "watch external secrets scoped in the provided namespace only. ClusterSecretStore can be used but only work if it doesn't reference resources from other namespaces")
 	rootCmd.Flags().BoolVar(&enableClusterStoreReconciler, "enable-cluster-store-reconciler", true, "Enable cluster store reconciler.")
@@ -326,6 +410,8 @@ func init() {
 	rootCmd.Flags().DurationVar(&storeRequeueInterval, "store-requeue-interval", time.Minute*5, "Default Time duration between reconciling (Cluster)SecretStores")
 	rootCmd.Flags().BoolVar(&enableFloodGate, "enable-flood-gate", true, "Enable flood gate. External secret will be reconciled only if the ClusterStore or Store have an healthy or unknown state.")
 	rootCmd.Flags().BoolVar(&enableExtendedMetricLabels, "enable-extended-metric-labels", false, "Enable recommended kubernetes annotations as labels in metrics.")
+	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
+
 	fs := feature.Features()
 	for _, f := range fs {
 		rootCmd.Flags().AddFlagSet(f.Flags)

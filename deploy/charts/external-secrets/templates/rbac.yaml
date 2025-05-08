@@ -14,8 +14,24 @@ metadata:
     {{- include "external-secrets.labels" . | nindent 4 }}
 rules:
   - apiGroups:
-    - "external-secrets.io"
+    - "federation.external-secrets.io"
     resources:
+    - "*"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+  - apiGroups:
+    - "workflows.external-secrets.io"
+    resources:
+    - "*"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+  - apiGroups:
+    - "external-secrets.io"
+    resources:    
     - "secretstores"
     {{- if .Values.processClusterStore }}
     - "clustersecretstores"
@@ -98,6 +114,7 @@ rules:
     - "acraccesstokens"
     - "clustergenerators"
     - "ecrauthorizationtokens"
+    - "awsiamkeys"
     - "fakes"
     - "gcraccesstokens"
     - "githubaccesstokens"

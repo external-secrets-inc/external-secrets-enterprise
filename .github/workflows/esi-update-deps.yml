@@ -1,0 +1,49 @@
+name: "Update dependencies"
+on:
+  schedule:
+    # Everyday, 10AM UTC
+    - cron: "0 10 * * *"
+
+  workflow_dispatch:
+    inputs: {}
+
+
+permissions:
+  contents: read
+
+jobs:
+  update-dependencies:
+    permissions:
+      contents: write  # for Git to git push
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ["main"]
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+      with:
+        go-version: "1.24"
+
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ matrix.branch }}
+        fetch-depth: 0
+    - name: create pull request
+      run: |
+        BRANCH=update-deps-$(date "+%s")
+        make update-deps || true
+        make check-diff || true
+        if git diff-index --quiet HEAD --; then
+          echo "nothing changed. skipping."
+          exit 0;
+        fi
+
+        git checkout -b $BRANCH
+        git add -A
+        git commit -m "update dependencies" -s
+        git push origin $BRANCH
+        gh pr create -B ${{ matrix.branch }} -H ${BRANCH} --title 'chore: update dependencies' --body 'Update dependencies'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
