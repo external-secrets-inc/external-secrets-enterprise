@@ -32,6 +32,8 @@ jobs:
         fetch-depth: 0
     - name: create pull request
       run: |
+        git config --global user.name "External Secrets Inc Bot"
+        git config --global user.email "bot@externalsecrets.com"
         BRANCH=update-deps-$(date "+%s")
         make update-deps || true
         make check-diff || true
