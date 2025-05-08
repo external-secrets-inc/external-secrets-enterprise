@@ -15,6 +15,7 @@ jobs:
   update-dependencies:
     permissions:
       contents: write  # for Git to git push
+      pull-requests: write  # for Git to create PR
     runs-on: ubuntu-latest
     strategy:
       matrix:
