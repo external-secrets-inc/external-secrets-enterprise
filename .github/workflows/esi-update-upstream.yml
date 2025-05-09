@@ -41,7 +41,8 @@ jobs:
         git config --global user.name "External Secrets Inc Bot"
         git config --global user.email "bot@externalsecrets.com"
         git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}
-
+        git remote set-url upstream https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}
+        git remote set-url upstream --push DISABLE
         bash hack/update_upstream.sh
       env:
         GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

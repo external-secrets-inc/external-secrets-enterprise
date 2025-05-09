@@ -4,9 +4,6 @@
 # git clone git@github.com:external-secrets-inc/external-secrets-enterprise
 # cd external-secrets-enterprise
 
-git remote add upstream git@github.com:external-secrets/external-secrets.git
-git remote set-url upstream --push DISABLE
-
 git fetch upstream
 
 git checkout -b update-upstream-$(date +%s)
