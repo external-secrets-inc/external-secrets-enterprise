@@ -6,6 +6,10 @@
 
 git fetch upstream
 
+git fetch origin
+
+git checkout origin/main
+
 git checkout -b update-upstream-$(date +%s)
 
 git merge upstream/main --no-ff --no-commit || true
