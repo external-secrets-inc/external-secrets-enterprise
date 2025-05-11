@@ -31,10 +31,17 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: ${{ matrix.branch }}
         fetch-depth: 0
+    - name: login to github app
+      uses: actions/create-github-app-token@v1
+      id: app-token
+      with:
+        app-id: ${{ vars.ESI_BOT_APP_ID }}
+        private-key: ${{ secrets.ESI_BOT_PRIVATE_KEY }}
     - name: create pull request
       run: |
         git config --global user.name "External Secrets Inc Bot"
         git config --global user.email "bot@externalsecrets.com"
+        git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}
         BRANCH=update-deps-$(date "+%s")
         make update-deps || true
         make check-diff || true
@@ -49,4 +56,4 @@ jobs:
         git push origin $BRANCH
         gh pr create -B ${{ matrix.branch }} -H ${BRANCH} --title 'chore: update dependencies' --body 'Update dependencies'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
