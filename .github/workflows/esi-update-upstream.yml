@@ -58,7 +58,7 @@ jobs:
         git checkout .github
         git commit -s -m "chore: update from upstream"
         git push origin update-upstream-$(date +%s)
-        gh pr create --title "chore: update from upstream" --body "update from upstream" --base main --head update-from-upstream-on-$(date)
+        gh pr create --title "chore: update from upstream" --body "update from upstream" --base main --head "Update from upstream on $(date)"
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
         GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
