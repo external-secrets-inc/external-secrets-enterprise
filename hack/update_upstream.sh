@@ -21,6 +21,11 @@ if [[ -z "$(git status --porcelain)" ]]; then
 fi
 
 git add .
+
+## Remove .github folder from the commit
+git reset HEAD .github
+git checkout .github
+
 git commit -s -m "chore: update upstream"
 
 git push origin update-upstream-$(date +%s)
