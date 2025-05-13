@@ -136,7 +136,11 @@ type Reconciler struct {
 	RequeueInterval           time.Duration
 	ClusterSecretStoreEnabled bool
 	EnableFloodGate           bool
+<<<<<<< HEAD
 	ShouldRefreshOnZero       bool
+=======
+	EnableGeneratorState      bool
+>>>>>>> upstream/main
 	recorder                  record.EventRecorder
 }
 
@@ -325,7 +329,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	}()
 
 	// retrieve the provider secret data.
-	dataMap, err := r.getProviderSecretData(ctx, externalSecret)
+	dataMap, err := r.GetProviderSecretData(ctx, externalSecret)
 	if err != nil {
 		r.markAsFailed(msgErrorGetSecretData, err, externalSecret, syncCallsError.With(resourceLabels))
 		return ctrl.Result{}, err
@@ -430,7 +434,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 		// WARNING: this will remove any labels or annotations managed by this ExternalSecret
 		//          so any updates to labels and annotations should be done AFTER this point
-		err = r.applyTemplate(ctx, externalSecret, secret, dataMap)
+		err = r.ApplyTemplate(ctx, externalSecret, secret, dataMap)
 		if err != nil {
 			return fmt.Errorf(errApplyTemplate, err)
 		}
