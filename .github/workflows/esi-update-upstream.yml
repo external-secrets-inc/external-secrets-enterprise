@@ -26,17 +26,17 @@ jobs:
       uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
       with:
         go-version: "1.24"
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ matrix.branch }}
+        fetch-depth: 0
     - name: login to github app
       uses: actions/create-github-app-token@v1
       id: app-token
       with:
         app-id: ${{ vars.ESI_BOT_APP_ID }}
         private-key: ${{ secrets.ESI_BOT_PRIVATE_KEY }}
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        ref: ${{ matrix.branch }}
-        fetch-depth: 0
     - name: create pull request
       run: |
         git config --global user.name "External Secrets Inc Bot"
