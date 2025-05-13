@@ -44,7 +44,21 @@ jobs:
         git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}
         git remote add upstream https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/external-secrets/external-secrets
         git remote set-url upstream --push DISABLE
-        bash hack/update_upstream.sh
+        git fetch upstream
+        git fetch origin
+        git checkout origin/main
+        git checkout -b update-upstream-$(date +%s)
+        git merge upstream/main --no-ff --no-commit || true
+        if [[ -z "$(git status --porcelain)" ]]; then
+          echo "nothing changed. skipping."
+          exit 0;
+        fi
+        git add .
+        git reset HEAD .github
+        git checkout .github
+        git commit -s -m "chore: update upstream"
+        git push origin update-upstream-$(date +%s)
+        gh pr create --title "chore: update upstream" --body "update upstream" --base main --head update-upstream-$(date +%s)
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
         GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
