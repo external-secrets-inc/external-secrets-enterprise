@@ -91,6 +91,7 @@ var (
 	enableClusterPushSecretReconciler     bool
 	enablePushSecretReconciler            bool
 	enableFloodGate                       bool
+	enableGeneratorState                  bool
 	enableExtendedMetricLabels            bool
 	storeRequeueInterval                  time.Duration
 	serviceName, serviceNamespace         string
@@ -247,8 +248,13 @@ var rootCmd = &cobra.Command{
 			RequeueInterval:           time.Hour,
 			ClusterSecretStoreEnabled: enableClusterStoreReconciler,
 			EnableFloodGate:           enableFloodGate,
+<<<<<<< HEAD
 		}
 		if err = externalSecretReconciler.SetupWithManager(mgr, controller.Options{
+=======
+			EnableGeneratorState:      enableGeneratorState,
+		}).SetupWithManager(mgr, controller.Options{
+>>>>>>> upstream/main
 			MaxConcurrentReconciles: concurrent,
 			RateLimiter:             ctrlcommon.BuildRateLimiter(),
 		}); err != nil {
@@ -409,6 +415,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&enableManagedSecretsCache, "enable-managed-secrets-caching", true, "Enable secrets caching for secrets managed by an ExternalSecret")
 	rootCmd.Flags().DurationVar(&storeRequeueInterval, "store-requeue-interval", time.Minute*5, "Default Time duration between reconciling (Cluster)SecretStores")
 	rootCmd.Flags().BoolVar(&enableFloodGate, "enable-flood-gate", true, "Enable flood gate. External secret will be reconciled only if the ClusterStore or Store have an healthy or unknown state.")
+	rootCmd.Flags().BoolVar(&enableGeneratorState, "enable-generator-state", true, "Whether the Controller should manage GeneratorState")
 	rootCmd.Flags().BoolVar(&enableExtendedMetricLabels, "enable-extended-metric-labels", false, "Enable recommended kubernetes annotations as labels in metrics.")
 	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
 
