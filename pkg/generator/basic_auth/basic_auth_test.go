@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
@@ -56,15 +57,8 @@ func TestGenerate(t *testing.T) {
 					assert.Equal(t, false, includeNumbers)
 					return "foo", nil
 				},
-				passGen: func(len int, symbols int, symbolCharacters string, digits int, noUpper bool, allowRepeat bool,
-				) (string, error) {
-					assert.Equal(t, defaultPasswordLength, len)
-					assert.Equal(t, defaultSymbolChars, symbolCharacters)
-					assert.Equal(t, 6, symbols)
-					assert.Equal(t, 6, digits)
-					assert.Equal(t, false, noUpper)
-					assert.Equal(t, false, allowRepeat)
-					return "bar", nil
+				passGen: func(passSpec genv1alpha1.PasswordSpec) ([]byte, error) {
+					return []byte("bar"), nil
 				},
 			},
 			want: map[string][]byte{
@@ -107,14 +101,14 @@ func TestGenerate(t *testing.T) {
 					assert.True(t, includeNumbers)
 					return "dev-word1.word2-svc4254", nil
 				},
-				passGen: func(len int, symbols int, symbolCharacters string, digits int, noUpper bool, allowRepeat bool) (string, error) {
-					assert.Equal(t, 48, len)
-					assert.Equal(t, "-_.", symbolCharacters)
-					assert.Equal(t, 2, symbols)
-					assert.Equal(t, 2, digits)
-					assert.True(t, noUpper)
-					assert.True(t, allowRepeat)
-					return "securePassword123!_", nil
+				passGen: func(passSpec genv1alpha1.PasswordSpec) ([]byte, error) {
+					assert.Equal(t, 48, passSpec.Length)
+					assert.Equal(t, "-_.", *passSpec.SymbolCharacters)
+					assert.Equal(t, 2, *passSpec.Symbols)
+					assert.Equal(t, 2, *passSpec.Digits)
+					assert.True(t, passSpec.NoUpper)
+					assert.True(t, passSpec.AllowRepeat)
+					return []byte("securePassword123!_"), nil
 				},
 			},
 			want: map[string][]byte{
@@ -133,9 +127,8 @@ func TestGenerate(t *testing.T) {
 				) (string, error) {
 					return "", errors.New("boom")
 				},
-				passGen: func(len int, symbols int, symbolCharacters string, digits int, noUpper bool, allowRepeat bool,
-				) (string, error) {
-					return "", errors.New("boom")
+				passGen: func(passSpec genv1alpha1.PasswordSpec) ([]byte, error) {
+					return nil, errors.New("boom")
 				},
 			},
 			wantErr: true,

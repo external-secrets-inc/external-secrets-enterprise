@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/sethvargo/go-password/password"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -18,16 +17,12 @@ import (
 	"github.com/nwtgck/go-fakelish"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/generator/password"
 )
 
 type Generator struct{}
 
 const (
-	defaultPasswordLength = 24
-	defaultSymbolChars    = "~!@#$%^&*()_+`-={}|[]\\:\"<>?,./"
-	digitFactor           = 0.25
-	symbolFactor          = 0.25
-
 	defaultUsernameLength = 8
 	defaultWordCount      = 1
 	defaultSeparator      = "_"
@@ -46,20 +41,13 @@ type usernameGenerateFunc func(
 	includeNumbers bool,
 ) (string, error)
 
-type passwordGenerateFunc func(
-	len int,
-	symbols int,
-	symbolCharacters string,
-	digits int,
-	noUpper bool,
-	allowRepeat bool,
-) (string, error)
+type passwordGenerateFunc func(passSpec genv1alpha1.PasswordSpec) ([]byte, error)
 
 func (g *Generator) Generate(_ context.Context, jsonSpec *apiextensions.JSON, _ client.Client, _ string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
 	return g.generate(
 		jsonSpec,
 		generateUsername,
-		generateSafePassword,
+		generatePassword,
 	)
 }
 
@@ -115,39 +103,14 @@ func (g *Generator) generate(
 		return nil, nil, err
 	}
 
-	passwordSpec := res.Spec.Password
-
-	symbolCharacters := defaultSymbolChars
-	if passwordSpec.SymbolCharacters != nil {
-		symbolCharacters = *passwordSpec.SymbolCharacters
-	}
-	passLen := defaultPasswordLength
-	if passwordSpec.Length > 0 {
-		passLen = passwordSpec.Length
-	}
-	digits := int(float32(passLen) * digitFactor)
-	if passwordSpec.Digits != nil {
-		digits = *passwordSpec.Digits
-	}
-	symbols := int(float32(passLen) * symbolFactor)
-	if passwordSpec.Symbols != nil {
-		symbols = *passwordSpec.Symbols
-	}
-	pass, err := passGen(
-		passLen,
-		symbols,
-		symbolCharacters,
-		digits,
-		passwordSpec.NoUpper,
-		passwordSpec.AllowRepeat,
-	)
+	pass, err := passGen(res.Spec.Password)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return map[string][]byte{
 		"username": []byte(user),
-		"password": []byte(pass),
+		"password": pass,
 	}, nil, nil
 }
 
@@ -199,27 +162,25 @@ func generateUsername(
 	return generatedUsername, nil
 }
 
-func generateSafePassword(
-	passLen int,
-	symbols int,
-	symbolCharacters string,
-	digits int,
-	noUpper bool,
-	allowRepeat bool,
-) (string, error) {
-	gen, err := password.NewGenerator(&password.GeneratorInput{
-		Symbols: symbolCharacters,
-	})
+func generatePassword(
+	passSpec genv1alpha1.PasswordSpec,
+) ([]byte, error) {
+	gen := password.Generator{}
+	rawPassSpec, err := yaml.Marshal(passSpec)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return gen.Generate(
-		passLen,
-		digits,
-		symbols,
-		noUpper,
-		allowRepeat,
-	)
+	passMap, _, err := gen.Generate(context.TODO(), &apiextensions.JSON{Raw: rawPassSpec}, nil, "")
+
+	if err != nil {
+		return nil, err
+	}
+
+	pass, ok := passMap["password"]
+	if !ok {
+		return nil, errors.New("password not found in generated map")
+	}
+	return pass, nil
 }
 
 func parseSpec(data []byte) (*genv1alpha1.BasicAuth, error) {
