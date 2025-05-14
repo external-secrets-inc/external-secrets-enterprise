@@ -21648,7 +21648,7 @@ spec:
                     length:
                       default: 8
                       description: |-
-                        Length of the username to be generated.
+                        Length of each word of the username to be generated.
                         Defaults to 8
                       type: integer
                     prefix:

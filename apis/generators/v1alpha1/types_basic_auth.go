@@ -33,7 +33,7 @@ type BasicAuthSpec struct {
 
 // UsernameSpec controls the behavior of the username generated.
 type UsernameSpec struct {
-	// Length of the username to be generated.
+	// Length of each word of the username to be generated.
 	// Defaults to 8
 	// +kubebuilder:default=8
 	Length int `json:"length"`
