@@ -40,12 +40,20 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/yandex-cloud/go-genproto v0.2.0
 	github.com/yandex-cloud/go-sdk v0.3.0
+<<<<<<< HEAD
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
+=======
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+>>>>>>> upstream/main
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.38.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.232.0
+<<<<<<< HEAD
 	google.golang.org/genproto v0.0.0-20250512202823-5a2f75b736a9
+=======
+	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2
+>>>>>>> upstream/main
 	google.golang.org/grpc v1.72.0
 	gopkg.in/yaml.v3 v3.0.1
 	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
@@ -83,7 +91,10 @@ require (
 	github.com/cloudru-tech/iam-sdk v1.0.4
 	github.com/cloudru-tech/secret-manager-sdk v1.1.1
 	github.com/cyberark/conjur-api-go v0.12.15
+<<<<<<< HEAD
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
+=======
+>>>>>>> upstream/main
 	github.com/fortanix/sdkms-client-go v0.4.1
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -93,7 +104,10 @@ require (
 	github.com/hashicorp/vault/api/auth/aws v0.9.0
 	github.com/hashicorp/vault/api/auth/userpass v0.9.0
 	github.com/keeper-security/secrets-manager-go/core v1.6.4
+<<<<<<< HEAD
 	github.com/labstack/echo/v4 v4.13.3
+=======
+>>>>>>> upstream/main
 	github.com/lestrrat-go/jwx/v2 v2.1.6
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
 	github.com/michaelklishin/rabbit-hole/v3 v3.2.0
@@ -107,7 +121,10 @@ require (
 	github.com/spf13/pflag v1.0.6
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.128.0
+<<<<<<< HEAD
 	golang.org/x/sync v0.14.0
+=======
+>>>>>>> upstream/main
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff
 	sigs.k8s.io/yaml v1.4.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
@@ -228,8 +245,14 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
+<<<<<<< HEAD
 	google.golang.org/genproto/googleapis/api v0.0.0-20250512202823-5a2f75b736a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9 // indirect
+=======
+	golang.org/x/sync v0.14.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
+>>>>>>> upstream/main
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
