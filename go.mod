@@ -24,7 +24,7 @@ require (
 	github.com/go-test/deep v1.0.4 // indirect
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.14.1
+	github.com/googleapis/gax-go/v2 v2.14.2
 	github.com/hashicorp/vault/api v1.16.0
 	github.com/hashicorp/vault/api/auth/approle v0.9.0
 	github.com/hashicorp/vault/api/auth/kubernetes v0.9.0
@@ -32,19 +32,19 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
-	github.com/oracle/oci-go-sdk/v65 v65.90.0
+	github.com/oracle/oci-go-sdk/v65 v65.91.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
-	github.com/yandex-cloud/go-genproto v0.2.0
+	github.com/yandex-cloud/go-genproto v0.3.0
 	github.com/yandex-cloud/go-sdk v0.3.0
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.38.0
 	golang.org/x/oauth2 v0.30.0
-	google.golang.org/api v0.232.0
+	google.golang.org/api v0.233.0
 	google.golang.org/genproto v0.0.0-20250512202823-5a2f75b736a9
 	google.golang.org/grpc v1.72.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -61,7 +61,7 @@ require (
 require github.com/1Password/connect-sdk-go v1.5.3
 
 require (
-	cloud.google.com/go/compute/metadata v0.6.0
+	cloud.google.com/go/compute/metadata v0.7.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.9.0
@@ -236,7 +236,7 @@ require (
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/code-generator v0.33.0 // indirect
-	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
+	k8s.io/gengo/v2 v2.0.0-20250513215321-e3bc6f1e78b4 // indirect
 	lukechampine.com/frand v1.5.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
@@ -336,7 +336,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/gengo v0.0.0-20250207200755-1244d31929d7 // indirect
+	k8s.io/gengo v0.0.0-20250513215321-e3bc6f1e78b4 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
