@@ -14,8 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/nwtgck/go-fakelish"
-
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 )
@@ -26,6 +24,8 @@ const (
 	defaultUsernameLength = 8
 	defaultWordCount      = 1
 	defaultSeparator      = "_"
+	consonants            = "bcdfghjklmnpqrstvwxyz"
+	vowels                = "aeiou"
 
 	errNoSpec    = "no config spec provided"
 	errParseSpec = "unable to parse spec: %w"
@@ -129,7 +129,7 @@ func generateUsername(
 	generatedUsername := ""
 	for i := 0; i < wordCount; i++ {
 		// Generate a fake word
-		fakeWord := fakelish.GenerateFakeWordByLength(userLen)
+		fakeWord := generateFakeWord(userLen)
 		// Capitalize the first letter
 		fakeWord = strings.ToLower(fakeWord)
 
@@ -144,18 +144,13 @@ func generateUsername(
 
 	generatedUsername = prefix + generatedUsername + sufix
 
-	// If the user wants numbers
 	if includeNumbers {
-		// Loop through the numbers count
 		for i := 0; i < 4; i++ {
-			// Create ioReader
 			ioReader := rand.Reader
-			// Random integer between 0 and 9
 			randomNumber, err := rand.Int(ioReader, new(big.Int).SetInt64(9))
 			if err != nil {
 				return "", err
 			}
-			// Append the number to the initial string
 			generatedUsername += fmt.Sprintf("%d", randomNumber)
 		}
 	}
@@ -191,4 +186,31 @@ func parseSpec(data []byte) (*genv1alpha1.BasicAuth, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.BasicAuthKind, &Generator{})
+}
+
+func generateFakeWord(size int) string {
+	word := []byte{}
+	ioReader := rand.Reader
+	for i := 0; i < size/2; i++ {
+		randomNumber, err := rand.Int(ioReader, big.NewInt(int64(len(consonants))))
+		if err != nil {
+			randomNumber = big.NewInt(0)
+		}
+		word = append(word, consonants[int(randomNumber.Int64())])
+		randomNumber, err = rand.Int(ioReader, big.NewInt(int64(len(vowels))))
+		if err != nil {
+			randomNumber = big.NewInt(0)
+		}
+		word = append(word, vowels[int(randomNumber.Int64())])
+	}
+
+	if size%2 != 0 {
+		randomNumber, err := rand.Int(ioReader, big.NewInt(int64(len(consonants))))
+		if err != nil {
+			randomNumber = big.NewInt(0)
+		}
+		word = append(word, consonants[int(randomNumber.Int64())])
+	}
+
+	return string(word)
 }
