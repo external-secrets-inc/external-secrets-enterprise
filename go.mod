@@ -97,6 +97,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.1.6
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
 	github.com/michaelklishin/rabbit-hole/v3 v3.2.0
+	github.com/nwtgck/go-fakelish v0.1.3
 	github.com/passbolt/go-passbolt v0.7.2
 	github.com/previder/vault-cli v0.1.2
 	github.com/pulumi/esc-sdk/sdk v0.12.1
@@ -213,6 +214,7 @@ require (
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
+	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect

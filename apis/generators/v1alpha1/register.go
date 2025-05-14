@@ -41,6 +41,7 @@ var (
 	STSSessionTokenKind       = reflect.TypeOf(STSSessionToken{}).Name()
 	GCRAccessTokenKind        = reflect.TypeOf(GCRAccessToken{}).Name()
 	ACRAccessTokenKind        = reflect.TypeOf(ACRAccessToken{}).Name()
+	BasicAuthKind             = reflect.TypeOf(BasicAuth{}).Name()
 	PasswordKind              = reflect.TypeOf(Password{}).Name()
 	WebhookKind               = reflect.TypeOf(Webhook{}).Name()
 	FakeKind                  = reflect.TypeOf(Fake{}).Name()
