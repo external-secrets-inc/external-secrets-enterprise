@@ -42,7 +42,6 @@ var (
 	GCRAccessTokenKind        = reflect.TypeOf(GCRAccessToken{}).Name()
 	ACRAccessTokenKind        = reflect.TypeOf(ACRAccessToken{}).Name()
 	PasswordKind              = reflect.TypeOf(Password{}).Name()
-	SSHKind                   = reflect.TypeOf(SSH{}).Name()
 	WebhookKind               = reflect.TypeOf(Webhook{}).Name()
 	FakeKind                  = reflect.TypeOf(Fake{}).Name()
 	VaultDynamicSecretKind    = reflect.TypeOf(VaultDynamicSecret{}).Name()
