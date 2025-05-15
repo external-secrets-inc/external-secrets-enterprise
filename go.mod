@@ -38,15 +38,15 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
-	github.com/yandex-cloud/go-genproto v0.3.0
-	github.com/yandex-cloud/go-sdk v0.3.0
+	github.com/yandex-cloud/go-genproto v0.4.0
+	github.com/yandex-cloud/go-sdk v0.4.0
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.38.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.233.0
 	google.golang.org/genproto v0.0.0-20250512202823-5a2f75b736a9
-	google.golang.org/grpc v1.72.0
+	google.golang.org/grpc v1.72.1
 	gopkg.in/yaml.v3 v3.0.1
 	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 	k8s.io/api v0.33.0
@@ -64,7 +64,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.7.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.9.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.0
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
 	github.com/BeyondTrust/go-client-library-passwordsafe v0.21.1
 	github.com/DelineaXPM/dsv-sdk-go/v2 v2.2.0
