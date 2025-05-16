@@ -959,19 +959,12 @@ func TestGetSecretMap(t *testing.T) {
 		secret := &sm.PrivateCertificate{
 			CreatedBy:      utilpointer.To("testCreatedBy"),
 			CreatedAt:      &strfmt.DateTime{},
-<<<<<<< HEAD
-			ExpirationDate: expirationDate,
-=======
->>>>>>> upstream/main
 			Downloaded:     utilpointer.To(false),
 			Labels:         []string{"abc", "def", "xyz"},
 			LocksTotal:     utilpointer.To(int64(20)),
 			Certificate:    utilpointer.To(secretCertificate),
 			PrivateKey:     utilpointer.To(secretPrivateKey),
-<<<<<<< HEAD
-=======
 			ExpirationDate: expirationDate,
->>>>>>> upstream/main
 		}
 		smtc.name = "good case: private_cert with metadata"
 		smtc.apiInput.ID = utilpointer.To(secretUUID)
