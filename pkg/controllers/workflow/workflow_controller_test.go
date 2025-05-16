@@ -1,4 +1,6 @@
-// reconciler_test.go
+// 2025
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package workflow
 
 import (
