@@ -59,8 +59,8 @@ jobs:
         git checkout .github
         git commit -s -m "chore: update from upstream"
         git push origin $BRANCH
-        gh pr create -B "main" -H ${BRANCH} --title 'chore: update from upstream' --body 'Update from upstream'
-
+        gh pr create --repo external-secrets-inc/external-secrets-enterprise -B ${{ matrix.branch }}-H ${BRANCH} --title 'chore: update from upstream' --body 'Update from upstream'
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
         GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        GH_DEBUG: "api"
