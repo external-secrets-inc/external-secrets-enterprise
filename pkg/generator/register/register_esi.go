@@ -18,6 +18,8 @@ package register
 
 import (
 	_ "github.com/external-secrets/external-secrets/pkg/generator/aws_iam"
+	_ "github.com/external-secrets/external-secrets/pkg/generator/basic_auth"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/rabbitmq"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/sendgrid"
+	_ "github.com/external-secrets/external-secrets/pkg/generator/ssh"
 )

@@ -20,6 +20,8 @@ var (
 	AWSIAMKeysKind        = reflect.TypeOf(AWSIAMKey{}).Name()
 	SendgridKind          = reflect.TypeOf(SendgridAuthorizationToken{}).Name()
 	RabbitMQGeneratorKind = reflect.TypeOf(RabbitMQ{}).Name()
+	BasicAuthKind         = reflect.TypeOf(BasicAuth{}).Name()
+	SSHKind               = reflect.TypeOf(SSH{}).Name()
 )
 
 func init() {
