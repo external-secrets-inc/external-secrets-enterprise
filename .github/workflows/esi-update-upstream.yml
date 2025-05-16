@@ -59,7 +59,7 @@ jobs:
         git checkout .github
         git commit -s -m "chore: update from upstream"
         git push origin $BRANCH
-        gh pr create --title "chore: update from upstream" --body "update upstream" --base main --head $BRANCH
+        gh pr create -B "main" -H ${BRANCH} --title 'chore: update from upstream' --body 'Update from upstream'
 
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
