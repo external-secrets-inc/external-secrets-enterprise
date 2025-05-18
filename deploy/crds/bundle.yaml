@@ -21129,7 +21129,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-<<<<<<< HEAD
   labels:
     external-secrets.io/component: controller
   name: authorizations.federation.external-secrets.io
@@ -21282,8 +21281,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-=======
->>>>>>> upstream/main
   labels:
     external-secrets.io/component: controller
   name: acraccesstokens.generators.external-secrets.io
@@ -21491,7 +21488,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-<<<<<<< HEAD
   labels:
     external-secrets.io/component: controller
   name: awsiamkeys.generators.external-secrets.io
@@ -21820,8 +21816,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-=======
->>>>>>> upstream/main
   labels:
     external-secrets.io/component: controller
   name: clustergenerators.generators.external-secrets.io
@@ -24570,7 +24564,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-<<<<<<< HEAD
   labels:
     external-secrets.io/component: controller
   name: rabbitmqs.generators.external-secrets.io
@@ -24908,8 +24901,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-=======
->>>>>>> upstream/main
   labels:
     external-secrets.io/component: controller
   name: stssessiontokens.generators.external-secrets.io
