@@ -55,7 +55,7 @@ require (
 	github.com/fluxcd/pkg/apis/meta v1.2.0
 	github.com/fluxcd/source-controller/api v1.2.3
 	github.com/golang-jwt/jwt/v4 v4.5.2
-	github.com/grafana/grafana-openapi-client-go v0.0.0-20250428202209-be3a35ff1dac
+	github.com/grafana/grafana-openapi-client-go v0.0.0-20250516123951-83fcd32d7bbe
 	github.com/hashicorp/vault/api v1.16.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
@@ -64,9 +64,9 @@ require (
 	gitlab.com/gitlab-org/api/client-go v0.128.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.233.0
-	k8s.io/api v0.33.0
-	k8s.io/apiextensions-apiserver v0.33.0
-	k8s.io/apimachinery v0.33.0
+	k8s.io/api v0.33.1
+	k8s.io/apiextensions-apiserver v0.33.1
+	k8s.io/apimachinery v0.33.1
 	k8s.io/client-go v1.5.2
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	sigs.k8s.io/controller-runtime v0.20.4
@@ -180,7 +180,7 @@ require (
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.63.0 // indirect
+	github.com/prometheus/common v0.64.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
