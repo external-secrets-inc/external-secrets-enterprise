@@ -63,7 +63,7 @@ require github.com/1Password/connect-sdk-go v1.5.3
 require (
 	cloud.google.com/go/compute/metadata v0.7.0
 	dario.cat/mergo v1.0.2
-	github.com/1password/onepassword-sdk-go v0.3.0
+	github.com/1password/onepassword-sdk-go v0.2.1
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.0
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
