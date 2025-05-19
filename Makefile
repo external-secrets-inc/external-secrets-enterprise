@@ -387,7 +387,7 @@ $(TILT): $(LOCALBIN)
 
 
 ARTIFACT_REG:=us-central1-docker.pkg.dev
-CHARTS_REPO := oci://$(ARTIFACT_REG)/external-secrets-inc-registry/external/charts
+CHARTS_REPO := oci://$(ARTIFACT_REG)/external-secrets-inc-registry/public/charts
 
 .PHONY: helm.login
 helm.login:

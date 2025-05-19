@@ -1,0 +1,93 @@
+name: Bump Chart Version
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+jobs:
+  bump-chart-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check if PR is from release-please
+        id: check_release_please
+        shell: bash
+        run: |
+          if $( echo "${{ github.event.pull_request.head.ref }}" | grep -qP "^release-please"); then
+            echo "is_release_please_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release_please_pr=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Check value
+        run: echo "${{ steps.check_release_please.outputs.is_release_please_pr }}"
+
+      - name: Exit if not a release-please PR
+        if: steps.check_release_please.outputs.is_release_please_pr == 'false'
+        run: echo "Not a release-please PR. Exiting."
+
+      - name: Extract version from release-please PR description
+        if: steps.check_release_please.outputs.is_release_please_pr == 'true'
+        id: extract_version
+        run: |
+          VERSION=$(echo "${{ github.event.pull_request.title }}" | grep -oP "[0-9]+.[0-9]+.[0-9]+")
+          if [[ -z "$VERSION" ]]; then
+            echo "Error: Unable to extract version from PR description."
+            exit 1
+          fi
+          echo "Extracted version: $VERSION"
+          echo "new_version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if chart version already bumped
+        if: steps.check_release_please.outputs.is_release_please_pr == 'true'
+        uses: actions/github-script@v6
+        id: check_chart_version
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            const chartFileChanged = files.some(file => file.filename === 'deploy/charts/async-rotator/Chart.yaml');
+            core.setOutput('chart_version_bumped', chartFileChanged);
+
+      - name: Exit if chart version already bumped
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'true'
+        run: echo "Chart version already bumped. Exiting."
+
+      - name: login to github app
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+            app-id: ${{ vars.ESI_BOT_APP_ID }}
+            private-key: ${{ secrets.ESI_BOT_PRIVATE_KEY }}
+      - name: Checkout code
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Update chart version in Chart.yaml
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
+        run: |
+          VERSION_FILE="deploy/charts/async-rotator/Chart.yaml"
+          sed -i "s/^version: .*/version: ${{ steps.extract_version.outputs.new_version }}/" $VERSION_FILE
+          sed -i "s/^appVersion: .*/appVersion: v${{ steps.extract_version.outputs.new_version }}/" $VERSION_FILE
+
+      - name: Commit and push updated Chart.yaml
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
+        env:
+            GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git config user.name "External Secrets Inc Bot"
+          git config user.email "bot@externalsecrets.com"
+          git commit -am "chore: bump chart version to ${{ steps.extract_version.outputs.new_version }}"
+          git push origin ${{ github.event.pull_request.head.ref }}
