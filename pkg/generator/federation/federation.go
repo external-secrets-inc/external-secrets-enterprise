@@ -72,7 +72,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	}
 
 	// Build URL for the federation server's generator endpoint
-	url := fmt.Sprintf("%s/generators/%s/%s/%s",
+	url := fmt.Sprintf("%s/generate/%s/%s/%s",
 		serverURL,
 		spec.Spec.Generator.Namespace,
 		spec.Spec.Generator.Kind,
