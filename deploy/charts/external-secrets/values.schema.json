@@ -299,6 +299,14 @@
         "dnsPolicy": {
             "type": "string"
         },
+        "esi-pod-webhook": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "extendedMetricLabels": {
             "type": "boolean"
         },
