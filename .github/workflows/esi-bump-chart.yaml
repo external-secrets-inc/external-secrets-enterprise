@@ -53,7 +53,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: prNumber,
             });
-            const chartFileChanged = files.some(file => file.filename === 'deploy/charts/async-rotator/Chart.yaml');
+            const chartFileChanged = files.some(file => file.filename === 'deploy/charts/external-secrets/Chart.yaml');
             core.setOutput('chart_version_bumped', chartFileChanged);
 
       - name: Exit if chart version already bumped
@@ -78,7 +78,7 @@ jobs:
       - name: Update chart version in Chart.yaml
         if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
         run: |
-          VERSION_FILE="deploy/charts/async-rotator/Chart.yaml"
+          VERSION_FILE="deploy/charts/external-secrets/Chart.yaml"
           sed -i "s/^version: .*/version: ${{ steps.extract_version.outputs.new_version }}/" $VERSION_FILE
           sed -i "s/^appVersion: .*/appVersion: v${{ steps.extract_version.outputs.new_version }}/" $VERSION_FILE
 
