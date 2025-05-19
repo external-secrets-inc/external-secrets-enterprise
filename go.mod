@@ -63,7 +63,7 @@ require github.com/1Password/connect-sdk-go v1.5.3
 require (
 	cloud.google.com/go/compute/metadata v0.7.0
 	dario.cat/mergo v1.0.2
-	github.com/1password/onepassword-sdk-go v0.2.1
+	github.com/1password/onepassword-sdk-go v0.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.0
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
@@ -152,10 +152,10 @@ require (
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/djherbis/times v1.6.0 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
-	github.com/dylibso/observe-sdk/go v0.0.0-20240819160327-2d926c5d788a // indirect
+	github.com/dylibso/observe-sdk/go v0.0.0-20240828172851-9145d8ad07e1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/extism/go-sdk v1.7.0 // indirect
+	github.com/extism/go-sdk v1.7.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
@@ -233,7 +233,7 @@ require (
 	go.opentelemetry.io/otel v1.35.0 // indirect
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.4.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250512202823-5a2f75b736a9 // indirect
