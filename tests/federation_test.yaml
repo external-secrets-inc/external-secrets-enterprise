@@ -1,0 +1,85 @@
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Federation
+metadata:
+  name: test-federation-generator
+  namespace: default
+spec:
+  server:
+    url: "http://external-secrets-webhook.external-secrets.svc.cluster.local:8000"
+  generator:
+    namespace: default
+    kind: Password
+    name: test-password
+  auth:
+    tokenSecretRef:
+      name: federation-auth
+      key: token
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: federation-test
+  namespace: default
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: dummy
+    kind: SecretStore
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Federation
+          name: test-federation-generator
+---
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: dummy
+  namespace: default
+spec:
+  provider:
+    fake:
+      data: []
+---
+apiVersion: federation.external-secrets.io/v1alpha1
+kind: Authorization
+metadata:
+  name: test-authorization
+spec:
+  federationRef:
+    name: test-federation
+    kind: Kubernetes
+  subject:
+    subject: "system:serviceaccount:default:default"
+  allowedGenerators:
+    - name: test-password
+      kind: Password
+      namespace: default
+---
+apiVersion: federation.external-secrets.io/v1alpha1
+kind: KubernetesFederation
+metadata:
+  name: test-federation
+spec:
+  url: "http://external-secrets-webhook.external-secrets.svc.cluster.local:8000"
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: test-password
+  namespace: default
+spec:
+  length: 20
+  digits: 5
+  symbols: 5
+  symbolCharacters: "!@#$%^&*()_+"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: federation-auth
+  namespace: default
+type: Opaque
+stringData:
+  token: "test-token"

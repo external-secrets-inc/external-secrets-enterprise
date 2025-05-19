@@ -1,0 +1,6 @@
+apiVersion: federation.external-secrets.io/v1alpha1
+kind: KubernetesFederation
+metadata:
+  name: test-federation
+spec:
+  url: "http://external-secrets-webhook.external-secrets.svc.cluster.local:8000"

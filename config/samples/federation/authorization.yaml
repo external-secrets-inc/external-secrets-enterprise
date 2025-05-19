@@ -1,0 +1,14 @@
+apiVersion: federation.external-secrets.io/v1alpha1
+kind: Authorization
+metadata:
+  name: test-authorization
+spec:
+  federationRef:
+    name: test-federation
+    kind: Kubernetes
+  subject:
+    subject: "system:serviceaccount:default:default"
+  allowedGenerators:
+    - name: test-password
+      kind: Password
+      namespace: default

@@ -27,7 +27,7 @@ type ClusterGeneratorSpec struct {
 }
 
 // GeneratorKind represents a kind of generator.
-// +kubebuilder:validation:Enum=ACRAccessToken;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana
+// +kubebuilder:validation:Enum=ACRAccessToken;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;Federation
 type GeneratorKind string
 
 const (
@@ -43,6 +43,7 @@ const (
 	GeneratorKindVaultDynamicSecret    GeneratorKind = "VaultDynamicSecret"
 	GeneratorKindWebhook               GeneratorKind = "Webhook"
 	GeneratorKindGrafana               GeneratorKind = "Grafana"
+	GeneratorKindFederation            GeneratorKind = "Federation"
 	GeneratorKindMFA                   GeneratorKind = "MFA"
 )
 
@@ -61,6 +62,7 @@ type GeneratorSpec struct {
 	VaultDynamicSecretSpec    *VaultDynamicSecretSpec    `json:"vaultDynamicSecretSpec,omitempty"`
 	WebhookSpec               *WebhookSpec               `json:"webhookSpec,omitempty"`
 	GrafanaSpec               *GrafanaSpec               `json:"grafanaSpec,omitempty"`
+	FederationSpec            *FederationSpec            `json:"federationSpec,omitempty"`
 	MFASpec                   *MFASpec                   `json:"mfaSpec,omitempty"`
 }
 
