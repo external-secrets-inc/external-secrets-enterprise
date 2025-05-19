@@ -12,5 +12,3 @@ spec:
     - name: test-password
       kind: Password
       namespace: default
-  allowedGeneratorStates:
-    - namespace: default
