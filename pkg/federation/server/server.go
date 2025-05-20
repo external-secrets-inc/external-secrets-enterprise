@@ -28,6 +28,8 @@ import (
 	"github.com/labstack/echo/v4"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // KubernetesClaims holds specific claims related to a Kubernetes service account token.
@@ -47,13 +49,14 @@ type KubernetesClaims struct {
 	KubernetesIOInner `json:"kubernetes.io"`
 }
 type ServerHandler struct {
-	reconciler       *externalsecrets.Reconciler
-	mu               sync.RWMutex
-	specMap          map[string][]*fedv1alpha1.AuthorizationSpec
-	port             string
-	genParseTokenFn  func(ctx context.Context, onlyToken string, caCrt []byte) func(token *jwt.Token) (interface{}, error)
-	generateSecretFn func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
-	getSecretFn      func(ctx context.Context, storeName string, name string) ([]byte, error)
+	reconciler             *externalsecrets.Reconciler
+	mu                     sync.RWMutex
+	specMap                map[string][]*fedv1alpha1.AuthorizationSpec
+	port                   string
+	genParseTokenFn        func(ctx context.Context, onlyToken string, caCrt []byte) func(token *jwt.Token) (interface{}, error)
+	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
+	getSecretFn            func(ctx context.Context, storeName string, name string) ([]byte, error)
+	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
 
 func NewServerHandler(reconciler *externalsecrets.Reconciler, port string) *ServerHandler {
@@ -66,6 +69,7 @@ func NewServerHandler(reconciler *externalsecrets.Reconciler, port string) *Serv
 	s.generateSecretFn = s.generateSecret
 	s.getSecretFn = s.getSecret
 	s.genParseTokenFn = s.genParseToken
+	s.deleteGeneratorStateFn = s.deleteGeneratorState
 	return s
 }
 
@@ -75,7 +79,9 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 		return ctx
 	}
 	e.POST("/secretstore/:secretStoreName/secrets/:secretName", s.postSecrets)
-	e.POST("/generate/:generatorNamespace/:generatorKind/:generatorName", s.generateSecrets)
+	e.POST("/generators/:generatorNamespace/:generatorKind/:generatorName", s.generateSecrets)
+	e.DELETE("/generators/:generatorNamespace/:generatorKind/:generatorName", s.revokeSelf)
+	e.POST("/generators/:generatorNamespace/revoke", s.revokeCredentialsOf)
 	e.Logger.Fatal(e.Start(s.port))
 	return e
 }
@@ -173,17 +179,11 @@ func (s *ServerHandler) genParseToken(ctx context.Context, onlyToken string, caC
 	}
 }
 
-func (s *ServerHandler) processRequest(c echo.Context) (*KubernetesClaims, error) {
+func (s *ServerHandler) processRequest(c echo.Context, caCrt []byte) (*KubernetesClaims, error) {
 	// Get Token from header
 	token := c.Request().Header.Get("Authorization")
 	onlyToken := strings.TrimPrefix(token, "Bearer ")
-	payload := map[string]string{}
-	err := c.Bind(&payload)
-	if err != nil {
-		return nil, err
-	}
-	caCrt := payload["ca.crt"]
-	parsedToken, err := jwt.ParseWithClaims(onlyToken, &KubernetesClaims{}, s.genParseTokenFn(c.Request().Context(), onlyToken, []byte(caCrt)))
+	parsedToken, err := jwt.ParseWithClaims(onlyToken, &KubernetesClaims{}, s.genParseTokenFn(c.Request().Context(), onlyToken, caCrt))
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +194,17 @@ func (s *ServerHandler) processRequest(c echo.Context) (*KubernetesClaims, error
 	return claim, nil
 }
 
+type generateSecretRequest struct {
+	CaCrt string `json:"ca.crt"`
+}
+
 func (s *ServerHandler) generateSecrets(c echo.Context) error {
-	claim, err := s.processRequest(c)
+	var req generateSecretRequest
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	claim, err := s.processRequest(c, []byte(req.CaCrt))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
@@ -239,16 +248,40 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 	return c.JSON(http.StatusNotFound, "Not Found")
 }
 
-func contains(slice []fedv1alpha1.AllowedGenerator, item fedv1alpha1.AllowedGenerator) bool {
-	for _, v := range slice {
-		if v.Name == item.Name && v.Kind == item.Kind && v.Namespace == item.Namespace {
-			return true
+func contains[T fedv1alpha1.AllowedGenerator | fedv1alpha1.AllowedGeneratorState](slice []T, item T) bool {
+	switch any(item).(type) {
+	case fedv1alpha1.AllowedGenerator:
+		for _, v := range slice {
+			sliceGen := any(v).(fedv1alpha1.AllowedGenerator)
+			itemGen := any(item).(fedv1alpha1.AllowedGenerator)
+
+			if sliceGen.Name == itemGen.Name && sliceGen.Kind == itemGen.Kind && sliceGen.Namespace == itemGen.Namespace {
+				return true
+			}
+		}
+	case fedv1alpha1.AllowedGeneratorState:
+		for _, v := range slice {
+			sliceState := any(v).(fedv1alpha1.AllowedGeneratorState)
+			itemState := any(item).(fedv1alpha1.AllowedGeneratorState)
+			if sliceState.Namespace == itemState.Namespace {
+				return true
+			}
 		}
 	}
 	return false
 }
+
+type postSecretRequest struct {
+	CaCrt string `json:"ca.crt"`
+}
+
 func (s *ServerHandler) postSecrets(c echo.Context) error {
-	claim, err := s.processRequest(c)
+	var req postSecretRequest
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	claim, err := s.processRequest(c, []byte(req.CaCrt))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
@@ -265,6 +298,103 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusNotFound, "Not Found")
+}
+
+type revokeSelfRequest struct {
+	CaCrt string `json:"ca.crt"`
+}
+
+func (s *ServerHandler) revokeSelf(c echo.Context) error {
+	var req revokeSelfRequest
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	claim, err := s.processRequest(c, []byte(req.CaCrt))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	AuthorizationSpecs := store.Get(claim.Issuer)
+	generatorNamespace := c.Param("generatorNamespace")
+	generatorName := c.Param("generatorName")
+	generatorKind := c.Param("generatorKind")
+	for _, spec := range AuthorizationSpecs {
+		if !contains(spec.AllowedGenerators, fedv1alpha1.AllowedGenerator{
+			Name:      generatorName,
+			Kind:      generatorKind,
+			Namespace: generatorNamespace,
+		}) || spec.Subject.Subject != claim.Subject {
+			continue
+		}
+		owner := claim.KubernetesIOInner.ServiceAccount.Name
+		if claim.KubernetesIOInner.Pod != nil {
+			owner = claim.KubernetesIOInner.Pod.Name
+		}
+		labels := labels.SelectorFromSet(labels.Set{
+			"federation.externalsecrets.com/owner":          owner,
+			"federation.externalsecrets.com/generator":      generatorName,
+			"federation.externalsecrets.com/generator-kind": generatorKind,
+		})
+		err = s.deleteGeneratorStateFn(c.Request().Context(), generatorNamespace, labels)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
+		return c.JSON(http.StatusOK, nil)
+	}
+	return c.JSON(http.StatusNotFound, "Not Found")
+}
+
+type deleteRequest struct {
+	Owner     string `json:"owner"`
+	Namespace string `json:"namespace"`
+	CaCert    string `json:"ca.crt"`
+}
+
+func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
+	var req deleteRequest
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	claim, err := s.processRequest(c, []byte(req.CaCert))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+	AuthorizationSpecs := store.Get(claim.Issuer)
+	generatorNamespace := c.Param("generatorNamespace")
+	for _, spec := range AuthorizationSpecs {
+		if contains(spec.AllowedGeneratorStates, fedv1alpha1.AllowedGeneratorState{
+			Namespace: generatorNamespace,
+		}) && spec.Subject.Subject == claim.Subject {
+			labels := labels.SelectorFromSet(labels.Set{
+				"federation.externalsecrets.com/owner": req.Owner,
+			})
+			err = s.deleteGeneratorStateFn(c.Request().Context(), req.Namespace, labels)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, err.Error())
+			}
+			return c.JSON(http.StatusOK, "GeneratorState deleted")
+		}
+	}
+	return c.JSON(http.StatusNotFound, "Not Found")
+}
+
+func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace string, labels labels.Selector) error {
+	generators := &genv1alpha1.GeneratorStateList{}
+	err := s.reconciler.Client.List(ctx, generators, &client.ListOptions{
+		Namespace:     namespace,
+		LabelSelector: labels,
+	})
+	if err != nil {
+		return err
+	}
+	for _, generator := range generators.Items {
+		err := s.reconciler.Client.Delete(ctx, &generator)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) ([]byte, error) {
@@ -315,8 +445,9 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 			GenerateName: fmt.Sprintf("%s-%s-%s-", strings.ToLower(generatorKind), strings.ToLower(generatorName), strings.ToLower(resource.Owner)),
 			Namespace:    namespace,
 			Labels: map[string]string{
-				"federation.externalsecrets.com/owner":     resource.Owner,
-				"federation.externalsecrets.com/generator": generatorName,
+				"federation.externalsecrets.com/owner":          resource.Owner,
+				"federation.externalsecrets.com/generator":      generatorName,
+				"federation.externalsecrets.com/generator-kind": generatorKind,
 			},
 			Annotations: map[string]string{
 				"federation.externalsecrets.com/owner-attributes": string(attributes),

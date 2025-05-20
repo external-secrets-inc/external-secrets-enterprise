@@ -16,10 +16,18 @@ package v1alpha1
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 type AuthorizationSpec struct {
-	FederationRef              FederationRef      `json:"federationRef"`
-	Subject                    FederationSubject  `json:"subject"`
-	AllowedClusterSecretStores []string           `json:"allowedClusterSecretStores"`
-	AllowedGenerators          []AllowedGenerator `json:"allowedGenerators"`
+	FederationRef FederationRef     `json:"federationRef"`
+	Subject       FederationSubject `json:"subject"`
+	// Which ClusterSecretStores can this subject request
+	AllowedClusterSecretStores []string `json:"allowedClusterSecretStores"`
+	// Which Generators namespaces can this subject request
+	AllowedGenerators []AllowedGenerator `json:"allowedGenerators"`
+	// Which GeneratorState namespaces can this subject delete
+	AllowedGeneratorStates []AllowedGeneratorState `json:"allowedGeneratorStates"`
+}
+
+type AllowedGeneratorState struct {
+	Namespace string `json:"namespace"`
 }
 type AllowedGenerator struct {
 	Name      string `json:"name"`
