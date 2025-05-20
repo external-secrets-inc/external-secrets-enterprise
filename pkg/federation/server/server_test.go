@@ -575,7 +575,7 @@ func (s *ProcessRequestTestSuite) TestProcessRequest() {
 			c := tt.setup()
 
 			// Call the function being tested
-			issuer, sub, err := s.server.processRequest(*c)
+			claim, err := s.server.processRequest(*c)
 
 			// Check results
 			if tt.wantErr {
@@ -585,8 +585,8 @@ func (s *ProcessRequestTestSuite) TestProcessRequest() {
 				}
 			} else {
 				s.Require().NoError(err)
-				s.Equal(tt.wantIssuer, issuer)
-				s.Equal(tt.wantSub, sub)
+				s.Equal(tt.wantIssuer, claim.Issuer)
+				s.Equal(tt.wantSub, claim.Subject)
 			}
 		})
 	}
@@ -617,12 +617,169 @@ func (s *GenerateSecretsTestSuite) TearDownTest() {
 	}
 }
 
+func (s *GenerateSecretsTestSuite) generateTestSATokenWithClaims(claims KubernetesClaims, key interface{}) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims) // Using HS256 for simplicity with a symmetric key
+	return token.SignedString(key)
+}
+
+func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
+	testKey := []byte("test-symmetric-secret-key-for-hs256") // Symmetric key for HS256
+	generatorName := "my-k8s-generator"
+	generatorKind := "VaultGenerator"
+	generatorNamespace := "secure-ns"
+
+	baseClaims := KubernetesClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "https://kubernetes.default.svc.cluster.local",
+			Subject:   "system:serviceaccount:kube-system:replicator",
+			Audience:  jwt.ClaimStrings{"kubernetes.io/serviceaccount"},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+		KubernetesIOInner: KubernetesIOInner{
+			Namespace: "kube-system",
+			ServiceAccount: struct {
+				Name string `json:"name"`
+				UID  string `json:"uid"`
+			}{Name: "replicator", UID: "sa-uid-replicator-777"},
+		},
+	}
+
+	tests := []struct {
+		name              string
+		claimModifier     func(claims *KubernetesClaims) // Modifies baseClaims for the test case
+		expectedOwner     string
+		expectPodUID      bool
+		expectedPodUID    string
+		expectedSAUID     string
+		expectedSAName    string
+		expectedIssuer    string
+		expectedNamespace string
+	}{
+		{
+			name: "with pod information in claims",
+			claimModifier: func(claims *KubernetesClaims) {
+				claims.KubernetesIOInner.Pod = &struct {
+					Name string `json:"name"`
+					UID  string `json:"uid"`
+				}{Name: "replicator-pod-xyz123", UID: "pod-uid-replicator-abc987"}
+			},
+			expectedOwner:     "replicator-pod-xyz123",
+			expectPodUID:      true,
+			expectedPodUID:    "pod-uid-replicator-abc987",
+			expectedSAUID:     "sa-uid-replicator-777",
+			expectedSAName:    "replicator",
+			expectedIssuer:    "https://kubernetes.default.svc.cluster.local",
+			expectedNamespace: "kube-system",
+		},
+		{
+			name: "without pod information in claims",
+			claimModifier: func(claims *KubernetesClaims) {
+				// No pod info, baseClaims is already like this
+			},
+			expectedOwner:     "replicator", // Falls back to SA name
+			expectPodUID:      false,
+			expectedSAUID:     "sa-uid-replicator-777",
+			expectedSAName:    "replicator",
+			expectedIssuer:    "https://kubernetes.default.svc.cluster.local",
+			expectedNamespace: "kube-system",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			currentClaims := baseClaims
+			if tt.claimModifier != nil {
+				tt.claimModifier(&currentClaims)
+			}
+
+			tokenString, err := s.generateTestSATokenWithClaims(currentClaims, testKey)
+			s.Require().NoError(err, "Failed to generate test JWT with SA claims")
+
+			// Mock genParseTokenFn on s.server to return a Keyfunc that "validates" our token
+			originalGenParseTokenFn := s.server.genParseTokenFn
+			s.server.genParseTokenFn = func(ctx context.Context, ts string, caCert []byte) func(token *jwt.Token) (interface{}, error) {
+				return func(token *jwt.Token) (interface{}, error) {
+					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+						return nil, fmt.Errorf("unexpected signing method for SA token: %v", token.Header["alg"])
+					}
+					return testKey, nil
+				}
+			}
+			s.T().Cleanup(func() { s.server.genParseTokenFn = originalGenParseTokenFn })
+
+			// Create and provision AuthorizationSpec for this test case
+			authSpec := &fedv1alpha1.AuthorizationSpec{
+				FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-k8s-claims", Kind: "Kubernetes"},
+				Subject:       fedv1alpha1.FederationSubject{Subject: currentClaims.Subject, Issuer: currentClaims.Issuer},
+				AllowedGenerators: []fedv1alpha1.AllowedGenerator{
+					{Name: generatorName, Kind: generatorKind, Namespace: generatorNamespace},
+				},
+			}
+			// Use the Issuer and Subject from the spec for Set, as seen in SetupTest
+			store.Add(authSpec.Subject.Issuer, authSpec)
+			s.T().Cleanup(func() {
+				// Remove using the issuer and spec object, as seen in user's preferred TearDownTest format
+				store.Remove(authSpec.Subject.Issuer, authSpec)
+			})
+
+			var capturedResource *Resource // Variable to capture the resource
+
+			// Mock generateSecretFn on s.server to capture the Resource and perform assertions
+			originalGenerateSecretFn := s.server.generateSecretFn
+			s.server.generateSecretFn = func(ctx context.Context, genName, genKind, genNamespace string, resource *Resource) (map[string]string, error) {
+				s.Require().NotNil(resource, "Resource passed to generateSecretFn was nil")
+				capturedResource = resource // Capture the resource
+				s.Equal(generatorName, genName)
+				s.Equal(generatorKind, genKind)
+				s.Equal(generatorNamespace, genNamespace)
+				return map[string]string{"secretKey": "secretValue"}, nil
+			}
+			s.T().Cleanup(func() { s.server.generateSecretFn = originalGenerateSecretFn })
+
+			// Prepare request and context
+			e := echo.New()
+			// processRequest will bind the body to map[string]string for "ca.crt"
+			reqBody := `{"ca.crt":"test-ca-data-for-sa-token-test"}`
+			req := httptest.NewRequest(http.MethodPost, "/should_not_matter_for_handler_target", strings.NewReader(reqBody))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			req.Header.Set("Authorization", "Bearer "+tokenString)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.SetParamNames("generatorName", "generatorKind", "generatorNamespace")
+			c.SetParamValues(generatorName, generatorKind, generatorNamespace)
+
+			// Call the handler s.server.generateSecrets
+			err = s.server.generateSecrets(c)
+			s.Require().NoError(err, "s.server.generateSecrets handler returned an unexpected error")
+			s.Require().Equal(http.StatusOK, rec.Code, "Expected HTTP OK status from generateSecrets")
+
+			// Assertions on the capturedResource
+			s.Require().NotNil(capturedResource, "generateSecretFn was not called or resource was not captured")
+			s.Equal(generatorName, capturedResource.Name)
+			s.Equal("KubernetesServiceAccount", capturedResource.AuthMethod)
+			s.Equal(tt.expectedOwner, capturedResource.Owner)
+
+			s.Equal(tt.expectedNamespace, capturedResource.OwnerAttributes["namespace"])
+			s.Equal(tt.expectedIssuer, capturedResource.OwnerAttributes["issuer"])
+			s.Equal(tt.expectedSAUID, capturedResource.OwnerAttributes["serviceaccount-uid"])
+			s.Equal(tt.expectedSAName, capturedResource.OwnerAttributes["service-account-name"])
+
+			if tt.expectPodUID {
+				s.Equal(tt.expectedPodUID, capturedResource.OwnerAttributes["pod-uid"])
+			} else {
+				_, ok := capturedResource.OwnerAttributes["pod-uid"]
+				s.False(ok, "pod-uid should not be present in OwnerAttributes when not in claims")
+			}
+		})
+	}
+}
+
 func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
-	// Define test cases
 	tests := []struct {
 		name           string
 		setup          func() echo.Context
-		mockGenSecret  func(ctx context.Context, generatorName string, generatorKind string, namespace string) (map[string]string, error)
+		mockGenSecret  func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
 		expectedStatus int
 		expectedBody   string
 	}{
@@ -691,7 +848,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
 				// Check that the parameters match what we expect
 				if generatorName != "test-generator" || generatorKind != "test-kind" || namespace != "test-namespace" {
 					return nil, fmt.Errorf("unexpected parameters: %s, %s, %s", generatorName, generatorKind, namespace)
@@ -722,7 +879,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
 				// This should not be called
 				s.T().Fatalf("mockGenSecret should not be called in this test case")
 				return nil, nil
@@ -795,7 +952,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
 				// This should not be called
 				s.T().Fatalf("mockGenSecret should not be called in this test case")
 				return nil, nil
@@ -868,7 +1025,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
 				return nil, fmt.Errorf("error generating secret")
 			},
 			expectedStatus: http.StatusBadRequest,

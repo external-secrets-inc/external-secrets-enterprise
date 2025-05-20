@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -16,24 +17,42 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/echo/v4"
-
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/federation/v1alpha1"
+	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	externalsecrets "github.com/external-secrets/external-secrets/pkg/controllers/externalsecret"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	store "github.com/external-secrets/external-secrets/pkg/federation/store"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/labstack/echo/v4"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// KubernetesClaims holds specific claims related to a Kubernetes service account token.
+type KubernetesIOInner struct {
+	Namespace      string `json:"namespace"`
+	ServiceAccount struct {
+		Name string `json:"name"`
+		UID  string `json:"uid"`
+	} `json:"serviceaccount"`
+	Pod *struct {
+		Name string `json:"name"`
+		UID  string `json:"uid"`
+	} `json:"pod,omitempty"`
+}
+type KubernetesClaims struct {
+	jwt.RegisteredClaims
+	KubernetesIOInner `json:"kubernetes.io"`
+}
 type ServerHandler struct {
 	reconciler       *externalsecrets.Reconciler
 	mu               sync.RWMutex
 	specMap          map[string][]*fedv1alpha1.AuthorizationSpec
 	port             string
 	genParseTokenFn  func(ctx context.Context, onlyToken string, caCrt []byte) func(token *jwt.Token) (interface{}, error)
-	generateSecretFn func(ctx context.Context, generatorName string, generatorKind string, namespace string) (map[string]string, error)
+	generateSecretFn func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
 	getSecretFn      func(ctx context.Context, storeName string, name string) ([]byte, error)
 }
 
@@ -154,37 +173,33 @@ func (s *ServerHandler) genParseToken(ctx context.Context, onlyToken string, caC
 	}
 }
 
-func (s *ServerHandler) processRequest(c echo.Context) (string, string, error) {
+func (s *ServerHandler) processRequest(c echo.Context) (*KubernetesClaims, error) {
 	// Get Token from header
 	token := c.Request().Header.Get("Authorization")
 	onlyToken := strings.TrimPrefix(token, "Bearer ")
 	payload := map[string]string{}
 	err := c.Bind(&payload)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	caCrt := payload["ca.crt"]
-	parsedToken, err := jwt.Parse(onlyToken, s.genParseTokenFn(c.Request().Context(), onlyToken, []byte(caCrt)))
+	parsedToken, err := jwt.ParseWithClaims(onlyToken, &KubernetesClaims{}, s.genParseTokenFn(c.Request().Context(), onlyToken, []byte(caCrt)))
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
-	issuer, err := parsedToken.Claims.GetIssuer()
-	if err != nil {
-		return "", "", err
+	claim, ok := parsedToken.Claims.(*KubernetesClaims)
+	if !ok {
+		return nil, errors.New("failed to parse token")
 	}
-	sub, err := parsedToken.Claims.GetSubject()
-	if err != nil {
-		return "", "", err
-	}
-	return issuer, sub, nil
+	return claim, nil
 }
 
 func (s *ServerHandler) generateSecrets(c echo.Context) error {
-	issuer, sub, err := s.processRequest(c)
+	claim, err := s.processRequest(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
-	AuthorizationSpecs := store.Get(issuer)
+	AuthorizationSpecs := store.Get(claim.Issuer)
 	generatorName := c.Param("generatorName")
 	generatorKind := c.Param("generatorKind")
 	generatorNamespace := c.Param("generatorNamespace")
@@ -193,9 +208,28 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 		Kind:      generatorKind,
 		Namespace: generatorNamespace,
 	}
+	owner := claim.KubernetesIOInner.ServiceAccount.Name
+	if claim.KubernetesIOInner.Pod != nil {
+		owner = claim.KubernetesIOInner.Pod.Name
+	}
+
+	resource := &Resource{
+		Name:       generatorName,
+		AuthMethod: "KubernetesServiceAccount",
+		Owner:      owner,
+		OwnerAttributes: map[string]string{
+			"namespace":            claim.KubernetesIOInner.Namespace,
+			"issuer":               claim.Issuer,
+			"serviceaccount-uid":   claim.KubernetesIOInner.ServiceAccount.UID,
+			"service-account-name": claim.KubernetesIOInner.ServiceAccount.Name,
+		},
+	}
+	if claim.KubernetesIOInner.Pod != nil {
+		resource.OwnerAttributes["pod-uid"] = claim.KubernetesIOInner.Pod.UID
+	}
 	for _, spec := range AuthorizationSpecs {
-		if contains(spec.AllowedGenerators, d) && spec.Subject.Subject == sub {
-			secret, err := s.generateSecretFn(c.Request().Context(), generatorName, generatorKind, generatorNamespace)
+		if contains(spec.AllowedGenerators, d) && spec.Subject.Subject == claim.Subject {
+			secret, err := s.generateSecretFn(c.Request().Context(), generatorName, generatorKind, generatorNamespace, resource)
 			if err != nil {
 				return c.JSON(http.StatusBadRequest, err.Error())
 			}
@@ -214,15 +248,15 @@ func contains(slice []fedv1alpha1.AllowedGenerator, item fedv1alpha1.AllowedGene
 	return false
 }
 func (s *ServerHandler) postSecrets(c echo.Context) error {
-	issuer, sub, err := s.processRequest(c)
+	claim, err := s.processRequest(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
-	AuthorizationSpecs := store.Get(issuer)
+	AuthorizationSpecs := store.Get(claim.Issuer)
 	storeName := c.Param("secretStoreName")
 	name := c.Param("secretName")
 	for _, spec := range AuthorizationSpecs {
-		if slices.Contains(spec.AllowedClusterSecretStores, storeName) && spec.Subject.Subject == sub {
+		if slices.Contains(spec.AllowedClusterSecretStores, storeName) && spec.Subject.Subject == claim.Subject {
 			secret, err := s.getSecretFn(c.Request().Context(), storeName, name)
 			if err != nil {
 				return c.JSON(http.StatusBadRequest, err.Error())
@@ -249,7 +283,10 @@ func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) (
 	return client.GetSecret(ctx, ref)
 }
 
-func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string) (map[string]string, error) {
+func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, error) {
+	if resource == nil {
+		return nil, errors.New("resource not found")
+	}
 	generatorRef := esv1.GeneratorRef{
 		Name:       generatorName,
 		Kind:       generatorKind,
@@ -262,11 +299,35 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	if generator == nil {
 		return nil, errors.New("generator not found")
 	}
-	// TODO[gusfcarvalho]: Generator State is currently IGNORED.
-	// Meaning, we cannot trigger any API to delete the generated information so far
-	// We need to get the Generator State and be sure to create / update it.
-	// And then add another endpoint to trigger a reconcile of it.
-	data, _, err := generator.Generate(ctx, obj, s.reconciler.Client, namespace)
+	data, stateJson, err := generator.Generate(ctx, obj, s.reconciler.Client, namespace)
+	if err != nil {
+		return nil, err
+	}
+	attributes, err := json.Marshal(resource.OwnerAttributes)
+	if err != nil {
+		return nil, err
+	}
+	if stateJson == nil {
+		stateJson = &apiextensions.JSON{Raw: []byte("{}")}
+	}
+	generatorState := genv1alpha1.GeneratorState{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: fmt.Sprintf("%s-%s-%s-", strings.ToLower(generatorKind), strings.ToLower(generatorName), strings.ToLower(resource.Owner)),
+			Namespace:    namespace,
+			Labels: map[string]string{
+				"federation.externalsecrets.com/owner":     resource.Owner,
+				"federation.externalsecrets.com/generator": generatorName,
+			},
+			Annotations: map[string]string{
+				"federation.externalsecrets.com/owner-attributes": string(attributes),
+			},
+		},
+		Spec: genv1alpha1.GeneratorStateSpec{
+			Resource: obj,
+			State:    stateJson,
+		},
+	}
+	err = s.reconciler.Client.Create(ctx, &generatorState)
 	if err != nil {
 		return nil, err
 	}
@@ -275,4 +336,11 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 		stringData[k] = string(v)
 	}
 	return stringData, nil
+}
+
+type Resource struct {
+	Name            string            `json:"name"`
+	Owner           string            `json:"owner"`
+	OwnerAttributes map[string]string `json:"ownerAttributes"`
+	AuthMethod      string            `json:"authMethod"`
 }
