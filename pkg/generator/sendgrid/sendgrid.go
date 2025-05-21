@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/sendgrid/rest"
 	sendgridapi "github.com/sendgrid/sendgrid-go"
@@ -52,22 +51,8 @@ type SecretKey struct {
 }
 
 type SendGridState struct {
-	ApiKeyID   string `json:"apiKeyID,omitempty,required"`
+	ApiKeyID   string `json:"apiKeyID,omitempty"`
 	ApiKeyName string `json:"apiKeyName,omitempty"`
-}
-
-type SecretKeyList struct {
-	Keys []SecretKey `json:"result"`
-}
-
-func (l *SecretKeyList) filterByName(name string) []SecretKey {
-	var filtered []SecretKey
-	for _, key := range l.Keys {
-		if key.Name == name {
-			filtered = append(filtered, key)
-		}
-	}
-	return filtered
 }
 
 type Client interface {
@@ -141,19 +126,14 @@ func (g *Generator) buildSendGridRequest(apiKey, dataResidency string, method re
 	return request, nil
 }
 
-func (g *Generator) deleteAPIKeys(apiKeys []string, apiKey, dataResidency string, client Client) error {
-	for _, key := range apiKeys {
-		path := fmt.Sprintf("/v3/api_keys/%s", key)
-		deleteRequest, err := g.buildSendGridRequest(apiKey, dataResidency, rest.Delete, path, client)
-		if err != nil {
-			return fmt.Errorf(errBuildRequest, err)
-		}
-		if _, err := client.API(deleteRequest); err != nil {
-			// Silently ignore errors when deleting old API Keys because it doesn't prevent the creation of a new API Key.
-			// Old API Keys will be retried for deletion in the next secret generation.
-			log.Printf("failed to delete API Key with ID %s: %v", key, err)
-			continue
-		}
+func (g *Generator) deleteAPIKey(keyID, apiKey, dataResidency string, client Client) error {
+	path := fmt.Sprintf("/v3/api_keys/%s", keyID)
+	deleteRequest, err := g.buildSendGridRequest(apiKey, dataResidency, rest.Delete, path, client)
+	if err != nil {
+		return fmt.Errorf(errBuildRequest, err)
+	}
+	if _, err := client.API(deleteRequest); err != nil {
+		return fmt.Errorf(errDeleteAPIKey, err)
 	}
 	return nil
 }
@@ -230,7 +210,11 @@ func (g *Generator) cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	if err != nil {
 		return err
 	}
-	g.deleteAPIKeys([]string{status.ApiKeyID}, apiKey, gen.Spec.DataResidency, client)
+
+	err = g.deleteAPIKey(status.ApiKeyID, apiKey, gen.Spec.DataResidency, client)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

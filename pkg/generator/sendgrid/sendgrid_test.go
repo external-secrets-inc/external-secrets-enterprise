@@ -31,6 +31,8 @@ type MockClient struct {
 
 func (m *MockClient) API(request rest.Request) (*rest.Response, error) {
 	switch request.Method {
+	case rest.Get:
+		return m.GetAPIResponse, m.GetAPIError
 	case rest.Post:
 		return m.PostAPIResponse, m.PostAPIError
 	case rest.Delete:
