@@ -163,6 +163,7 @@ spec:
                                       - Webhook
                                       - Grafana
                                       - MFA
+                                      - SendgridAuthorizationToken
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -352,6 +353,7 @@ spec:
                                       - Webhook
                                       - Grafana
                                       - MFA
+                                      - SendgridAuthorizationToken
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1728,6 +1730,7 @@ spec:
                                 - Webhook
                                 - Grafana
                                 - MFA
+                                - SendgridAuthorizationToken
                               type: string
                             name:
                               description: Specify the name of the generator resource
@@ -10857,6 +10860,7 @@ spec:
                                   - Webhook
                                   - Grafana
                                   - MFA
+                                  - SendgridAuthorizationToken
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11046,6 +11050,7 @@ spec:
                                   - Webhook
                                   - Grafana
                                   - MFA
+                                  - SendgridAuthorizationToken
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -12121,6 +12126,7 @@ spec:
                             - Webhook
                             - Grafana
                             - MFA
+                            - SendgridAuthorizationToken
                           type: string
                         name:
                           description: Specify the name of the generator resource
@@ -26809,6 +26815,7 @@ spec:
                                             - Webhook
                                             - Grafana
                                             - MFA
+                                            - SendgridAuthorizationToken
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -28815,6 +28822,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -29002,6 +29010,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -29067,6 +29076,7 @@ spec:
                                                 - Webhook
                                                 - Grafana
                                                 - MFA
+                                                - SendgridAuthorizationToken
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -29236,6 +29246,7 @@ spec:
                                             - Webhook
                                             - Grafana
                                             - MFA
+                                            - SendgridAuthorizationToken
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -31242,6 +31253,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -31429,6 +31441,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -31494,6 +31507,7 @@ spec:
                                                 - Webhook
                                                 - Grafana
                                                 - MFA
+                                                - SendgridAuthorizationToken
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -31672,6 +31686,7 @@ spec:
                                                   - Webhook
                                                   - Grafana
                                                   - MFA
+                                                  - SendgridAuthorizationToken
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -33678,6 +33693,7 @@ spec:
                                                             - Webhook
                                                             - Grafana
                                                             - MFA
+                                                            - SendgridAuthorizationToken
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -33865,6 +33881,7 @@ spec:
                                                             - Webhook
                                                             - Grafana
                                                             - MFA
+                                                            - SendgridAuthorizationToken
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -33930,6 +33947,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -34316,6 +34334,7 @@ spec:
                                             - Webhook
                                             - Grafana
                                             - MFA
+                                            - SendgridAuthorizationToken
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -36322,6 +36341,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -36509,6 +36529,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -36574,6 +36595,7 @@ spec:
                                                 - Webhook
                                                 - Grafana
                                                 - MFA
+                                                - SendgridAuthorizationToken
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -36743,6 +36765,7 @@ spec:
                                             - Webhook
                                             - Grafana
                                             - MFA
+                                            - SendgridAuthorizationToken
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -38749,6 +38772,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -38936,6 +38960,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -39001,6 +39026,7 @@ spec:
                                                 - Webhook
                                                 - Grafana
                                                 - MFA
+                                                - SendgridAuthorizationToken
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -39179,6 +39205,7 @@ spec:
                                                   - Webhook
                                                   - Grafana
                                                   - MFA
+                                                  - SendgridAuthorizationToken
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -41185,6 +41212,7 @@ spec:
                                                             - Webhook
                                                             - Grafana
                                                             - MFA
+                                                            - SendgridAuthorizationToken
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -41372,6 +41400,7 @@ spec:
                                                             - Webhook
                                                             - Grafana
                                                             - MFA
+                                                            - SendgridAuthorizationToken
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -41437,6 +41466,7 @@ spec:
                                                       - Webhook
                                                       - Grafana
                                                       - MFA
+                                                      - SendgridAuthorizationToken
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
