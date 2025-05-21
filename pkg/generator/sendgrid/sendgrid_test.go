@@ -31,8 +31,6 @@ type MockClient struct {
 
 func (m *MockClient) API(request rest.Request) (*rest.Response, error) {
 	switch request.Method {
-	case rest.Get:
-		return m.GetAPIResponse, m.GetAPIError
 	case rest.Post:
 		return m.PostAPIResponse, m.PostAPIError
 	case rest.Delete:
@@ -93,10 +91,6 @@ spec:
 			},
 			setupMock: func() *MockClient {
 				return &MockClient{
-					GetAPIResponse: &rest.Response{
-						StatusCode: 200,
-						Body:       `{"result": []}`,
-					},
 					PostAPIResponse: &rest.Response{
 						StatusCode: 200,
 						Body:       `{"api_key": "newly-created-api-key"}`,
@@ -135,10 +129,6 @@ spec:
 			},
 			setupMock: func() *MockClient {
 				return &MockClient{
-					GetAPIResponse: &rest.Response{
-						StatusCode: 200,
-						Body:       `{"result": []}`,
-					},
 					PostAPIResponse: &rest.Response{
 						StatusCode: 400,
 						Body:       `{"error": "bad request"}`,
@@ -147,8 +137,47 @@ spec:
 				}
 			},
 			expectErr: true,
-		}, {
-			name: "Deletion Silently Failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			generator := &Generator{}
+
+			mockClient := tt.setupMock()
+			data, _, err := generator.generate(context.Background(), tt.jsonSpec, kube, namespace, mockClient)
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectData, data)
+			}
+		})
+	}
+}
+
+func TestGenerator_Cleanup(t *testing.T) {
+	kube := fake.NewClientBuilder().WithObjects(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sendgrid-api-key",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"apiKey": []byte("foo"),
+		},
+	}).Build()
+	namespace := "default"
+
+	tests := []struct {
+		name       string
+		jsonSpec   *apiextensions.JSON
+		state      *apiextensions.JSON
+		setupMock  func() *MockClient
+		expectErr  bool
+		expectData map[string][]byte
+	}{
+		{
+			name: "Success",
 			jsonSpec: &apiextensions.JSON{
 				Raw: []byte(`apiVersion: generators.external-secrets.io/v1alpha1
 kind: SendgridAuthorizationToken
@@ -165,20 +194,13 @@ spec:
         key: apiKey
 `),
 			},
+			state: &apiextensions.JSON{
+				Raw: []byte(`{"apiKeyID": "foo", "apiKeyName": "bar"}`),
+			},
 			setupMock: func() *MockClient {
 				return &MockClient{
-					GetAPIResponse: &rest.Response{
-						StatusCode: 200,
-						Body:       `{"result": [{"api_key_id": "key-id", "name": "Created By ESO Generator: my-sendgrid-generator"}]}`,
-					},
 					DeleteAPIResponse: &rest.Response{
-						StatusCode: 400,
-						Body:       `{"error": "invalid request"}`,
-					},
-					DeleteAPIError: errors.New("invalid request"),
-					PostAPIResponse: &rest.Response{
 						StatusCode: 200,
-						Body:       `{"api_key": "newly-created-api-key"}`,
 					},
 				}
 			},
@@ -187,6 +209,41 @@ spec:
 				"apiKey": []byte("newly-created-api-key"),
 			},
 		},
+		{
+			name:     "No spec error",
+			jsonSpec: nil,
+			state: &apiextensions.JSON{
+				Raw: []byte(`{"apiKeyID": "foo", "apiKeyName": "bar"}`),
+			},
+			setupMock: func() *MockClient {
+				return &MockClient{}
+			},
+			expectErr: true,
+		},
+
+		{
+			name: "No previous state error",
+			jsonSpec: &apiextensions.JSON{
+				Raw: []byte(`apiVersion: generators.external-secrets.io/v1alpha1
+kind: SendgridAuthorizationToken
+metadata:
+  name: my-sendgrid-generator
+spec:
+  scopes:
+    - alerts.create
+    - alerts.read
+  auth: 
+    secretRef:
+      apiKeySecretRef:
+        name: sendgrid-api-key
+        key: apiKey
+`)},
+			state: nil,
+			setupMock: func() *MockClient {
+				return &MockClient{}
+			},
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -194,12 +251,11 @@ spec:
 			generator := &Generator{}
 
 			mockClient := tt.setupMock()
-			data, _, err := generator.generate(context.Background(), tt.jsonSpec, kube, namespace, mockClient)
+			err := generator.cleanup(context.Background(), tt.jsonSpec, tt.state, kube, namespace, mockClient)
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectData, data)
 			}
 		})
 	}
