@@ -26,10 +26,12 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	v1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // KubernetesClaims holds specific claims related to a Kubernetes service account token.
@@ -458,6 +460,26 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 			State:    stateJson,
 		},
 	}
+	var cobj client.Object
+	if _, ok := resource.OwnerAttributes["pod-uid"]; ok {
+		pod := &v1.Pod{}
+		err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, pod)
+		if err != nil {
+			return nil, err
+		}
+		cobj = pod
+	} else {
+		sa := &v1.ServiceAccount{}
+		err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, sa)
+		if err != nil {
+			return nil, err
+		}
+		cobj = sa
+	}
+	if err := controllerutil.SetOwnerReference(cobj, &generatorState, s.reconciler.Scheme); err != nil {
+		return nil, err
+	}
+
 	err = s.reconciler.Client.Create(ctx, &generatorState)
 	if err != nil {
 		return nil, err
