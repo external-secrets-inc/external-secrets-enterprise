@@ -60,6 +60,16 @@ jobs:
         if: steps.check_chart_version.outputs.chart_version_bumped == 'true'
         run: echo "Chart version already bumped. Exiting."
 
+      - name: Set up Helm
+        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
+        with:
+          version: v3.14.2 # remember to also update for the second job (release)
+
+      - name: Install chart unittest
+        run: |
+          helm env
+          helm plugin install https://github.com/helm-unittest/helm-unittest
+
       - name: login to github app
         if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
         uses: actions/create-github-app-token@v1
@@ -81,6 +91,17 @@ jobs:
           VERSION_FILE="deploy/charts/external-secrets/Chart.yaml"
           sed -i "s/^version: .*/version: ${{ steps.extract_version.outputs.new_version }}/" $VERSION_FILE
           sed -i "s/^appVersion: .*/appVersion: v${{ steps.extract_version.outputs.new_version }}/" $VERSION_FILE
+
+      - name: Update Helm and CRD tests
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
+        run: |
+          make helm.test.update
+          make test.crds.update
+ 
+      - name: helm docs
+        if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
+        run: |
+          make helm.docs
 
       - name: Commit and push updated Chart.yaml
         if: steps.check_chart_version.outputs.chart_version_bumped == 'false'
