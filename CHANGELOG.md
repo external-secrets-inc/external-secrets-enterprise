@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.0...v1.1.1) (2025-05-22)
+
+
+### Bug Fixes
+
+* repository values for webhook and certController ([#59](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/59)) ([4b016d6](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4b016d655de2814bbfe57027b096a1f77b92ac9f))
+
 ## [1.1.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.0.0...v1.1.0) (2025-05-22)
 
 
