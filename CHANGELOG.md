@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.0.0...v1.1.0) (2025-05-22)
+
+
+### Features
+
+* federation service export ([#58](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/58)) ([e1905e3](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e1905e33eb47bc81f54dc6fd6dc490e24e4f449c))
+* implement revoke methods for federation server ([#48](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/48)) ([666f0c9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/666f0c9a04dc20ef45e329b76f7cb866edc4c19c))
+
 ## [1.0.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v0.16.3...v1.0.0) (2025-05-22)
 
 
