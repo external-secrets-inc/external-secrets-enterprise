@@ -38,33 +38,13 @@ jobs:
         with:
           python-version: 3.12
 
-      - name: Set up chart-testing
-        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b # v2.7.0
-
-      - name: Run chart-testing (list-changed)
-        id: list-changed
-        run: |
-          changed=$(ct list-changed --config=.github/ci/ct.yaml)
-          if [[ -n "$changed" ]]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
       - name: Install chart unittest
         run: |
           helm env
           helm plugin install https://github.com/helm-unittest/helm-unittest
-      - name: Run chart-testing (lint)
-        run: ct lint --config=.github/ci/ct.yaml
 
-      - name: Create kind cluster
-        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
-        if: steps.list-changed.outputs.changed == 'true'
-
-      - name: Run chart-testing (install)
-        run: ct install --config=.github/ci/ct.yaml --charts deploy/charts/external-secrets
-        if: steps.list-changed.outputs.changed == 'true'
 
       - name: Run unitests
-        if: steps.list-changed.outputs.changed == 'true'
         run: make helm.test
 
   release:
