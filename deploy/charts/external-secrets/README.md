@@ -47,7 +47,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | certController.hostNetwork | bool | `false` | Run the certController on the host network |
 | certController.image.flavour | string | `""` |  |
 | certController.image.pullPolicy | string | `"IfNotPresent"` |  |
-| certController.image.repository | string | `"oci.external-secrets.io/external-secrets/external-secrets"` |  |
+| certController.image.repository | string | `"us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets"` |  |
 | certController.image.tag | string | `""` |  |
 | certController.imagePullSecrets | list | `[]` |  |
 | certController.log | object | `{"level":"info","timeEncoding":"epoch"}` | Specifices Log Params to the Certificate Controller |
@@ -201,7 +201,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | webhook.hostNetwork | bool | `false` | Specifies if webhook pod should use hostNetwork or not. |
 | webhook.image.flavour | string | `""` | The flavour of tag you want to use |
 | webhook.image.pullPolicy | string | `"IfNotPresent"` |  |
-| webhook.image.repository | string | `"oci.external-secrets.io/external-secrets/external-secrets"` |  |
+| webhook.image.repository | string | `"us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets"` |  |
 | webhook.image.tag | string | `""` | The image tag to use. The default is the chart appVersion. |
 | webhook.imagePullSecrets | list | `[]` |  |
 | webhook.log | object | `{"level":"info","timeEncoding":"epoch"}` | Specifices Log Params to the Webhook |
