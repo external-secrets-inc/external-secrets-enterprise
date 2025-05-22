@@ -100,7 +100,7 @@ spec:
           ports:
             - containerPort: {{ .Values.federation.listen.port }}
               protocol: TCP
-              name: federation-server
+              name: server
             - containerPort: {{ .Values.metrics.listen.port }}
               protocol: TCP
               name: metrics

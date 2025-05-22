@@ -341,6 +341,9 @@
                 },
                 "service": {
                     "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
                         "port": {
                             "type": "integer"
                         }
