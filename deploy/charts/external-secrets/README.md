@@ -105,6 +105,9 @@ The command removes all the Kubernetes components associated with the chart and 
 | extraObjects | list | `[]` |  |
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
+| federation.listen.port | int | `8000` |  |
+| federation.service.enabled | bool | `true` |  |
+| federation.service.port | int | `8000` |  |
 | fullnameOverride | string | `""` |  |
 | global.affinity | object | `{}` |  |
 | global.compatibility.openshift.adaptSecurityContext | string | `"auto"` | Manages the securityContext properties to make them compatible with OpenShift. Possible values: auto - Apply configurations if it is detected that OpenShift is the target platform. force - Always apply configurations. disabled - No modification applied. |
@@ -118,7 +121,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | hostNetwork | bool | `false` | Run the controller on the host network |
 | image.flavour | string | `""` | The flavour of tag you want to use There are different image flavours available, like distroless and ubi. Please see GitHub release notes for image tags for these flavors. By default, the distroless image is used. |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"oci.external-secrets.io/external-secrets/external-secrets"` |  |
+| image.repository | string | `"us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets"` |  |
 | image.tag | string | `""` | The image tag to use. The default is the chart appVersion. |
 | imagePullSecrets | list | `[]` |  |
 | installCRDs | bool | `true` | If set, install and upgrade CRDs through helm chart. |
