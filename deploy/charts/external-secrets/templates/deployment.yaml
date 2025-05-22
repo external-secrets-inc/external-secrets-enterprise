@@ -98,6 +98,9 @@ spec:
           - --loglevel={{ .Values.log.level }}
           - --zap-time-encoding={{ .Values.log.timeEncoding }}
           ports:
+            - containerPort: {{ .Values.federation.listen.port }}
+              protocol: TCP
+              name: federation-server
             - containerPort: {{ .Values.metrics.listen.port }}
               protocol: TCP
               name: metrics

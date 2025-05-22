@@ -34,10 +34,13 @@ should match snapshot of default values:
                 - --metrics-addr=:8080
                 - --loglevel=info
                 - --zap-time-encoding=epoch
-              image: oci.external-secrets.io/external-secrets/external-secrets:v1.0.0
+              image: us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets:v1.0.0
               imagePullPolicy: IfNotPresent
               name: external-secrets
               ports:
+                - containerPort: 8000
+                  name: federation-server
+                  protocol: TCP
                 - containerPort: 8080
                   name: metrics
                   protocol: TCP
