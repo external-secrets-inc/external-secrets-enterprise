@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.1...v1.1.2) (2025-05-22)
+
+
+### Bug Fixes
+
+* bump webhook chart to version 0.2.0 ([#61](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/61)) ([4a5800f](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4a5800f99e2a144c4250634af4a16fa84ffa520f))
+
 ## [1.1.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.0...v1.1.1) (2025-05-22)
 
 
