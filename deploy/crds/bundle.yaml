@@ -162,8 +162,7 @@ spec:
                                       - VaultDynamicSecret
                                       - Webhook
                                       - Grafana
-                                      - MFA
-                                      - SendgridAuthorizationToken
+                                      - Federation
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -352,8 +351,7 @@ spec:
                                       - VaultDynamicSecret
                                       - Webhook
                                       - Grafana
-                                      - MFA
-                                      - SendgridAuthorizationToken
+                                      - Federation
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -887,6 +885,7 @@ spec:
                                       - AWSIAMKey
                                       - SendgridAuthorizationToken
                                       - RabbitMQ
+                                      - Federation
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1078,6 +1077,7 @@ spec:
                                       - AWSIAMKey
                                       - SendgridAuthorizationToken
                                       - RabbitMQ
+                                      - Federation
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1729,8 +1729,7 @@ spec:
                                 - VaultDynamicSecret
                                 - Webhook
                                 - Grafana
-                                - MFA
-                                - SendgridAuthorizationToken
+                                - Federation
                               type: string
                             name:
                               description: Specify the name of the generator resource
@@ -10859,8 +10858,7 @@ spec:
                                   - VaultDynamicSecret
                                   - Webhook
                                   - Grafana
-                                  - MFA
-                                  - SendgridAuthorizationToken
+                                  - Federation
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11049,8 +11047,7 @@ spec:
                                   - VaultDynamicSecret
                                   - Webhook
                                   - Grafana
-                                  - MFA
-                                  - SendgridAuthorizationToken
+                                  - Federation
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11460,6 +11457,7 @@ spec:
                                   - AWSIAMKey
                                   - SendgridAuthorizationToken
                                   - RabbitMQ
+                                  - Federation
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11651,6 +11649,7 @@ spec:
                                   - AWSIAMKey
                                   - SendgridAuthorizationToken
                                   - RabbitMQ
+                                  - Federation
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -12125,8 +12124,7 @@ spec:
                             - VaultDynamicSecret
                             - Webhook
                             - Grafana
-                            - MFA
-                            - SendgridAuthorizationToken
+                            - Federation
                           type: string
                         name:
                           description: Specify the name of the generator resource
@@ -22193,6 +22191,96 @@ spec:
                             by this generator.
                           type: object
                       type: object
+                    federationSpec:
+                      description: FederationSpec defines the configuration for the federation generator
+                      properties:
+                        auth:
+                          description: Auth specifies the authentication configuration
+                          properties:
+                            caCertSecretRef:
+                              description: CACertSecretRef references a secret containing the CA certificate
+                              properties:
+                                key:
+                                  description: |-
+                                    A key in the referenced Secret.
+                                    Some instances of this field may be defaulted, in others it may be required.
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[-._a-zA-Z0-9]+$
+                                  type: string
+                                name:
+                                  description: The name of the Secret resource being referred to.
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                                namespace:
+                                  description: |-
+                                    The namespace of the Secret resource being referred to.
+                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                  type: string
+                              type: object
+                            tokenSecretRef:
+                              description: TokenSecretRef references a secret containing the auth token
+                              properties:
+                                key:
+                                  description: |-
+                                    A key in the referenced Secret.
+                                    Some instances of this field may be defaulted, in others it may be required.
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[-._a-zA-Z0-9]+$
+                                  type: string
+                                name:
+                                  description: The name of the Secret resource being referred to.
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                                namespace:
+                                  description: |-
+                                    The namespace of the Secret resource being referred to.
+                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                  type: string
+                              type: object
+                          type: object
+                        generator:
+                          description: Generator specifies the target generator to use
+                          properties:
+                            kind:
+                              description: Kind is the kind of the generator
+                              type: string
+                            name:
+                              description: Name is the name of the generator
+                              type: string
+                            namespace:
+                              description: Namespace is the namespace of the generator
+                              type: string
+                          required:
+                            - kind
+                            - name
+                            - namespace
+                          type: object
+                        server:
+                          description: Server specifies the federation server configuration
+                          properties:
+                            url:
+                              description: URL is the URL of the federation server
+                              type: string
+                          required:
+                            - url
+                          type: object
+                      required:
+                        - auth
+                        - generator
+                        - server
+                      type: object
                     gcrAccessTokenSpec:
                       properties:
                         auth:
@@ -23700,6 +23788,7 @@ spec:
                     - VaultDynamicSecret
                     - Webhook
                     - Grafana
+                    - Federation
                   type: string
               required:
                 - generator
@@ -23971,6 +24060,143 @@ spec:
       storage: true
       subresources:
         status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  labels:
+    external-secrets.io/component: controller
+  name: federations.generators.external-secrets.io
+spec:
+  group: generators.external-secrets.io
+  names:
+    categories:
+      - external-secrets
+      - external-secrets-generators
+    kind: Federation
+    listKind: FederationList
+    plural: federations
+    singular: federation
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: FederationSpec defines the configuration for the federation generator
+              properties:
+                auth:
+                  description: Auth specifies the authentication configuration
+                  properties:
+                    caCertSecretRef:
+                      description: CACertSecretRef references a secret containing the CA certificate
+                      properties:
+                        key:
+                          description: |-
+                            A key in the referenced Secret.
+                            Some instances of this field may be defaulted, in others it may be required.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[-._a-zA-Z0-9]+$
+                          type: string
+                        name:
+                          description: The name of the Secret resource being referred to.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        namespace:
+                          description: |-
+                            The namespace of the Secret resource being referred to.
+                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                          maxLength: 63
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                          type: string
+                      type: object
+                    tokenSecretRef:
+                      description: TokenSecretRef references a secret containing the auth token
+                      properties:
+                        key:
+                          description: |-
+                            A key in the referenced Secret.
+                            Some instances of this field may be defaulted, in others it may be required.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[-._a-zA-Z0-9]+$
+                          type: string
+                        name:
+                          description: The name of the Secret resource being referred to.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        namespace:
+                          description: |-
+                            The namespace of the Secret resource being referred to.
+                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                          maxLength: 63
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                          type: string
+                      type: object
+                  type: object
+                generator:
+                  description: Generator specifies the target generator to use
+                  properties:
+                    kind:
+                      description: Kind is the kind of the generator
+                      type: string
+                    name:
+                      description: Name is the name of the generator
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of the generator
+                      type: string
+                  required:
+                    - kind
+                    - name
+                    - namespace
+                  type: object
+                server:
+                  description: Server specifies the federation server configuration
+                  properties:
+                    url:
+                      description: URL is the URL of the federation server
+                      type: string
+                  required:
+                    - url
+                  type: object
+              required:
+                - auth
+                - generator
+                - server
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -26827,8 +27053,7 @@ spec:
                                             - VaultDynamicSecret
                                             - Webhook
                                             - Grafana
-                                            - MFA
-                                            - SendgridAuthorizationToken
+                                            - Federation
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -26857,6 +27082,7 @@ spec:
                                         - VaultDynamicSecret
                                         - Webhook
                                         - Grafana
+                                        - Federation
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -27206,6 +27432,96 @@ spec:
                                                 Data defines the static data returned
                                                 by this generator.
                                               type: object
+                                          type: object
+                                        federationSpec:
+                                          description: FederationSpec defines the configuration for the federation generator
+                                          properties:
+                                            auth:
+                                              description: Auth specifies the authentication configuration
+                                              properties:
+                                                caCertSecretRef:
+                                                  description: CACertSecretRef references a secret containing the CA certificate
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                                tokenSecretRef:
+                                                  description: TokenSecretRef references a secret containing the auth token
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                              type: object
+                                            generator:
+                                              description: Generator specifies the target generator to use
+                                              properties:
+                                                kind:
+                                                  description: Kind is the kind of the generator
+                                                  type: string
+                                                name:
+                                                  description: Name is the name of the generator
+                                                  type: string
+                                                namespace:
+                                                  description: Namespace is the namespace of the generator
+                                                  type: string
+                                              required:
+                                                - kind
+                                                - name
+                                                - namespace
+                                              type: object
+                                            server:
+                                              description: Server specifies the federation server configuration
+                                              properties:
+                                                url:
+                                                  description: URL is the URL of the federation server
+                                                  type: string
+                                              required:
+                                                - url
+                                              type: object
+                                          required:
+                                            - auth
+                                            - generator
+                                            - server
                                           type: object
                                         gcrAccessTokenSpec:
                                           properties:
@@ -28834,8 +29150,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -29022,8 +29337,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -29088,8 +29402,7 @@ spec:
                                                 - VaultDynamicSecret
                                                 - Webhook
                                                 - Grafana
-                                                - MFA
-                                                - SendgridAuthorizationToken
+                                                - Federation
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -29258,8 +29571,7 @@ spec:
                                             - VaultDynamicSecret
                                             - Webhook
                                             - Grafana
-                                            - MFA
-                                            - SendgridAuthorizationToken
+                                            - Federation
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -29288,6 +29600,7 @@ spec:
                                         - VaultDynamicSecret
                                         - Webhook
                                         - Grafana
+                                        - Federation
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -29637,6 +29950,96 @@ spec:
                                                 Data defines the static data returned
                                                 by this generator.
                                               type: object
+                                          type: object
+                                        federationSpec:
+                                          description: FederationSpec defines the configuration for the federation generator
+                                          properties:
+                                            auth:
+                                              description: Auth specifies the authentication configuration
+                                              properties:
+                                                caCertSecretRef:
+                                                  description: CACertSecretRef references a secret containing the CA certificate
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                                tokenSecretRef:
+                                                  description: TokenSecretRef references a secret containing the auth token
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                              type: object
+                                            generator:
+                                              description: Generator specifies the target generator to use
+                                              properties:
+                                                kind:
+                                                  description: Kind is the kind of the generator
+                                                  type: string
+                                                name:
+                                                  description: Name is the name of the generator
+                                                  type: string
+                                                namespace:
+                                                  description: Namespace is the namespace of the generator
+                                                  type: string
+                                              required:
+                                                - kind
+                                                - name
+                                                - namespace
+                                              type: object
+                                            server:
+                                              description: Server specifies the federation server configuration
+                                              properties:
+                                                url:
+                                                  description: URL is the URL of the federation server
+                                                  type: string
+                                              required:
+                                                - url
+                                              type: object
+                                          required:
+                                            - auth
+                                            - generator
+                                            - server
                                           type: object
                                         gcrAccessTokenSpec:
                                           properties:
@@ -31265,8 +31668,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -31453,8 +31855,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -31519,8 +31920,7 @@ spec:
                                                 - VaultDynamicSecret
                                                 - Webhook
                                                 - Grafana
-                                                - MFA
-                                                - SendgridAuthorizationToken
+                                                - Federation
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -31698,8 +32098,7 @@ spec:
                                                   - VaultDynamicSecret
                                                   - Webhook
                                                   - Grafana
-                                                  - MFA
-                                                  - SendgridAuthorizationToken
+                                                  - Federation
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -31728,6 +32127,7 @@ spec:
                                               - VaultDynamicSecret
                                               - Webhook
                                               - Grafana
+                                              - Federation
                                             type: string
                                           rewrite:
                                             description: Rewrite contains rules for rewriting the generated keys.
@@ -32077,6 +32477,96 @@ spec:
                                                       Data defines the static data returned
                                                       by this generator.
                                                     type: object
+                                                type: object
+                                              federationSpec:
+                                                description: FederationSpec defines the configuration for the federation generator
+                                                properties:
+                                                  auth:
+                                                    description: Auth specifies the authentication configuration
+                                                    properties:
+                                                      caCertSecretRef:
+                                                        description: CACertSecretRef references a secret containing the CA certificate
+                                                        properties:
+                                                          key:
+                                                            description: |-
+                                                              A key in the referenced Secret.
+                                                              Some instances of this field may be defaulted, in others it may be required.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[-._a-zA-Z0-9]+$
+                                                            type: string
+                                                          name:
+                                                            description: The name of the Secret resource being referred to.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                          namespace:
+                                                            description: |-
+                                                              The namespace of the Secret resource being referred to.
+                                                              Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                            maxLength: 63
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                            type: string
+                                                        type: object
+                                                      tokenSecretRef:
+                                                        description: TokenSecretRef references a secret containing the auth token
+                                                        properties:
+                                                          key:
+                                                            description: |-
+                                                              A key in the referenced Secret.
+                                                              Some instances of this field may be defaulted, in others it may be required.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[-._a-zA-Z0-9]+$
+                                                            type: string
+                                                          name:
+                                                            description: The name of the Secret resource being referred to.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                          namespace:
+                                                            description: |-
+                                                              The namespace of the Secret resource being referred to.
+                                                              Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                            maxLength: 63
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                            type: string
+                                                        type: object
+                                                    type: object
+                                                  generator:
+                                                    description: Generator specifies the target generator to use
+                                                    properties:
+                                                      kind:
+                                                        description: Kind is the kind of the generator
+                                                        type: string
+                                                      name:
+                                                        description: Name is the name of the generator
+                                                        type: string
+                                                      namespace:
+                                                        description: Namespace is the namespace of the generator
+                                                        type: string
+                                                    required:
+                                                      - kind
+                                                      - name
+                                                      - namespace
+                                                    type: object
+                                                  server:
+                                                    description: Server specifies the federation server configuration
+                                                    properties:
+                                                      url:
+                                                        description: URL is the URL of the federation server
+                                                        type: string
+                                                    required:
+                                                      - url
+                                                    type: object
+                                                required:
+                                                  - auth
+                                                  - generator
+                                                  - server
                                                 type: object
                                               gcrAccessTokenSpec:
                                                 properties:
@@ -33705,8 +34195,7 @@ spec:
                                                             - VaultDynamicSecret
                                                             - Webhook
                                                             - Grafana
-                                                            - MFA
-                                                            - SendgridAuthorizationToken
+                                                            - Federation
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -33893,8 +34382,7 @@ spec:
                                                             - VaultDynamicSecret
                                                             - Webhook
                                                             - Grafana
-                                                            - MFA
-                                                            - SendgridAuthorizationToken
+                                                            - Federation
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -33959,8 +34447,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -34346,8 +34833,7 @@ spec:
                                             - VaultDynamicSecret
                                             - Webhook
                                             - Grafana
-                                            - MFA
-                                            - SendgridAuthorizationToken
+                                            - Federation
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -34376,6 +34862,7 @@ spec:
                                         - VaultDynamicSecret
                                         - Webhook
                                         - Grafana
+                                        - Federation
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -34725,6 +35212,96 @@ spec:
                                                 Data defines the static data returned
                                                 by this generator.
                                               type: object
+                                          type: object
+                                        federationSpec:
+                                          description: FederationSpec defines the configuration for the federation generator
+                                          properties:
+                                            auth:
+                                              description: Auth specifies the authentication configuration
+                                              properties:
+                                                caCertSecretRef:
+                                                  description: CACertSecretRef references a secret containing the CA certificate
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                                tokenSecretRef:
+                                                  description: TokenSecretRef references a secret containing the auth token
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                              type: object
+                                            generator:
+                                              description: Generator specifies the target generator to use
+                                              properties:
+                                                kind:
+                                                  description: Kind is the kind of the generator
+                                                  type: string
+                                                name:
+                                                  description: Name is the name of the generator
+                                                  type: string
+                                                namespace:
+                                                  description: Namespace is the namespace of the generator
+                                                  type: string
+                                              required:
+                                                - kind
+                                                - name
+                                                - namespace
+                                              type: object
+                                            server:
+                                              description: Server specifies the federation server configuration
+                                              properties:
+                                                url:
+                                                  description: URL is the URL of the federation server
+                                                  type: string
+                                              required:
+                                                - url
+                                              type: object
+                                          required:
+                                            - auth
+                                            - generator
+                                            - server
                                           type: object
                                         gcrAccessTokenSpec:
                                           properties:
@@ -36353,8 +36930,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -36541,8 +37117,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -36607,8 +37182,7 @@ spec:
                                                 - VaultDynamicSecret
                                                 - Webhook
                                                 - Grafana
-                                                - MFA
-                                                - SendgridAuthorizationToken
+                                                - Federation
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -36777,8 +37351,7 @@ spec:
                                             - VaultDynamicSecret
                                             - Webhook
                                             - Grafana
-                                            - MFA
-                                            - SendgridAuthorizationToken
+                                            - Federation
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -36807,6 +37380,7 @@ spec:
                                         - VaultDynamicSecret
                                         - Webhook
                                         - Grafana
+                                        - Federation
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -37156,6 +37730,96 @@ spec:
                                                 Data defines the static data returned
                                                 by this generator.
                                               type: object
+                                          type: object
+                                        federationSpec:
+                                          description: FederationSpec defines the configuration for the federation generator
+                                          properties:
+                                            auth:
+                                              description: Auth specifies the authentication configuration
+                                              properties:
+                                                caCertSecretRef:
+                                                  description: CACertSecretRef references a secret containing the CA certificate
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                                tokenSecretRef:
+                                                  description: TokenSecretRef references a secret containing the auth token
+                                                  properties:
+                                                    key:
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                      type: string
+                                                  type: object
+                                              type: object
+                                            generator:
+                                              description: Generator specifies the target generator to use
+                                              properties:
+                                                kind:
+                                                  description: Kind is the kind of the generator
+                                                  type: string
+                                                name:
+                                                  description: Name is the name of the generator
+                                                  type: string
+                                                namespace:
+                                                  description: Namespace is the namespace of the generator
+                                                  type: string
+                                              required:
+                                                - kind
+                                                - name
+                                                - namespace
+                                              type: object
+                                            server:
+                                              description: Server specifies the federation server configuration
+                                              properties:
+                                                url:
+                                                  description: URL is the URL of the federation server
+                                                  type: string
+                                              required:
+                                                - url
+                                              type: object
+                                          required:
+                                            - auth
+                                            - generator
+                                            - server
                                           type: object
                                         gcrAccessTokenSpec:
                                           properties:
@@ -38784,8 +39448,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -38972,8 +39635,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -39038,8 +39700,7 @@ spec:
                                                 - VaultDynamicSecret
                                                 - Webhook
                                                 - Grafana
-                                                - MFA
-                                                - SendgridAuthorizationToken
+                                                - Federation
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -39217,8 +39878,7 @@ spec:
                                                   - VaultDynamicSecret
                                                   - Webhook
                                                   - Grafana
-                                                  - MFA
-                                                  - SendgridAuthorizationToken
+                                                  - Federation
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -39247,6 +39907,7 @@ spec:
                                               - VaultDynamicSecret
                                               - Webhook
                                               - Grafana
+                                              - Federation
                                             type: string
                                           rewrite:
                                             description: Rewrite contains rules for rewriting the generated keys.
@@ -39596,6 +40257,96 @@ spec:
                                                       Data defines the static data returned
                                                       by this generator.
                                                     type: object
+                                                type: object
+                                              federationSpec:
+                                                description: FederationSpec defines the configuration for the federation generator
+                                                properties:
+                                                  auth:
+                                                    description: Auth specifies the authentication configuration
+                                                    properties:
+                                                      caCertSecretRef:
+                                                        description: CACertSecretRef references a secret containing the CA certificate
+                                                        properties:
+                                                          key:
+                                                            description: |-
+                                                              A key in the referenced Secret.
+                                                              Some instances of this field may be defaulted, in others it may be required.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[-._a-zA-Z0-9]+$
+                                                            type: string
+                                                          name:
+                                                            description: The name of the Secret resource being referred to.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                          namespace:
+                                                            description: |-
+                                                              The namespace of the Secret resource being referred to.
+                                                              Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                            maxLength: 63
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                            type: string
+                                                        type: object
+                                                      tokenSecretRef:
+                                                        description: TokenSecretRef references a secret containing the auth token
+                                                        properties:
+                                                          key:
+                                                            description: |-
+                                                              A key in the referenced Secret.
+                                                              Some instances of this field may be defaulted, in others it may be required.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[-._a-zA-Z0-9]+$
+                                                            type: string
+                                                          name:
+                                                            description: The name of the Secret resource being referred to.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                          namespace:
+                                                            description: |-
+                                                              The namespace of the Secret resource being referred to.
+                                                              Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                            maxLength: 63
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                                            type: string
+                                                        type: object
+                                                    type: object
+                                                  generator:
+                                                    description: Generator specifies the target generator to use
+                                                    properties:
+                                                      kind:
+                                                        description: Kind is the kind of the generator
+                                                        type: string
+                                                      name:
+                                                        description: Name is the name of the generator
+                                                        type: string
+                                                      namespace:
+                                                        description: Namespace is the namespace of the generator
+                                                        type: string
+                                                    required:
+                                                      - kind
+                                                      - name
+                                                      - namespace
+                                                    type: object
+                                                  server:
+                                                    description: Server specifies the federation server configuration
+                                                    properties:
+                                                      url:
+                                                        description: URL is the URL of the federation server
+                                                        type: string
+                                                    required:
+                                                      - url
+                                                    type: object
+                                                required:
+                                                  - auth
+                                                  - generator
+                                                  - server
                                                 type: object
                                               gcrAccessTokenSpec:
                                                 properties:
@@ -41224,8 +41975,7 @@ spec:
                                                             - VaultDynamicSecret
                                                             - Webhook
                                                             - Grafana
-                                                            - MFA
-                                                            - SendgridAuthorizationToken
+                                                            - Federation
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -41412,8 +42162,7 @@ spec:
                                                             - VaultDynamicSecret
                                                             - Webhook
                                                             - Grafana
-                                                            - MFA
-                                                            - SendgridAuthorizationToken
+                                                            - Federation
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -41478,8 +42227,7 @@ spec:
                                                       - VaultDynamicSecret
                                                       - Webhook
                                                       - Grafana
-                                                      - MFA
-                                                      - SendgridAuthorizationToken
+                                                      - Federation
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
