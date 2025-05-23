@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.3...v1.1.4) (2025-05-23)
+
+
+### Bug Fixes
+
+* bump webhook to 0.3.0 ([#67](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/67)) ([652bb64](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/652bb64028d2ba180ed1b415e6a0806c06e5ffd4))
+
 ## [1.1.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.2...v1.1.3) (2025-05-23)
 
 
