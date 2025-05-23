@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.5...v1.1.6) (2025-05-23)
+
+
+### Bug Fixes
+
+* parsing sni only works if it matches the url - not always the case ([#72](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/72)) ([cc51c9d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/cc51c9d380d1a114b3141ee39148e51eef102ba8))
+
 ## [1.1.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.4...v1.1.5) (2025-05-23)
 
 
