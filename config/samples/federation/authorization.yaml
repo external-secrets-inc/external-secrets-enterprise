@@ -8,6 +8,9 @@ spec:
     kind: Kubernetes
   subject:
     subject: "system:serviceaccount:default:default"
+    issuer: "kubernetes.default.svc"
+  allowedClusterSecretStores:
+    - "default"
   allowedGenerators:
     - name: test-password
       kind: Password
