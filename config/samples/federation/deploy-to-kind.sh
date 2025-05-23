@@ -36,7 +36,9 @@ helm upgrade --install external-secrets ./deploy/charts/external-secrets/ \
   --namespace external-secrets --create-namespace \
   --set image.repository=$IMAGE --set image.tag=$TAG \
   --set webhook.image.repository=$IMAGE --set webhook.image.tag=$TAG \
-  --set certController.image.repository=$IMAGE --set certController.image.tag=$TAG
+  --set certController.image.repository=$IMAGE --set certController.image.tag=$TAG \
+  --set federation.service.enabled=true \
+  --set federation.service.port=8000
 
 echo "Waiting for External Secrets Operator to be ready..."
 kubectl wait --for=condition=Available deployment/external-secrets -n external-secrets --timeout=60s
