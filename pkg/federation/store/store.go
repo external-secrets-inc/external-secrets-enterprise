@@ -7,6 +7,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	api "github.com/external-secrets/external-secrets/apis/federation/v1alpha1"
@@ -62,6 +63,7 @@ func GetJWKS(ctx context.Context, specs []*api.AuthorizationSpec, token, issuer 
 		}
 		jwks, err := provider.GetJWKS(ctx, token, issuer, caCrt)
 		if err != nil {
+			fmt.Println(err)
 			// Not This One, go to next
 			continue
 		}

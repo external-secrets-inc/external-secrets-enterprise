@@ -49,7 +49,7 @@ func (k *KubernetesProvider) GetJWKS(ctx context.Context, token, issuer string, 
 	pool := x509.NewCertPool()
 	pool.AddCert(ca)
 	oidcConfigURL := fmt.Sprintf("%s/.well-known/openid-configuration", k.URL)
-	sni := strings.TrimPrefix(issuer, "https://")
+	sni := strings.TrimPrefix(k.URL, "https://")
 	// TODO[gusfcarvalho]: factor out a method to generate http Clients
 	httpClient := &http.Client{
 		Timeout: 10 * time.Second,
