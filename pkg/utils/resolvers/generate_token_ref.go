@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
-	esv1beta1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1beta1"
+	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
@@ -47,7 +47,7 @@ func GenerateToken(
 			ExpirationSeconds: &expirationSeconds,
 		},
 	}
-	if (storeKind == esv1beta1.ClusterSecretStoreKind) &&
+	if (storeKind == esv1.ClusterSecretStoreKind) &&
 		(serviceAccountRef.Namespace != nil) {
 		tokenRequest.Namespace = *serviceAccountRef.Namespace
 	}

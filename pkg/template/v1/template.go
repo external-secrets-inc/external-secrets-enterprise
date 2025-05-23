@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"software.sslmate.com/src/go-pkcs12"
 
-	esapi "github.com/external-secrets/external-secrets/apis/externalsecrets/v1beta1"
+	esapi "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 )
 
 var tplFuncs = tpl.FuncMap{
