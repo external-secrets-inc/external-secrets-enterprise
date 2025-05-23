@@ -130,11 +130,21 @@ rules:
     - "get"
     - "list"
     - "watch"
+  # for enterprise generators
+  - apiGroups:
+    - "generators.external-secrets.io"
+    resources:
+    - "*"
+    verbs:
+      - "get"
+      - "watch"
+      - "list"
   - apiGroups:
     - ""
     resources:
     - "serviceaccounts"
     - "namespaces"
+    - "pods"
     verbs:
     - "get"
     - "list"
@@ -246,6 +256,15 @@ rules:
     - "grafanas"
     - "generatorstates"
     - "mfas"
+    verbs:
+      - "get"
+      - "watch"
+      - "list"
+  # for enterprise generators
+  - apiGroups:
+    - "generators.external-secrets.io"
+    resources:
+    - "*"
     verbs:
       - "get"
       - "watch"
