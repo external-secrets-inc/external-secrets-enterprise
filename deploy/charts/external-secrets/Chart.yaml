@@ -15,7 +15,7 @@ maintainers:
     email: kellinmcavoy@gmail.com
 dependencies:
   - name: esi-pod-webhook
-    version: 0.2.1
+    version: 0.3.0
     repository: oci://us-central1-docker.pkg.dev/external-secrets-inc-registry/public/charts
     condition: esi-pod-webhook.enabled
   - name: bitwarden-sdk-server
