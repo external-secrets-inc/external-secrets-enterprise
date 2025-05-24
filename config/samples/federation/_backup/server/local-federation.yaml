@@ -3,4 +3,4 @@ kind: KubernetesFederation
 metadata:
   name: test-federation
 spec:
-  url: "http://external-secrets-webhook.external-secrets.svc.cluster.local:8000"
+  url: "https://kubernetes.default.svc"

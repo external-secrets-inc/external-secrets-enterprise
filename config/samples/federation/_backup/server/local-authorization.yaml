@@ -7,11 +7,11 @@ spec:
     name: test-federation
     kind: Kubernetes
   subject:
-    subject: "system:serviceaccount:default:default"
+    subject: "system:serviceaccount:your-namespace:federation-sa"
     issuer: "kubernetes.default.svc"
   allowedClusterSecretStores:
     - "default"
   allowedGenerators:
-    - name: test-password
+    - name: password-gen
       kind: Password
       namespace: default
