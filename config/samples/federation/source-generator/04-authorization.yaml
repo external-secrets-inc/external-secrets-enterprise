@@ -6,10 +6,10 @@ metadata:
 spec:
   federationRef:
     name: current-cluster-federation
-    kind: Kubernetes
+    kind: KubernetesFederation
   subject:
     subject: "system:serviceaccount:federation-example:federation-sa"
-    issuer: "kubernetes.default.svc"
+    issuer: "https://kubernetes.default.svc.cluster.local"
   allowedClusterSecretStores:
     - "federation-secret-store"
   allowedGeneratorStates:
@@ -18,4 +18,3 @@ spec:
     - name: federation-generator
       kind: Fake
       namespace: federation-example
-

@@ -6,7 +6,7 @@ metadata:
 spec:
   federationRef:
     name: current-cluster-federation
-    kind: Kubernetes
+    kind: KubernetesFederation
   subject:
     subject: "system:serviceaccount:federation-example:federation-sa"
     issuer: "kubernetes.default.svc"
