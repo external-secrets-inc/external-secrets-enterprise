@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-federation
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-federation-sa
+  namespace: test-federation
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-secret
+  namespace: test-federation
+type: Opaque
+data:
+  username: dGVzdC11c2Vy  # test-user
+  password: dGVzdC1wYXNzd29yZA==  # test-password
