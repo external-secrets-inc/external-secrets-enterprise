@@ -278,6 +278,17 @@ func clusterGeneratorToVirtual(gen *genv1alpha1.ClusterGenerator) (client.Object
 			},
 			Spec: *gen.Spec.Generator.MFASpec,
 		}, nil
+	case genv1alpha1.GeneratorKindFederation:
+		if gen.Spec.Generator.FederationSpec == nil {
+			return nil, fmt.Errorf("when kind is %s, FederationSpec must be set", gen.Spec.Kind)
+		}
+		return &genv1alpha1.Federation{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
+				Kind:       "Federation",
+			},
+			Spec: *gen.Spec.Generator.FederationSpec,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown kind %s", gen.Spec.Kind)
 	}

@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// FederationSpec defines the configuration for the federation generator
+// FederationSpec defines the configuration for the federation generator.
 type FederationSpec struct {
 	// Server specifies the federation server configuration
 	Server FederationServer `json:"server"`
@@ -30,13 +30,13 @@ type FederationSpec struct {
 	Auth FederationAuth `json:"auth"`
 }
 
-// FederationServer defines the federation server configuration
+// FederationServer defines the federation server configuration.
 type FederationServer struct {
 	// URL is the URL of the federation server
 	URL string `json:"url"`
 }
 
-// FederationGeneratorRef defines the target generator
+// FederationGeneratorRef defines the target generator.
 type FederationGeneratorRef struct {
 	// Namespace is the namespace of the generator
 	Namespace string `json:"namespace"`
@@ -48,7 +48,7 @@ type FederationGeneratorRef struct {
 	Name string `json:"name"`
 }
 
-// FederationAuth defines the authentication configuration
+// FederationAuth defines the authentication configuration.
 type FederationAuth struct {
 	// TokenSecretRef references a secret containing the auth token
 	// +optional

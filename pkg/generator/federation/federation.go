@@ -39,10 +39,10 @@ const (
 	errInvalidResponse = "invalid response from federation server: %w"
 )
 
-// Generator implements the generator interface for federation
+// Generator implements the generator interface for federation.
 type Generator struct{}
 
-// Generate implements the Generator interface
+// Generate implements the Generator interface.
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
 	if jsonSpec == nil {
 		return nil, nil, errors.New(errNoSpec)
@@ -106,7 +106,12 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	if err != nil {
 		return nil, nil, fmt.Errorf(errFederationCall, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log the error since we can't return it from a defer
+			fmt.Printf("Error closing response body: %v\n", closeErr)
+		}
+	}()
 
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
@@ -129,13 +134,13 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	return byteMap, nil, nil
 }
 
-// Cleanup implements the Generator interface
+// Cleanup implements the Generator interface.
 func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kclient client.Client, namespace string) error {
 	// No cleanup needed for federation generator
 	return nil
 }
 
-// Helper functions
+// Helper functions.
 func parseSpec(data []byte) (*genv1alpha1.Federation, error) {
 	var spec genv1alpha1.Federation
 	err := yaml.Unmarshal(data, &spec)

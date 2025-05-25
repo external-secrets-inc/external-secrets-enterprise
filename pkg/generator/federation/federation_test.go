@@ -321,7 +321,7 @@ func TestGetFromSecretRef(t *testing.T) {
 	}
 }
 
-// Helper function to marshal an object to YAML bytes
+// Helper function to marshal an object to YAML bytes.
 func mustMarshal(t *testing.T, v interface{}) []byte {
 	data, err := yaml.Marshal(v)
 	if err != nil {
