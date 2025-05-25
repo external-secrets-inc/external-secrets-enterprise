@@ -5,10 +5,10 @@
 set -e
 
 echo "Deleting existing kind cluster (if any)..."
-kind delete cluster --name external-secrets || true
+kind delete cluster --name federation-source || true
 
 echo "Creating new kind cluster..."
-kind create cluster --name external-secrets
+kind create cluster --config=./config/samples/federation/federation-server/kind-config.yaml
 
 echo "Building External Secrets Operator..."
 export TAG=$(make docker.tag)
@@ -27,7 +27,7 @@ echo "Waiting for core components to be ready..."
 kubectl wait --for=condition=Ready --namespace=kube-system pods --all --timeout=120s
 
 echo "Loading image into kind cluster..."
-kind load docker-image $IMAGE:$TAG --name external-secrets
+kind load docker-image $IMAGE:$TAG --name federation-source
 
 echo "Deploying External Secrets Operator..."
 make helm.generate
@@ -55,8 +55,5 @@ echo "Verifying webhook service..."
 kubectl get service external-secrets-webhook -n external-secrets
 
 echo "External Secrets Operator deployed successfully!"
-echo ""
-echo "IMPORTANT: Before running the setup script, make sure the webhook service is ready."
-echo "You can check the status with: kubectl get pods -n external-secrets"
-echo ""
-echo "If the webhook service is ready, you can run ./setup.sh to deploy the federation example."
+echo "Deploying federation server resources..."
+kubectl apply -f ./config/samples/federation/federation-server/manifests

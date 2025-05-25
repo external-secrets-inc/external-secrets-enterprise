@@ -2,10 +2,9 @@ apiVersion: generators.external-secrets.io/v1alpha1
 kind: Federation
 metadata:
   name: local-federation-generator
-  namespace: federation-example
 spec:
   server:
-    url: "http://external-secrets-federation-server.external-secrets.svc:8000"
+    url: "http://localhost:30080"
   generator:
     namespace: "federation-example"
     kind: "Fake"
@@ -14,6 +13,6 @@ spec:
     tokenSecretRef:
       name: "federation-token"
       key: "token"
-    metadataSecretRef:
+    caCertSecretRef:
       name: "federation-token"
-      key: "metadata"
+      key: "ca.crt"
