@@ -22192,7 +22192,7 @@ spec:
                           type: object
                       type: object
                     federationSpec:
-                      description: FederationSpec defines the configuration for the federation generator
+                      description: FederationSpec defines the configuration for the federation generator.
                       properties:
                         auth:
                           description: Auth specifies the authentication configuration
@@ -24103,7 +24103,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: FederationSpec defines the configuration for the federation generator
+              description: FederationSpec defines the configuration for the federation generator.
               properties:
                 auth:
                   description: Auth specifies the authentication configuration
@@ -27434,7 +27434,7 @@ spec:
                                               type: object
                                           type: object
                                         federationSpec:
-                                          description: FederationSpec defines the configuration for the federation generator
+                                          description: FederationSpec defines the configuration for the federation generator.
                                           properties:
                                             auth:
                                               description: Auth specifies the authentication configuration
@@ -29952,7 +29952,7 @@ spec:
                                               type: object
                                           type: object
                                         federationSpec:
-                                          description: FederationSpec defines the configuration for the federation generator
+                                          description: FederationSpec defines the configuration for the federation generator.
                                           properties:
                                             auth:
                                               description: Auth specifies the authentication configuration
@@ -32479,7 +32479,7 @@ spec:
                                                     type: object
                                                 type: object
                                               federationSpec:
-                                                description: FederationSpec defines the configuration for the federation generator
+                                                description: FederationSpec defines the configuration for the federation generator.
                                                 properties:
                                                   auth:
                                                     description: Auth specifies the authentication configuration
@@ -35214,7 +35214,7 @@ spec:
                                               type: object
                                           type: object
                                         federationSpec:
-                                          description: FederationSpec defines the configuration for the federation generator
+                                          description: FederationSpec defines the configuration for the federation generator.
                                           properties:
                                             auth:
                                               description: Auth specifies the authentication configuration
@@ -37732,7 +37732,7 @@ spec:
                                               type: object
                                           type: object
                                         federationSpec:
-                                          description: FederationSpec defines the configuration for the federation generator
+                                          description: FederationSpec defines the configuration for the federation generator.
                                           properties:
                                             auth:
                                               description: Auth specifies the authentication configuration
@@ -40259,7 +40259,7 @@ spec:
                                                     type: object
                                                 type: object
                                               federationSpec:
-                                                description: FederationSpec defines the configuration for the federation generator
+                                                description: FederationSpec defines the configuration for the federation generator.
                                                 properties:
                                                   auth:
                                                     description: Auth specifies the authentication configuration
