@@ -33,17 +33,8 @@ echo "$JWKS" | jq .
 echo "Creating JSON payload..."
 JSON_PAYLOAD=$(jq -n \
   --arg cert "$CA_CERT" \
-  --argjson jwks "$JWKS" \
-  --arg issuer "https://kubernetes.default.svc.cluster.local" \
-  --arg oidc_url "https://kubernetes.default.svc.cluster.local/.well-known/openid-configuration" \
-  --arg jwks_url "https://kubernetes.default.svc.cluster.local/openid/v1/jwks" \
   '{
-    "ca.crt": $cert,
-    "jwks": $jwks,
-    "issuer": $issuer,
-    "oidc_discovery_url": $oidc_url,
-    "jwks_uri": $jwks_url,
-    "skip_verification": true
+    "ca.crt": $cert
   }')
 
 # Save payload to file for inspection
