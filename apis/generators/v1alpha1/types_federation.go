@@ -68,3 +68,10 @@ type Federation struct {
 
 	Spec FederationSpec `json:"spec"`
 }
+
+// +kubebuilder:object:root=true
+type FederationList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Federation `json:"items"`
+}

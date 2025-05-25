@@ -85,4 +85,5 @@ func init() {
 	SchemeBuilder.Register(&Webhook{}, &WebhookList{})
 	SchemeBuilder.Register(&Grafana{}, &GrafanaList{})
 	SchemeBuilder.Register(&MFA{}, &MFAList{})
+	SchemeBuilder.Register(&Federation{}, &FederationList{})
 }
