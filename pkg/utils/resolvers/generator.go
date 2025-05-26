@@ -289,6 +289,39 @@ func clusterGeneratorToVirtual(gen *genv1alpha1.ClusterGenerator) (client.Object
 			},
 			Spec: *gen.Spec.Generator.FederationSpec,
 		}, nil
+	case genv1alpha1.GeneratorKindBasicAuth:
+		if gen.Spec.Generator.BasicAuthSpec == nil {
+			return nil, fmt.Errorf("when kind is %s, BasicAuthSpec must be set", gen.Spec.Kind)
+		}
+		return &genv1alpha1.BasicAuth{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
+				Kind:       genv1alpha1.BasicAuthKind,
+			},
+			Spec: *gen.Spec.Generator.BasicAuthSpec,
+		}, nil
+	case genv1alpha1.GeneratorKindSSH:
+		if gen.Spec.Generator.SSHSpec == nil {
+			return nil, fmt.Errorf("when kind is %s, SSHSpec must be set", gen.Spec.Kind)
+		}
+		return &genv1alpha1.SSH{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
+				Kind:       genv1alpha1.SSHKind,
+			},
+			Spec: *gen.Spec.Generator.SSHSpec,
+		}, nil
+	case genv1alpha1.GeneratorKindNeo4j:
+		if gen.Spec.Generator.Neo4jSpec == nil {
+			return nil, fmt.Errorf("when kind is %s, Neo4jSpec must be set", gen.Spec.Kind)
+		}
+		return &genv1alpha1.Neo4j{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
+				Kind:       genv1alpha1.Neo4jKind,
+			},
+			Spec: *gen.Spec.Generator.Neo4jSpec,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown kind %s", gen.Spec.Kind)
 	}

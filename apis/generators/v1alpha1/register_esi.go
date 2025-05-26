@@ -46,4 +46,7 @@ func init() {
 	SchemeBuilder.Register(&SendgridAuthorizationToken{}, &SendgridAuthorizationTokenList{})
 	SchemeBuilder.Register(&RabbitMQ{}, &RabbitMQList{})
 	SchemeBuilder.Register(&MongoDB{}, &MongoDBList{})
+	SchemeBuilder.Register(&BasicAuth{}, &BasicAuthList{})
+	SchemeBuilder.Register(&SSH{}, &SSHList{})
+	SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
 }

@@ -131,7 +131,8 @@ func (s *Neo4jTestSuite) SetupSuite() {
 
 func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 	// build generator input
-	spec := newGeneratorSpec(s.T(), s.uri, testUser, false)
+	user := fmt.Sprintf("%s_TestNeo4jGeneratorIntegration", testUser)
+	spec := newGeneratorSpec(s.T(), s.uri, user, false)
 
 	specJSON, _ := yaml.Marshal(spec)
 
@@ -141,13 +142,13 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 
 	require.NoError(s.T(), err)
 	require.Contains(s.T(), result, "user")
-	assert.Equal(s.T(), result["user"], []byte(testUser))
+	assert.Equal(s.T(), result["user"], []byte(user))
 	require.Contains(s.T(), result, testSecretKey)
 
 	status, err := parseStatus(rawStatus.Raw)
 	require.NoError(s.T(), err)
 
-	assert.Equal(s.T(), status.User, testUser)
+	assert.Equal(s.T(), status.User, user)
 
 	// Verify that the user was created in the Neo4j database
 	customClient := generatorMockClient{t: s.T(), userPassword: result[testSecretKey]}
@@ -155,7 +156,7 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 	driver, err := newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
 		URI: s.uri,
 		Basic: &genv1alpha1.Neo4jBasicAuth{
-			Username: testUser,
+			Username: user,
 			Password: genv1alpha1.SecretKeySelector{
 				Name: testGeneratedSecretName,
 				Key:  testSecretKey,
@@ -192,7 +193,8 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorWithRandomSufix() {
 
 func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 	// build generator input
-	spec := newGeneratorSpec(s.T(), s.uri, testUser, false)
+	user := fmt.Sprintf("%s_TestNeo4jCleanup", testUser)
+	spec := newGeneratorSpec(s.T(), s.uri, user, false)
 	specJSON, _ := yaml.Marshal(spec)
 
 	// call Generate()
@@ -208,7 +210,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 	customClient := generatorMockClient{t: s.T(), userPassword: result[testSecretKey]}
 
 	userAuth := &genv1alpha1.Neo4jBasicAuth{
-		Username: testUser,
+		Username: user,
 		Password: genv1alpha1.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
@@ -232,7 +234,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 	driver, err = newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
 		URI:   s.uri,
 		Basic: userAuth,
-	}, s.client, testNamespace)
+	}, customClient, testNamespace)
 	require.NoError(s.T(), err)
 	defer closeDriver(s.T(), s.ctx, driver)
 	err = driver.VerifyConnectivity(s.ctx)
@@ -242,7 +244,8 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 
 func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 	// build generator input
-	spec := newGeneratorSpec(s.T(), s.uri, testUser, false)
+	user := fmt.Sprintf("%s_TestNeo4jCleanupAfterUserDBManipulation", testUser)
+	spec := newGeneratorSpec(s.T(), s.uri, user, false)
 	specJSON, _ := yaml.Marshal(spec)
 
 	// call Generate()
@@ -258,7 +261,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 	customClient := generatorMockClient{t: s.T(), userPassword: result[testSecretKey]}
 
 	userAuth := &genv1alpha1.Neo4jBasicAuth{
-		Username: testUser,
+		Username: user,
 		Password: genv1alpha1.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,

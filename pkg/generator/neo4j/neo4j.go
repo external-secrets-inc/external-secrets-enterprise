@@ -27,8 +27,9 @@ import (
 type Generator struct{}
 
 const (
-	defaultDatabase = "neo4j"
-	defaultProvider = genv1alpha1.Neo4jAuthProviderNative
+	defaultDatabase        = "neo4j"
+	defaultProvider        = genv1alpha1.Neo4jAuthProviderNative
+	defaultPasswordSymbols = "~!@#$%^&*()_+-={}|[]:<>?,./"
 )
 
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
@@ -196,7 +197,12 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 	query.WriteString(fmt.Sprintf("SET AUTH '%s' {\n", authProvider))
 
 	if authProvider == genv1alpha1.Neo4jAuthProviderNative {
-		pass, err := generatePassword(genv1alpha1.PasswordSpec{})
+		symbols := defaultPasswordSymbols // "~!@#$%^&*()_+`-={}|[]:<>?,./"
+		pass, err := generatePassword(genv1alpha1.Password{
+			Spec: genv1alpha1.PasswordSpec{
+				SymbolCharacters: &symbols,
+			},
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate password: %w", err)
 		}
@@ -302,7 +308,7 @@ func createBasicRole(ctx context.Context, driver neo4j.DriverWithContext, dbName
 }
 
 func generatePassword(
-	passSpec genv1alpha1.PasswordSpec,
+	passSpec genv1alpha1.Password,
 ) ([]byte, error) {
 	gen := password.Generator{}
 	rawPassSpec, err := yaml.Marshal(passSpec)
