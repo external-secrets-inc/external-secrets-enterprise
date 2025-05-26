@@ -55,14 +55,14 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	}
 
 	// Get auth token from k8s secret
-	authToken, err := getFromSecretRef(ctx, spec.Spec.Auth.TokenSecretRef, "", kube, namespace)
+	authToken, err := getFromSecretRef(ctx, spec.Spec.Auth.TokenSecretRef, resolvers.EmptyStoreKind, kube, namespace)
 	if err != nil {
 		return nil, nil, fmt.Errorf(errFetchSecretRef, err)
 	}
 
 	var caCert string
 	if spec.Spec.Auth.CACertSecretRef != nil {
-		caCert, err = getFromSecretRef(ctx, spec.Spec.Auth.CACertSecretRef, "", kube, namespace)
+		caCert, err = getFromSecretRef(ctx, spec.Spec.Auth.CACertSecretRef, resolvers.EmptyStoreKind, kube, namespace)
 		if err != nil {
 			return nil, nil, fmt.Errorf(errFetchSecretRef, err)
 		}
@@ -115,7 +115,7 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, s
 		return fmt.Errorf(errParseSpec, err)
 	}
 
-	authToken, err := getFromSecretRef(ctx, spec.Spec.Auth.TokenSecretRef, "", kclient, namespace)
+	authToken, err := getFromSecretRef(ctx, spec.Spec.Auth.TokenSecretRef, resolvers.EmptyStoreKind, kclient, namespace)
 	if err != nil {
 		return fmt.Errorf(errFetchSecretRef, err)
 	}
