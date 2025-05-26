@@ -52,6 +52,22 @@ spec:
     fakeSpec:
       controller: string
       data: {}
+    federationSpec:
+      auth:
+        caCertSecretRef:
+          key: string
+          name: string
+          namespace: string
+        tokenSecretRef:
+          key: string
+          name: string
+          namespace: string
+      generator:
+        kind: string
+        name: string
+        namespace: string
+      server:
+        url: string
     gcrAccessTokenSpec:
       auth:
         secretRef:
@@ -296,4 +312,4 @@ spec:
           name: string
       timeout: string
       url: string
-  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana"
+  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation"
