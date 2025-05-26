@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.7...v1.2.0) (2025-05-26)
+
+
+### Features
+
+* add mongodb generator ([85bffac](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/85bffac4e961ca0910c8446663fd3f881b3988c2))
+* mongodb generator ([0e57df6](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/0e57df6abb0c4d280bed8243b41fbc502704012b))
+
 ## [1.1.7](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.6...v1.1.7) (2025-05-23)
 
 
