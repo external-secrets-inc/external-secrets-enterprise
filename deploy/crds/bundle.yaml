@@ -166,6 +166,9 @@ spec:
                                       - SendgridAuthorizationToken
                                       - MongoDB
                                       - Federation
+                                      - BasicAuth
+                                      - SSH
+                                      - Neo4j
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -358,6 +361,9 @@ spec:
                                       - SendgridAuthorizationToken
                                       - MongoDB
                                       - Federation
+                                      - BasicAuth
+                                      - SSH
+                                      - Neo4j
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -893,6 +899,9 @@ spec:
                                       - RabbitMQ
                                       - MongoDB
                                       - Federation
+                                      - BasicAuth
+                                      - SSH
+                                      - Neo4j
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1086,6 +1095,9 @@ spec:
                                       - RabbitMQ
                                       - MongoDB
                                       - Federation
+                                      - BasicAuth
+                                      - SSH
+                                      - Neo4j
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1741,6 +1753,9 @@ spec:
                                 - SendgridAuthorizationToken
                                 - MongoDB
                                 - Federation
+                                - BasicAuth
+                                - SSH
+                                - Neo4j
                               type: string
                             name:
                               description: Specify the name of the generator resource
@@ -10873,6 +10888,9 @@ spec:
                                   - SendgridAuthorizationToken
                                   - MongoDB
                                   - Federation
+                                  - BasicAuth
+                                  - SSH
+                                  - Neo4j
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11065,6 +11083,9 @@ spec:
                                   - SendgridAuthorizationToken
                                   - MongoDB
                                   - Federation
+                                  - BasicAuth
+                                  - SSH
+                                  - Neo4j
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11476,6 +11497,9 @@ spec:
                                   - RabbitMQ
                                   - MongoDB
                                   - Federation
+                                  - BasicAuth
+                                  - SSH
+                                  - Neo4j
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11669,6 +11693,9 @@ spec:
                                   - RabbitMQ
                                   - MongoDB
                                   - Federation
+                                  - BasicAuth
+                                  - SSH
+                                  - Neo4j
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -12147,6 +12174,9 @@ spec:
                             - SendgridAuthorizationToken
                             - MongoDB
                             - Federation
+                            - BasicAuth
+                            - SSH
+                            - Neo4j
                           type: string
                         name:
                           description: Specify the name of the generator resource
@@ -22056,6 +22086,85 @@ spec:
                         - auth
                         - registry
                       type: object
+                    basicAuthSpec:
+                      description: BasicAuthSpec controls the behavior of the basic auth generator.
+                      properties:
+                        password:
+                          description: PasswordSpec controls the behavior of the password generator.
+                          properties:
+                            allowRepeat:
+                              default: false
+                              description: set AllowRepeat to true to allow repeating characters.
+                              type: boolean
+                            digits:
+                              description: |-
+                                Digits specifies the number of digits in the generated
+                                password. If omitted it defaults to 25% of the length of the password
+                              type: integer
+                            length:
+                              default: 24
+                              description: |-
+                                Length of the password to be generated.
+                                Defaults to 24
+                              type: integer
+                            noUpper:
+                              default: false
+                              description: Set NoUpper to disable uppercase characters
+                              type: boolean
+                            symbolCharacters:
+                              description: |-
+                                SymbolCharacters specifies the special characters that should be used
+                                in the generated password.
+                              type: string
+                            symbols:
+                              description: |-
+                                Symbols specifies the number of symbol characters in the generated
+                                password. If omitted it defaults to 25% of the length of the password
+                              type: integer
+                          required:
+                            - allowRepeat
+                            - length
+                            - noUpper
+                          type: object
+                        username:
+                          description: UsernameSpec controls the behavior of the username generated.
+                          properties:
+                            includeNumbers:
+                              default: false
+                              description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                              type: boolean
+                            length:
+                              default: 8
+                              description: |-
+                                Length of each word of the username to be generated.
+                                Defaults to 8
+                              type: integer
+                            prefix:
+                              description: |-
+                                Prefix specifies a prefix to be added to the generated
+                                username. If omitted it defaults to empty
+                              type: string
+                            separator:
+                              description: |-
+                                Separator specifies the separator character that should be used
+                                in the generated username. If omitted it defaults to "_"
+                              type: string
+                            sufix:
+                              description: |-
+                                Sufix specifies a sufix to be added to the generated
+                                username. If omitted it defaults to empty
+                              type: string
+                            wordCount:
+                              default: 1
+                              description: |-
+                                WordCount specifies the number of words in the generated
+                                username. If omitted it defaults to 1
+                              type: integer
+                          required:
+                            - includeNumbers
+                            - length
+                          type: object
+                      type: object
                     ecrAuthorizationTokenSpec:
                       properties:
                         auth:
@@ -22581,6 +22690,122 @@ spec:
                       required:
                         - secret
                       type: object
+                    neo4jSpec:
+                      description: Neo4jSpec controls the behavior of the neo4j generator.
+                      properties:
+                        auth:
+                          description: Auth contains the credentials or auth configuration
+                          properties:
+                            basic:
+                              description: Basic auth credentials used to authenticate against the Neo4j instance.
+                              properties:
+                                password:
+                                  description: A basic auth password used to authenticate against the Neo4j instance.
+                                  properties:
+                                    key:
+                                      description: The key where the token is found.
+                                      maxLength: 253
+                                      minLength: 1
+                                      pattern: ^[-._a-zA-Z0-9]+$
+                                      type: string
+                                    name:
+                                      description: The name of the Secret resource being referred to.
+                                      maxLength: 253
+                                      minLength: 1
+                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                      type: string
+                                  type: object
+                                username:
+                                  description: A basic auth username used to authenticate against the Neo4j instance.
+                                  type: string
+                              required:
+                                - password
+                                - username
+                              type: object
+                            bearer:
+                              description: Bearer auth token used to authenticate against the Neo4j instance.
+                              properties:
+                                token:
+                                  description: A bearer auth token used to authenticate against the Neo4j instance.
+                                  properties:
+                                    key:
+                                      description: The key where the token is found.
+                                      maxLength: 253
+                                      minLength: 1
+                                      pattern: ^[-._a-zA-Z0-9]+$
+                                      type: string
+                                    name:
+                                      description: The name of the Secret resource being referred to.
+                                      maxLength: 253
+                                      minLength: 1
+                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                      type: string
+                                  type: object
+                              required:
+                                - token
+                              type: object
+                            uri:
+                              description: |-
+                                URI is the connection URI for the Neo4j database.
+                                Example: bolt://neo4j.default.svc.cluster.local:7687
+                              type: string
+                          required:
+                            - uri
+                          type: object
+                        database:
+                          default: neo4j
+                          description: |-
+                            Database is the name of the database to connect to.
+                            If not specified, the "neo4j" database will be used.
+                          type: string
+                        enterprise:
+                          default: false
+                          description: If the neo4j instance is running in enterprise mode.
+                          type: boolean
+                        user:
+                          description: User is the data of the user to be created.
+                          properties:
+                            home:
+                              description: The home database of the user (Neo4j Enterprise only).
+                              type: string
+                            provider:
+                              default: native
+                              description: |-
+                                The auth provider to be used for the user (Neo4j Enterprise only).
+                                Currently only "native" is supported.
+                                "native" provider is used for Neo4j Community
+                              enum:
+                                - native
+                              type: string
+                            randomSufix:
+                              default: false
+                              description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                              type: boolean
+                            roles:
+                              description: |-
+                                The roles to be assigned to the user (Neo4j Enterprise only).
+                                See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                for a list of built-in roles.
+                                If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                If empty, the user will be created with no role.
+                              items:
+                                type: string
+                              type: array
+                            user:
+                              description: |-
+                                The name of the user to be created.
+                                Must not contain a dash ("-") character.
+                              pattern: ^[^-\s]+$
+                              type: string
+                          required:
+                            - provider
+                            - roles
+                            - user
+                          type: object
+                      required:
+                        - auth
+                        - database
+                      type: object
                     passwordSpec:
                       description: PasswordSpec controls the behavior of the password generator.
                       properties:
@@ -22657,6 +22882,30 @@ spec:
                       required:
                         - robotAccount
                         - serviceAccountRef
+                      type: object
+                    sshSpec:
+                      description: SSHSpec controls the behavior of the password generator.
+                      properties:
+                        keyType:
+                          default: RSA
+                          description: |-
+                            KeyType specifies the SSH key type to be generated.
+                            Currently only RSA is supported.
+                          enum:
+                            - RSA
+                          type: string
+                        rsaConfig:
+                          description: RSAConfig specifies the configuration of the RSA key to be generated.
+                          properties:
+                            bits:
+                              default: 4096
+                              description: |-
+                                Bit size of the RSA Key to be generated.
+                                Defaults to 4096
+                              type: integer
+                          required:
+                            - bits
+                          type: object
                       type: object
                     stsSessionTokenSpec:
                       properties:
@@ -23811,6 +24060,10 @@ spec:
                     - Webhook
                     - Grafana
                     - Federation
+                    - MFA
+                    - BasicAuth
+                    - SSH
+                    - Neo4j
                   type: string
               required:
                 - generator
@@ -27248,6 +27501,9 @@ spec:
                                             - SendgridAuthorizationToken
                                             - MongoDB
                                             - Federation
+                                            - BasicAuth
+                                            - SSH
+                                            - Neo4j
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -27277,6 +27533,10 @@ spec:
                                         - Webhook
                                         - Grafana
                                         - Federation
+                                        - MFA
+                                        - BasicAuth
+                                        - SSH
+                                        - Neo4j
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -27469,6 +27729,85 @@ spec:
                                           required:
                                             - auth
                                             - registry
+                                          type: object
+                                        basicAuthSpec:
+                                          description: BasicAuthSpec controls the behavior of the basic auth generator.
+                                          properties:
+                                            password:
+                                              description: PasswordSpec controls the behavior of the password generator.
+                                              properties:
+                                                allowRepeat:
+                                                  default: false
+                                                  description: set AllowRepeat to true to allow repeating characters.
+                                                  type: boolean
+                                                digits:
+                                                  description: |-
+                                                    Digits specifies the number of digits in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                                length:
+                                                  default: 24
+                                                  description: |-
+                                                    Length of the password to be generated.
+                                                    Defaults to 24
+                                                  type: integer
+                                                noUpper:
+                                                  default: false
+                                                  description: Set NoUpper to disable uppercase characters
+                                                  type: boolean
+                                                symbolCharacters:
+                                                  description: |-
+                                                    SymbolCharacters specifies the special characters that should be used
+                                                    in the generated password.
+                                                  type: string
+                                                symbols:
+                                                  description: |-
+                                                    Symbols specifies the number of symbol characters in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                              required:
+                                                - allowRepeat
+                                                - length
+                                                - noUpper
+                                              type: object
+                                            username:
+                                              description: UsernameSpec controls the behavior of the username generated.
+                                              properties:
+                                                includeNumbers:
+                                                  default: false
+                                                  description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                                                  type: boolean
+                                                length:
+                                                  default: 8
+                                                  description: |-
+                                                    Length of each word of the username to be generated.
+                                                    Defaults to 8
+                                                  type: integer
+                                                prefix:
+                                                  description: |-
+                                                    Prefix specifies a prefix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                separator:
+                                                  description: |-
+                                                    Separator specifies the separator character that should be used
+                                                    in the generated username. If omitted it defaults to "_"
+                                                  type: string
+                                                sufix:
+                                                  description: |-
+                                                    Sufix specifies a sufix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                wordCount:
+                                                  default: 1
+                                                  description: |-
+                                                    WordCount specifies the number of words in the generated
+                                                    username. If omitted it defaults to 1
+                                                  type: integer
+                                              required:
+                                                - includeNumbers
+                                                - length
+                                              type: object
                                           type: object
                                         ecrAuthorizationTokenSpec:
                                           properties:
@@ -27995,6 +28334,122 @@ spec:
                                           required:
                                             - secret
                                           type: object
+                                        neo4jSpec:
+                                          description: Neo4jSpec controls the behavior of the neo4j generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                basic:
+                                                  description: Basic auth credentials used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    password:
+                                                      description: A basic auth password used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                    username:
+                                                      description: A basic auth username used to authenticate against the Neo4j instance.
+                                                      type: string
+                                                  required:
+                                                    - password
+                                                    - username
+                                                  type: object
+                                                bearer:
+                                                  description: Bearer auth token used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    token:
+                                                      description: A bearer auth token used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                  required:
+                                                    - token
+                                                  type: object
+                                                uri:
+                                                  description: |-
+                                                    URI is the connection URI for the Neo4j database.
+                                                    Example: bolt://neo4j.default.svc.cluster.local:7687
+                                                  type: string
+                                              required:
+                                                - uri
+                                              type: object
+                                            database:
+                                              default: neo4j
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "neo4j" database will be used.
+                                              type: string
+                                            enterprise:
+                                              default: false
+                                              description: If the neo4j instance is running in enterprise mode.
+                                              type: boolean
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                home:
+                                                  description: The home database of the user (Neo4j Enterprise only).
+                                                  type: string
+                                                provider:
+                                                  default: native
+                                                  description: |-
+                                                    The auth provider to be used for the user (Neo4j Enterprise only).
+                                                    Currently only "native" is supported.
+                                                    "native" provider is used for Neo4j Community
+                                                  enum:
+                                                    - native
+                                                  type: string
+                                                randomSufix:
+                                                  default: false
+                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    The roles to be assigned to the user (Neo4j Enterprise only).
+                                                    See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                                    for a list of built-in roles.
+                                                    If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                                    If empty, the user will be created with no role.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                user:
+                                                  description: |-
+                                                    The name of the user to be created.
+                                                    Must not contain a dash ("-") character.
+                                                  pattern: ^[^-\s]+$
+                                                  type: string
+                                              required:
+                                                - provider
+                                                - roles
+                                                - user
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                          type: object
                                         passwordSpec:
                                           description: PasswordSpec controls the behavior of the password generator.
                                           properties:
@@ -28071,6 +28526,30 @@ spec:
                                           required:
                                             - robotAccount
                                             - serviceAccountRef
+                                          type: object
+                                        sshSpec:
+                                          description: SSHSpec controls the behavior of the password generator.
+                                          properties:
+                                            keyType:
+                                              default: RSA
+                                              description: |-
+                                                KeyType specifies the SSH key type to be generated.
+                                                Currently only RSA is supported.
+                                              enum:
+                                                - RSA
+                                              type: string
+                                            rsaConfig:
+                                              description: RSAConfig specifies the configuration of the RSA key to be generated.
+                                              properties:
+                                                bits:
+                                                  default: 4096
+                                                  description: |-
+                                                    Bit size of the RSA Key to be generated.
+                                                    Defaults to 4096
+                                                  type: integer
+                                              required:
+                                                - bits
+                                              type: object
                                           type: object
                                         stsSessionTokenSpec:
                                           properties:
@@ -29348,6 +29827,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -29538,6 +30020,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -29606,6 +30091,9 @@ spec:
                                                 - SendgridAuthorizationToken
                                                 - MongoDB
                                                 - Federation
+                                                - BasicAuth
+                                                - SSH
+                                                - Neo4j
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -29778,6 +30266,9 @@ spec:
                                             - SendgridAuthorizationToken
                                             - MongoDB
                                             - Federation
+                                            - BasicAuth
+                                            - SSH
+                                            - Neo4j
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -29807,6 +30298,10 @@ spec:
                                         - Webhook
                                         - Grafana
                                         - Federation
+                                        - MFA
+                                        - BasicAuth
+                                        - SSH
+                                        - Neo4j
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -29999,6 +30494,85 @@ spec:
                                           required:
                                             - auth
                                             - registry
+                                          type: object
+                                        basicAuthSpec:
+                                          description: BasicAuthSpec controls the behavior of the basic auth generator.
+                                          properties:
+                                            password:
+                                              description: PasswordSpec controls the behavior of the password generator.
+                                              properties:
+                                                allowRepeat:
+                                                  default: false
+                                                  description: set AllowRepeat to true to allow repeating characters.
+                                                  type: boolean
+                                                digits:
+                                                  description: |-
+                                                    Digits specifies the number of digits in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                                length:
+                                                  default: 24
+                                                  description: |-
+                                                    Length of the password to be generated.
+                                                    Defaults to 24
+                                                  type: integer
+                                                noUpper:
+                                                  default: false
+                                                  description: Set NoUpper to disable uppercase characters
+                                                  type: boolean
+                                                symbolCharacters:
+                                                  description: |-
+                                                    SymbolCharacters specifies the special characters that should be used
+                                                    in the generated password.
+                                                  type: string
+                                                symbols:
+                                                  description: |-
+                                                    Symbols specifies the number of symbol characters in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                              required:
+                                                - allowRepeat
+                                                - length
+                                                - noUpper
+                                              type: object
+                                            username:
+                                              description: UsernameSpec controls the behavior of the username generated.
+                                              properties:
+                                                includeNumbers:
+                                                  default: false
+                                                  description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                                                  type: boolean
+                                                length:
+                                                  default: 8
+                                                  description: |-
+                                                    Length of each word of the username to be generated.
+                                                    Defaults to 8
+                                                  type: integer
+                                                prefix:
+                                                  description: |-
+                                                    Prefix specifies a prefix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                separator:
+                                                  description: |-
+                                                    Separator specifies the separator character that should be used
+                                                    in the generated username. If omitted it defaults to "_"
+                                                  type: string
+                                                sufix:
+                                                  description: |-
+                                                    Sufix specifies a sufix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                wordCount:
+                                                  default: 1
+                                                  description: |-
+                                                    WordCount specifies the number of words in the generated
+                                                    username. If omitted it defaults to 1
+                                                  type: integer
+                                              required:
+                                                - includeNumbers
+                                                - length
+                                              type: object
                                           type: object
                                         ecrAuthorizationTokenSpec:
                                           properties:
@@ -30525,6 +31099,122 @@ spec:
                                           required:
                                             - secret
                                           type: object
+                                        neo4jSpec:
+                                          description: Neo4jSpec controls the behavior of the neo4j generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                basic:
+                                                  description: Basic auth credentials used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    password:
+                                                      description: A basic auth password used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                    username:
+                                                      description: A basic auth username used to authenticate against the Neo4j instance.
+                                                      type: string
+                                                  required:
+                                                    - password
+                                                    - username
+                                                  type: object
+                                                bearer:
+                                                  description: Bearer auth token used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    token:
+                                                      description: A bearer auth token used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                  required:
+                                                    - token
+                                                  type: object
+                                                uri:
+                                                  description: |-
+                                                    URI is the connection URI for the Neo4j database.
+                                                    Example: bolt://neo4j.default.svc.cluster.local:7687
+                                                  type: string
+                                              required:
+                                                - uri
+                                              type: object
+                                            database:
+                                              default: neo4j
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "neo4j" database will be used.
+                                              type: string
+                                            enterprise:
+                                              default: false
+                                              description: If the neo4j instance is running in enterprise mode.
+                                              type: boolean
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                home:
+                                                  description: The home database of the user (Neo4j Enterprise only).
+                                                  type: string
+                                                provider:
+                                                  default: native
+                                                  description: |-
+                                                    The auth provider to be used for the user (Neo4j Enterprise only).
+                                                    Currently only "native" is supported.
+                                                    "native" provider is used for Neo4j Community
+                                                  enum:
+                                                    - native
+                                                  type: string
+                                                randomSufix:
+                                                  default: false
+                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    The roles to be assigned to the user (Neo4j Enterprise only).
+                                                    See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                                    for a list of built-in roles.
+                                                    If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                                    If empty, the user will be created with no role.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                user:
+                                                  description: |-
+                                                    The name of the user to be created.
+                                                    Must not contain a dash ("-") character.
+                                                  pattern: ^[^-\s]+$
+                                                  type: string
+                                              required:
+                                                - provider
+                                                - roles
+                                                - user
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                          type: object
                                         passwordSpec:
                                           description: PasswordSpec controls the behavior of the password generator.
                                           properties:
@@ -30601,6 +31291,30 @@ spec:
                                           required:
                                             - robotAccount
                                             - serviceAccountRef
+                                          type: object
+                                        sshSpec:
+                                          description: SSHSpec controls the behavior of the password generator.
+                                          properties:
+                                            keyType:
+                                              default: RSA
+                                              description: |-
+                                                KeyType specifies the SSH key type to be generated.
+                                                Currently only RSA is supported.
+                                              enum:
+                                                - RSA
+                                              type: string
+                                            rsaConfig:
+                                              description: RSAConfig specifies the configuration of the RSA key to be generated.
+                                              properties:
+                                                bits:
+                                                  default: 4096
+                                                  description: |-
+                                                    Bit size of the RSA Key to be generated.
+                                                    Defaults to 4096
+                                                  type: integer
+                                              required:
+                                                - bits
+                                              type: object
                                           type: object
                                         stsSessionTokenSpec:
                                           properties:
@@ -31878,6 +32592,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -32068,6 +32785,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -32136,6 +32856,9 @@ spec:
                                                 - SendgridAuthorizationToken
                                                 - MongoDB
                                                 - Federation
+                                                - BasicAuth
+                                                - SSH
+                                                - Neo4j
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -32317,6 +33040,9 @@ spec:
                                                   - SendgridAuthorizationToken
                                                   - MongoDB
                                                   - Federation
+                                                  - BasicAuth
+                                                  - SSH
+                                                  - Neo4j
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -32346,6 +33072,10 @@ spec:
                                               - Webhook
                                               - Grafana
                                               - Federation
+                                              - MFA
+                                              - BasicAuth
+                                              - SSH
+                                              - Neo4j
                                             type: string
                                           rewrite:
                                             description: Rewrite contains rules for rewriting the generated keys.
@@ -32538,6 +33268,85 @@ spec:
                                                 required:
                                                   - auth
                                                   - registry
+                                                type: object
+                                              basicAuthSpec:
+                                                description: BasicAuthSpec controls the behavior of the basic auth generator.
+                                                properties:
+                                                  password:
+                                                    description: PasswordSpec controls the behavior of the password generator.
+                                                    properties:
+                                                      allowRepeat:
+                                                        default: false
+                                                        description: set AllowRepeat to true to allow repeating characters.
+                                                        type: boolean
+                                                      digits:
+                                                        description: |-
+                                                          Digits specifies the number of digits in the generated
+                                                          password. If omitted it defaults to 25% of the length of the password
+                                                        type: integer
+                                                      length:
+                                                        default: 24
+                                                        description: |-
+                                                          Length of the password to be generated.
+                                                          Defaults to 24
+                                                        type: integer
+                                                      noUpper:
+                                                        default: false
+                                                        description: Set NoUpper to disable uppercase characters
+                                                        type: boolean
+                                                      symbolCharacters:
+                                                        description: |-
+                                                          SymbolCharacters specifies the special characters that should be used
+                                                          in the generated password.
+                                                        type: string
+                                                      symbols:
+                                                        description: |-
+                                                          Symbols specifies the number of symbol characters in the generated
+                                                          password. If omitted it defaults to 25% of the length of the password
+                                                        type: integer
+                                                    required:
+                                                      - allowRepeat
+                                                      - length
+                                                      - noUpper
+                                                    type: object
+                                                  username:
+                                                    description: UsernameSpec controls the behavior of the username generated.
+                                                    properties:
+                                                      includeNumbers:
+                                                        default: false
+                                                        description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                                                        type: boolean
+                                                      length:
+                                                        default: 8
+                                                        description: |-
+                                                          Length of each word of the username to be generated.
+                                                          Defaults to 8
+                                                        type: integer
+                                                      prefix:
+                                                        description: |-
+                                                          Prefix specifies a prefix to be added to the generated
+                                                          username. If omitted it defaults to empty
+                                                        type: string
+                                                      separator:
+                                                        description: |-
+                                                          Separator specifies the separator character that should be used
+                                                          in the generated username. If omitted it defaults to "_"
+                                                        type: string
+                                                      sufix:
+                                                        description: |-
+                                                          Sufix specifies a sufix to be added to the generated
+                                                          username. If omitted it defaults to empty
+                                                        type: string
+                                                      wordCount:
+                                                        default: 1
+                                                        description: |-
+                                                          WordCount specifies the number of words in the generated
+                                                          username. If omitted it defaults to 1
+                                                        type: integer
+                                                    required:
+                                                      - includeNumbers
+                                                      - length
+                                                    type: object
                                                 type: object
                                               ecrAuthorizationTokenSpec:
                                                 properties:
@@ -33064,6 +33873,122 @@ spec:
                                                 required:
                                                   - secret
                                                 type: object
+                                              neo4jSpec:
+                                                description: Neo4jSpec controls the behavior of the neo4j generator.
+                                                properties:
+                                                  auth:
+                                                    description: Auth contains the credentials or auth configuration
+                                                    properties:
+                                                      basic:
+                                                        description: Basic auth credentials used to authenticate against the Neo4j instance.
+                                                        properties:
+                                                          password:
+                                                            description: A basic auth password used to authenticate against the Neo4j instance.
+                                                            properties:
+                                                              key:
+                                                                description: The key where the token is found.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[-._a-zA-Z0-9]+$
+                                                                type: string
+                                                              name:
+                                                                description: The name of the Secret resource being referred to.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                            type: object
+                                                          username:
+                                                            description: A basic auth username used to authenticate against the Neo4j instance.
+                                                            type: string
+                                                        required:
+                                                          - password
+                                                          - username
+                                                        type: object
+                                                      bearer:
+                                                        description: Bearer auth token used to authenticate against the Neo4j instance.
+                                                        properties:
+                                                          token:
+                                                            description: A bearer auth token used to authenticate against the Neo4j instance.
+                                                            properties:
+                                                              key:
+                                                                description: The key where the token is found.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[-._a-zA-Z0-9]+$
+                                                                type: string
+                                                              name:
+                                                                description: The name of the Secret resource being referred to.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                            type: object
+                                                        required:
+                                                          - token
+                                                        type: object
+                                                      uri:
+                                                        description: |-
+                                                          URI is the connection URI for the Neo4j database.
+                                                          Example: bolt://neo4j.default.svc.cluster.local:7687
+                                                        type: string
+                                                    required:
+                                                      - uri
+                                                    type: object
+                                                  database:
+                                                    default: neo4j
+                                                    description: |-
+                                                      Database is the name of the database to connect to.
+                                                      If not specified, the "neo4j" database will be used.
+                                                    type: string
+                                                  enterprise:
+                                                    default: false
+                                                    description: If the neo4j instance is running in enterprise mode.
+                                                    type: boolean
+                                                  user:
+                                                    description: User is the data of the user to be created.
+                                                    properties:
+                                                      home:
+                                                        description: The home database of the user (Neo4j Enterprise only).
+                                                        type: string
+                                                      provider:
+                                                        default: native
+                                                        description: |-
+                                                          The auth provider to be used for the user (Neo4j Enterprise only).
+                                                          Currently only "native" is supported.
+                                                          "native" provider is used for Neo4j Community
+                                                        enum:
+                                                          - native
+                                                        type: string
+                                                      randomSufix:
+                                                        default: false
+                                                        description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                                                        type: boolean
+                                                      roles:
+                                                        description: |-
+                                                          The roles to be assigned to the user (Neo4j Enterprise only).
+                                                          See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                                          for a list of built-in roles.
+                                                          If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                                          If empty, the user will be created with no role.
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                      user:
+                                                        description: |-
+                                                          The name of the user to be created.
+                                                          Must not contain a dash ("-") character.
+                                                        pattern: ^[^-\s]+$
+                                                        type: string
+                                                    required:
+                                                      - provider
+                                                      - roles
+                                                      - user
+                                                    type: object
+                                                required:
+                                                  - auth
+                                                  - database
+                                                type: object
                                               passwordSpec:
                                                 description: PasswordSpec controls the behavior of the password generator.
                                                 properties:
@@ -33140,6 +34065,30 @@ spec:
                                                 required:
                                                   - robotAccount
                                                   - serviceAccountRef
+                                                type: object
+                                              sshSpec:
+                                                description: SSHSpec controls the behavior of the password generator.
+                                                properties:
+                                                  keyType:
+                                                    default: RSA
+                                                    description: |-
+                                                      KeyType specifies the SSH key type to be generated.
+                                                      Currently only RSA is supported.
+                                                    enum:
+                                                      - RSA
+                                                    type: string
+                                                  rsaConfig:
+                                                    description: RSAConfig specifies the configuration of the RSA key to be generated.
+                                                    properties:
+                                                      bits:
+                                                        default: 4096
+                                                        description: |-
+                                                          Bit size of the RSA Key to be generated.
+                                                          Defaults to 4096
+                                                        type: integer
+                                                    required:
+                                                      - bits
+                                                    type: object
                                                 type: object
                                               stsSessionTokenSpec:
                                                 properties:
@@ -34417,6 +35366,9 @@ spec:
                                                             - SendgridAuthorizationToken
                                                             - MongoDB
                                                             - Federation
+                                                            - BasicAuth
+                                                            - SSH
+                                                            - Neo4j
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -34607,6 +35559,9 @@ spec:
                                                             - SendgridAuthorizationToken
                                                             - MongoDB
                                                             - Federation
+                                                            - BasicAuth
+                                                            - SSH
+                                                            - Neo4j
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -34675,6 +35630,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -35064,6 +36022,9 @@ spec:
                                             - SendgridAuthorizationToken
                                             - MongoDB
                                             - Federation
+                                            - BasicAuth
+                                            - SSH
+                                            - Neo4j
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -35093,6 +36054,10 @@ spec:
                                         - Webhook
                                         - Grafana
                                         - Federation
+                                        - MFA
+                                        - BasicAuth
+                                        - SSH
+                                        - Neo4j
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -35285,6 +36250,85 @@ spec:
                                           required:
                                             - auth
                                             - registry
+                                          type: object
+                                        basicAuthSpec:
+                                          description: BasicAuthSpec controls the behavior of the basic auth generator.
+                                          properties:
+                                            password:
+                                              description: PasswordSpec controls the behavior of the password generator.
+                                              properties:
+                                                allowRepeat:
+                                                  default: false
+                                                  description: set AllowRepeat to true to allow repeating characters.
+                                                  type: boolean
+                                                digits:
+                                                  description: |-
+                                                    Digits specifies the number of digits in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                                length:
+                                                  default: 24
+                                                  description: |-
+                                                    Length of the password to be generated.
+                                                    Defaults to 24
+                                                  type: integer
+                                                noUpper:
+                                                  default: false
+                                                  description: Set NoUpper to disable uppercase characters
+                                                  type: boolean
+                                                symbolCharacters:
+                                                  description: |-
+                                                    SymbolCharacters specifies the special characters that should be used
+                                                    in the generated password.
+                                                  type: string
+                                                symbols:
+                                                  description: |-
+                                                    Symbols specifies the number of symbol characters in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                              required:
+                                                - allowRepeat
+                                                - length
+                                                - noUpper
+                                              type: object
+                                            username:
+                                              description: UsernameSpec controls the behavior of the username generated.
+                                              properties:
+                                                includeNumbers:
+                                                  default: false
+                                                  description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                                                  type: boolean
+                                                length:
+                                                  default: 8
+                                                  description: |-
+                                                    Length of each word of the username to be generated.
+                                                    Defaults to 8
+                                                  type: integer
+                                                prefix:
+                                                  description: |-
+                                                    Prefix specifies a prefix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                separator:
+                                                  description: |-
+                                                    Separator specifies the separator character that should be used
+                                                    in the generated username. If omitted it defaults to "_"
+                                                  type: string
+                                                sufix:
+                                                  description: |-
+                                                    Sufix specifies a sufix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                wordCount:
+                                                  default: 1
+                                                  description: |-
+                                                    WordCount specifies the number of words in the generated
+                                                    username. If omitted it defaults to 1
+                                                  type: integer
+                                              required:
+                                                - includeNumbers
+                                                - length
+                                              type: object
                                           type: object
                                         ecrAuthorizationTokenSpec:
                                           properties:
@@ -35811,6 +36855,122 @@ spec:
                                           required:
                                             - secret
                                           type: object
+                                        neo4jSpec:
+                                          description: Neo4jSpec controls the behavior of the neo4j generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                basic:
+                                                  description: Basic auth credentials used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    password:
+                                                      description: A basic auth password used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                    username:
+                                                      description: A basic auth username used to authenticate against the Neo4j instance.
+                                                      type: string
+                                                  required:
+                                                    - password
+                                                    - username
+                                                  type: object
+                                                bearer:
+                                                  description: Bearer auth token used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    token:
+                                                      description: A bearer auth token used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                  required:
+                                                    - token
+                                                  type: object
+                                                uri:
+                                                  description: |-
+                                                    URI is the connection URI for the Neo4j database.
+                                                    Example: bolt://neo4j.default.svc.cluster.local:7687
+                                                  type: string
+                                              required:
+                                                - uri
+                                              type: object
+                                            database:
+                                              default: neo4j
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "neo4j" database will be used.
+                                              type: string
+                                            enterprise:
+                                              default: false
+                                              description: If the neo4j instance is running in enterprise mode.
+                                              type: boolean
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                home:
+                                                  description: The home database of the user (Neo4j Enterprise only).
+                                                  type: string
+                                                provider:
+                                                  default: native
+                                                  description: |-
+                                                    The auth provider to be used for the user (Neo4j Enterprise only).
+                                                    Currently only "native" is supported.
+                                                    "native" provider is used for Neo4j Community
+                                                  enum:
+                                                    - native
+                                                  type: string
+                                                randomSufix:
+                                                  default: false
+                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    The roles to be assigned to the user (Neo4j Enterprise only).
+                                                    See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                                    for a list of built-in roles.
+                                                    If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                                    If empty, the user will be created with no role.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                user:
+                                                  description: |-
+                                                    The name of the user to be created.
+                                                    Must not contain a dash ("-") character.
+                                                  pattern: ^[^-\s]+$
+                                                  type: string
+                                              required:
+                                                - provider
+                                                - roles
+                                                - user
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                          type: object
                                         passwordSpec:
                                           description: PasswordSpec controls the behavior of the password generator.
                                           properties:
@@ -35887,6 +37047,30 @@ spec:
                                           required:
                                             - robotAccount
                                             - serviceAccountRef
+                                          type: object
+                                        sshSpec:
+                                          description: SSHSpec controls the behavior of the password generator.
+                                          properties:
+                                            keyType:
+                                              default: RSA
+                                              description: |-
+                                                KeyType specifies the SSH key type to be generated.
+                                                Currently only RSA is supported.
+                                              enum:
+                                                - RSA
+                                              type: string
+                                            rsaConfig:
+                                              description: RSAConfig specifies the configuration of the RSA key to be generated.
+                                              properties:
+                                                bits:
+                                                  default: 4096
+                                                  description: |-
+                                                    Bit size of the RSA Key to be generated.
+                                                    Defaults to 4096
+                                                  type: integer
+                                              required:
+                                                - bits
+                                              type: object
                                           type: object
                                         stsSessionTokenSpec:
                                           properties:
@@ -37164,6 +38348,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -37354,6 +38541,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -37422,6 +38612,9 @@ spec:
                                                 - SendgridAuthorizationToken
                                                 - MongoDB
                                                 - Federation
+                                                - BasicAuth
+                                                - SSH
+                                                - Neo4j
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -37594,6 +38787,9 @@ spec:
                                             - SendgridAuthorizationToken
                                             - MongoDB
                                             - Federation
+                                            - BasicAuth
+                                            - SSH
+                                            - Neo4j
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -37623,6 +38819,10 @@ spec:
                                         - Webhook
                                         - Grafana
                                         - Federation
+                                        - MFA
+                                        - BasicAuth
+                                        - SSH
+                                        - Neo4j
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -37815,6 +39015,85 @@ spec:
                                           required:
                                             - auth
                                             - registry
+                                          type: object
+                                        basicAuthSpec:
+                                          description: BasicAuthSpec controls the behavior of the basic auth generator.
+                                          properties:
+                                            password:
+                                              description: PasswordSpec controls the behavior of the password generator.
+                                              properties:
+                                                allowRepeat:
+                                                  default: false
+                                                  description: set AllowRepeat to true to allow repeating characters.
+                                                  type: boolean
+                                                digits:
+                                                  description: |-
+                                                    Digits specifies the number of digits in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                                length:
+                                                  default: 24
+                                                  description: |-
+                                                    Length of the password to be generated.
+                                                    Defaults to 24
+                                                  type: integer
+                                                noUpper:
+                                                  default: false
+                                                  description: Set NoUpper to disable uppercase characters
+                                                  type: boolean
+                                                symbolCharacters:
+                                                  description: |-
+                                                    SymbolCharacters specifies the special characters that should be used
+                                                    in the generated password.
+                                                  type: string
+                                                symbols:
+                                                  description: |-
+                                                    Symbols specifies the number of symbol characters in the generated
+                                                    password. If omitted it defaults to 25% of the length of the password
+                                                  type: integer
+                                              required:
+                                                - allowRepeat
+                                                - length
+                                                - noUpper
+                                              type: object
+                                            username:
+                                              description: UsernameSpec controls the behavior of the username generated.
+                                              properties:
+                                                includeNumbers:
+                                                  default: false
+                                                  description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                                                  type: boolean
+                                                length:
+                                                  default: 8
+                                                  description: |-
+                                                    Length of each word of the username to be generated.
+                                                    Defaults to 8
+                                                  type: integer
+                                                prefix:
+                                                  description: |-
+                                                    Prefix specifies a prefix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                separator:
+                                                  description: |-
+                                                    Separator specifies the separator character that should be used
+                                                    in the generated username. If omitted it defaults to "_"
+                                                  type: string
+                                                sufix:
+                                                  description: |-
+                                                    Sufix specifies a sufix to be added to the generated
+                                                    username. If omitted it defaults to empty
+                                                  type: string
+                                                wordCount:
+                                                  default: 1
+                                                  description: |-
+                                                    WordCount specifies the number of words in the generated
+                                                    username. If omitted it defaults to 1
+                                                  type: integer
+                                              required:
+                                                - includeNumbers
+                                                - length
+                                              type: object
                                           type: object
                                         ecrAuthorizationTokenSpec:
                                           properties:
@@ -38341,6 +39620,122 @@ spec:
                                           required:
                                             - secret
                                           type: object
+                                        neo4jSpec:
+                                          description: Neo4jSpec controls the behavior of the neo4j generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                basic:
+                                                  description: Basic auth credentials used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    password:
+                                                      description: A basic auth password used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                    username:
+                                                      description: A basic auth username used to authenticate against the Neo4j instance.
+                                                      type: string
+                                                  required:
+                                                    - password
+                                                    - username
+                                                  type: object
+                                                bearer:
+                                                  description: Bearer auth token used to authenticate against the Neo4j instance.
+                                                  properties:
+                                                    token:
+                                                      description: A bearer auth token used to authenticate against the Neo4j instance.
+                                                      properties:
+                                                        key:
+                                                          description: The key where the token is found.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[-._a-zA-Z0-9]+$
+                                                          type: string
+                                                        name:
+                                                          description: The name of the Secret resource being referred to.
+                                                          maxLength: 253
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                      type: object
+                                                  required:
+                                                    - token
+                                                  type: object
+                                                uri:
+                                                  description: |-
+                                                    URI is the connection URI for the Neo4j database.
+                                                    Example: bolt://neo4j.default.svc.cluster.local:7687
+                                                  type: string
+                                              required:
+                                                - uri
+                                              type: object
+                                            database:
+                                              default: neo4j
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "neo4j" database will be used.
+                                              type: string
+                                            enterprise:
+                                              default: false
+                                              description: If the neo4j instance is running in enterprise mode.
+                                              type: boolean
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                home:
+                                                  description: The home database of the user (Neo4j Enterprise only).
+                                                  type: string
+                                                provider:
+                                                  default: native
+                                                  description: |-
+                                                    The auth provider to be used for the user (Neo4j Enterprise only).
+                                                    Currently only "native" is supported.
+                                                    "native" provider is used for Neo4j Community
+                                                  enum:
+                                                    - native
+                                                  type: string
+                                                randomSufix:
+                                                  default: false
+                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    The roles to be assigned to the user (Neo4j Enterprise only).
+                                                    See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                                    for a list of built-in roles.
+                                                    If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                                    If empty, the user will be created with no role.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                user:
+                                                  description: |-
+                                                    The name of the user to be created.
+                                                    Must not contain a dash ("-") character.
+                                                  pattern: ^[^-\s]+$
+                                                  type: string
+                                              required:
+                                                - provider
+                                                - roles
+                                                - user
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                          type: object
                                         passwordSpec:
                                           description: PasswordSpec controls the behavior of the password generator.
                                           properties:
@@ -38417,6 +39812,30 @@ spec:
                                           required:
                                             - robotAccount
                                             - serviceAccountRef
+                                          type: object
+                                        sshSpec:
+                                          description: SSHSpec controls the behavior of the password generator.
+                                          properties:
+                                            keyType:
+                                              default: RSA
+                                              description: |-
+                                                KeyType specifies the SSH key type to be generated.
+                                                Currently only RSA is supported.
+                                              enum:
+                                                - RSA
+                                              type: string
+                                            rsaConfig:
+                                              description: RSAConfig specifies the configuration of the RSA key to be generated.
+                                              properties:
+                                                bits:
+                                                  default: 4096
+                                                  description: |-
+                                                    Bit size of the RSA Key to be generated.
+                                                    Defaults to 4096
+                                                  type: integer
+                                              required:
+                                                - bits
+                                              type: object
                                           type: object
                                         stsSessionTokenSpec:
                                           properties:
@@ -39694,6 +41113,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -39884,6 +41306,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -39952,6 +41377,9 @@ spec:
                                                 - SendgridAuthorizationToken
                                                 - MongoDB
                                                 - Federation
+                                                - BasicAuth
+                                                - SSH
+                                                - Neo4j
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -40133,6 +41561,9 @@ spec:
                                                   - SendgridAuthorizationToken
                                                   - MongoDB
                                                   - Federation
+                                                  - BasicAuth
+                                                  - SSH
+                                                  - Neo4j
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -40162,6 +41593,10 @@ spec:
                                               - Webhook
                                               - Grafana
                                               - Federation
+                                              - MFA
+                                              - BasicAuth
+                                              - SSH
+                                              - Neo4j
                                             type: string
                                           rewrite:
                                             description: Rewrite contains rules for rewriting the generated keys.
@@ -40354,6 +41789,85 @@ spec:
                                                 required:
                                                   - auth
                                                   - registry
+                                                type: object
+                                              basicAuthSpec:
+                                                description: BasicAuthSpec controls the behavior of the basic auth generator.
+                                                properties:
+                                                  password:
+                                                    description: PasswordSpec controls the behavior of the password generator.
+                                                    properties:
+                                                      allowRepeat:
+                                                        default: false
+                                                        description: set AllowRepeat to true to allow repeating characters.
+                                                        type: boolean
+                                                      digits:
+                                                        description: |-
+                                                          Digits specifies the number of digits in the generated
+                                                          password. If omitted it defaults to 25% of the length of the password
+                                                        type: integer
+                                                      length:
+                                                        default: 24
+                                                        description: |-
+                                                          Length of the password to be generated.
+                                                          Defaults to 24
+                                                        type: integer
+                                                      noUpper:
+                                                        default: false
+                                                        description: Set NoUpper to disable uppercase characters
+                                                        type: boolean
+                                                      symbolCharacters:
+                                                        description: |-
+                                                          SymbolCharacters specifies the special characters that should be used
+                                                          in the generated password.
+                                                        type: string
+                                                      symbols:
+                                                        description: |-
+                                                          Symbols specifies the number of symbol characters in the generated
+                                                          password. If omitted it defaults to 25% of the length of the password
+                                                        type: integer
+                                                    required:
+                                                      - allowRepeat
+                                                      - length
+                                                      - noUpper
+                                                    type: object
+                                                  username:
+                                                    description: UsernameSpec controls the behavior of the username generated.
+                                                    properties:
+                                                      includeNumbers:
+                                                        default: false
+                                                        description: set IncludeNumbers to add 4 numbers at the end of the username after the sufix.
+                                                        type: boolean
+                                                      length:
+                                                        default: 8
+                                                        description: |-
+                                                          Length of each word of the username to be generated.
+                                                          Defaults to 8
+                                                        type: integer
+                                                      prefix:
+                                                        description: |-
+                                                          Prefix specifies a prefix to be added to the generated
+                                                          username. If omitted it defaults to empty
+                                                        type: string
+                                                      separator:
+                                                        description: |-
+                                                          Separator specifies the separator character that should be used
+                                                          in the generated username. If omitted it defaults to "_"
+                                                        type: string
+                                                      sufix:
+                                                        description: |-
+                                                          Sufix specifies a sufix to be added to the generated
+                                                          username. If omitted it defaults to empty
+                                                        type: string
+                                                      wordCount:
+                                                        default: 1
+                                                        description: |-
+                                                          WordCount specifies the number of words in the generated
+                                                          username. If omitted it defaults to 1
+                                                        type: integer
+                                                    required:
+                                                      - includeNumbers
+                                                      - length
+                                                    type: object
                                                 type: object
                                               ecrAuthorizationTokenSpec:
                                                 properties:
@@ -40880,6 +42394,122 @@ spec:
                                                 required:
                                                   - secret
                                                 type: object
+                                              neo4jSpec:
+                                                description: Neo4jSpec controls the behavior of the neo4j generator.
+                                                properties:
+                                                  auth:
+                                                    description: Auth contains the credentials or auth configuration
+                                                    properties:
+                                                      basic:
+                                                        description: Basic auth credentials used to authenticate against the Neo4j instance.
+                                                        properties:
+                                                          password:
+                                                            description: A basic auth password used to authenticate against the Neo4j instance.
+                                                            properties:
+                                                              key:
+                                                                description: The key where the token is found.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[-._a-zA-Z0-9]+$
+                                                                type: string
+                                                              name:
+                                                                description: The name of the Secret resource being referred to.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                            type: object
+                                                          username:
+                                                            description: A basic auth username used to authenticate against the Neo4j instance.
+                                                            type: string
+                                                        required:
+                                                          - password
+                                                          - username
+                                                        type: object
+                                                      bearer:
+                                                        description: Bearer auth token used to authenticate against the Neo4j instance.
+                                                        properties:
+                                                          token:
+                                                            description: A bearer auth token used to authenticate against the Neo4j instance.
+                                                            properties:
+                                                              key:
+                                                                description: The key where the token is found.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[-._a-zA-Z0-9]+$
+                                                                type: string
+                                                              name:
+                                                                description: The name of the Secret resource being referred to.
+                                                                maxLength: 253
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                            type: object
+                                                        required:
+                                                          - token
+                                                        type: object
+                                                      uri:
+                                                        description: |-
+                                                          URI is the connection URI for the Neo4j database.
+                                                          Example: bolt://neo4j.default.svc.cluster.local:7687
+                                                        type: string
+                                                    required:
+                                                      - uri
+                                                    type: object
+                                                  database:
+                                                    default: neo4j
+                                                    description: |-
+                                                      Database is the name of the database to connect to.
+                                                      If not specified, the "neo4j" database will be used.
+                                                    type: string
+                                                  enterprise:
+                                                    default: false
+                                                    description: If the neo4j instance is running in enterprise mode.
+                                                    type: boolean
+                                                  user:
+                                                    description: User is the data of the user to be created.
+                                                    properties:
+                                                      home:
+                                                        description: The home database of the user (Neo4j Enterprise only).
+                                                        type: string
+                                                      provider:
+                                                        default: native
+                                                        description: |-
+                                                          The auth provider to be used for the user (Neo4j Enterprise only).
+                                                          Currently only "native" is supported.
+                                                          "native" provider is used for Neo4j Community
+                                                        enum:
+                                                          - native
+                                                        type: string
+                                                      randomSufix:
+                                                        default: false
+                                                        description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
+                                                        type: boolean
+                                                      roles:
+                                                        description: |-
+                                                          The roles to be assigned to the user (Neo4j Enterprise only).
+                                                          See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
+                                                          for a list of built-in roles.
+                                                          If contains non-existing roles, they will be created as copy of "PUBLIC" role.
+                                                          If empty, the user will be created with no role.
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                      user:
+                                                        description: |-
+                                                          The name of the user to be created.
+                                                          Must not contain a dash ("-") character.
+                                                        pattern: ^[^-\s]+$
+                                                        type: string
+                                                    required:
+                                                      - provider
+                                                      - roles
+                                                      - user
+                                                    type: object
+                                                required:
+                                                  - auth
+                                                  - database
+                                                type: object
                                               passwordSpec:
                                                 description: PasswordSpec controls the behavior of the password generator.
                                                 properties:
@@ -40956,6 +42586,30 @@ spec:
                                                 required:
                                                   - robotAccount
                                                   - serviceAccountRef
+                                                type: object
+                                              sshSpec:
+                                                description: SSHSpec controls the behavior of the password generator.
+                                                properties:
+                                                  keyType:
+                                                    default: RSA
+                                                    description: |-
+                                                      KeyType specifies the SSH key type to be generated.
+                                                      Currently only RSA is supported.
+                                                    enum:
+                                                      - RSA
+                                                    type: string
+                                                  rsaConfig:
+                                                    description: RSAConfig specifies the configuration of the RSA key to be generated.
+                                                    properties:
+                                                      bits:
+                                                        default: 4096
+                                                        description: |-
+                                                          Bit size of the RSA Key to be generated.
+                                                          Defaults to 4096
+                                                        type: integer
+                                                    required:
+                                                      - bits
+                                                    type: object
                                                 type: object
                                               stsSessionTokenSpec:
                                                 properties:
@@ -42233,6 +43887,9 @@ spec:
                                                             - SendgridAuthorizationToken
                                                             - MongoDB
                                                             - Federation
+                                                            - BasicAuth
+                                                            - SSH
+                                                            - Neo4j
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -42423,6 +44080,9 @@ spec:
                                                             - SendgridAuthorizationToken
                                                             - MongoDB
                                                             - Federation
+                                                            - BasicAuth
+                                                            - SSH
+                                                            - Neo4j
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -42491,6 +44151,9 @@ spec:
                                                       - SendgridAuthorizationToken
                                                       - MongoDB
                                                       - Federation
+                                                      - BasicAuth
+                                                      - SSH
+                                                      - Neo4j
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource

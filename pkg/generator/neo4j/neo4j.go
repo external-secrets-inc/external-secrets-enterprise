@@ -197,7 +197,7 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 	query.WriteString(fmt.Sprintf("SET AUTH '%s' {\n", authProvider))
 
 	if authProvider == genv1alpha1.Neo4jAuthProviderNative {
-		symbols := defaultPasswordSymbols // "~!@#$%^&*()_+`-={}|[]:<>?,./"
+		symbols := defaultPasswordSymbols
 		pass, err := generatePassword(genv1alpha1.Password{
 			Spec: genv1alpha1.PasswordSpec{
 				SymbolCharacters: &symbols,
