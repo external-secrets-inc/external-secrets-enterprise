@@ -37,6 +37,7 @@ const (
 	errFetchSecretRef  = "could not fetch secret ref: %w"
 	errFederationCall  = "failed to call federation server: %w"
 	errInvalidResponse = "invalid response from federation server: %w"
+	errCreateRequest   = "failed to create request: %w"
 )
 
 // Generator implements the generator interface for federation.
@@ -53,16 +54,12 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf(errParseSpec, err)
 	}
 
-	// Get federation server URL
-	serverURL := spec.Spec.Server.URL
-
-	// Get auth token
+	// Get auth token from k8s secret
 	authToken, err := getFromSecretRef(ctx, spec.Spec.Auth.TokenSecretRef, "", kube, namespace)
 	if err != nil {
 		return nil, nil, fmt.Errorf(errFetchSecretRef, err)
 	}
 
-	// Get CA certificate if provided
 	var caCert string
 	if spec.Spec.Auth.CACertSecretRef != nil {
 		caCert, err = getFromSecretRef(ctx, spec.Spec.Auth.CACertSecretRef, "", kube, namespace)
@@ -71,61 +68,34 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		}
 	}
 
-	// Build URL for the federation server's generator endpoint
-	url := fmt.Sprintf("%s/generators/%s/%s/%s",
-		serverURL,
-		spec.Spec.Generator.Namespace,
-		spec.Spec.Generator.Kind,
-		spec.Spec.Generator.Name)
+	url := buildFederationURL(spec)
 
-	// Create payload with CA certificate if provided
 	payload := map[string]string{}
 	if caCert != "" {
 		payload["ca.crt"] = caCert
 	}
 
-	// Marshal payload to JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payloadBytes))
+	// Make the HTTP request
+	resp, err := makeHTTPRequest(ctx, "POST", url, authToken, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, nil, err
 	}
+	defer closeResponseBody(resp)
 
-	// Add headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
-
-	// Send request
-	c := &http.Client{}
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf(errFederationCall, err)
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Log the error since we can't return it from a defer
-			fmt.Printf("Error closing response body: %v\n", closeErr)
-		}
-	}()
-
-	// Check response status
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, nil, fmt.Errorf("federation server returned non-OK status: %d, body: %s", resp.StatusCode, string(bodyBytes))
+		return nil, nil, handleErrorResponse(resp)
 	}
 
-	// Parse response
 	var result map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, nil, fmt.Errorf(errInvalidResponse, err)
 	}
 
-	// Convert string map to byte map
 	byteMap := make(map[string][]byte)
 	for k, v := range result {
 		byteMap[k] = []byte(v)
@@ -136,7 +106,32 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 
 // Cleanup implements the Generator interface.
 func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kclient client.Client, namespace string) error {
-	// No cleanup needed for federation generator
+	if jsonSpec == nil {
+		return errors.New(errNoSpec)
+	}
+
+	spec, err := parseSpec(jsonSpec.Raw)
+	if err != nil {
+		return fmt.Errorf(errParseSpec, err)
+	}
+
+	authToken, err := getFromSecretRef(ctx, spec.Spec.Auth.TokenSecretRef, "", kclient, namespace)
+	if err != nil {
+		return fmt.Errorf(errFetchSecretRef, err)
+	}
+
+	url := buildFederationURL(spec)
+
+	resp, err := makeHTTPRequest(ctx, "DELETE", url, authToken, nil)
+	if err != nil {
+		return err
+	}
+	defer closeResponseBody(resp)
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return handleErrorResponse(resp)
+	}
+
 	return nil
 }
 
@@ -158,6 +153,51 @@ func getFromSecretRef(ctx context.Context, keySelector *esmeta.SecretKeySelector
 	}
 
 	return value, err
+}
+
+// buildFederationURL constructs the URL for the federation server endpoint.
+func buildFederationURL(spec *genv1alpha1.Federation) string {
+	return fmt.Sprintf("%s/generators/%s/%s/%s",
+		spec.Spec.Server.URL,
+		spec.Spec.Generator.Namespace,
+		spec.Spec.Generator.Kind,
+		spec.Spec.Generator.Name)
+}
+
+// makeHTTPRequest creates and sends an HTTP request to the federation server.
+func makeHTTPRequest(ctx context.Context, method, url, authToken string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, fmt.Errorf(errCreateRequest, err)
+	}
+
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authToken))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf(errFederationCall, err)
+	}
+
+	return resp, nil
+}
+
+// closeResponseBody safely closes the response body.
+func closeResponseBody(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			fmt.Printf("Error closing response body: %v\n", closeErr)
+		}
+	}
+}
+
+// handleErrorResponse reads the response body and creates an appropriate error message.
+func handleErrorResponse(resp *http.Response) error {
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("federation server returned non-OK status: %d, body: %s", resp.StatusCode, string(bodyBytes))
 }
 
 func init() {

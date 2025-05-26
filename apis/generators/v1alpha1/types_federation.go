@@ -27,7 +27,7 @@ type FederationSpec struct {
 	Generator FederationGeneratorRef `json:"generator"`
 
 	// Auth specifies the authentication configuration
-	Auth FederationAuth `json:"auth"`
+	Auth FederationAuthKubernetes `json:"auth"`
 }
 
 // FederationServer defines the federation server configuration.
@@ -48,8 +48,8 @@ type FederationGeneratorRef struct {
 	Name string `json:"name"`
 }
 
-// FederationAuth defines the authentication configuration.
-type FederationAuth struct {
+// FederationAuthKubernetes defines the authentication configuration.
+type FederationAuthKubernetes struct {
 	// TokenSecretRef references a secret containing the auth token
 	// +optional
 	TokenSecretRef *esmeta.SecretKeySelector `json:"tokenSecretRef,omitempty"`

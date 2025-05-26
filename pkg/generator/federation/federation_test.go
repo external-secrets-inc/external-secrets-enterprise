@@ -116,7 +116,7 @@ func TestGenerator_Generate(t *testing.T) {
 						Server: genv1alpha1.FederationServer{
 							URL: ts.URL,
 						},
-						Auth: genv1alpha1.FederationAuth{
+						Auth: genv1alpha1.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
@@ -148,7 +148,7 @@ func TestGenerator_Generate(t *testing.T) {
 						Server: genv1alpha1.FederationServer{
 							URL: ts.URL,
 						},
-						Auth: genv1alpha1.FederationAuth{
+						Auth: genv1alpha1.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
@@ -173,7 +173,7 @@ func TestGenerator_Generate(t *testing.T) {
 						Server: genv1alpha1.FederationServer{
 							URL: "http://invalid-url",
 						},
-						Auth: genv1alpha1.FederationAuth{
+						Auth: genv1alpha1.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
@@ -213,9 +213,166 @@ func TestGenerator_Generate(t *testing.T) {
 }
 
 func TestGenerator_Cleanup(t *testing.T) {
-	g := &Generator{}
-	err := g.Cleanup(context.Background(), nil, nil, nil, "")
-	assert.NoError(t, err, "Cleanup should always return nil")
+	// Create a test server to mock federation server responses
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check the request method
+		if r.Method != "DELETE" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Check the request path
+		if r.URL.Path == "/generators/test-namespace/test-kind/test-name" {
+			// Check authorization header
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "Bearer test-token" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			// Return a successful response
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		if r.URL.Path == "/generators/test-namespace/error-kind/error-name" {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("internal server error"))
+			return
+		}
+
+		// Default: not found
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	// Create a mock Kubernetes client with test secrets
+	kube := fake.NewClientBuilder().WithObjects(
+		&v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "token-secret",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				"token": []byte("test-token"),
+			},
+		},
+	).Build()
+
+	// Create test cases
+	tests := []struct {
+		name       string
+		jsonSpec   *apiextensions.JSON
+		wantErr    bool
+		errMessage string
+	}{
+		{
+			name:       "nil spec",
+			jsonSpec:   nil,
+			wantErr:    true,
+			errMessage: errNoSpec,
+		},
+		{
+			name: "invalid spec",
+			jsonSpec: &apiextensions.JSON{
+				Raw: []byte(`invalid json`),
+			},
+			wantErr:    true,
+			errMessage: "unable to parse spec:",
+		},
+		{
+			name: "successful cleanup",
+			jsonSpec: &apiextensions.JSON{
+				Raw: mustMarshal(t, &genv1alpha1.Federation{
+					Spec: genv1alpha1.FederationSpec{
+						Server: genv1alpha1.FederationServer{
+							URL: ts.URL,
+						},
+						Auth: genv1alpha1.FederationAuthKubernetes{
+							TokenSecretRef: &esmeta.SecretKeySelector{
+								Name: "token-secret",
+								Key:  "token",
+							},
+						},
+						Generator: genv1alpha1.FederationGeneratorRef{
+							Namespace: "test-namespace",
+							Kind:      "test-kind",
+							Name:      "test-name",
+						},
+					},
+				}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "server error",
+			jsonSpec: &apiextensions.JSON{
+				Raw: mustMarshal(t, &genv1alpha1.Federation{
+					Spec: genv1alpha1.FederationSpec{
+						Server: genv1alpha1.FederationServer{
+							URL: ts.URL,
+						},
+						Auth: genv1alpha1.FederationAuthKubernetes{
+							TokenSecretRef: &esmeta.SecretKeySelector{
+								Name: "token-secret",
+								Key:  "token",
+							},
+						},
+						Generator: genv1alpha1.FederationGeneratorRef{
+							Namespace: "test-namespace",
+							Kind:      "error-kind",
+							Name:      "error-name",
+						},
+					},
+				}),
+			},
+			wantErr:    true,
+			errMessage: "federation server returned non-OK status: 500",
+		},
+		{
+			name: "invalid server URL",
+			jsonSpec: &apiextensions.JSON{
+				Raw: mustMarshal(t, &genv1alpha1.Federation{
+					Spec: genv1alpha1.FederationSpec{
+						Server: genv1alpha1.FederationServer{
+							URL: "http://invalid-url",
+						},
+						Auth: genv1alpha1.FederationAuthKubernetes{
+							TokenSecretRef: &esmeta.SecretKeySelector{
+								Name: "token-secret",
+								Key:  "token",
+							},
+						},
+						Generator: genv1alpha1.FederationGeneratorRef{
+							Namespace: "test-namespace",
+							Kind:      "test-kind",
+							Name:      "test-name",
+						},
+					},
+				}),
+			},
+			wantErr:    true,
+			errMessage: "failed to call federation server:",
+		},
+	}
+
+	// Run tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &Generator{}
+			err := g.Cleanup(context.Background(), tt.jsonSpec, nil, kube, "default")
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMessage != "" {
+					assert.Contains(t, err.Error(), tt.errMessage)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+		})
+	}
 }
 
 func TestParseSpec(t *testing.T) {
