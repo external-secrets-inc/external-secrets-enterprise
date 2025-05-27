@@ -13,15 +13,15 @@ spec:
           expiresAt: "{{ .expires_at }}"
       data:
         .dockerconfigjson: |
-          {
-            "auths": {
-              "{{ .proxy_endpoint | replace "https://" "" }}": {
-                "username": "{{ .username }}",
-                "password": "{{ .password }}",
-                "auth": "{{ printf "%s:%s" .username .password | b64enc }}"
+            {
+              "auths": {
+                "{{ .proxy_endpoint | replace "https://" "" }}": {
+                  "username": "{{ .username }}",
+                  "password": "{{ .password }}",
+                  "auth": "{{ printf "%s:%s" .username .password | b64enc }}"
+                }
               }
             }
-          }
   dataFrom:
     - sourceRef:
         generatorRef:
