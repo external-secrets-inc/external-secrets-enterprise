@@ -180,7 +180,7 @@ func (s *ServerHandler) getJWKS(ctx context.Context, issuer, onlyToken, caCrt st
 	return jwks, nil
 }
 
-// ClearJWKSCache clears the JWKS cache for a specific caCrt or all if caCrt is empty
+// ClearJWKSCache clears the JWKS cache for a specific caCrt or all if caCrt is empty.
 func (s *ServerHandler) ClearJWKSCache(caCrt string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
