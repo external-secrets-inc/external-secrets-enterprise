@@ -176,6 +176,9 @@ The command removes all the Kubernetes components associated with the chart and 
 | serviceMonitor.namespace | string | `""` | namespace where you want to install ServiceMonitors |
 | serviceMonitor.relabelings | list | `[]` | Relabel configs to apply to samples before ingestion. [Relabeling](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) |
 | serviceMonitor.scrapeTimeout | string | `"25s"` | Timeout if metrics can't be retrieved in given time interval |
+| spire-crds.enabled | bool | `false` |  |
+| spire.enabled | bool | `false` |  |
+| spire.spire-server.controllerManager.enabled | bool | `false` |  |
 | tolerations | list | `[]` |  |
 | topologySpreadConstraints | list | `[]` |  |
 | webhook.affinity | object | `{}` |  |

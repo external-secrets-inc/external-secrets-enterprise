@@ -1,9 +1,15 @@
 dependencies:
+- name: spire-crds
+  repository: https://spiffe.github.io/helm-charts-hardened
+  version: 0.5.0
+- name: spire
+  repository: https://spiffe.github.io/helm-charts-hardened
+  version: 0.25.0
 - name: esi-pod-webhook
   repository: oci://us-central1-docker.pkg.dev/external-secrets-inc-registry/public/charts
   version: 0.3.2
 - name: bitwarden-sdk-server
   repository: oci://ghcr.io/external-secrets/charts
-  version: v0.3.1
-digest: sha256:909123108989b4e20eeb650d908dacfaab71d34ea134f5693b5e09e499e2d7be
-generated: "2025-05-23T16:37:39.358017785-03:00"
+  version: v0.4.2
+digest: sha256:8cb1495a3e545834dfb64e9739adffde96ac9c6de2574046f5639a3a46c76b90
+generated: "2025-05-27T13:52:04.526752466-03:00"

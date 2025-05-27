@@ -673,6 +673,35 @@
             },
             "type": "object"
         },
+        "spire": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "spire-server": {
+                    "properties": {
+                        "controllerManager": {
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "spire-crds": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "tolerations": {
             "type": "array"
         },
