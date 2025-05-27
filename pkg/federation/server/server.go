@@ -54,6 +54,7 @@ type ServerHandler struct {
 	reconciler             *externalsecrets.Reconciler
 	mu                     sync.RWMutex
 	specMap                map[string][]*fedv1alpha1.AuthorizationSpec
+	jwksCache              map[string]map[string]map[string]string // Cache JWKS data by caCrt
 	port                   string
 	genParseTokenFn        func(ctx context.Context, onlyToken string, caCrt []byte) func(token *jwt.Token) (interface{}, error)
 	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
@@ -66,6 +67,7 @@ func NewServerHandler(reconciler *externalsecrets.Reconciler, port string) *Serv
 		reconciler: reconciler,
 		mu:         sync.RWMutex{},
 		specMap:    map[string][]*fedv1alpha1.AuthorizationSpec{},
+		jwksCache:  map[string]map[string]map[string]string{},
 		port:       port,
 	}
 	s.generateSecretFn = s.generateSecret
@@ -138,17 +140,60 @@ func findJWKS(ctx context.Context, issuer, onlyToken, caCrt string) (map[*fedv1a
 func (s *ServerHandler) getJWKS(ctx context.Context, issuer, onlyToken, caCrt string) (map[string]map[string]string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	specs, ok := s.specMap[caCrt]
-	if !ok {
-		specs, err := findJWKS(ctx, issuer, onlyToken, caCrt)
+
+	// Check if JWKS are already cached
+	if jwks, ok := s.jwksCache[caCrt]; ok {
+		return jwks, nil
+	}
+
+	// Check if specs are cached
+	specs, specsOk := s.specMap[caCrt]
+	if !specsOk {
+		// First time - fetch JWKS and cache both specs and JWKS data
+		specsWithJWKS, err := findJWKS(ctx, issuer, onlyToken, caCrt)
 		if err != nil {
 			return nil, err
 		}
-		for spec := range specs {
+
+		// Cache the specs
+		for spec := range specsWithJWKS {
 			s.specMap[caCrt] = append(s.specMap[caCrt], spec)
 		}
+
+		// Cache the JWKS data from the first successful spec
+		for _, jwks := range specsWithJWKS {
+			s.jwksCache[caCrt] = jwks
+			return jwks, nil
+		}
+
+		return nil, errors.New("no jwks found")
 	}
-	return store.GetJWKS(ctx, specs, onlyToken, issuer, []byte(caCrt))
+
+	// Specs are cached but JWKS are not - fetch JWKS and cache them
+	jwks, err := store.GetJWKS(ctx, specs, onlyToken, issuer, []byte(caCrt))
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the JWKS data
+	s.jwksCache[caCrt] = jwks
+	return jwks, nil
+}
+
+// ClearJWKSCache clears the JWKS cache for a specific caCrt or all if caCrt is empty
+func (s *ServerHandler) ClearJWKSCache(caCrt string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if caCrt == "" {
+		// Clear all cache
+		s.jwksCache = map[string]map[string]map[string]string{}
+		s.specMap = map[string][]*fedv1alpha1.AuthorizationSpec{}
+	} else {
+		// Clear specific cache entry
+		delete(s.jwksCache, caCrt)
+		delete(s.specMap, caCrt)
+	}
 }
 
 func (s *ServerHandler) genParseToken(ctx context.Context, onlyToken string, caCrt []byte) func(token *jwt.Token) (interface{}, error) {
