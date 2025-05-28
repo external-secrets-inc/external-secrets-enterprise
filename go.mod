@@ -32,7 +32,7 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
-	github.com/oracle/oci-go-sdk/v65 v65.91.1
+	github.com/oracle/oci-go-sdk/v65 v65.92.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/spf13/cobra v1.9.1
