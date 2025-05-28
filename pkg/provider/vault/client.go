@@ -51,6 +51,9 @@ type client struct {
 
 func (c *client) newConfig(ctx context.Context) (*vault.Config, error) {
 	cfg := vault.DefaultConfig()
+	if c.store.Server == "" {
+		return nil, errors.New(errVaultServer)
+	}
 	cfg.Address = c.store.Server
 
 	if len(c.store.CABundle) != 0 || c.store.CAProvider != nil {

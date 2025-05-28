@@ -48,6 +48,7 @@ const (
 	errVaultCert     = "cannot set Vault CA certificate: %w"
 	errClientTLSAuth = "error from Client TLS Auth: %q"
 	errCANamespace   = "missing namespace on caProvider secret"
+	errVaultServer   = "vault server URL is required"
 )
 
 const (
