@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/labels"
@@ -187,107 +186,157 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 		testCaCertData    = "test-ca-cert-data-for-revoke-self-happy-path"
 	)
 
-	tc := struct {
+	tc := []struct {
 		name                  string
 		setupAuthSpecs        func()
-		jwtClaims             *KubernetesClaims // Using your existing KubernetesClaims struct
 		authInfo              *auth.AuthInfo
 		expectedStatus        int
 		expectDeleteCall      bool
 		deleteParamsValidator func(ns string, lbls labels.Selector)
 	}{
-		name: "successful revocation with pod info",
-		setupAuthSpecs: func() {
-			authSpec := &fedv1alpha1.AuthorizationSpec{
-				FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
-				Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
-				AllowedGenerators: []fedv1alpha1.AllowedGenerator{
-					{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
-				},
-			}
-			store.Add(testIssuer, authSpec)
-			s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
-		},
-		jwtClaims: &KubernetesClaims{
-			RegisteredClaims: jwt.RegisteredClaims{Issuer: testIssuer, Subject: testSubject},
-			KubernetesIOInner: KubernetesIOInner{
-				Namespace: "test-ns", // SA's namespace
-				ServiceAccount: struct {
-					Name string `json:"name"`
-					UID  string `json:"uid"`
-				}{Name: testSAName},
-				Pod: &struct {
-					Name string `json:"name"`
-					UID  string `json:"uid"`
-				}{Name: testPodName},
+		{
+			name: "successful revocation with pod info",
+			setupAuthSpecs: func() {
+				authSpec := &fedv1alpha1.AuthorizationSpec{
+					FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
+					Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
+						{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
+					},
+				}
+				store.Add(testIssuer, authSpec)
+				s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
 			},
-		},
-		authInfo: &auth.AuthInfo{
-			Method:   "oidc",
-			Provider: testIssuer,
-			Subject:  testSubject,
-			KubeAttributes: &auth.KubeAttributes{
-				Namespace: "test-ns",
-				ServiceAccount: &auth.ServiceAccount{
-					Name: testSAName,
-				},
-				Pod: &auth.PodInfo{
-					Name: testPodName,
+			authInfo: &auth.AuthInfo{
+				Method:   "oidc",
+				Provider: testIssuer,
+				Subject:  testSubject,
+				KubeAttributes: &auth.KubeAttributes{
+					Namespace: "test-ns",
+					ServiceAccount: &auth.ServiceAccount{
+						Name: testSAName,
+					},
+					Pod: &auth.PodInfo{
+						Name: testPodName,
+					},
 				},
 			},
-		},
-		expectedStatus:   http.StatusOK,
-		expectDeleteCall: true,
-		deleteParamsValidator: func(ns string, lbls labels.Selector) {
-			s.Equal(testGeneratorNS, ns)
-			expectedOwnerLabels := labels.Set{
-				"federation.externalsecrets.com/owner":          testPodName,
-				"federation.externalsecrets.com/generator":      testGeneratorName,
-				"federation.externalsecrets.com/generator-kind": testGeneratorKind,
-			}
-			s.Equal(labels.SelectorFromSet(expectedOwnerLabels).String(), lbls.String())
+			expectedStatus:   http.StatusOK,
+			expectDeleteCall: true,
+			deleteParamsValidator: func(ns string, lbls labels.Selector) {
+				s.Equal(testGeneratorNS, ns)
+				expectedOwnerLabels := labels.Set{
+					"federation.externalsecrets.com/owner":          testPodName,
+					"federation.externalsecrets.com/generator":      testGeneratorName,
+					"federation.externalsecrets.com/generator-kind": testGeneratorKind,
+				}
+				s.Equal(labels.SelectorFromSet(expectedOwnerLabels).String(), lbls.String())
+			},
+		}, {
+			name: "failed revocation without kubernetes attributes",
+			setupAuthSpecs: func() {
+				authSpec := &fedv1alpha1.AuthorizationSpec{
+					FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
+					Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
+						{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
+					},
+				}
+				store.Add(testIssuer, authSpec)
+				s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
+			},
+			authInfo: &auth.AuthInfo{
+				Method:   "oidc",
+				Provider: testIssuer,
+				Subject:  testSubject,
+			},
+			expectedStatus:   http.StatusBadRequest,
+			expectDeleteCall: false,
+			deleteParamsValidator: func(ns string, lbls labels.Selector) {
+				s.Equal(testGeneratorNS, ns)
+				expectedOwnerLabels := labels.Set{
+					"federation.externalsecrets.com/owner":          testPodName,
+					"federation.externalsecrets.com/generator":      testGeneratorName,
+					"federation.externalsecrets.com/generator-kind": testGeneratorKind,
+				}
+				s.Equal(labels.SelectorFromSet(expectedOwnerLabels).String(), lbls.String())
+			},
+		}, {
+			name: "failed revocation without kubernetes service account",
+			setupAuthSpecs: func() {
+				authSpec := &fedv1alpha1.AuthorizationSpec{
+					FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
+					Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
+						{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
+					},
+				}
+				store.Add(testIssuer, authSpec)
+				s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
+			},
+			authInfo: &auth.AuthInfo{
+				Method:   "oidc",
+				Provider: testIssuer,
+				Subject:  testSubject,
+				KubeAttributes: &auth.KubeAttributes{
+					Namespace: "test-ns",
+				},
+			},
+			expectedStatus:   http.StatusBadRequest,
+			expectDeleteCall: false,
+			deleteParamsValidator: func(ns string, lbls labels.Selector) {
+				s.Equal(testGeneratorNS, ns)
+				expectedOwnerLabels := labels.Set{
+					"federation.externalsecrets.com/owner":          testPodName,
+					"federation.externalsecrets.com/generator":      testGeneratorName,
+					"federation.externalsecrets.com/generator-kind": testGeneratorKind,
+				}
+				s.Equal(labels.SelectorFromSet(expectedOwnerLabels).String(), lbls.String())
+			},
 		},
 	}
 
-	s.Run(tc.name, func() {
-		// Setup: AuthSpecs in store
-		tc.setupAuthSpecs()
+	for _, tt := range tc {
+		s.Run(tt.name, func() {
+			// Setup: AuthSpecs in store
+			tt.setupAuthSpecs()
 
-		// Setup: Mock deleteGeneratorStateFn (ONLY this is mocked for revokeSelf internals)
-		var deleteCalled bool
-		var capturedDeleteNamespace string
-		var capturedDeleteLabels labels.Selector
-		originalDeleteFn := s.server.deleteGeneratorStateFn
-		s.server.deleteGeneratorStateFn = func(ctx context.Context, namespace string, lbls labels.Selector) error {
-			deleteCalled = true
-			capturedDeleteNamespace = namespace
-			capturedDeleteLabels = lbls
-			return nil // Success for happy path
-		}
-		s.T().Cleanup(func() { s.server.deleteGeneratorStateFn = originalDeleteFn })
+			// Setup: Mock deleteGeneratorStateFn (ONLY this is mocked for revokeSelf internals)
+			var deleteCalled bool
+			var capturedDeleteNamespace string
+			var capturedDeleteLabels labels.Selector
+			originalDeleteFn := s.server.deleteGeneratorStateFn
+			s.server.deleteGeneratorStateFn = func(ctx context.Context, namespace string, lbls labels.Selector) error {
+				deleteCalled = true
+				capturedDeleteNamespace = namespace
+				capturedDeleteLabels = lbls
+				return nil // Success for happy path
+			}
+			s.T().Cleanup(func() { s.server.deleteGeneratorStateFn = originalDeleteFn })
 
-		// Prepare Echo context
-		e := echo.New()
-		req := httptest.NewRequest(http.MethodDelete, "/test/revoke", http.NoBody)
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
-		c.SetParamNames("generatorNamespace", "generatorName", "generatorKind")
-		c.SetParamValues(testGeneratorNS, testGeneratorName, testGeneratorKind)
-		c.Set("authInfo", tc.authInfo)
+			// Prepare Echo context
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodDelete, "/test/revoke", http.NoBody)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.SetParamNames("generatorNamespace", "generatorName", "generatorKind")
+			c.SetParamValues(testGeneratorNS, testGeneratorName, testGeneratorKind)
+			c.Set("authInfo", tt.authInfo)
 
-		// Call the handler (revokeSelf)
-		handlerErr := s.server.revokeSelf(c) // processRequest is called internally and is NOT mocked
-		s.Require().NoError(handlerErr, "Handler invocation itself should not error out")
+			// Call the handler (revokeSelf)
+			handlerErr := s.server.revokeSelf(c) // processRequest is called internally and is NOT mocked
+			s.Require().NoError(handlerErr, "Handler invocation itself should not error out")
 
-		// Assertions
-		s.Equal(tc.expectedStatus, rec.Code)
-		s.Equal(tc.expectDeleteCall, deleteCalled, "deleteGeneratorStateFn call expectation mismatch")
+			// Assertions
+			s.Equal(tt.expectedStatus, rec.Code)
+			s.Equal(tt.expectDeleteCall, deleteCalled, "deleteGeneratorStateFn call expectation mismatch")
 
-		if tc.expectDeleteCall && tc.deleteParamsValidator != nil {
-			tc.deleteParamsValidator(capturedDeleteNamespace, capturedDeleteLabels)
-		}
-	})
+			if tt.expectDeleteCall && tt.deleteParamsValidator != nil {
+				tt.deleteParamsValidator(capturedDeleteNamespace, capturedDeleteLabels)
+			}
+		})
+	}
 }
 
 func (s *GenerateSecretsTestSuite) TestRevokeSelfHappyPath() {
@@ -553,6 +602,121 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "error generating secret",
+		},
+		{
+			name: "error missing kubernetes attributes",
+			setup: func() echo.Context {
+				// Create a mock Echo context
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				rec := httptest.NewRecorder()
+				c := e.NewContext(req, rec)
+
+				// Set path parameters
+				c.SetParamNames("generatorName", "generatorKind", "generatorNamespace")
+				c.SetParamValues("test-generator", "test-kind", testNamespace)
+
+				customAuthInfo := &auth.AuthInfo{
+					Method:   "oidc",
+					Provider: testIssuer,
+					Subject:  testSubject,
+				}
+				c.Set("authInfo", customAuthInfo)
+
+				// Setup the server for this test
+				spec := &fedv1alpha1.AuthorizationSpec{
+					FederationRef: fedv1alpha1.FederationRef{
+						Name: "test-federation",
+						Kind: "Kubernetes",
+					},
+					Subject: fedv1alpha1.FederationSubject{
+						Subject: testSubject,
+						Issuer:  testIssuer,
+					},
+					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
+						{
+							Name:      "test-generator",
+							Kind:      "test-kind",
+							Namespace: testNamespace,
+						},
+					},
+				}
+
+				// Add the spec to the store
+				store.Add(testIssuer, spec)
+
+				// Store the spec for cleanup
+				s.specs = append(s.specs, spec)
+
+				return c
+			},
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
+				// This should not be called
+				s.T().Fatalf("mockGenSecret should not be called in this test case")
+				return nil, nil
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "missing kubernetes attributes",
+		},
+		{
+			name: "error missing kubernetes attributes",
+			setup: func() echo.Context {
+				// Create a mock Echo context
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				rec := httptest.NewRecorder()
+				c := e.NewContext(req, rec)
+
+				// Set path parameters
+				c.SetParamNames("generatorName", "generatorKind", "generatorNamespace")
+				c.SetParamValues("test-generator", "test-kind", testNamespace)
+
+				customAuthInfo := &auth.AuthInfo{
+					Method:   "oidc",
+					Provider: testIssuer,
+					Subject:  testSubject,
+					KubeAttributes: &auth.KubeAttributes{
+						Namespace: testNamespace,
+					},
+				}
+				c.Set("authInfo", customAuthInfo)
+
+				// Setup the server for this test
+				spec := &fedv1alpha1.AuthorizationSpec{
+					FederationRef: fedv1alpha1.FederationRef{
+						Name: "test-federation",
+						Kind: "Kubernetes",
+					},
+					Subject: fedv1alpha1.FederationSubject{
+						Subject: testSubject,
+						Issuer:  testIssuer,
+					},
+					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
+						{
+							Name:      "test-generator",
+							Kind:      "test-kind",
+							Namespace: testNamespace,
+						},
+					},
+				}
+
+				// Add the spec to the store
+				store.Add(testIssuer, spec)
+
+				// Store the spec for cleanup
+				s.specs = append(s.specs, spec)
+
+				return c
+			},
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
+				// This should not be called
+				s.T().Fatalf("mockGenSecret should not be called in this test case")
+				return nil, nil
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "missing kubernetes service account",
 		},
 	}
 

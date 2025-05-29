@@ -112,6 +112,15 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 		Kind:      generatorKind,
 		Namespace: generatorNamespace,
 	}
+
+	if authInfo.KubeAttributes == nil {
+		return c.JSON(http.StatusBadRequest, "missing kubernetes attributes")
+	}
+
+	if authInfo.KubeAttributes.ServiceAccount == nil {
+		return c.JSON(http.StatusBadRequest, "missing kubernetes service account")
+	}
+
 	owner := authInfo.KubeAttributes.ServiceAccount.Name
 	if authInfo.KubeAttributes.Pod != nil {
 		owner = authInfo.KubeAttributes.Pod.Name
@@ -191,6 +200,15 @@ func (s *ServerHandler) revokeSelf(c echo.Context) error {
 	generatorNamespace := c.Param("generatorNamespace")
 	generatorName := c.Param("generatorName")
 	generatorKind := c.Param("generatorKind")
+
+	if authInfo.KubeAttributes == nil {
+		return c.JSON(http.StatusBadRequest, "missing kubernetes attributes")
+	}
+
+	if authInfo.KubeAttributes.ServiceAccount == nil {
+		return c.JSON(http.StatusBadRequest, "missing kubernetes service account")
+	}
+
 	for _, spec := range AuthorizationSpecs {
 		if !contains(spec.AllowedGenerators, fedv1alpha1.AllowedGenerator{
 			Name:      generatorName,
