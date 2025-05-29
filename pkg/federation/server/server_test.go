@@ -5,15 +5,12 @@ package server
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
@@ -44,11 +41,6 @@ func (s *GenerateSecretsTestSuite) TearDownTest() {
 	for _, spec := range s.specs {
 		store.Remove("test-issuer", spec)
 	}
-}
-
-func (s *GenerateSecretsTestSuite) generateTestSATokenWithClaims(claims KubernetesClaims, key interface{}) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims) // Using HS256 for simplicity with a symmetric key
-	return token.SignedString(key)
 }
 
 func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
@@ -149,7 +141,7 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 
 			// Prepare request and context
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodPost, "/should_not_matter_for_handler_target", nil)
+			req := httptest.NewRequest(http.MethodPost, "/should_not_matter_for_handler_target", http.NoBody)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
@@ -276,7 +268,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 
 		// Prepare Echo context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodDelete, "/test/revoke", nil)
+		req := httptest.NewRequest(http.MethodDelete, "/test/revoke", http.NoBody)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -353,7 +345,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelfHappyPath() {
 
 		// 3. Prepare Echo context
 		e := echo.New()
-		req := httptest.NewRequest(http.MethodDelete, "/test/revokeSelfHappyPath", nil)
+		req := httptest.NewRequest(http.MethodDelete, "/test/revokeSelfHappyPath", http.NoBody)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -412,10 +404,9 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 		{
 			name: "successful secret generation",
 			setup: func() echo.Context {
-
 				// Create a mock Echo context
 				e := echo.New()
-				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
@@ -471,7 +462,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
-				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
@@ -520,7 +511,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
-				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
@@ -726,7 +717,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
-				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
@@ -773,7 +764,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
-				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
@@ -817,7 +808,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
-				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
@@ -888,35 +879,6 @@ func TestPostSecretsTestSuite(t *testing.T) {
 	suite.Run(t, new(PostSecretsTestSuite))
 }
 
-// generateTestJWT creates a signed JWT token for testing.
-func generateTestJWT(issuer, subject string) (string, *rsa.PrivateKey, error) {
-	// Generate a new RSA key pair for signing
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// Create the claims
-	claims := jwt.MapClaims{
-		"iss": issuer,
-		"sub": subject,
-		"exp": time.Now().Add(time.Hour).Unix(),
-		"iat": time.Now().Unix(),
-	}
-
-	// Create the token
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	token.Header["kid"] = "kid1"
-
-	// Sign the token
-	tokenString, err := token.SignedString(privateKey)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return tokenString, privateKey, nil
-}
-
 type fakeAuthProvider struct {
 	info *auth.AuthInfo
 	err  error
@@ -956,7 +918,7 @@ func (s *AuthMiddlewareSuite) Test_FirstProviderSucceeds() {
 	})
 
 	mw := s.server.authMiddleware(next)
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	rec := httptest.NewRecorder()
 	e := echo.New()
 	c := e.NewContext(req, rec)
@@ -983,7 +945,7 @@ func (s *AuthMiddlewareSuite) Test_SecondProviderSucceeds() {
 	})
 
 	mw := s.server.authMiddleware(next)
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	rec := httptest.NewRecorder()
 	e := echo.New()
 	c := e.NewContext(req, rec)
@@ -1006,7 +968,7 @@ func (s *AuthMiddlewareSuite) Test_AllProvidersFail() {
 	})
 
 	mw := s.server.authMiddleware(next)
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	rec := httptest.NewRecorder()
 	e := echo.New()
 	c := e.NewContext(req, rec)
