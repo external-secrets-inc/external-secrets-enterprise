@@ -24,6 +24,7 @@ var (
 	SSHKind               = reflect.TypeOf(SSH{}).Name()
 	Neo4jKind             = reflect.TypeOf(Neo4j{}).Name()
 	MongoDBKind           = reflect.TypeOf(MongoDB{}).Name()
+	PostgreSqlKind        = reflect.TypeOf(PostgreSql{}).Name()
 )
 
 func init() {
