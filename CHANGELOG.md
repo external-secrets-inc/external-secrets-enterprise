@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.3.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.2.0...v1.3.0) (2025-05-29)
+
+
+### Features
+
+* spire-server as part of external-secrets ([8cc7912](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8cc791239792e1310c867d01b613b1b4211c8e9e))
+
+
+### Bug Fixes
+
+* chart locks ([c95fbe2](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c95fbe2f116a3b2200912ceec2118d7a7c1b3d12))
+* conflicts ([fda7584](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/fda7584834cf5688d162092b8e813548300ac60b))
+* e2e tests ([#4847](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4847)) ([a47a323](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a47a323089e2b1274e35039a1746eac3fc39555f))
+* gcp regional push should have no replications ([#4815](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4815)) ([2740f07](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2740f077275d0ca4924d7c11679a2f754d6bceb0))
+* generator state for  pushsecrets ([#4842](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4842)) ([abd9b5d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/abd9b5dabce6cdf3d83d091984b44b5218af0b6c))
+* intermittent neo4j tests ([#84](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/84)) ([67d8840](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/67d88405ce2cedbaf3c6ab77ed3ca25b2b389ffb))
+* set klog to logger for client-go ([#4818](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4818)) ([031fb75](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/031fb75c6ca79e409b7661f3a4f5ff9c68da744e))
+* update aws iam to v2 ([0ecf364](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/0ecf364b1266f0b3a0d42e6638dfe97cffa80b58))
+* update dependencies ([#87](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/87)) ([82388e5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/82388e59e6bc598d2383b7e2bbaa5950d3db7a1a))
+* update from upstream ([654499a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/654499a59d30cb8dacb458ff3072548304afd00c))
+* update from upstream ([#86](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/86)) ([7508e68](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/7508e6884dfcd388262ea3c4b0d9a80ca60a3d76))
+
 ## [1.2.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.1.7...v1.2.0) (2025-05-26)
 
 
