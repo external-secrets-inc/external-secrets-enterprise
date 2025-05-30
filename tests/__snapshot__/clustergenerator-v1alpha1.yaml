@@ -26,6 +26,21 @@ spec:
       registry: string
       scope: string
       tenantId: string
+    basicAuthSpec:
+      password:
+        allowRepeat: false
+        digits: 1
+        length: 24
+        noUpper: false
+        symbolCharacters: string
+        symbols: 1
+      username:
+        includeNumbers: false
+        length: 8
+        prefix: string
+        separator: string
+        sufix: string
+        wordCount: 1
     ecrAuthorizationTokenSpec:
       auth:
         jwt:
@@ -119,6 +134,26 @@ spec:
         namespace: string
       timePeriod: 1
       when: 2024-10-11T12:48:44Z
+    neo4jSpec:
+      auth:
+        basic:
+          password:
+            key: string
+            name: string
+          username: string
+        bearer:
+          token:
+            key: string
+            name: string
+        uri: string
+      database: "neo4j"
+      enterprise: false
+      user:
+        home: string
+        provider: "native"
+        randomSufix: false
+        roles: [] # minItems 0 of type string
+        user: string
     passwordSpec:
       allowRepeat: false
       digits: 1
@@ -133,6 +168,10 @@ spec:
         name: string
         namespace: string
       url: string
+    sshSpec:
+      keyType: "RSA"
+      rsaConfig:
+        bits: 4096
     stsSessionTokenSpec:
       auth:
         jwt:
@@ -312,4 +351,4 @@ spec:
           name: string
       timeout: string
       url: string
-  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation"
+  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j"
