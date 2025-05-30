@@ -115,7 +115,7 @@ require (
 	github.com/pulumi/esc-sdk/sdk v0.12.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.33
 	github.com/sendgrid/rest v2.6.9+incompatible
-	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
+	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/sethvargo/go-password v0.3.1
 	github.com/spf13/pflag v1.0.6
 	github.com/testcontainers/testcontainers-go v0.37.0
@@ -255,7 +255,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.14.2 // indirect
-	github.com/pulumi/pulumi/sdk/v3 v3.171.0 // indirect
+	github.com/pulumi/pulumi/sdk/v3 v3.173.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
@@ -288,7 +288,7 @@ require (
 	go.opentelemetry.io/otel v1.36.0 // indirect
 	go.opentelemetry.io/otel/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250528174236-200df99c418a // indirect
@@ -297,7 +297,7 @@ require (
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/code-generator v0.33.1 // indirect
-	k8s.io/gengo/v2 v2.0.0-20250529001416-3d5256650f36 // indirect
+	k8s.io/gengo/v2 v2.0.0-20250529191817-cc0d9c447938 // indirect
 	lukechampine.com/frand v1.5.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
@@ -397,7 +397,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/gengo v0.0.0-20250529001416-3d5256650f36 // indirect
+	k8s.io/gengo v0.0.0-20250529191817-cc0d9c447938 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.130.1
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
