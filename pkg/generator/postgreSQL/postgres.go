@@ -5,14 +5,16 @@ package postgresql
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"slices"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
+
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -25,9 +27,10 @@ import (
 type Generator struct{}
 
 const (
-	defaultPort   = "5432"
-	defaultUser   = "postgres"
-	defaultDbName = "postgres"
+	defaultPort       = "5432"
+	defaultUser       = "postgres"
+	defaultDbName     = "postgres"
+	defaultSuffixSize = 8
 )
 
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
@@ -41,18 +44,18 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("unable to create db connection: %w", err)
 	}
 	defer func() {
-		err := db.Close()
+		err := db.Close(ctx)
 		if err != nil {
 			fmt.Printf("failed to close db: %v", err)
 		}
 	}()
 
-	err = db.Ping()
+	err = db.Ping(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to ping the database: %w", err)
 	}
 
-	user, err := createOrReplaceUser(db, &res.Spec)
+	user, err := createOrReplaceUser(ctx, db, &res.Spec)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create or replace user: %w", err)
 	}
@@ -89,18 +92,19 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 		return err
 	}
 	defer func() {
-		err := db.Close()
+		err := db.Close(ctx)
 		if err != nil {
 			fmt.Printf("failed to close db: %v", err)
 		}
 	}()
 
-	err = db.Ping()
+	err = db.Ping(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to ping the database: %w", err)
 	}
 
-	err = dropUser(db, status.Username, res.Spec.Auth.Username, res.Spec.User.DestructiveCleanup)
+	sanitizedUsername := pgx.Identifier{status.Username}.Sanitize()
+	err = dropUser(ctx, db, sanitizedUsername, res.Spec.Auth.Username, res.Spec.User.DestructiveCleanup)
 	if err != nil {
 		return fmt.Errorf("unable to drop user: %w", err)
 	}
@@ -108,7 +112,7 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
-func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclient client.Client, ns string) (*sql.DB, error) {
+func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclient client.Client, ns string) (*pgx.Conn, error) {
 	dbName := defaultDbName
 	if spec.Database != "" {
 		dbName = spec.Database
@@ -119,9 +123,9 @@ func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclien
 		port = spec.Port
 	}
 
-	user := defaultUser
+	username := defaultUser
 	if spec.Auth.Username != "" {
-		user = spec.Auth.Username
+		username = spec.Auth.Username
 	}
 	password, err := resolvers.SecretKeyRef(ctx, kclient, resolvers.EmptyStoreKind, ns, &esmeta.SecretKeySelector{
 		Namespace: &ns,
@@ -134,15 +138,15 @@ func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclien
 
 	psqlInfo := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		spec.Host, port, user, password, dbName,
+		spec.Host, port, username, password, dbName,
 	)
 
-	return sql.Open("postgres", psqlInfo)
+	return pgx.Connect(ctx, psqlInfo)
 }
 
-func getExistingRoles(db *sql.DB) ([]string, error) {
+func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
 	var current_rows = make([]string, 0)
-	rows, err := db.Query("SELECT rolname FROM pq_roles")
+	rows, err := db.Query(ctx, "SELECT rolname FROM pg_roles")
 	if err != nil {
 		return nil, err
 	}
@@ -163,9 +167,9 @@ func getExistingRoles(db *sql.DB) ([]string, error) {
 	return current_rows, nil
 }
 
-func createRole(db *sql.DB, roleName string, attributes []genv1alpha1.PostgreSqlUserAttributes) error {
+func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttributes) error {
 	var query strings.Builder
-	query.WriteString("CREATE ROLE $1")
+	query.WriteString(fmt.Sprintf("CREATE ROLE %s", roleName))
 	if len(attributes) > 0 {
 		query.WriteString(" WITH ")
 		for i, attr := range attributes {
@@ -175,43 +179,54 @@ func createRole(db *sql.DB, roleName string, attributes []genv1alpha1.PostgreSql
 			query.WriteString(string(attr))
 		}
 	}
-	_, err := db.Exec(query.String(), roleName)
+	_, err := db.Exec(ctx, query.String())
 	return err
 }
 
-func createOrReplaceUser(db *sql.DB, spec *genv1alpha1.PostgreSqlSpec) (map[string][]byte, error) {
+func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlSpec) (map[string][]byte, error) {
 	username := spec.User.Username
-	if spec.User.RandomSufix {
-		ioReader := rand.Reader
-		randomNumber, err := rand.Int(ioReader, new(big.Int).SetInt64(10000))
-		if err != nil {
-			return nil, err
-		}
-		username += fmt.Sprintf("%04d", randomNumber)
+	suffixSize := defaultSuffixSize
+	if spec.User.SuffixSize != nil {
+		suffixSize = *spec.User.SuffixSize
 	}
+	suffix, err := generateRandomString(suffixSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random suffix: %w", err)
+	}
+	username = fmt.Sprintf("%s_%s", username, suffix)
+	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 
 	userAttributes, err := ConvertStringArrayToAttributes(spec.User.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert user attributes: %w", err)
 	}
-	err = createRole(db, username, userAttributes)
+
+	current_roles, err := getExistingRoles(ctx, db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get existing roles: %w", err)
+	}
+
+	err = createRole(ctx, db, sanitizedUsername, userAttributes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create role %s: %w", username, err)
 	}
 
-	userAttributesQuery := `CREATE ROLE $1 WITH LOGIN PASSWORD '$2'`
-
-	pass, err := generatePassword(genv1alpha1.Password{})
+	pass, err := generatePassword(genv1alpha1.Password{
+		Spec: genv1alpha1.PasswordSpec{
+			SymbolCharacters: ptr.To("~!@#$%^&*()_+-={}|[]:<>?,./"),
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate password: %w", err)
 	}
 
-	_, err = db.Exec(userAttributesQuery, username, string(pass))
+	userAttributesQuery := fmt.Sprintf(`ALTER ROLE %s WITH LOGIN PASSWORD '%s'`, sanitizedUsername, string(pass))
+	_, err = db.Exec(ctx, userAttributesQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user %s: %w", username, err)
 	}
 
-	err = addRolesToUser(db, username, spec.User.Roles)
+	err = addRolesToUser(ctx, db, sanitizedUsername, spec.User.Roles, current_roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add roles to user %s: %w", username, err)
 	}
@@ -222,22 +237,17 @@ func createOrReplaceUser(db *sql.DB, spec *genv1alpha1.PostgreSqlSpec) (map[stri
 	}, nil
 }
 
-func addRolesToUser(db *sql.DB, username string, roles []string) error {
-	current_roles, err := getExistingRoles(db)
-	if err != nil {
-		return fmt.Errorf("failed to get existing roles: %w", err)
-	}
-
+func addRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, current_roles []string) error {
 	for _, role := range roles {
 		if !slices.Contains(current_roles, role) {
-			err = createRole(db, role, nil)
+			err := createRole(ctx, db, role, nil)
 			if err != nil {
 				return fmt.Errorf("failed to create role %s: %w", role, err)
 			}
 		}
 
-		grantRoleQuery := `GRANT $1 TO $2`
-		_, err = db.Exec(grantRoleQuery, role, username)
+		grantRoleQuery := fmt.Sprintf("GRANT %s TO %s", role, username)
+		_, err := db.Exec(ctx, grantRoleQuery)
 		if err != nil {
 			return fmt.Errorf("failed to grant role %s to user %s: %w", role, username, err)
 		}
@@ -245,19 +255,19 @@ func addRolesToUser(db *sql.DB, username string, roles []string) error {
 	return nil
 }
 
-func dropUser(db *sql.DB, username, adminUser string, destructive bool) error {
+func dropUser(ctx context.Context, db *pgx.Conn, username, adminUser string, destructive bool) error {
 	if !destructive {
-		_, err := db.Exec(`REASSIGN OWNED BY $1 TO $2`, username, adminUser)
+		_, err := db.Exec(ctx, fmt.Sprintf(`REASSIGN OWNED BY %s TO %s`, username, adminUser))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to reassign owned by %s to %s: %v", username, adminUser, err)
 		}
 	}
 	dropQueries := []string{
-		`DROP OWNED BY $1`,
-		`DROP ROLE $1`,
+		`DROP OWNED BY %s`,
+		`DROP ROLE %s`,
 	}
 	for _, query := range dropQueries {
-		_, err := db.Exec(query, username)
+		_, err := db.Exec(ctx, fmt.Sprintf(query, username))
 		if err != nil {
 			return err
 		}
@@ -304,6 +314,22 @@ func ConvertStringArrayToAttributes(input []string) ([]genv1alpha1.PostgreSqlUse
 		attrs = append(attrs, attr)
 	}
 	return attrs, nil
+}
+
+func generateRandomString(size int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	limit := big.NewInt(int64(len(charset)))
+
+	b := make([]byte, size)
+	for i := range b {
+		n, err := rand.Int(rand.Reader, limit)
+		if err != nil {
+			return "", err
+		}
+		b[i] = charset[n.Int64()]
+	}
+	return string(b), nil
 }
 
 func parseSpec(data []byte) (*genv1alpha1.PostgreSql, error) {

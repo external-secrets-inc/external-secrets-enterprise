@@ -94,6 +94,7 @@ require (
 	github.com/cloudru-tech/iam-sdk v1.0.4
 	github.com/cloudru-tech/secret-manager-sdk v1.1.1
 	github.com/cyberark/conjur-api-go v0.12.15
+	github.com/docker/go-connections v0.5.0
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/fortanix/sdkms-client-go v0.4.1
 	github.com/go-openapi/strfmt v0.23.0
@@ -103,6 +104,7 @@ require (
 	github.com/hashicorp/golang-lru v1.0.2
 	github.com/hashicorp/vault/api/auth/aws v0.9.0
 	github.com/hashicorp/vault/api/auth/userpass v0.9.0
+	github.com/jackc/pgx/v5 v5.7.5
 	github.com/keeper-security/secrets-manager-go/core v1.6.4
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/labstack/gommon v0.4.2
@@ -121,6 +123,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/mongodb v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/neo4j v0.37.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.129.0
 	golang.org/x/sync v0.14.0
@@ -182,7 +185,6 @@ require (
 	github.com/djherbis/times v1.6.0 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/docker/docker v28.0.1+incompatible // indirect
-	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dylibso/observe-sdk/go v0.0.0-20240828172851-9145d8ad07e1 // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
@@ -223,6 +225,8 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect

@@ -55,9 +55,10 @@ const (
 type PostgreSqlUser struct {
 	// The username of the user to be created.
 	Username string `json:"username"`
-	// RandomSufix adds a random 4-digits sufix to the user name if enabled.
-	// +kubebuilder:default=false
-	RandomSufix bool `json:"randomSufix,omitempty"`
+	// SuffixSize define the size of the random suffix added after the defined username.
+	// If not specified, a random suffix of size 8 will be used.
+	// +kubebuilder:default=8
+	SuffixSize *int `json:"suffixSize,omitempty"`
 	// Attributes is the list of PostgreSQL role attributes assigned to this user.
 	// Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
 	// +kubebuilder:validation:Enum=SUPERUSER;CREATEDB;CREATEROLE;REPLICATION;
