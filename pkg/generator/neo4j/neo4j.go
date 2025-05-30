@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -28,8 +27,9 @@ import (
 type Generator struct{}
 
 const (
-	defaultDatabase = "neo4j"
-	defaultProvider = genv1alpha1.Neo4jAuthProviderNative
+	defaultDatabase        = "neo4j"
+	defaultProvider        = genv1alpha1.Neo4jAuthProviderNative
+	defaultPasswordSymbols = "~!@#$%^&*()_+-={}|[]:<>?,./"
 )
 
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
@@ -197,9 +197,10 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 	query.WriteString(fmt.Sprintf("SET AUTH '%s' {\n", authProvider))
 
 	if authProvider == genv1alpha1.Neo4jAuthProviderNative {
+		symbols := defaultPasswordSymbols
 		pass, err := generatePassword(genv1alpha1.Password{
 			Spec: genv1alpha1.PasswordSpec{
-				SymbolCharacters: ptr.To("~!@#$%^&*()_+-={}|[]:<>?,./"),
+				SymbolCharacters: &symbols,
 			},
 		})
 		if err != nil {
