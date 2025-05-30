@@ -169,6 +169,7 @@ spec:
                                       - BasicAuth
                                       - SSH
                                       - Neo4j
+                                      - PostgreSql
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -364,6 +365,7 @@ spec:
                                       - BasicAuth
                                       - SSH
                                       - Neo4j
+                                      - PostgreSql
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -902,6 +904,7 @@ spec:
                                       - BasicAuth
                                       - SSH
                                       - Neo4j
+                                      - PostgreSql
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1098,6 +1101,7 @@ spec:
                                       - BasicAuth
                                       - SSH
                                       - Neo4j
+                                      - PostgreSql
                                     type: string
                                   name:
                                     description: Specify the name of the generator resource
@@ -1754,6 +1758,7 @@ spec:
                                 - BasicAuth
                                 - SSH
                                 - Neo4j
+                                - PostgreSql
                               type: string
                             name:
                               description: Specify the name of the generator resource
@@ -10889,6 +10894,7 @@ spec:
                                   - BasicAuth
                                   - SSH
                                   - Neo4j
+                                  - PostgreSql
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11084,6 +11090,7 @@ spec:
                                   - BasicAuth
                                   - SSH
                                   - Neo4j
+                                  - PostgreSql
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11498,6 +11505,7 @@ spec:
                                   - BasicAuth
                                   - SSH
                                   - Neo4j
+                                  - PostgreSql
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -11694,6 +11702,7 @@ spec:
                                   - BasicAuth
                                   - SSH
                                   - Neo4j
+                                  - PostgreSql
                                 type: string
                               name:
                                 description: Specify the name of the generator resource
@@ -12175,6 +12184,7 @@ spec:
                             - BasicAuth
                             - SSH
                             - Neo4j
+                            - PostgreSql
                           type: string
                         name:
                           description: Specify the name of the generator resource
@@ -22841,6 +22851,98 @@ spec:
                         - length
                         - noUpper
                       type: object
+                    postgreSqlSpec:
+                      description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                      properties:
+                        auth:
+                          description: Auth contains the credentials or auth configuration
+                          properties:
+                            password:
+                              description: A basic auth password used to authenticate against the PostgreSql instance.
+                              properties:
+                                key:
+                                  description: The key where the token is found.
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[-._a-zA-Z0-9]+$
+                                  type: string
+                                name:
+                                  description: The name of the Secret resource being referred to.
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                              type: object
+                            username:
+                              description: A basic auth username used to authenticate against the PostgreSql instance.
+                              type: string
+                          required:
+                            - password
+                            - username
+                          type: object
+                        database:
+                          default: postgres
+                          description: |-
+                            Database is the name of the database to connect to.
+                            If not specified, the "postgres" database will be used.
+                          type: string
+                        host:
+                          description: Host is the server where the database is hosted.
+                          type: string
+                        port:
+                          default: 5432
+                          description: |-
+                            Port is the port of the database to connect to.
+                            If not specified, the "5432" port will be used.
+                          type: string
+                        user:
+                          description: User is the data of the user to be created.
+                          properties:
+                            attributes:
+                              description: |-
+                                Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                              enum:
+                                - SUPERUSER
+                                - CREATEDB
+                                - CREATEROLE
+                                - REPLICATION
+                              items:
+                                type: string
+                              type: array
+                            destructiveCleanup:
+                              default: false
+                              description: |-
+                                If set to true, case the generator needs to clean up the user
+                                it will drop everything it owns before dropping him.
+                                If not set, all things owned by the user will be reassinged
+                                to the user specified in `spec.auth.username`.
+                              type: boolean
+                            roles:
+                              description: |-
+                                Roles is the list of existing roles that will be granted to this user.
+                                If a role does not exist, it will be created without any attributes.
+                              items:
+                                type: string
+                              type: array
+                            suffixSize:
+                              default: 8
+                              description: |-
+                                SuffixSize define the size of the random suffix added after the defined username.
+                                If not specified, a random suffix of size 8 will be used.
+                              type: integer
+                            username:
+                              description: The username of the user to be created.
+                              type: string
+                          required:
+                            - username
+                          type: object
+                      required:
+                        - auth
+                        - database
+                        - host
+                        - port
+                      type: object
                     quayAccessTokenSpec:
                       properties:
                         robotAccount:
@@ -24058,6 +24160,7 @@ spec:
                     - BasicAuth
                     - SSH
                     - Neo4j
+                    - PostgreSql
                   type: string
               required:
                 - generator
@@ -25458,6 +25561,149 @@ spec:
                 - allowRepeat
                 - length
                 - noUpper
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  labels:
+    external-secrets.io/component: controller
+  name: postgresqls.generators.external-secrets.io
+spec:
+  group: generators.external-secrets.io
+  names:
+    categories:
+      - external-secrets
+      - external-secrets-generators
+    kind: PostgreSql
+    listKind: PostgreSqlList
+    plural: postgresqls
+    singular: postgresql
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: |-
+            PostgreSql generates a random postgreSQL based on the
+            configuration parameters in spec.
+            You can specify the length, characterset and other attributes.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+              properties:
+                auth:
+                  description: Auth contains the credentials or auth configuration
+                  properties:
+                    password:
+                      description: A basic auth password used to authenticate against the PostgreSql instance.
+                      properties:
+                        key:
+                          description: The key where the token is found.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[-._a-zA-Z0-9]+$
+                          type: string
+                        name:
+                          description: The name of the Secret resource being referred to.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                      type: object
+                    username:
+                      description: A basic auth username used to authenticate against the PostgreSql instance.
+                      type: string
+                  required:
+                    - password
+                    - username
+                  type: object
+                database:
+                  default: postgres
+                  description: |-
+                    Database is the name of the database to connect to.
+                    If not specified, the "postgres" database will be used.
+                  type: string
+                host:
+                  description: Host is the server where the database is hosted.
+                  type: string
+                port:
+                  default: 5432
+                  description: |-
+                    Port is the port of the database to connect to.
+                    If not specified, the "5432" port will be used.
+                  type: string
+                user:
+                  description: User is the data of the user to be created.
+                  properties:
+                    attributes:
+                      description: |-
+                        Attributes is the list of PostgreSQL role attributes assigned to this user.
+                        Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                      enum:
+                        - SUPERUSER
+                        - CREATEDB
+                        - CREATEROLE
+                        - REPLICATION
+                      items:
+                        type: string
+                      type: array
+                    destructiveCleanup:
+                      default: false
+                      description: |-
+                        If set to true, case the generator needs to clean up the user
+                        it will drop everything it owns before dropping him.
+                        If not set, all things owned by the user will be reassinged
+                        to the user specified in `spec.auth.username`.
+                      type: boolean
+                    roles:
+                      description: |-
+                        Roles is the list of existing roles that will be granted to this user.
+                        If a role does not exist, it will be created without any attributes.
+                      items:
+                        type: string
+                      type: array
+                    suffixSize:
+                      default: 8
+                      description: |-
+                        SuffixSize define the size of the random suffix added after the defined username.
+                        If not specified, a random suffix of size 8 will be used.
+                      type: integer
+                    username:
+                      description: The username of the user to be created.
+                      type: string
+                  required:
+                    - username
+                  type: object
+              required:
+                - auth
+                - database
+                - host
+                - port
               type: object
           type: object
       served: true
@@ -27494,6 +27740,7 @@ spec:
                                             - BasicAuth
                                             - SSH
                                             - Neo4j
+                                            - PostgreSql
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -27527,6 +27774,7 @@ spec:
                                         - BasicAuth
                                         - SSH
                                         - Neo4j
+                                        - PostgreSql
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -28476,6 +28724,98 @@ spec:
                                             - allowRepeat
                                             - length
                                             - noUpper
+                                          type: object
+                                        postgreSqlSpec:
+                                          description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                password:
+                                                  description: A basic auth password used to authenticate against the PostgreSql instance.
+                                                  properties:
+                                                    key:
+                                                      description: The key where the token is found.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                  type: object
+                                                username:
+                                                  description: A basic auth username used to authenticate against the PostgreSql instance.
+                                                  type: string
+                                              required:
+                                                - password
+                                                - username
+                                              type: object
+                                            database:
+                                              default: postgres
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "postgres" database will be used.
+                                              type: string
+                                            host:
+                                              description: Host is the server where the database is hosted.
+                                              type: string
+                                            port:
+                                              default: 5432
+                                              description: |-
+                                                Port is the port of the database to connect to.
+                                                If not specified, the "5432" port will be used.
+                                              type: string
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                attributes:
+                                                  description: |-
+                                                    Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                                    Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                                                  enum:
+                                                    - SUPERUSER
+                                                    - CREATEDB
+                                                    - CREATEROLE
+                                                    - REPLICATION
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                destructiveCleanup:
+                                                  default: false
+                                                  description: |-
+                                                    If set to true, case the generator needs to clean up the user
+                                                    it will drop everything it owns before dropping him.
+                                                    If not set, all things owned by the user will be reassinged
+                                                    to the user specified in `spec.auth.username`.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    Roles is the list of existing roles that will be granted to this user.
+                                                    If a role does not exist, it will be created without any attributes.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                  type: integer
+                                                username:
+                                                  description: The username of the user to be created.
+                                                  type: string
+                                              required:
+                                                - username
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                            - host
+                                            - port
                                           type: object
                                         quayAccessTokenSpec:
                                           properties:
@@ -29816,6 +30156,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -30009,6 +30350,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -30080,6 +30422,7 @@ spec:
                                                 - BasicAuth
                                                 - SSH
                                                 - Neo4j
+                                                - PostgreSql
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -30255,6 +30598,7 @@ spec:
                                             - BasicAuth
                                             - SSH
                                             - Neo4j
+                                            - PostgreSql
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -30288,6 +30632,7 @@ spec:
                                         - BasicAuth
                                         - SSH
                                         - Neo4j
+                                        - PostgreSql
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -31237,6 +31582,98 @@ spec:
                                             - allowRepeat
                                             - length
                                             - noUpper
+                                          type: object
+                                        postgreSqlSpec:
+                                          description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                password:
+                                                  description: A basic auth password used to authenticate against the PostgreSql instance.
+                                                  properties:
+                                                    key:
+                                                      description: The key where the token is found.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                  type: object
+                                                username:
+                                                  description: A basic auth username used to authenticate against the PostgreSql instance.
+                                                  type: string
+                                              required:
+                                                - password
+                                                - username
+                                              type: object
+                                            database:
+                                              default: postgres
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "postgres" database will be used.
+                                              type: string
+                                            host:
+                                              description: Host is the server where the database is hosted.
+                                              type: string
+                                            port:
+                                              default: 5432
+                                              description: |-
+                                                Port is the port of the database to connect to.
+                                                If not specified, the "5432" port will be used.
+                                              type: string
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                attributes:
+                                                  description: |-
+                                                    Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                                    Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                                                  enum:
+                                                    - SUPERUSER
+                                                    - CREATEDB
+                                                    - CREATEROLE
+                                                    - REPLICATION
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                destructiveCleanup:
+                                                  default: false
+                                                  description: |-
+                                                    If set to true, case the generator needs to clean up the user
+                                                    it will drop everything it owns before dropping him.
+                                                    If not set, all things owned by the user will be reassinged
+                                                    to the user specified in `spec.auth.username`.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    Roles is the list of existing roles that will be granted to this user.
+                                                    If a role does not exist, it will be created without any attributes.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                  type: integer
+                                                username:
+                                                  description: The username of the user to be created.
+                                                  type: string
+                                              required:
+                                                - username
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                            - host
+                                            - port
                                           type: object
                                         quayAccessTokenSpec:
                                           properties:
@@ -32577,6 +33014,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -32770,6 +33208,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -32841,6 +33280,7 @@ spec:
                                                 - BasicAuth
                                                 - SSH
                                                 - Neo4j
+                                                - PostgreSql
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -33025,6 +33465,7 @@ spec:
                                                   - BasicAuth
                                                   - SSH
                                                   - Neo4j
+                                                  - PostgreSql
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -33058,6 +33499,7 @@ spec:
                                               - BasicAuth
                                               - SSH
                                               - Neo4j
+                                              - PostgreSql
                                             type: string
                                           rewrite:
                                             description: Rewrite contains rules for rewriting the generated keys.
@@ -34007,6 +34449,98 @@ spec:
                                                   - allowRepeat
                                                   - length
                                                   - noUpper
+                                                type: object
+                                              postgreSqlSpec:
+                                                description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                                                properties:
+                                                  auth:
+                                                    description: Auth contains the credentials or auth configuration
+                                                    properties:
+                                                      password:
+                                                        description: A basic auth password used to authenticate against the PostgreSql instance.
+                                                        properties:
+                                                          key:
+                                                            description: The key where the token is found.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[-._a-zA-Z0-9]+$
+                                                            type: string
+                                                          name:
+                                                            description: The name of the Secret resource being referred to.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                        type: object
+                                                      username:
+                                                        description: A basic auth username used to authenticate against the PostgreSql instance.
+                                                        type: string
+                                                    required:
+                                                      - password
+                                                      - username
+                                                    type: object
+                                                  database:
+                                                    default: postgres
+                                                    description: |-
+                                                      Database is the name of the database to connect to.
+                                                      If not specified, the "postgres" database will be used.
+                                                    type: string
+                                                  host:
+                                                    description: Host is the server where the database is hosted.
+                                                    type: string
+                                                  port:
+                                                    default: 5432
+                                                    description: |-
+                                                      Port is the port of the database to connect to.
+                                                      If not specified, the "5432" port will be used.
+                                                    type: string
+                                                  user:
+                                                    description: User is the data of the user to be created.
+                                                    properties:
+                                                      attributes:
+                                                        description: |-
+                                                          Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                                          Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                                                        enum:
+                                                          - SUPERUSER
+                                                          - CREATEDB
+                                                          - CREATEROLE
+                                                          - REPLICATION
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                      destructiveCleanup:
+                                                        default: false
+                                                        description: |-
+                                                          If set to true, case the generator needs to clean up the user
+                                                          it will drop everything it owns before dropping him.
+                                                          If not set, all things owned by the user will be reassinged
+                                                          to the user specified in `spec.auth.username`.
+                                                        type: boolean
+                                                      roles:
+                                                        description: |-
+                                                          Roles is the list of existing roles that will be granted to this user.
+                                                          If a role does not exist, it will be created without any attributes.
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                      suffixSize:
+                                                        default: 8
+                                                        description: |-
+                                                          SuffixSize define the size of the random suffix added after the defined username.
+                                                          If not specified, a random suffix of size 8 will be used.
+                                                        type: integer
+                                                      username:
+                                                        description: The username of the user to be created.
+                                                        type: string
+                                                    required:
+                                                      - username
+                                                    type: object
+                                                required:
+                                                  - auth
+                                                  - database
+                                                  - host
+                                                  - port
                                                 type: object
                                               quayAccessTokenSpec:
                                                 properties:
@@ -35347,6 +35881,7 @@ spec:
                                                             - BasicAuth
                                                             - SSH
                                                             - Neo4j
+                                                            - PostgreSql
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -35540,6 +36075,7 @@ spec:
                                                             - BasicAuth
                                                             - SSH
                                                             - Neo4j
+                                                            - PostgreSql
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -35611,6 +36147,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -36003,6 +36540,7 @@ spec:
                                             - BasicAuth
                                             - SSH
                                             - Neo4j
+                                            - PostgreSql
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -36036,6 +36574,7 @@ spec:
                                         - BasicAuth
                                         - SSH
                                         - Neo4j
+                                        - PostgreSql
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -36985,6 +37524,98 @@ spec:
                                             - allowRepeat
                                             - length
                                             - noUpper
+                                          type: object
+                                        postgreSqlSpec:
+                                          description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                password:
+                                                  description: A basic auth password used to authenticate against the PostgreSql instance.
+                                                  properties:
+                                                    key:
+                                                      description: The key where the token is found.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                  type: object
+                                                username:
+                                                  description: A basic auth username used to authenticate against the PostgreSql instance.
+                                                  type: string
+                                              required:
+                                                - password
+                                                - username
+                                              type: object
+                                            database:
+                                              default: postgres
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "postgres" database will be used.
+                                              type: string
+                                            host:
+                                              description: Host is the server where the database is hosted.
+                                              type: string
+                                            port:
+                                              default: 5432
+                                              description: |-
+                                                Port is the port of the database to connect to.
+                                                If not specified, the "5432" port will be used.
+                                              type: string
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                attributes:
+                                                  description: |-
+                                                    Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                                    Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                                                  enum:
+                                                    - SUPERUSER
+                                                    - CREATEDB
+                                                    - CREATEROLE
+                                                    - REPLICATION
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                destructiveCleanup:
+                                                  default: false
+                                                  description: |-
+                                                    If set to true, case the generator needs to clean up the user
+                                                    it will drop everything it owns before dropping him.
+                                                    If not set, all things owned by the user will be reassinged
+                                                    to the user specified in `spec.auth.username`.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    Roles is the list of existing roles that will be granted to this user.
+                                                    If a role does not exist, it will be created without any attributes.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                  type: integer
+                                                username:
+                                                  description: The username of the user to be created.
+                                                  type: string
+                                              required:
+                                                - username
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                            - host
+                                            - port
                                           type: object
                                         quayAccessTokenSpec:
                                           properties:
@@ -38325,6 +38956,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -38518,6 +39150,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -38589,6 +39222,7 @@ spec:
                                                 - BasicAuth
                                                 - SSH
                                                 - Neo4j
+                                                - PostgreSql
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -38764,6 +39398,7 @@ spec:
                                             - BasicAuth
                                             - SSH
                                             - Neo4j
+                                            - PostgreSql
                                           type: string
                                         name:
                                           description: Specify the name of the generator resource
@@ -38797,6 +39432,7 @@ spec:
                                         - BasicAuth
                                         - SSH
                                         - Neo4j
+                                        - PostgreSql
                                       type: string
                                     rewrite:
                                       description: Rewrite contains rules for rewriting the generated keys.
@@ -39746,6 +40382,98 @@ spec:
                                             - allowRepeat
                                             - length
                                             - noUpper
+                                          type: object
+                                        postgreSqlSpec:
+                                          description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                                          properties:
+                                            auth:
+                                              description: Auth contains the credentials or auth configuration
+                                              properties:
+                                                password:
+                                                  description: A basic auth password used to authenticate against the PostgreSql instance.
+                                                  properties:
+                                                    key:
+                                                      description: The key where the token is found.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[-._a-zA-Z0-9]+$
+                                                      type: string
+                                                    name:
+                                                      description: The name of the Secret resource being referred to.
+                                                      maxLength: 253
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                  type: object
+                                                username:
+                                                  description: A basic auth username used to authenticate against the PostgreSql instance.
+                                                  type: string
+                                              required:
+                                                - password
+                                                - username
+                                              type: object
+                                            database:
+                                              default: postgres
+                                              description: |-
+                                                Database is the name of the database to connect to.
+                                                If not specified, the "postgres" database will be used.
+                                              type: string
+                                            host:
+                                              description: Host is the server where the database is hosted.
+                                              type: string
+                                            port:
+                                              default: 5432
+                                              description: |-
+                                                Port is the port of the database to connect to.
+                                                If not specified, the "5432" port will be used.
+                                              type: string
+                                            user:
+                                              description: User is the data of the user to be created.
+                                              properties:
+                                                attributes:
+                                                  description: |-
+                                                    Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                                    Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                                                  enum:
+                                                    - SUPERUSER
+                                                    - CREATEDB
+                                                    - CREATEROLE
+                                                    - REPLICATION
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                destructiveCleanup:
+                                                  default: false
+                                                  description: |-
+                                                    If set to true, case the generator needs to clean up the user
+                                                    it will drop everything it owns before dropping him.
+                                                    If not set, all things owned by the user will be reassinged
+                                                    to the user specified in `spec.auth.username`.
+                                                  type: boolean
+                                                roles:
+                                                  description: |-
+                                                    Roles is the list of existing roles that will be granted to this user.
+                                                    If a role does not exist, it will be created without any attributes.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                  type: integer
+                                                username:
+                                                  description: The username of the user to be created.
+                                                  type: string
+                                              required:
+                                                - username
+                                              type: object
+                                          required:
+                                            - auth
+                                            - database
+                                            - host
+                                            - port
                                           type: object
                                         quayAccessTokenSpec:
                                           properties:
@@ -41086,6 +41814,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -41279,6 +42008,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource
@@ -41350,6 +42080,7 @@ spec:
                                                 - BasicAuth
                                                 - SSH
                                                 - Neo4j
+                                                - PostgreSql
                                               type: string
                                             name:
                                               description: Specify the name of the generator resource
@@ -41534,6 +42265,7 @@ spec:
                                                   - BasicAuth
                                                   - SSH
                                                   - Neo4j
+                                                  - PostgreSql
                                                 type: string
                                               name:
                                                 description: Specify the name of the generator resource
@@ -41567,6 +42299,7 @@ spec:
                                               - BasicAuth
                                               - SSH
                                               - Neo4j
+                                              - PostgreSql
                                             type: string
                                           rewrite:
                                             description: Rewrite contains rules for rewriting the generated keys.
@@ -42516,6 +43249,98 @@ spec:
                                                   - allowRepeat
                                                   - length
                                                   - noUpper
+                                                type: object
+                                              postgreSqlSpec:
+                                                description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
+                                                properties:
+                                                  auth:
+                                                    description: Auth contains the credentials or auth configuration
+                                                    properties:
+                                                      password:
+                                                        description: A basic auth password used to authenticate against the PostgreSql instance.
+                                                        properties:
+                                                          key:
+                                                            description: The key where the token is found.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[-._a-zA-Z0-9]+$
+                                                            type: string
+                                                          name:
+                                                            description: The name of the Secret resource being referred to.
+                                                            maxLength: 253
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                        type: object
+                                                      username:
+                                                        description: A basic auth username used to authenticate against the PostgreSql instance.
+                                                        type: string
+                                                    required:
+                                                      - password
+                                                      - username
+                                                    type: object
+                                                  database:
+                                                    default: postgres
+                                                    description: |-
+                                                      Database is the name of the database to connect to.
+                                                      If not specified, the "postgres" database will be used.
+                                                    type: string
+                                                  host:
+                                                    description: Host is the server where the database is hosted.
+                                                    type: string
+                                                  port:
+                                                    default: 5432
+                                                    description: |-
+                                                      Port is the port of the database to connect to.
+                                                      If not specified, the "5432" port will be used.
+                                                    type: string
+                                                  user:
+                                                    description: User is the data of the user to be created.
+                                                    properties:
+                                                      attributes:
+                                                        description: |-
+                                                          Attributes is the list of PostgreSQL role attributes assigned to this user.
+                                                          Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
+                                                        enum:
+                                                          - SUPERUSER
+                                                          - CREATEDB
+                                                          - CREATEROLE
+                                                          - REPLICATION
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                      destructiveCleanup:
+                                                        default: false
+                                                        description: |-
+                                                          If set to true, case the generator needs to clean up the user
+                                                          it will drop everything it owns before dropping him.
+                                                          If not set, all things owned by the user will be reassinged
+                                                          to the user specified in `spec.auth.username`.
+                                                        type: boolean
+                                                      roles:
+                                                        description: |-
+                                                          Roles is the list of existing roles that will be granted to this user.
+                                                          If a role does not exist, it will be created without any attributes.
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                      suffixSize:
+                                                        default: 8
+                                                        description: |-
+                                                          SuffixSize define the size of the random suffix added after the defined username.
+                                                          If not specified, a random suffix of size 8 will be used.
+                                                        type: integer
+                                                      username:
+                                                        description: The username of the user to be created.
+                                                        type: string
+                                                    required:
+                                                      - username
+                                                    type: object
+                                                required:
+                                                  - auth
+                                                  - database
+                                                  - host
+                                                  - port
                                                 type: object
                                               quayAccessTokenSpec:
                                                 properties:
@@ -43856,6 +44681,7 @@ spec:
                                                             - BasicAuth
                                                             - SSH
                                                             - Neo4j
+                                                            - PostgreSql
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -44049,6 +44875,7 @@ spec:
                                                             - BasicAuth
                                                             - SSH
                                                             - Neo4j
+                                                            - PostgreSql
                                                           type: string
                                                         name:
                                                           description: Specify the name of the generator resource
@@ -44120,6 +44947,7 @@ spec:
                                                       - BasicAuth
                                                       - SSH
                                                       - Neo4j
+                                                      - PostgreSql
                                                     type: string
                                                   name:
                                                     description: Specify the name of the generator resource

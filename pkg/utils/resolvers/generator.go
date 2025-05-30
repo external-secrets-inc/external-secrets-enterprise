@@ -322,6 +322,17 @@ func clusterGeneratorToVirtual(gen *genv1alpha1.ClusterGenerator) (client.Object
 			},
 			Spec: *gen.Spec.Generator.Neo4jSpec,
 		}, nil
+	case genv1alpha1.GeneratorKindPostgreSql:
+		if gen.Spec.Generator.PostgreSqlSpec == nil {
+			return nil, fmt.Errorf("when kind is %s, PostgreSqlSpec must be set", gen.Spec.Kind)
+		}
+		return &genv1alpha1.PostgreSql{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
+				Kind:       genv1alpha1.PostgreSqlKind,
+			},
+			Spec: *gen.Spec.Generator.PostgreSqlSpec,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown kind %s", gen.Spec.Kind)
 	}

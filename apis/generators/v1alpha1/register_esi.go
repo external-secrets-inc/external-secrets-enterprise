@@ -50,4 +50,5 @@ func init() {
 	SchemeBuilder.Register(&BasicAuth{}, &BasicAuthList{})
 	SchemeBuilder.Register(&SSH{}, &SSHList{})
 	SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
+	SchemeBuilder.Register(&PostgreSql{}, &PostgreSqlList{})
 }
