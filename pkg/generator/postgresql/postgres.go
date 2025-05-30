@@ -60,7 +60,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("unable to create or replace user: %w", err)
 	}
 
-	username, ok := user["user"]
+	username, ok := user["username"]
 	if !ok {
 		return nil, nil, fmt.Errorf("user not found in response")
 	}
@@ -232,7 +232,7 @@ func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.Po
 	}
 
 	return map[string][]byte{
-		"user":     []byte(username),
+		"username": []byte(username),
 		"password": pass,
 	}, nil
 }
@@ -259,7 +259,7 @@ func dropUser(ctx context.Context, db *pgx.Conn, username, adminUser string, des
 	if !destructive {
 		_, err := db.Exec(ctx, fmt.Sprintf(`REASSIGN OWNED BY %s TO %s`, username, adminUser))
 		if err != nil {
-			return fmt.Errorf("failed to reassign owned by %s to %s: %v", username, adminUser, err)
+			return fmt.Errorf("failed to reassign owned by %s to %s: %w", username, adminUser, err)
 		}
 	}
 	dropQueries := []string{
@@ -303,9 +303,9 @@ var validAttributes = map[string]genv1alpha1.PostgreSqlUserAttributes{
 	string(genv1alpha1.PostgreSqlUserReplication): genv1alpha1.PostgreSqlUserReplication,
 }
 
-// ConvertStringArrayToAttributes converts []string to []PostgreSqlUserAttributes
+// ConvertStringArrayToAttributes converts []string to []PostgreSqlUserAttributes.
 func ConvertStringArrayToAttributes(input []string) ([]genv1alpha1.PostgreSqlUserAttributes, error) {
-	var attrs []genv1alpha1.PostgreSqlUserAttributes
+	attrs := make([]genv1alpha1.PostgreSqlUserAttributes, 0, len(input))
 	for _, val := range input {
 		attr, ok := validAttributes[strings.ToUpper(val)]
 		if !ok {

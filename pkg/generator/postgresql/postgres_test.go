@@ -1,3 +1,17 @@
+// /*
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 package postgresql
 
 import (
@@ -84,10 +98,8 @@ func (s *PostgresTestSuite) SetupSuite() {
 	s.pg = pgContainer
 	s.port, err = pgContainer.MappedPort(s.ctx, "5432/tcp")
 	require.NoError(s.T(), err)
-	s.T().Logf("Port: %s", string(s.port))
 
 	connStr, err := pgContainer.ConnectionString(s.ctx, "sslmode=disable")
-	s.T().Logf("Postgres connection string: %s", connStr)
 	require.NoError(s.T(), err)
 
 	conn, err := pgx.Connect(s.ctx, connStr)
@@ -130,9 +142,9 @@ func newGeneratorSpec(t *testing.T, host, port, username string, destructive boo
 }
 
 func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
-	user := fmt.Sprintf("%s_TestGenerate", testUser)
+	username := fmt.Sprintf("%s_TestGenerate", testUser)
 
-	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), user, true)
+	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true)
 
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
@@ -142,12 +154,12 @@ func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
 	// Call Generate
 	result, statusRaw, err := gen.Generate(s.ctx, &apiextensions.JSON{Raw: specJSON}, s.client, testNamespace)
 	require.NoError(s.T(), err)
-	require.Contains(s.T(), result, "user")
+	require.Contains(s.T(), result, "username")
 	require.Contains(s.T(), result, "password")
-	regex := regexp.MustCompile(fmt.Sprintf(`%s_[a-zA-Z0-9]{8}`, user))
-	assert.Regexp(s.T(), regex, string(result["user"]))
+	regex := regexp.MustCompile(fmt.Sprintf(`%s_[a-zA-Z0-9]{8}`, username))
+	assert.Regexp(s.T(), regex, string(result["username"]))
 
-	generatedUser := string(result["user"])
+	generatedUsername := string(result["username"])
 	// Verify attributes
 	var (
 		rolcanlogin    bool
@@ -160,7 +172,7 @@ func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
 		SELECT rolcanlogin, rolcreatedb, rolcreaterole, rolsuper, rolreplication
 		FROM pg_roles
 		WHERE rolname = $1
-	`, generatedUser)
+	`, generatedUsername)
 	err = row.Scan(&rolcanlogin, &rolcreatedb, &rolcreaterole, &rolsuper, &rolreplication)
 	require.NoError(s.T(), err)
 
@@ -177,7 +189,7 @@ func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
 		JOIN pg_roles r ON r.oid = m.roleid
 		JOIN pg_roles u ON u.oid = m.member
 		WHERE u.rolname = $1
-	`, generatedUser)
+	`, generatedUsername)
 	require.NoError(s.T(), err)
 
 	defer rows.Close()
@@ -198,16 +210,16 @@ func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
 	require.NoError(s.T(), err)
 
 	// Verify user was dropped
-	row = s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUser)
+	row = s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUsername)
 	var dummy int
 	err = row.Scan(&dummy)
 	assert.ErrorIs(s.T(), err, sql.ErrNoRows)
 }
 
 func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
-	user := fmt.Sprintf("%s_NonDestructive", testUser)
+	username := fmt.Sprintf("%s_NonDestructive", testUser)
 
-	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), user, false)
+	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false)
 	spec.Spec.User.Attributes = []string{"SUPERUSER"}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
@@ -215,15 +227,15 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	gen := &Generator{}
 	result, rawStatus, err := gen.Generate(s.ctx, &apiextensions.JSON{Raw: specJSON}, s.client, testNamespace)
 	require.NoError(s.T(), err)
-	require.Contains(s.T(), result, "user")
+	require.Contains(s.T(), result, "username")
 	require.Contains(s.T(), result, "password")
 
-	generatedUser := string(result["user"])
+	generatedUsername := string(result["username"])
 	password := string(result["password"])
 
-	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUser, false)
+	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false)
 	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
-		Username: generatedUser,
+		Username: generatedUsername,
 		Password: genv1alpha1.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
@@ -240,7 +252,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	err = gen.Cleanup(s.ctx, &apiextensions.JSON{Raw: specJSON}, rawStatus, s.client, testNamespace)
 	require.NoError(s.T(), err)
 
-	row := s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUser)
+	row := s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUsername)
 	var dummy int
 	err = row.Scan(&dummy)
 	assert.ErrorIs(s.T(), err, sql.ErrNoRows)
@@ -260,9 +272,9 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 }
 
 func (s *PostgresTestSuite) TestDestructiveCleanup() {
-	user := fmt.Sprintf("%s_Destructive", testUser)
+	username := fmt.Sprintf("%s_Destructive", testUser)
 
-	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), user, true)
+	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true)
 	spec.Spec.User.Attributes = []string{"SUPERUSER"}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
@@ -270,15 +282,15 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	gen := &Generator{}
 	result, rawStatus, err := gen.Generate(s.ctx, &apiextensions.JSON{Raw: specJSON}, s.client, testNamespace)
 	require.NoError(s.T(), err)
-	require.Contains(s.T(), result, "user")
+	require.Contains(s.T(), result, "username")
 	require.Contains(s.T(), result, "password")
 
-	generatedUser := string(result["user"])
+	generatedUsername := string(result["username"])
 	password := string(result["password"])
 
-	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUser, true)
+	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, true)
 	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
-		Username: generatedUser,
+		Username: generatedUsername,
 		Password: genv1alpha1.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
@@ -295,7 +307,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	err = gen.Cleanup(s.ctx, &apiextensions.JSON{Raw: specJSON}, rawStatus, s.client, testNamespace)
 	require.NoError(s.T(), err)
 
-	row := s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUser)
+	row := s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUsername)
 	var dummy int
 	err = row.Scan(&dummy)
 	assert.ErrorIs(s.T(), err, sql.ErrNoRows)
