@@ -44,13 +44,18 @@ type PostgreSqlAuth struct {
 	Password SecretKeySelector `json:"password"`
 }
 
-type PostgreSqlUserAttributes string
+type PostgreSqlUserAttributesEnum string
 
 const (
-	PostgreSqlUserSuperUser   PostgreSqlUserAttributes = "SUPERUSER"
-	PostgreSqlUserCreateDb    PostgreSqlUserAttributes = "CREATEDB"
-	PostgreSqlUserCreateRole  PostgreSqlUserAttributes = "CREATEROLE"
-	PostgreSqlUserReplication PostgreSqlUserAttributes = "REPLICATION"
+	PostgreSqlUserSuperUser       PostgreSqlUserAttributesEnum = "SUPERUSER"
+	PostgreSqlUserCreateDb        PostgreSqlUserAttributesEnum = "CREATEDB"
+	PostgreSqlUserCreateRole      PostgreSqlUserAttributesEnum = "CREATEROLE"
+	PostgreSqlUserReplication     PostgreSqlUserAttributesEnum = "REPLICATION"
+	PostgreSqlUserNoInherit       PostgreSqlUserAttributesEnum = "NOINHERIT"
+	PostgreSqlUserByPassRls       PostgreSqlUserAttributesEnum = "BYPASSRLS"
+	PostgreSqlUserConnectionLimit PostgreSqlUserAttributesEnum = "CONNECTION LIMIT"
+	PostgreSqlUserLogin           PostgreSqlUserAttributesEnum = "LOGIN"
+	PostgreSqlUserPassword        PostgreSqlUserAttributesEnum = "PASSWORD"
 )
 
 type PostgreSqlUser struct {
@@ -63,9 +68,7 @@ type PostgreSqlUser struct {
 	// +kubebuilder:default=8
 	SuffixSize *int `json:"suffixSize,omitempty"`
 	// Attributes is the list of PostgreSQL role attributes assigned to this user.
-	// Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION.
-	// +kubebuilder:validation:Enum=SUPERUSER;CREATEDB;CREATEROLE;REPLICATION;
-	Attributes []string `json:"attributes,omitempty"`
+	Attributes []PostgreSqlUserAttribute `json:"attributes,omitempty"`
 	// Roles is the list of existing roles that will be granted to this user.
 	// If a role does not exist, it will be created without any attributes.
 	Roles []string `json:"roles,omitempty"`
@@ -80,6 +83,15 @@ type PostgreSqlUser struct {
 	// If not specified, the role from `spec.auth.username` will be used.
 	// If the role does not exist, it will be created with no attributes or roles..
 	ReassignTo *string `json:"reassignTo,omitempty"`
+}
+
+type PostgreSqlUserAttribute struct {
+	// Attribute is the name of the PostgreSQL role attribute to be set for the user.
+	// Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION, NOINHERIT, BYPASSRLS, CONNECTION_LIMIT.
+	// +kubebuilder:validation:Enum=SUPERUSER;CREATEDB;CREATEROLE;REPLICATION;NOINHERIT;BYPASSRLS;CONNECTION_LIMIT
+	Name string `json:"name"`
+	// Optional value for the attribute (e.g., connection limit)
+	Value *string `json:"value,omitempty"`
 }
 
 type PostgreSqlUserState struct {

@@ -133,13 +133,78 @@ func newGeneratorSpec(t *testing.T, host, port, username string, destructive boo
 				},
 			},
 			User: &genv1alpha1.PostgreSqlUser{
-				Username:           username,
-				Attributes:         []string{"CREATEDB"},
+				Username: username,
+				Attributes: []genv1alpha1.PostgreSqlUserAttribute{
+					{Name: "CREATEDB"},
+				},
 				Roles:              []string{"pg_read_all_data", "customrole"},
 				DestructiveCleanup: destructive,
 				ReassignTo:         reassignTo,
 			},
 		},
+	}
+}
+
+func (s *PostgresTestSuite) verifyAttributes(rolname string,
+	canLogin, createDb, createRole, superuser bool,
+	replication, inherit, byPassRls bool,
+	connLimit int,
+) {
+	var (
+		rolcanlogin    bool
+		rolcreatedb    bool
+		rolcreaterole  bool
+		rolsuper       bool
+		rolreplication bool
+		rolinherit     bool
+		rolconnlimit   int
+		rolpassword    string
+		rolbypassrls   bool
+	)
+	row := s.db.QueryRow(s.ctx, `
+		SELECT rolcanlogin, rolcreatedb, rolcreaterole, rolsuper, rolreplication, 
+		rolinherit, rolconnlimit, rolpassword, rolbypassrls
+		FROM pg_roles
+		WHERE rolname = $1
+	`, rolname)
+	err := row.Scan(
+		&rolcanlogin, &rolcreatedb, &rolcreaterole, &rolsuper, &rolreplication,
+		&rolinherit, &rolconnlimit, &rolpassword, &rolbypassrls,
+	)
+	require.NoError(s.T(), err)
+
+	assert.Equal(s.T(), canLogin, rolcanlogin, "user should be able to login")
+	assert.Equal(s.T(), createDb, rolcreatedb, "user should have CREATEDB")
+	assert.Equal(s.T(), createRole, rolcreaterole, "user should not have CREATEROLE")
+	assert.Equal(s.T(), superuser, rolsuper, "user should not be SUPERUSER")
+	assert.Equal(s.T(), replication, rolreplication, "user should not have REPLICATION")
+	assert.Equal(s.T(), inherit, rolinherit, "user should have INHERIT")
+	assert.Equal(s.T(), byPassRls, rolbypassrls, "user should not have BYPASSRLS")
+	assert.Equal(s.T(), connLimit, rolconnlimit, "user should have no connection limit")
+	assert.NotNil(s.T(), rolpassword, "user should have PASSWORD")
+}
+
+func (s *PostgresTestSuite) verifyGrantedRoles(rolname string, expectedRoles []string) {
+	rows, err := s.db.Query(s.ctx, `
+		SELECT r.rolname
+		FROM pg_auth_members m
+		JOIN pg_roles r ON r.oid = m.roleid
+		JOIN pg_roles u ON u.oid = m.member
+		WHERE u.rolname = $1
+	`, rolname)
+	require.NoError(s.T(), err)
+
+	defer rows.Close()
+	var grantedRoles []string
+	for rows.Next() {
+		var role string
+		require.NoError(s.T(), rows.Scan(&role))
+		grantedRoles = append(grantedRoles, role)
+	}
+
+	require.NoError(s.T(), rows.Err())
+	for _, expectedRole := range expectedRoles {
+		assert.Contains(s.T(), grantedRoles, expectedRole, "user should have role %s", expectedRole)
 	}
 }
 
@@ -163,56 +228,69 @@ func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
 
 	generatedUsername := string(result["username"])
 	// Verify attributes
-	var (
-		rolcanlogin    bool
-		rolcreatedb    bool
-		rolcreaterole  bool
-		rolsuper       bool
-		rolreplication bool
-	)
-	row := s.db.QueryRow(s.ctx, `
-		SELECT rolcanlogin, rolcreatedb, rolcreaterole, rolsuper, rolreplication
-		FROM pg_roles
-		WHERE rolname = $1
-	`, generatedUsername)
-	err = row.Scan(&rolcanlogin, &rolcreatedb, &rolcreaterole, &rolsuper, &rolreplication)
-	require.NoError(s.T(), err)
-
-	assert.True(s.T(), rolcanlogin, "user should be able to login")
-	assert.True(s.T(), rolcreatedb, "user should have CREATEDB")
-	assert.False(s.T(), rolcreaterole, "user should not have CREATEROLE")
-	assert.False(s.T(), rolsuper, "user should not be SUPERUSER")
-	assert.False(s.T(), rolreplication, "user should not have REPLICATION")
+	s.verifyAttributes(generatedUsername, true, true, false, false, false, true, false, -1)
 
 	// Verify granted roles
-	rows, err := s.db.Query(s.ctx, `
-		SELECT r.rolname
-		FROM pg_auth_members m
-		JOIN pg_roles r ON r.oid = m.roleid
-		JOIN pg_roles u ON u.oid = m.member
-		WHERE u.rolname = $1
-	`, generatedUsername)
-	require.NoError(s.T(), err)
-
-	defer rows.Close()
-	var grantedRoles []string
-	for rows.Next() {
-		var role string
-		require.NoError(s.T(), rows.Scan(&role))
-		grantedRoles = append(grantedRoles, role)
-	}
-
-	require.NoError(s.T(), rows.Err())
-
-	assert.Contains(s.T(), grantedRoles, "pg_read_all_data")
-	assert.Contains(s.T(), grantedRoles, "customrole")
+	s.verifyGrantedRoles(generatedUsername, []string{"pg_read_all_data", "customrole"})
 
 	// Cleanup
 	err = gen.Cleanup(s.ctx, &apiextensions.JSON{Raw: specJSON}, statusRaw, s.client, testNamespace)
 	require.NoError(s.T(), err)
 
 	// Verify user was dropped
-	row = s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUsername)
+	row := s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUsername)
+	var dummy int
+	err = row.Scan(&dummy)
+	assert.ErrorIs(s.T(), err, sql.ErrNoRows)
+}
+
+func (s *PostgresTestSuite) TestGenerateUserWithSameUsername() {
+	username := fmt.Sprintf("%s_TestGenerateUserWithSameUsername", testUser)
+
+	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
+	spec.Spec.User.SuffixSize = ptr.To(0)
+	specJSON, err := yaml.Marshal(spec)
+	require.NoError(s.T(), err)
+
+	gen := &Generator{}
+
+	// Call Generate
+	result, _, err := gen.Generate(s.ctx, &apiextensions.JSON{Raw: specJSON}, s.client, testNamespace)
+	require.NoError(s.T(), err)
+	require.Contains(s.T(), result, "username")
+	require.Contains(s.T(), result, "password")
+	assert.Equal(s.T(), username, string(result["username"]))
+
+	generatedUsername := string(result["username"])
+	s.verifyAttributes(generatedUsername, true, true, false, false, false, true, false, -1)
+	s.verifyGrantedRoles(generatedUsername, []string{"pg_read_all_data", "customrole"})
+
+	// Call Generate again with new attributes
+	spec.Spec.User.SuffixSize = ptr.To(0)
+	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{
+		{Name: "NOINHERIT"},
+		{Name: "CONNECTION_LIMIT", Value: ptr.To("5")},
+	}
+	spec.Spec.User.Roles = []string{"pg_write_all_data"}
+
+	specJSON, err = yaml.Marshal(spec)
+	require.NoError(s.T(), err)
+	result, statusRaw, err := gen.Generate(s.ctx, &apiextensions.JSON{Raw: specJSON}, s.client, testNamespace)
+	require.NoError(s.T(), err)
+	require.Contains(s.T(), result, "username")
+	require.Contains(s.T(), result, "password")
+	assert.Equal(s.T(), username, string(result["username"]))
+
+	generatedUsername = string(result["username"])
+	s.verifyAttributes(generatedUsername, true, false, false, false, false, false, false, 5)
+	s.verifyGrantedRoles(generatedUsername, []string{"pg_write_all_data"})
+
+	// Cleanup
+	err = gen.Cleanup(s.ctx, &apiextensions.JSON{Raw: specJSON}, statusRaw, s.client, testNamespace)
+	require.NoError(s.T(), err)
+
+	// Verify user was dropped
+	row := s.db.QueryRow(s.ctx, `SELECT 1 FROM pg_roles WHERE rolname = $1`, generatedUsername)
 	var dummy int
 	err = row.Scan(&dummy)
 	assert.ErrorIs(s.T(), err, sql.ErrNoRows)
@@ -243,7 +321,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	username := fmt.Sprintf("%s_NonDestructive", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, nil)
-	spec.Spec.User.Attributes = []string{"SUPERUSER"}
+	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -299,7 +377,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 
 	// Generate reassign user as `username` without suffix
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, nil)
-	spec.Spec.User.Attributes = []string{"SUPERUSER"}
+	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	spec.Spec.User.SuffixSize = ptr.To(0)
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
@@ -309,7 +387,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 	require.NoError(s.T(), err)
 
 	spec = newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, &username)
-	spec.Spec.User.Attributes = []string{"SUPERUSER"}
+	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err = yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -364,7 +442,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithNonExistentReassignUser
 	username := fmt.Sprintf("%s_NonDestructiveWithNonExistentReassignUser", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, &username)
-	spec.Spec.User.Attributes = []string{"SUPERUSER"}
+	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -419,7 +497,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	username := fmt.Sprintf("%s_Destructive", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
-	spec.Spec.User.Attributes = []string{"SUPERUSER"}
+	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 

@@ -33,6 +33,18 @@ const (
 	defaultSuffixSize = 8
 )
 
+var mapAttributes = map[string]genv1alpha1.PostgreSqlUserAttributesEnum{
+	string(genv1alpha1.PostgreSqlUserSuperUser):   genv1alpha1.PostgreSqlUserSuperUser,
+	string(genv1alpha1.PostgreSqlUserCreateDb):    genv1alpha1.PostgreSqlUserCreateDb,
+	string(genv1alpha1.PostgreSqlUserCreateRole):  genv1alpha1.PostgreSqlUserCreateRole,
+	string(genv1alpha1.PostgreSqlUserReplication): genv1alpha1.PostgreSqlUserReplication,
+	string(genv1alpha1.PostgreSqlUserNoInherit):   genv1alpha1.PostgreSqlUserNoInherit,
+	string(genv1alpha1.PostgreSqlUserByPassRls):   genv1alpha1.PostgreSqlUserByPassRls,
+	"CONNECTION_LIMIT":                            genv1alpha1.PostgreSqlUserConnectionLimit,
+	string(genv1alpha1.PostgreSqlUserLogin):       genv1alpha1.PostgreSqlUserLogin,
+	string(genv1alpha1.PostgreSqlUserPassword):    genv1alpha1.PostgreSqlUserPassword,
+}
+
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
 	res, err := parseSpec(jsonSpec.Raw)
 	if err != nil {
@@ -57,7 +69,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 
 	user, err := createUser(ctx, db, &res.Spec)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create or replace user: %w", err)
+		return nil, nil, fmt.Errorf("unable to create or update user: %w", err)
 	}
 
 	username, ok := user["username"]
@@ -166,20 +178,84 @@ func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
 	return current_rows, nil
 }
 
-func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttributes) error {
-	var query strings.Builder
-	query.WriteString(fmt.Sprintf("CREATE ROLE %s", pgx.Identifier{roleName}.Sanitize()))
+func addRolesAttributesToQueryString(query *strings.Builder, attributes []genv1alpha1.PostgreSqlUserAttribute) {
 	if len(attributes) > 0 {
 		query.WriteString(" WITH ")
 		for i, attr := range attributes {
 			if i > 0 {
-				query.WriteString(", ")
+				query.WriteString(" ")
 			}
-			query.WriteString(string(attr))
+			if attr.Value != nil {
+				if string(mapAttributes[attr.Name]) == string(genv1alpha1.PostgreSqlUserPassword) {
+					fmt.Fprintf(query, `%s '%s'`, string(mapAttributes[attr.Name]), *attr.Value)
+				} else {
+					fmt.Fprintf(query, `%s %s`, string(mapAttributes[attr.Name]), *attr.Value)
+				}
+			} else {
+				query.WriteString(string(mapAttributes[attr.Name]))
+			}
 		}
 	}
+}
+
+func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttribute) error {
+	var query strings.Builder
+	query.WriteString(fmt.Sprintf("CREATE ROLE %s", pgx.Identifier{roleName}.Sanitize()))
+	addRolesAttributesToQueryString(&query, attributes)
 	_, err := db.Exec(ctx, query.String())
 	return err
+}
+
+func updateRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttribute) error {
+	var query strings.Builder
+	query.WriteString(fmt.Sprintf("ALTER ROLE %s", pgx.Identifier{roleName}.Sanitize()))
+	addRolesAttributesToQueryString(&query, attributes)
+	_, err := db.Exec(ctx, query.String())
+	return err
+}
+
+func resetRole(ctx context.Context, db *pgx.Conn, roleName string) error {
+	sanitizedRole := pgx.Identifier{roleName}.Sanitize()
+
+	_, err := db.Exec(ctx, fmt.Sprintf(`
+		ALTER ROLE %s WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS
+	`, sanitizedRole))
+	if err != nil {
+		return fmt.Errorf("failed to reset attributes for role %s: %w", roleName, err)
+	}
+
+	rows, err := db.Query(ctx, `
+		SELECT r.rolname
+		FROM pg_auth_members m
+		JOIN pg_roles r ON r.oid = m.roleid
+		JOIN pg_roles u ON u.oid = m.member
+		WHERE u.rolname = $1
+	`, roleName)
+	if err != nil {
+		return fmt.Errorf("failed to list granted roles for %s: %w", roleName, err)
+	}
+	defer rows.Close()
+
+	var grantedRoles []string
+	for rows.Next() {
+		var grantedRole string
+		if err := rows.Scan(&grantedRole); err != nil {
+			return fmt.Errorf("failed to scan granted role: %w", err)
+		}
+		grantedRoles = append(grantedRoles, pgx.Identifier{grantedRole}.Sanitize())
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating granted roles: %w", err)
+	}
+
+	rolesCSV := strings.Join(grantedRoles, ", ")
+
+	_, err = db.Exec(ctx, fmt.Sprintf("REVOKE %s FROM %s", rolesCSV, sanitizedRole))
+	if err != nil {
+		return fmt.Errorf("failed to revoke roles [%s] from %s: %w", rolesCSV, roleName, err)
+	}
+
+	return nil
 }
 
 func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlSpec) (map[string][]byte, error) {
@@ -197,19 +273,9 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlS
 		username = fmt.Sprintf("%s_%s", username, suffix)
 	}
 
-	userAttributes, err := ConvertStringArrayToAttributes(spec.User.Attributes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert user attributes: %w", err)
-	}
-
 	current_roles, err := getExistingRoles(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get existing roles: %w", err)
-	}
-
-	err = createRole(ctx, db, username, userAttributes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create role %s: %w", username, err)
 	}
 
 	pass, err := generatePassword(genv1alpha1.Password{
@@ -221,13 +287,32 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlS
 		return nil, fmt.Errorf("failed to generate password: %w", err)
 	}
 
-	userAttributesQuery := fmt.Sprintf(`ALTER ROLE %s WITH LOGIN PASSWORD '%s'`, pgx.Identifier{username}.Sanitize(), string(pass))
-	_, err = db.Exec(ctx, userAttributesQuery)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create user %s: %w", username, err)
+	spec.User.Attributes = append(spec.User.Attributes,
+		genv1alpha1.PostgreSqlUserAttribute{
+			Name: string(genv1alpha1.PostgreSqlUserLogin),
+		}, genv1alpha1.PostgreSqlUserAttribute{
+			Name:  string(genv1alpha1.PostgreSqlUserPassword),
+			Value: ptr.To(string(pass)),
+		},
+	)
+
+	if !slices.Contains(current_roles, username) {
+		err = createRole(ctx, db, username, spec.User.Attributes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create role %s: %w", username, err)
+		}
+	} else {
+		err = resetRole(ctx, db, username)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reset role %s: %w", username, err)
+		}
+		err = updateRole(ctx, db, username, spec.User.Attributes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create role %s: %w", username, err)
+		}
 	}
 
-	err = addRolesToUser(ctx, db, username, spec.User.Roles, current_roles)
+	err = grantRolesToUser(ctx, db, username, spec.User.Roles, current_roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add roles to user %s: %w", username, err)
 	}
@@ -238,22 +323,30 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlS
 	}, nil
 }
 
-func addRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, current_roles []string) error {
+func grantRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, current_roles []string) error {
 	sanitizedUsername := pgx.Identifier{username}.Sanitize()
+
+	toGrant := make([]string, 0, len(roles))
 	for _, role := range roles {
 		if !slices.Contains(current_roles, role) {
-			err := createRole(ctx, db, role, nil)
-			if err != nil {
+			if err := createRole(ctx, db, role, nil); err != nil {
 				return fmt.Errorf("failed to create role %s: %w", role, err)
 			}
 		}
-
-		grantRoleQuery := fmt.Sprintf("GRANT %s TO %s", pgx.Identifier{role}.Sanitize(), sanitizedUsername)
-		_, err := db.Exec(ctx, grantRoleQuery)
-		if err != nil {
-			return fmt.Errorf("failed to grant role %s to user %s: %w", role, username, err)
-		}
+		toGrant = append(toGrant, pgx.Identifier{role}.Sanitize())
 	}
+
+	if len(toGrant) == 0 {
+		return nil
+	}
+
+	rolesCSV := strings.Join(toGrant, ", ")
+	query := fmt.Sprintf("GRANT %s TO %s", rolesCSV, sanitizedUsername)
+
+	if _, err := db.Exec(ctx, query); err != nil {
+		return fmt.Errorf("failed to grant roles [%s] to user %s: %w", rolesCSV, username, err)
+	}
+
 	return nil
 }
 
@@ -313,26 +406,6 @@ func generatePassword(
 		return nil, fmt.Errorf("password not found in generated map")
 	}
 	return pass, nil
-}
-
-var validAttributes = map[string]genv1alpha1.PostgreSqlUserAttributes{
-	string(genv1alpha1.PostgreSqlUserSuperUser):   genv1alpha1.PostgreSqlUserSuperUser,
-	string(genv1alpha1.PostgreSqlUserCreateDb):    genv1alpha1.PostgreSqlUserCreateDb,
-	string(genv1alpha1.PostgreSqlUserCreateRole):  genv1alpha1.PostgreSqlUserCreateRole,
-	string(genv1alpha1.PostgreSqlUserReplication): genv1alpha1.PostgreSqlUserReplication,
-}
-
-// ConvertStringArrayToAttributes converts []string to []PostgreSqlUserAttributes.
-func ConvertStringArrayToAttributes(input []string) ([]genv1alpha1.PostgreSqlUserAttributes, error) {
-	attrs := make([]genv1alpha1.PostgreSqlUserAttributes, 0, len(input))
-	for _, val := range input {
-		attr, ok := validAttributes[strings.ToUpper(val)]
-		if !ok {
-			return nil, fmt.Errorf("invalid attribute: %s", val)
-		}
-		attrs = append(attrs, attr)
-	}
-	return attrs, nil
 }
 
 func generateRandomString(size int) (string, error) {
