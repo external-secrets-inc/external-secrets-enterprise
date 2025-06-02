@@ -22890,7 +22890,7 @@ spec:
                           description: Host is the server where the database is hosted.
                           type: string
                         port:
-                          default: 5432
+                          default: "5432"
                           description: |-
                             Port is the port of the database to connect to.
                             If not specified, the "5432" port will be used.
@@ -25674,7 +25674,7 @@ spec:
                   description: Host is the server where the database is hosted.
                   type: string
                 port:
-                  default: 5432
+                  default: "5432"
                   description: |-
                     Port is the port of the database to connect to.
                     If not specified, the "5432" port will be used.
@@ -28808,7 +28808,7 @@ spec:
                                               description: Host is the server where the database is hosted.
                                               type: string
                                             port:
-                                              default: 5432
+                                              default: "5432"
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
@@ -31688,7 +31688,7 @@ spec:
                                               description: Host is the server where the database is hosted.
                                               type: string
                                             port:
-                                              default: 5432
+                                              default: "5432"
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
@@ -34577,7 +34577,7 @@ spec:
                                                     description: Host is the server where the database is hosted.
                                                     type: string
                                                   port:
-                                                    default: 5432
+                                                    default: "5432"
                                                     description: |-
                                                       Port is the port of the database to connect to.
                                                       If not specified, the "5432" port will be used.
@@ -37674,7 +37674,7 @@ spec:
                                               description: Host is the server where the database is hosted.
                                               type: string
                                             port:
-                                              default: 5432
+                                              default: "5432"
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
@@ -40554,7 +40554,7 @@ spec:
                                               description: Host is the server where the database is hosted.
                                               type: string
                                             port:
-                                              default: 5432
+                                              default: "5432"
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
@@ -43443,7 +43443,7 @@ spec:
                                                     description: Host is the server where the database is hosted.
                                                     type: string
                                                   port:
-                                                    default: 5432
+                                                    default: "5432"
                                                     description: |-
                                                       Port is the port of the database to connect to.
                                                       If not specified, the "5432" port will be used.

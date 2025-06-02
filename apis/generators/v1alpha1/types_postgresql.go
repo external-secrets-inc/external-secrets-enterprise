@@ -29,7 +29,7 @@ type PostgreSqlSpec struct {
 	// Port is the port of the database to connect to.
 	// If not specified, the "5432" port will be used.
 	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$`
-	// +kubebuilder:default=5432
+	// +kubebuilder:default="5432"
 	Port string `json:"port"`
 	// Auth contains the credentials or auth configuration
 	Auth PostgreSqlAuth `json:"auth"`
