@@ -28,6 +28,7 @@ type PostgreSqlSpec struct {
 	Host string `json:"host"`
 	// Port is the port of the database to connect to.
 	// If not specified, the "5432" port will be used.
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$`
 	// +kubebuilder:default=5432
 	Port string `json:"port"`
 	// Auth contains the credentials or auth configuration
@@ -57,6 +58,8 @@ type PostgreSqlUser struct {
 	Username string `json:"username"`
 	// SuffixSize define the size of the random suffix added after the defined username.
 	// If not specified, a random suffix of size 8 will be used.
+	// If set to 0, no suffix will be added.
+	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:default=8
 	SuffixSize *int `json:"suffixSize,omitempty"`
 	// Attributes is the list of PostgreSQL role attributes assigned to this user.
@@ -66,12 +69,17 @@ type PostgreSqlUser struct {
 	// Roles is the list of existing roles that will be granted to this user.
 	// If a role does not exist, it will be created without any attributes.
 	Roles []string `json:"roles,omitempty"`
-	// If set to true, case the generator needs to clean up the user
-	// it will drop everything it owns before dropping him.
-	// If not set, all things owned by the user will be reassinged
-	// to the user specified in `spec.auth.username`.
+	// If set to true, the generator will drop all objects owned by the user
+	// before deleting the user during cleanup.
+	// If false (default), ownership of all objects will be reassigned
+	// to the role specified in `spec.user.reassignTo`.
 	// +kubebuilder:default=false
 	DestructiveCleanup bool `json:"destructiveCleanup,omitempty"`
+	// The name of the role to which all owned objects should be reassigned
+	// during cleanup (if DestructiveCleanup is false).
+	// If not specified, the role from `spec.auth.username` will be used.
+	// If the role does not exist, it will be created with no attributes or roles..
+	ReassignTo *string `json:"reassignTo,omitempty"`
 }
 
 type PostgreSqlUserState struct {

@@ -104,7 +104,7 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	}
 
 	sanitizedUsername := pgx.Identifier{status.Username}.Sanitize()
-	err = dropUser(ctx, db, sanitizedUsername, res.Spec.Auth.Username, res.Spec.User.DestructiveCleanup)
+	err = dropUser(ctx, db, sanitizedUsername, res.Spec)
 	if err != nil {
 		return fmt.Errorf("unable to drop user: %w", err)
 	}
@@ -193,7 +193,10 @@ func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.Po
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random suffix: %w", err)
 	}
-	username = fmt.Sprintf("%s_%s", username, suffix)
+
+	if suffix != "" {
+		username = fmt.Sprintf("%s_%s", username, suffix)
+	}
 	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 
 	userAttributes, err := ConvertStringArrayToAttributes(spec.User.Attributes)
@@ -255,11 +258,28 @@ func addRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, c
 	return nil
 }
 
-func dropUser(ctx context.Context, db *pgx.Conn, username, adminUser string, destructive bool) error {
-	if !destructive {
-		_, err := db.Exec(ctx, fmt.Sprintf(`REASSIGN OWNED BY %s TO %s`, username, adminUser))
+func dropUser(ctx context.Context, db *pgx.Conn, username string, spec genv1alpha1.PostgreSqlSpec) error {
+	if !spec.User.DestructiveCleanup {
+		reassignToUser := spec.Auth.Username
+		if spec.User.ReassignTo != nil && *spec.User.ReassignTo != "" {
+			reassignToUser = *spec.User.ReassignTo
+		}
+
+		sanitizedReassignToUser := pgx.Identifier{reassignToUser}.Sanitize()
+		current_roles, err := getExistingRoles(ctx, db)
 		if err != nil {
-			return fmt.Errorf("failed to reassign owned by %s to %s: %w", username, adminUser, err)
+			return fmt.Errorf("failed to get existing roles: %w", err)
+		}
+		if !slices.Contains(current_roles, reassignToUser) {
+			err = createRole(ctx, db, sanitizedReassignToUser, nil)
+			if err != nil {
+				return fmt.Errorf("failed to create role %s: %w", reassignToUser, err)
+			}
+		}
+
+		_, err = db.Exec(ctx, fmt.Sprintf(`REASSIGN OWNED BY %s TO %s`, username, sanitizedReassignToUser))
+		if err != nil {
+			return fmt.Errorf("failed to reassign owned by %s to %s: %w", username, reassignToUser, err)
 		}
 	}
 	dropQueries := []string{

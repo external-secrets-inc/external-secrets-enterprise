@@ -22894,6 +22894,7 @@ spec:
                           description: |-
                             Port is the port of the database to connect to.
                             If not specified, the "5432" port will be used.
+                          pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                           type: string
                         user:
                           description: User is the data of the user to be created.
@@ -22913,11 +22914,18 @@ spec:
                             destructiveCleanup:
                               default: false
                               description: |-
-                                If set to true, case the generator needs to clean up the user
-                                it will drop everything it owns before dropping him.
-                                If not set, all things owned by the user will be reassinged
-                                to the user specified in `spec.auth.username`.
+                                If set to true, the generator will drop all objects owned by the user
+                                before deleting the user during cleanup.
+                                If false (default), ownership of all objects will be reassigned
+                                to the role specified in `spec.user.reassignTo`.
                               type: boolean
+                            reassignTo:
+                              description: |-
+                                The name of the role to which all owned objects should be reassigned
+                                during cleanup (if DestructiveCleanup is false).
+                                If not specified, the role from `spec.auth.username` will be used.
+                                If the role does not exist, it will be created with no attributes or roles..
+                              type: string
                             roles:
                               description: |-
                                 Roles is the list of existing roles that will be granted to this user.
@@ -22930,6 +22938,8 @@ spec:
                               description: |-
                                 SuffixSize define the size of the random suffix added after the defined username.
                                 If not specified, a random suffix of size 8 will be used.
+                                If set to 0, no suffix will be added.
+                              minimum: 0
                               type: integer
                             username:
                               description: The username of the user to be created.
@@ -25656,6 +25666,7 @@ spec:
                   description: |-
                     Port is the port of the database to connect to.
                     If not specified, the "5432" port will be used.
+                  pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                   type: string
                 user:
                   description: User is the data of the user to be created.
@@ -25675,11 +25686,18 @@ spec:
                     destructiveCleanup:
                       default: false
                       description: |-
-                        If set to true, case the generator needs to clean up the user
-                        it will drop everything it owns before dropping him.
-                        If not set, all things owned by the user will be reassinged
-                        to the user specified in `spec.auth.username`.
+                        If set to true, the generator will drop all objects owned by the user
+                        before deleting the user during cleanup.
+                        If false (default), ownership of all objects will be reassigned
+                        to the role specified in `spec.user.reassignTo`.
                       type: boolean
+                    reassignTo:
+                      description: |-
+                        The name of the role to which all owned objects should be reassigned
+                        during cleanup (if DestructiveCleanup is false).
+                        If not specified, the role from `spec.auth.username` will be used.
+                        If the role does not exist, it will be created with no attributes or roles..
+                      type: string
                     roles:
                       description: |-
                         Roles is the list of existing roles that will be granted to this user.
@@ -25692,6 +25710,8 @@ spec:
                       description: |-
                         SuffixSize define the size of the random suffix added after the defined username.
                         If not specified, a random suffix of size 8 will be used.
+                        If set to 0, no suffix will be added.
+                      minimum: 0
                       type: integer
                     username:
                       description: The username of the user to be created.
@@ -28768,6 +28788,7 @@ spec:
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
+                                              pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                                               type: string
                                             user:
                                               description: User is the data of the user to be created.
@@ -28787,11 +28808,18 @@ spec:
                                                 destructiveCleanup:
                                                   default: false
                                                   description: |-
-                                                    If set to true, case the generator needs to clean up the user
-                                                    it will drop everything it owns before dropping him.
-                                                    If not set, all things owned by the user will be reassinged
-                                                    to the user specified in `spec.auth.username`.
+                                                    If set to true, the generator will drop all objects owned by the user
+                                                    before deleting the user during cleanup.
+                                                    If false (default), ownership of all objects will be reassigned
+                                                    to the role specified in `spec.user.reassignTo`.
                                                   type: boolean
+                                                reassignTo:
+                                                  description: |-
+                                                    The name of the role to which all owned objects should be reassigned
+                                                    during cleanup (if DestructiveCleanup is false).
+                                                    If not specified, the role from `spec.auth.username` will be used.
+                                                    If the role does not exist, it will be created with no attributes or roles..
+                                                  type: string
                                                 roles:
                                                   description: |-
                                                     Roles is the list of existing roles that will be granted to this user.
@@ -28804,6 +28832,8 @@ spec:
                                                   description: |-
                                                     SuffixSize define the size of the random suffix added after the defined username.
                                                     If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
                                                   type: integer
                                                 username:
                                                   description: The username of the user to be created.
@@ -31626,6 +31656,7 @@ spec:
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
+                                              pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                                               type: string
                                             user:
                                               description: User is the data of the user to be created.
@@ -31645,11 +31676,18 @@ spec:
                                                 destructiveCleanup:
                                                   default: false
                                                   description: |-
-                                                    If set to true, case the generator needs to clean up the user
-                                                    it will drop everything it owns before dropping him.
-                                                    If not set, all things owned by the user will be reassinged
-                                                    to the user specified in `spec.auth.username`.
+                                                    If set to true, the generator will drop all objects owned by the user
+                                                    before deleting the user during cleanup.
+                                                    If false (default), ownership of all objects will be reassigned
+                                                    to the role specified in `spec.user.reassignTo`.
                                                   type: boolean
+                                                reassignTo:
+                                                  description: |-
+                                                    The name of the role to which all owned objects should be reassigned
+                                                    during cleanup (if DestructiveCleanup is false).
+                                                    If not specified, the role from `spec.auth.username` will be used.
+                                                    If the role does not exist, it will be created with no attributes or roles..
+                                                  type: string
                                                 roles:
                                                   description: |-
                                                     Roles is the list of existing roles that will be granted to this user.
@@ -31662,6 +31700,8 @@ spec:
                                                   description: |-
                                                     SuffixSize define the size of the random suffix added after the defined username.
                                                     If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
                                                   type: integer
                                                 username:
                                                   description: The username of the user to be created.
@@ -34493,6 +34533,7 @@ spec:
                                                     description: |-
                                                       Port is the port of the database to connect to.
                                                       If not specified, the "5432" port will be used.
+                                                    pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                                                     type: string
                                                   user:
                                                     description: User is the data of the user to be created.
@@ -34512,11 +34553,18 @@ spec:
                                                       destructiveCleanup:
                                                         default: false
                                                         description: |-
-                                                          If set to true, case the generator needs to clean up the user
-                                                          it will drop everything it owns before dropping him.
-                                                          If not set, all things owned by the user will be reassinged
-                                                          to the user specified in `spec.auth.username`.
+                                                          If set to true, the generator will drop all objects owned by the user
+                                                          before deleting the user during cleanup.
+                                                          If false (default), ownership of all objects will be reassigned
+                                                          to the role specified in `spec.user.reassignTo`.
                                                         type: boolean
+                                                      reassignTo:
+                                                        description: |-
+                                                          The name of the role to which all owned objects should be reassigned
+                                                          during cleanup (if DestructiveCleanup is false).
+                                                          If not specified, the role from `spec.auth.username` will be used.
+                                                          If the role does not exist, it will be created with no attributes or roles..
+                                                        type: string
                                                       roles:
                                                         description: |-
                                                           Roles is the list of existing roles that will be granted to this user.
@@ -34529,6 +34577,8 @@ spec:
                                                         description: |-
                                                           SuffixSize define the size of the random suffix added after the defined username.
                                                           If not specified, a random suffix of size 8 will be used.
+                                                          If set to 0, no suffix will be added.
+                                                        minimum: 0
                                                         type: integer
                                                       username:
                                                         description: The username of the user to be created.
@@ -37568,6 +37618,7 @@ spec:
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
+                                              pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                                               type: string
                                             user:
                                               description: User is the data of the user to be created.
@@ -37587,11 +37638,18 @@ spec:
                                                 destructiveCleanup:
                                                   default: false
                                                   description: |-
-                                                    If set to true, case the generator needs to clean up the user
-                                                    it will drop everything it owns before dropping him.
-                                                    If not set, all things owned by the user will be reassinged
-                                                    to the user specified in `spec.auth.username`.
+                                                    If set to true, the generator will drop all objects owned by the user
+                                                    before deleting the user during cleanup.
+                                                    If false (default), ownership of all objects will be reassigned
+                                                    to the role specified in `spec.user.reassignTo`.
                                                   type: boolean
+                                                reassignTo:
+                                                  description: |-
+                                                    The name of the role to which all owned objects should be reassigned
+                                                    during cleanup (if DestructiveCleanup is false).
+                                                    If not specified, the role from `spec.auth.username` will be used.
+                                                    If the role does not exist, it will be created with no attributes or roles..
+                                                  type: string
                                                 roles:
                                                   description: |-
                                                     Roles is the list of existing roles that will be granted to this user.
@@ -37604,6 +37662,8 @@ spec:
                                                   description: |-
                                                     SuffixSize define the size of the random suffix added after the defined username.
                                                     If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
                                                   type: integer
                                                 username:
                                                   description: The username of the user to be created.
@@ -40426,6 +40486,7 @@ spec:
                                               description: |-
                                                 Port is the port of the database to connect to.
                                                 If not specified, the "5432" port will be used.
+                                              pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                                               type: string
                                             user:
                                               description: User is the data of the user to be created.
@@ -40445,11 +40506,18 @@ spec:
                                                 destructiveCleanup:
                                                   default: false
                                                   description: |-
-                                                    If set to true, case the generator needs to clean up the user
-                                                    it will drop everything it owns before dropping him.
-                                                    If not set, all things owned by the user will be reassinged
-                                                    to the user specified in `spec.auth.username`.
+                                                    If set to true, the generator will drop all objects owned by the user
+                                                    before deleting the user during cleanup.
+                                                    If false (default), ownership of all objects will be reassigned
+                                                    to the role specified in `spec.user.reassignTo`.
                                                   type: boolean
+                                                reassignTo:
+                                                  description: |-
+                                                    The name of the role to which all owned objects should be reassigned
+                                                    during cleanup (if DestructiveCleanup is false).
+                                                    If not specified, the role from `spec.auth.username` will be used.
+                                                    If the role does not exist, it will be created with no attributes or roles..
+                                                  type: string
                                                 roles:
                                                   description: |-
                                                     Roles is the list of existing roles that will be granted to this user.
@@ -40462,6 +40530,8 @@ spec:
                                                   description: |-
                                                     SuffixSize define the size of the random suffix added after the defined username.
                                                     If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
                                                   type: integer
                                                 username:
                                                   description: The username of the user to be created.
@@ -43293,6 +43363,7 @@ spec:
                                                     description: |-
                                                       Port is the port of the database to connect to.
                                                       If not specified, the "5432" port will be used.
+                                                    pattern: ^([0-9]{1,5}|[0-9]{1,5}\/[0-9]{1,5})$
                                                     type: string
                                                   user:
                                                     description: User is the data of the user to be created.
@@ -43312,11 +43383,18 @@ spec:
                                                       destructiveCleanup:
                                                         default: false
                                                         description: |-
-                                                          If set to true, case the generator needs to clean up the user
-                                                          it will drop everything it owns before dropping him.
-                                                          If not set, all things owned by the user will be reassinged
-                                                          to the user specified in `spec.auth.username`.
+                                                          If set to true, the generator will drop all objects owned by the user
+                                                          before deleting the user during cleanup.
+                                                          If false (default), ownership of all objects will be reassigned
+                                                          to the role specified in `spec.user.reassignTo`.
                                                         type: boolean
+                                                      reassignTo:
+                                                        description: |-
+                                                          The name of the role to which all owned objects should be reassigned
+                                                          during cleanup (if DestructiveCleanup is false).
+                                                          If not specified, the role from `spec.auth.username` will be used.
+                                                          If the role does not exist, it will be created with no attributes or roles..
+                                                        type: string
                                                       roles:
                                                         description: |-
                                                           Roles is the list of existing roles that will be granted to this user.
@@ -43329,6 +43407,8 @@ spec:
                                                         description: |-
                                                           SuffixSize define the size of the random suffix added after the defined username.
                                                           If not specified, a random suffix of size 8 will be used.
+                                                          If set to 0, no suffix will be added.
+                                                        minimum: 0
                                                         type: integer
                                                       username:
                                                         description: The username of the user to be created.
