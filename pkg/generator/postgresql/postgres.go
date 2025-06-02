@@ -55,7 +55,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("unable to ping the database: %w", err)
 	}
 
-	user, err := createOrReplaceUser(ctx, db, &res.Spec)
+	user, err := createUser(ctx, db, &res.Spec)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create or replace user: %w", err)
 	}
@@ -103,8 +103,7 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 		return fmt.Errorf("unable to ping the database: %w", err)
 	}
 
-	sanitizedUsername := pgx.Identifier{status.Username}.Sanitize()
-	err = dropUser(ctx, db, sanitizedUsername, res.Spec)
+	err = dropUser(ctx, db, status.Username, res.Spec)
 	if err != nil {
 		return fmt.Errorf("unable to drop user: %w", err)
 	}
@@ -169,7 +168,7 @@ func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
 
 func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttributes) error {
 	var query strings.Builder
-	query.WriteString(fmt.Sprintf("CREATE ROLE %s", roleName))
+	query.WriteString(fmt.Sprintf("CREATE ROLE %s", pgx.Identifier{roleName}.Sanitize()))
 	if len(attributes) > 0 {
 		query.WriteString(" WITH ")
 		for i, attr := range attributes {
@@ -183,7 +182,7 @@ func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes [
 	return err
 }
 
-func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlSpec) (map[string][]byte, error) {
+func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlSpec) (map[string][]byte, error) {
 	username := spec.User.Username
 	suffixSize := defaultSuffixSize
 	if spec.User.SuffixSize != nil {
@@ -197,7 +196,6 @@ func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.Po
 	if suffix != "" {
 		username = fmt.Sprintf("%s_%s", username, suffix)
 	}
-	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 
 	userAttributes, err := ConvertStringArrayToAttributes(spec.User.Attributes)
 	if err != nil {
@@ -209,7 +207,7 @@ func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.Po
 		return nil, fmt.Errorf("failed to get existing roles: %w", err)
 	}
 
-	err = createRole(ctx, db, sanitizedUsername, userAttributes)
+	err = createRole(ctx, db, username, userAttributes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create role %s: %w", username, err)
 	}
@@ -223,13 +221,13 @@ func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.Po
 		return nil, fmt.Errorf("failed to generate password: %w", err)
 	}
 
-	userAttributesQuery := fmt.Sprintf(`ALTER ROLE %s WITH LOGIN PASSWORD '%s'`, sanitizedUsername, string(pass))
+	userAttributesQuery := fmt.Sprintf(`ALTER ROLE %s WITH LOGIN PASSWORD '%s'`, pgx.Identifier{username}.Sanitize(), string(pass))
 	_, err = db.Exec(ctx, userAttributesQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user %s: %w", username, err)
 	}
 
-	err = addRolesToUser(ctx, db, sanitizedUsername, spec.User.Roles, current_roles)
+	err = addRolesToUser(ctx, db, username, spec.User.Roles, current_roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add roles to user %s: %w", username, err)
 	}
@@ -241,6 +239,7 @@ func createOrReplaceUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.Po
 }
 
 func addRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, current_roles []string) error {
+	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 	for _, role := range roles {
 		if !slices.Contains(current_roles, role) {
 			err := createRole(ctx, db, role, nil)
@@ -249,7 +248,7 @@ func addRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, c
 			}
 		}
 
-		grantRoleQuery := fmt.Sprintf("GRANT %s TO %s", role, username)
+		grantRoleQuery := fmt.Sprintf("GRANT %s TO %s", pgx.Identifier{role}.Sanitize(), sanitizedUsername)
 		_, err := db.Exec(ctx, grantRoleQuery)
 		if err != nil {
 			return fmt.Errorf("failed to grant role %s to user %s: %w", role, username, err)
@@ -259,25 +258,25 @@ func addRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, c
 }
 
 func dropUser(ctx context.Context, db *pgx.Conn, username string, spec genv1alpha1.PostgreSqlSpec) error {
+	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 	if !spec.User.DestructiveCleanup {
 		reassignToUser := spec.Auth.Username
 		if spec.User.ReassignTo != nil && *spec.User.ReassignTo != "" {
 			reassignToUser = *spec.User.ReassignTo
 		}
 
-		sanitizedReassignToUser := pgx.Identifier{reassignToUser}.Sanitize()
 		current_roles, err := getExistingRoles(ctx, db)
 		if err != nil {
 			return fmt.Errorf("failed to get existing roles: %w", err)
 		}
 		if !slices.Contains(current_roles, reassignToUser) {
-			err = createRole(ctx, db, sanitizedReassignToUser, nil)
+			err = createRole(ctx, db, reassignToUser, nil)
 			if err != nil {
 				return fmt.Errorf("failed to create role %s: %w", reassignToUser, err)
 			}
 		}
 
-		_, err = db.Exec(ctx, fmt.Sprintf(`REASSIGN OWNED BY %s TO %s`, username, sanitizedReassignToUser))
+		_, err = db.Exec(ctx, fmt.Sprintf(`REASSIGN OWNED BY %s TO %s`, sanitizedUsername, pgx.Identifier{reassignToUser}.Sanitize()))
 		if err != nil {
 			return fmt.Errorf("failed to reassign owned by %s to %s: %w", username, reassignToUser, err)
 		}
@@ -287,7 +286,7 @@ func dropUser(ctx context.Context, db *pgx.Conn, username string, spec genv1alph
 		`DROP ROLE %s`,
 	}
 	for _, query := range dropQueries {
-		_, err := db.Exec(ctx, fmt.Sprintf(query, username))
+		_, err := db.Exec(ctx, fmt.Sprintf(query, sanitizedUsername))
 		if err != nil {
 			return err
 		}
