@@ -394,10 +394,41 @@ helm.login:
 	gcloud auth print-access-token | helm registry login -u oauth2accesstoken \
 		--password-stdin https://$(ARTIFACT_REG)
 
-.PHONY: helm.push
-helm.push: helm.login ## Push helm chart to the repository
-	@helm dependency build deploy/charts/external-secrets
+.PHONY: helm.package
+helm.package: helm.login ## Push helm chart to the repository
+	@helm repo add spiffe https://spiffe.github.io/helm-charts-hardened && helm dependency build deploy/charts/external-secrets
 	@helm package deploy/charts/external-secrets
+
+.PHONY: helm.check
+helm.check: helm.package ## Check if any chart-x.y.z.tgz in current directory already exists on CHARTS_REPO
+	@$(INFO) Checking if any charts exist in repository
+	@if [ -z "$$(ls *.tgz 2>/dev/null)" ]; then \
+		echo "No .tgz files found in current directory"; \
+		exit 1; \
+	fi
+	@FOUND=0; \
+	for CHART_FILE in *.tgz; do \
+		CHART_NAME=$$(echo $$CHART_FILE | sed 's/-[0-9]\+\.[0-9]\+\.[0-9]\+.tgz//'); \
+		CHART_VERSION=$$(echo $$CHART_FILE | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+'); \
+		if [ -z "$$CHART_VERSION" ]; then \
+			echo "Warning: $$CHART_FILE has invalid format. Expected format: chart-x.y.z.tgz. Skipping."; \
+			continue; \
+		fi; \
+		if helm show chart $(CHARTS_REPO)/$$CHART_NAME --version $$CHART_VERSION > /dev/null 2>&1; then \
+			echo "Chart $$CHART_NAME version $$CHART_VERSION already exists in repository"; \
+			FOUND=1; \
+		fi; \
+	done; \
+	if [ $$FOUND -eq 1 ]; then \
+		echo "At least one chart already exists in repository. Skipping push."; \
+		exit 0; \
+	else \
+		echo "No existing charts found in repository. Proceeding."; \
+	fi
+	@$(OK) Chart check completed
+
+.PHONY: helm.push
+helm.push: helm.check
 	@helm push *.tgz $(CHARTS_REPO)
 
 .PHONY: cty
