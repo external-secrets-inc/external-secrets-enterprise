@@ -86,7 +86,7 @@ func (c *AuthorizationController) cleanup(ctx context.Context, authorization *v1
 		}
 	}
 	if err := c.Update(ctx, authorization); err != nil {
-		log.Println("failed to remove finalizer: %v", err)
+		log.Printf("failed to remove finalizer: %v", err)
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -104,7 +104,7 @@ func (c *AuthorizationController) setFinalizer(ctx context.Context, authorizatio
 	if !hasFinalizer {
 		authorization.SetFinalizers(append(authorization.GetFinalizers(), authorizationFinalizer))
 		if err := c.Update(ctx, authorization); err != nil {
-			log.Println("failed to add finalizer: %v", err)
+			log.Printf("failed to add finalizer: %v", err)
 			return err
 		}
 	}

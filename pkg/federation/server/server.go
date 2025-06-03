@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/federation/v1alpha1"
@@ -79,9 +80,10 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	tlsConfig.VerifyConnection = verifyConnection
 
 	tlsSrv := &http.Server{
-		Addr:      s.tlsPort,
-		Handler:   e,
-		TLSConfig: tlsConfig,
+		Addr:              s.tlsPort,
+		Handler:           e,
+		TLSConfig:         tlsConfig,
+		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
@@ -94,9 +96,10 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	}()
 
 	srv := &http.Server{
-		Addr:      s.port,
-		Handler:   e,
-		TLSConfig: tlsConfig,
+		Addr:              s.port,
+		Handler:           e,
+		TLSConfig:         tlsConfig,
+		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
