@@ -44,6 +44,14 @@ var (
 	KubernetesFederationGroupVersionKind = SchemeGroupVersion.WithKind(KubernetesFederationKind)
 )
 
+// SpiffeFederation type metadata.
+var (
+	SpiffeFederationKind             = reflect.TypeOf(SpiffeFederation{}).Name()
+	SpiffeFederationGroupKind        = schema.GroupKind{Group: Group, Kind: SpiffeFederationKind}.String()
+	SpiffeFederationKindAPIVersion   = SpiffeFederationKind + "." + SchemeGroupVersion.String()
+	SpiffeFederationGroupVersionKind = SchemeGroupVersion.WithKind(SpiffeFederationKind)
+)
+
 // Authorization type metadata.
 var (
 	AuthorizationKind             = reflect.TypeOf(Authorization{}).Name()
@@ -54,5 +62,6 @@ var (
 
 func init() {
 	SchemeBuilder.Register(&KubernetesFederation{}, &KubernetesFederationList{})
+	SchemeBuilder.Register(&SpiffeFederation{}, &SpiffeFederationList{})
 	SchemeBuilder.Register(&Authorization{}, &AuthorizationList{})
 }
