@@ -13,17 +13,65 @@
 // */
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"errors"
 
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// +kubebuilder:validation:XValidation:rule="(has(self.spiffe) && !has(self.subject)) || (!has(self.spiffe) && has(self.subject))",message="spiffe or subject must be set"
 type AuthorizationSpec struct {
-	FederationRef FederationRef     `json:"federationRef"`
-	Subject       FederationSubject `json:"subject"`
+	FederationRef FederationRef `json:"federationRef"`
+
+	// +kubebuilder:validation:Optional
+	Spiffe *FederationSpiffe `json:"spiffe"`
+	// +kubebuilder:validation:Optional
+	Subject *FederationSubject `json:"subject"`
+
 	// Which ClusterSecretStores can this subject request
 	AllowedClusterSecretStores []string `json:"allowedClusterSecretStores"`
 	// Which Generators namespaces can this subject request
 	AllowedGenerators []AllowedGenerator `json:"allowedGenerators"`
 	// Which GeneratorState namespaces can this subject delete
 	AllowedGeneratorStates []AllowedGeneratorState `json:"allowedGeneratorStates"`
+}
+
+func (a *AuthorizationSpec) RequiresTLS() bool {
+	switch {
+	case a.Spiffe != nil:
+		return true
+	case a.Subject != nil:
+		return false
+	default:
+		return false
+	}
+}
+
+func (a *AuthorizationSpec) Principal() (string, error) {
+	switch {
+	case a.Spiffe != nil:
+		return a.Spiffe.SpiffeID, nil
+	case a.Subject != nil:
+		return a.Subject.Subject, nil
+	default:
+		return "", errors.New("no subject configured (choose spiffe or subject)")
+	}
+}
+
+func (a *AuthorizationSpec) Authority() (string, error) {
+	switch {
+	case a.Spiffe != nil:
+		spiffeID, err := spiffeid.FromString(a.Spiffe.SpiffeID)
+		if err != nil {
+			return "", err
+		}
+		return spiffeID.TrustDomain().Name(), nil
+	case a.Subject != nil:
+		return a.Subject.Issuer, nil
+	default:
+		return "", errors.New("no issuer configured (choose spiffe or subject)")
+	}
 }
 
 type AllowedGeneratorState struct {
@@ -42,6 +90,10 @@ type FederationRef struct {
 type FederationSubject struct {
 	Issuer  string `json:"issuer"`
 	Subject string `json:"subject"`
+}
+
+type FederationSpiffe struct {
+	SpiffeID string `json:"spiffeID"`
 }
 
 // Todo - This should be the permission for secretStores instead of slice of string
