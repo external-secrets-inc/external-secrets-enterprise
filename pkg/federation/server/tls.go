@@ -1,0 +1,50 @@
+package server
+
+import (
+	"crypto/tls"
+	"fmt"
+	"sync"
+
+	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
+)
+
+var (
+	allowedMu  sync.RWMutex
+	allowedIDs = map[string]struct{}{}
+)
+
+func AddTLSAllowedID(id string) {
+	allowedMu.Lock()
+	defer allowedMu.Unlock()
+	allowedIDs[id] = struct{}{}
+}
+
+func RemoveTLSAllowedID(id string) {
+	allowedMu.Lock()
+	defer allowedMu.Unlock()
+	delete(allowedIDs, id)
+}
+
+func isAllowed(id string) bool {
+	allowedMu.RLock()
+	defer allowedMu.RUnlock()
+	_, ok := allowedIDs[id]
+	return ok
+}
+
+func verifyConnection(cs tls.ConnectionState) error {
+	if len(cs.PeerCertificates) == 0 {
+		return fmt.Errorf("no certificates found")
+	}
+	leaf := cs.PeerCertificates[0]
+
+	id, err := x509svid.IDFromCert(leaf)
+	if err != nil {
+		return fmt.Errorf("error extracting spiffe id: %w", err)
+	}
+
+	if !isAllowed(id.String()) {
+		return fmt.Errorf("not authorized spiffe id: %s", id.String())
+	}
+	return nil
+}

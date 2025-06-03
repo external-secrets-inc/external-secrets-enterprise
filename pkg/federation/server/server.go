@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"slices"
@@ -22,8 +23,9 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/federation/store"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	v1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,37 +34,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// KubernetesClaims holds specific claims related to a Kubernetes service account token.
-type KubernetesIOInner struct {
-	Namespace      string `json:"namespace"`
-	ServiceAccount struct {
-		Name string `json:"name"`
-		UID  string `json:"uid"`
-	} `json:"serviceaccount"`
-	Pod *struct {
-		Name string `json:"name"`
-		UID  string `json:"uid"`
-	} `json:"pod,omitempty"`
-}
-type KubernetesClaims struct {
-	jwt.RegisteredClaims
-	KubernetesIOInner `json:"kubernetes.io"`
-}
 type ServerHandler struct {
 	reconciler             *externalsecrets.Reconciler
 	mu                     sync.RWMutex
 	port                   string
+	tlsPort                string
+	spireAgentSocketPath   string
 	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
 	getSecretFn            func(ctx context.Context, storeName string, name string) ([]byte, error)
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
 
-func NewServerHandler(reconciler *externalsecrets.Reconciler, port string) *ServerHandler {
+func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string) *ServerHandler {
 	s := &ServerHandler{
 		reconciler: reconciler,
 		mu:         sync.RWMutex{},
 		port:       port,
+		tlsPort:    tlsPort,
 	}
+	s.spireAgentSocketPath = socketPath
 	s.generateSecretFn = s.generateSecret
 	s.getSecretFn = s.getSecret
 	s.deleteGeneratorStateFn = s.deleteGeneratorState
@@ -80,7 +70,44 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	e.POST("/generators/:generatorNamespace/:generatorKind/:generatorName", s.generateSecrets)
 	e.DELETE("/generators/:generatorNamespace/:generatorKind/:generatorName", s.revokeSelf)
 	e.POST("/generators/:generatorNamespace/revoke", s.revokeCredentialsOf)
-	e.Logger.Fatal(e.Start(s.port))
+
+	source, err := workloadapi.NewX509Source(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(s.spireAgentSocketPath)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	tlsConfig := tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny())
+	tlsConfig.VerifyConnection = verifyConnection
+
+	tlsSrv := &http.Server{
+		Addr:      s.tlsPort,
+		Handler:   e,
+		TLSConfig: tlsConfig,
+		BaseContext: func(_ net.Listener) context.Context {
+			return ctx
+		},
+	}
+
+	go func() {
+		if err := tlsSrv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("failed to start tls server: %v", err)
+		}
+	}()
+
+	srv := &http.Server{
+		Addr:      s.port,
+		Handler:   e,
+		TLSConfig: tlsConfig,
+		BaseContext: func(_ net.Listener) context.Context {
+			return ctx
+		},
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("failed to start server: %v", err)
+		}
+	}()
+
 	return e
 }
 
@@ -141,7 +168,11 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 		resource.OwnerAttributes["pod-uid"] = authInfo.KubeAttributes.Pod.UID
 	}
 	for _, spec := range AuthorizationSpecs {
-		if contains(spec.AllowedGenerators, d) && spec.Subject.Subject == authInfo.Subject {
+		principal, err := spec.Principal()
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
+		if contains(spec.AllowedGenerators, d) && principal == authInfo.Subject {
 			secret, err := s.generateSecretFn(c.Request().Context(), generatorName, generatorKind, generatorNamespace, resource)
 			if err != nil {
 				return c.JSON(http.StatusBadRequest, err.Error())
@@ -182,7 +213,11 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 	storeName := c.Param("secretStoreName")
 	name := c.Param("secretName")
 	for _, spec := range AuthorizationSpecs {
-		if slices.Contains(spec.AllowedClusterSecretStores, storeName) && spec.Subject.Subject == authInfo.Subject {
+		principal, err := spec.Principal()
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
+		if slices.Contains(spec.AllowedClusterSecretStores, storeName) && principal == authInfo.Subject {
 			secret, err := s.getSecretFn(c.Request().Context(), storeName, name)
 			if err != nil {
 				return c.JSON(http.StatusBadRequest, err.Error())
@@ -210,11 +245,15 @@ func (s *ServerHandler) revokeSelf(c echo.Context) error {
 	}
 
 	for _, spec := range AuthorizationSpecs {
+		principal, err := spec.Principal()
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
 		if !contains(spec.AllowedGenerators, fedv1alpha1.AllowedGenerator{
 			Name:      generatorName,
 			Kind:      generatorKind,
 			Namespace: generatorNamespace,
-		}) || spec.Subject.Subject != authInfo.Subject {
+		}) || principal != authInfo.Subject {
 			continue
 		}
 		owner := authInfo.KubeAttributes.ServiceAccount.Name
@@ -226,7 +265,7 @@ func (s *ServerHandler) revokeSelf(c echo.Context) error {
 			"federation.externalsecrets.com/generator":      generatorName,
 			"federation.externalsecrets.com/generator-kind": generatorKind,
 		})
-		err := s.deleteGeneratorStateFn(c.Request().Context(), generatorNamespace, labels)
+		err = s.deleteGeneratorStateFn(c.Request().Context(), generatorNamespace, labels)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
@@ -252,9 +291,14 @@ func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
 	AuthorizationSpecs := store.Get(authInfo.Provider)
 	generatorNamespace := c.Param("generatorNamespace")
 	for _, spec := range AuthorizationSpecs {
+		principal, err := spec.Principal()
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err.Error())
+		}
+
 		if contains(spec.AllowedGeneratorStates, fedv1alpha1.AllowedGeneratorState{
 			Namespace: generatorNamespace,
-		}) && spec.Subject.Subject == authInfo.Subject {
+		}) && principal == authInfo.Subject {
 			labels := labels.SelectorFromSet(labels.Set{
 				"federation.externalsecrets.com/owner": req.Owner,
 			})
