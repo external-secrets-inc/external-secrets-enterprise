@@ -114,8 +114,16 @@ func (in *AuthorizationList) DeepCopyObject() runtime.Object {
 func (in *AuthorizationSpec) DeepCopyInto(out *AuthorizationSpec) {
 	*out = *in
 	out.FederationRef = in.FederationRef
-	out.Spiffe = in.Spiffe
-	out.Subject = in.Subject
+	if in.Spiffe != nil {
+		in, out := &in.Spiffe, &out.Spiffe
+		*out = new(FederationSpiffe)
+		**out = **in
+	}
+	if in.Subject != nil {
+		in, out := &in.Subject, &out.Subject
+		*out = new(FederationSubject)
+		**out = **in
+	}
 	if in.AllowedClusterSecretStores != nil {
 		in, out := &in.AllowedClusterSecretStores, &out.AllowedClusterSecretStores
 		*out = make([]string, len(*in))
