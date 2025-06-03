@@ -29,7 +29,7 @@ type GenerateSecretsTestSuite struct {
 
 func (s *GenerateSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(nil, ":8080")
+	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock")
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -112,7 +112,7 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 			// Create and provision AuthorizationSpec for this test case
 			authSpec := &fedv1alpha1.AuthorizationSpec{
 				FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-k8s-claims", Kind: "Kubernetes"},
-				Subject:       fedv1alpha1.FederationSubject{Subject: tt.authInfo.Subject, Issuer: tt.authInfo.Provider},
+				Subject:       &fedv1alpha1.FederationSubject{Subject: tt.authInfo.Subject, Issuer: tt.authInfo.Provider},
 				AllowedGenerators: []fedv1alpha1.AllowedGenerator{
 					{Name: generatorName, Kind: generatorKind, Namespace: generatorNamespace},
 				},
@@ -199,7 +199,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 			setupAuthSpecs: func() {
 				authSpec := &fedv1alpha1.AuthorizationSpec{
 					FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
-					Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+					Subject:       &fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
 					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
 						{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
 					},
@@ -237,7 +237,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 			setupAuthSpecs: func() {
 				authSpec := &fedv1alpha1.AuthorizationSpec{
 					FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
-					Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+					Subject:       &fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
 					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
 						{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
 					},
@@ -266,7 +266,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 			setupAuthSpecs: func() {
 				authSpec := &fedv1alpha1.AuthorizationSpec{
 					FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy", Kind: "Kubernetes"},
-					Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+					Subject:       &fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
 					AllowedGenerators: []fedv1alpha1.AllowedGenerator{
 						{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
 					},
@@ -371,7 +371,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelfHappyPath() {
 		// 1. Setup AuthorizationSpec in store
 		authSpec := &fedv1alpha1.AuthorizationSpec{
 			FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-happy-path", Kind: "Kubernetes"},
-			Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+			Subject:       &fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
 			AllowedGenerators: []fedv1alpha1.AllowedGenerator{
 				{Name: testGeneratorName, Kind: testGeneratorKind, Namespace: testGeneratorNS},
 			},
@@ -471,7 +471,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -527,7 +527,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -576,7 +576,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -630,7 +630,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -689,7 +689,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -763,7 +763,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeCredentialsOfHappyPath() {
 		// 1. Setup AuthorizationSpec in store
 		authSpec := &fedv1alpha1.AuthorizationSpec{
 			FederationRef: fedv1alpha1.FederationRef{Name: "test-fed-revoke-creds-happy", Kind: "Kubernetes"},
-			Subject:       fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
+			Subject:       &fedv1alpha1.FederationSubject{Subject: testSubject, Issuer: testIssuer},
 			AllowedGeneratorStates: []fedv1alpha1.AllowedGeneratorState{ // Used by revokeCredentialsOf
 				{Namespace: testParamGeneratorNS},
 			},
@@ -845,7 +845,7 @@ type PostSecretsTestSuite struct {
 
 func (s *PostSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(nil, ":8080")
+	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock")
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -897,7 +897,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -944,7 +944,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
@@ -988,7 +988,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 						Name: "test-federation",
 						Kind: "Kubernetes",
 					},
-					Subject: fedv1alpha1.FederationSubject{
+					Subject: &fedv1alpha1.FederationSubject{
 						Subject: testSubject,
 						Issuer:  testIssuer,
 					},
