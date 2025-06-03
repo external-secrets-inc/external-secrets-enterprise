@@ -72,6 +72,7 @@ var (
 	healthzAddr                           string
 	controllerClass                       string
 	serverPort                            string
+	serverTLSPort                         string
 	workflowAPIPort                       string
 	enableLeaderElection                  bool
 	enableSecretsCache                    bool
@@ -103,6 +104,7 @@ var (
 	tlsCiphers                            string
 	tlsMinVersion                         string
 	sensitivePatterns                     []string
+	spireAgentSocketPath                  string
 )
 
 const (
@@ -336,7 +338,16 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "KubernetesFederation")
 			os.Exit(1)
 		}
-		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort)
+
+		if err = (&federation.SpiffeFederationController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("SpiffeFederation"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "SpiffeFederation")
+			os.Exit(1)
+		}
+		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath)
 		go handler.SetupEcho(cmd.Context())
 
 		// Start the workflow API server if enabled
@@ -398,6 +409,7 @@ func init() {
 	rootCmd.Flags().IntVar(&clientBurst, "client-burst", 100, "Maximum Burst allowed to be passed to rest.Client")
 	rootCmd.Flags().StringVar(&loglevel, "loglevel", "info", "loglevel to use, one of: debug, info, warn, error, dpanic, panic, fatal")
 	rootCmd.Flags().StringVar(&serverPort, "server-port", ":8000", "federation server port")
+	rootCmd.Flags().StringVar(&serverTLSPort, "server-tls-port", ":8001", "federation server TLS port")
 	rootCmd.Flags().StringVar(&workflowAPIPort, "workflow-api-port", ":8080", "workflow API server port")
 	rootCmd.Flags().BoolVar(&enableWorkflowAPI, "enable-workflow-api", false, "Enable workflow API server")
 	rootCmd.Flags().StringVar(&zapTimeEncoding, "zap-time-encoding", "epoch", "Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')")
@@ -414,6 +426,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&enableGeneratorState, "enable-generator-state", true, "Whether the Controller should manage GeneratorState")
 	rootCmd.Flags().BoolVar(&enableExtendedMetricLabels, "enable-extended-metric-labels", false, "Enable recommended kubernetes annotations as labels in metrics.")
 	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
+	rootCmd.Flags().StringVar(&spireAgentSocketPath, "spire-agent-socket-path", "unix:///tmp/spire-agent/public/api.sock", "Path to the Spiffe agent socket")
 
 	fs := feature.Features()
 	for _, f := range fs {
