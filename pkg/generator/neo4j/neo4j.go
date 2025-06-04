@@ -6,12 +6,15 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"slices"
 	"strings"
+	"unicode"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -27,9 +30,9 @@ import (
 type Generator struct{}
 
 const (
-	defaultDatabase        = "neo4j"
-	defaultProvider        = genv1alpha1.Neo4jAuthProviderNative
-	defaultPasswordSymbols = "~!@#$%^&*()_+-={}|[]:<>?,./"
+	defaultDatabase   = "neo4j"
+	defaultProvider   = genv1alpha1.Neo4jAuthProviderNative
+	defaultSuffixSize = 8
 )
 
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
@@ -66,13 +69,13 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		res.Spec.User.Provider = defaultProvider
 	}
 
-	user, err := createOrReplaceUser(ctx, driver, res)
+	user, err := createOrReplaceUser(ctx, driver, &res.Spec)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create or replace user: %w", err)
 	}
 
 	if res.Spec.Enterprise {
-		err = addRolesToUser(ctx, driver, res)
+		err = addRolesToUser(ctx, driver, &res.Spec)
 		if err != nil {
 			dropErr := dropUser(ctx, driver, res.Spec.User.User)
 			if dropErr != nil {
@@ -140,6 +143,29 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
+func EscapeNeo4jIdentifier(input string) (string, error) {
+	if input == "" {
+		return "", errors.New("identifier cannot be empty")
+	}
+
+	var sanitized strings.Builder
+	for _, r := range input {
+		if unicode.IsControl(r) {
+			return "", errors.New("identifier contains control characters")
+		}
+		switch r {
+		case '`':
+			sanitized.WriteString("``") // escape backtick
+		case '\'', '"':
+			// skip quotes
+		default:
+			sanitized.WriteRune(r)
+		}
+	}
+
+	return "`" + sanitized.String() + "`", nil
+}
+
 func newDriver(ctx context.Context, auth *genv1alpha1.Neo4jAuth, kclient client.Client, ns string) (neo4j.DriverWithContext, error) {
 	dbUri := auth.URI
 	var authToken neo4j.AuthToken
@@ -172,40 +198,51 @@ func newDriver(ctx context.Context, auth *genv1alpha1.Neo4jAuth, kclient client.
 	)
 }
 
-func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, spec *genv1alpha1.Neo4j) (map[string][]byte, error) {
+func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, spec *genv1alpha1.Neo4jSpec) (map[string][]byte, error) {
 	var query strings.Builder
-	username := spec.Spec.User.User
-	if spec.Spec.User.RandomSufix {
-		ioReader := rand.Reader
-		randomNumber, err := rand.Int(ioReader, new(big.Int).SetInt64(10000))
-		if err != nil {
-			return nil, err
-		}
-		username += fmt.Sprintf("%04d", randomNumber)
+	username := spec.User.User
+	suffixSize := defaultSuffixSize
+	if spec.User.SuffixSize != nil {
+		suffixSize = *spec.User.SuffixSize
+	}
+	suffix, err := generateRandomString(suffixSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random suffix: %w", err)
 	}
 
-	query.WriteString(fmt.Sprintf("CREATE OR REPLACE USER %s\n", username))
+	if suffix != "" {
+		username = fmt.Sprintf("%s_%s", username, suffix)
+	}
+	sanitizedUsername, err := EscapeNeo4jIdentifier(username)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sanitize username %q: %w", username, err)
+	}
+	query.WriteString(fmt.Sprintf("CREATE OR REPLACE USER %s\n", sanitizedUsername))
 
-	authProvider := genv1alpha1.Neo4jAuthProviderNative
-	if spec.Spec.Enterprise {
-		if spec.Spec.User.Home != nil {
-			query.WriteString(fmt.Sprintf("SET HOME DATABASE %s\n", *spec.Spec.User.Home))
+	authProvider := spec.User.Provider
+	if spec.Enterprise {
+		if spec.User.Home != nil {
+			sanitizedHome, err := EscapeNeo4jIdentifier(*spec.User.Home)
+			if err != nil {
+				return nil, fmt.Errorf("failed to sanitize user home %q: %w", *spec.User.Home, err)
+			}
+			query.WriteString(fmt.Sprintf("SET HOME DATABASE %s\n", sanitizedHome))
 		}
-		authProvider = spec.Spec.User.Provider
+		authProvider = spec.User.Provider
 	}
 
 	query.WriteString(fmt.Sprintf("SET AUTH '%s' {\n", authProvider))
 
 	if authProvider == genv1alpha1.Neo4jAuthProviderNative {
-		symbols := defaultPasswordSymbols
 		pass, err := generatePassword(genv1alpha1.Password{
 			Spec: genv1alpha1.PasswordSpec{
-				SymbolCharacters: &symbols,
+				SymbolCharacters: ptr.To("~!@#$%^&*()_+-={}|[]:<>?,./"),
 			},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate password: %w", err)
 		}
+
 		query.WriteString(fmt.Sprintf("\tSET PASSWORD '%s'\n", string(pass)))
 		query.WriteString("\tSET PASSWORD CHANGE NOT REQUIRED\n")
 		query.WriteString("}\n")
@@ -213,7 +250,7 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 		_, err = neo4j.ExecuteQuery(ctx, driver,
 			query.String(), map[string]any{},
 			neo4j.EagerResultTransformer,
-			neo4j.ExecuteQueryWithDatabase(spec.Spec.Database),
+			neo4j.ExecuteQueryWithDatabase(spec.Database),
 		)
 		if err != nil {
 			return nil, err
@@ -224,11 +261,11 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 			"password": pass,
 		}, nil
 	}
-	return nil, fmt.Errorf("unsupported auth provider: %s", spec.Spec.User.Provider)
+	return nil, fmt.Errorf("unsupported auth provider: %s", spec.User.Provider)
 }
 
-func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *genv1alpha1.Neo4j) error {
-	if len(spec.Spec.User.Roles) == 0 {
+func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *genv1alpha1.Neo4jSpec) error {
+	if len(spec.User.Roles) == 0 {
 		return nil
 	}
 
@@ -236,7 +273,7 @@ func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *g
 	result, err := neo4j.ExecuteQuery(ctx, driver,
 		"SHOW ROLES", map[string]any{},
 		neo4j.EagerResultTransformer,
-		neo4j.ExecuteQueryWithDatabase(spec.Spec.Database),
+		neo4j.ExecuteQueryWithDatabase(spec.Database),
 	)
 	if err != nil {
 		return err
@@ -251,20 +288,31 @@ func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *g
 		existingRoles = append(existingRoles, roleName)
 	}
 
-	for _, role := range spec.Spec.User.Roles {
+	sanitizedRoles := make([]string, 0, len(spec.User.Roles))
+	for _, role := range spec.User.Roles {
 		if !slices.Contains(existingRoles, role) {
-			err = createBasicRole(ctx, driver, spec.Spec.Database, role)
+			err = createBasicRole(ctx, driver, spec.Database, role)
 			if err != nil {
 				return fmt.Errorf("failed to create role %s: %w", role, err)
 			}
 		}
+		sanitizedRole, err := EscapeNeo4jIdentifier(role)
+		if err != nil {
+			return fmt.Errorf("failed to sanitize role %q: %w", role, err)
+		}
+
+		sanitizedRoles = append(sanitizedRoles, sanitizedRole)
 	}
 
-	query := fmt.Sprintf("GRANT ROLE %s TO %s", strings.Join(spec.Spec.User.Roles, ", "), spec.Spec.User.User)
+	sanitizedUsername, err := EscapeNeo4jIdentifier(spec.User.User)
+	if err != nil {
+		return fmt.Errorf("failed to sanitize username %q: %w", spec.User.User, err)
+	}
+	query := fmt.Sprintf("GRANT ROLE %s TO %s", strings.Join(sanitizedRoles, ", "), sanitizedUsername)
 	_, err = neo4j.ExecuteQuery(ctx, driver,
 		query, map[string]any{},
 		neo4j.EagerResultTransformer,
-		neo4j.ExecuteQueryWithDatabase(spec.Spec.Database),
+		neo4j.ExecuteQueryWithDatabase(spec.Database),
 	)
 	if err != nil {
 		return err
@@ -273,8 +321,13 @@ func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *g
 }
 
 func dropUser(ctx context.Context, driver neo4j.DriverWithContext, username string) error {
-	query := fmt.Sprintf("DROP USER %s IF EXISTS", username)
-	_, err := neo4j.ExecuteQuery(ctx, driver, query, nil, neo4j.EagerResultTransformer)
+	sanitizedUsername, err := EscapeNeo4jIdentifier(username)
+	if err != nil {
+		return fmt.Errorf("failed to sanitize username %q: %w", username, err)
+	}
+
+	query := fmt.Sprintf("DROP USER %s IF EXISTS", sanitizedUsername)
+	_, err = neo4j.ExecuteQuery(ctx, driver, query, nil, neo4j.EagerResultTransformer)
 	if err != nil {
 		return err
 	}
@@ -282,12 +335,16 @@ func dropUser(ctx context.Context, driver neo4j.DriverWithContext, username stri
 }
 
 func suspendUser(ctx context.Context, driver neo4j.DriverWithContext, username string) error {
+	sanitizedUsername, err := EscapeNeo4jIdentifier(username)
+	if err != nil {
+		return fmt.Errorf("failed to sanitize username %q: %w", username, err)
+	}
 	query := fmt.Sprintf(
 		`ALTER USER %s IF EXISTS 
 		SET STATUS SUSPENDED`,
-		username,
+		sanitizedUsername,
 	)
-	_, err := neo4j.ExecuteQuery(ctx, driver, query, nil, neo4j.EagerResultTransformer)
+	_, err = neo4j.ExecuteQuery(ctx, driver, query, nil, neo4j.EagerResultTransformer)
 	if err != nil {
 		return err
 	}
@@ -295,8 +352,13 @@ func suspendUser(ctx context.Context, driver neo4j.DriverWithContext, username s
 }
 
 func createBasicRole(ctx context.Context, driver neo4j.DriverWithContext, dbName, roleName string) error {
-	query := fmt.Sprintf("CREATE ROLE %s IF NOT EXISTS AS COPY OF PUBLIC", roleName)
-	_, err := neo4j.ExecuteQuery(ctx, driver,
+	sanitizedRole, err := EscapeNeo4jIdentifier(roleName)
+	if err != nil {
+		return fmt.Errorf("failed to sanitize role %q: %w", roleName, err)
+	}
+
+	query := fmt.Sprintf("CREATE ROLE %s IF NOT EXISTS AS COPY OF PUBLIC", sanitizedRole)
+	_, err = neo4j.ExecuteQuery(ctx, driver,
 		query, map[string]any{},
 		neo4j.EagerResultTransformer,
 		neo4j.ExecuteQueryWithDatabase(dbName),
@@ -326,6 +388,22 @@ func generatePassword(
 		return nil, fmt.Errorf("password not found in generated map")
 	}
 	return pass, nil
+}
+
+func generateRandomString(size int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	limit := big.NewInt(int64(len(charset)))
+
+	b := make([]byte, size)
+	for i := range b {
+		n, err := rand.Int(rand.Reader, limit)
+		if err != nil {
+			return "", err
+		}
+		b[i] = charset[n.Int64()]
+	}
+	return string(b), nil
 }
 
 func parseSpec(data []byte) (*genv1alpha1.Neo4j, error) {

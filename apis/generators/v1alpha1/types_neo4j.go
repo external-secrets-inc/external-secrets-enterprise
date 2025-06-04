@@ -68,9 +68,12 @@ type Neo4jUser struct {
 	// Must not contain a dash ("-") character.
 	// +kubebuilder:validation:Pattern=`^[^-\s]+$`
 	User string `json:"user"`
-	// RandomSufix adds a random 4-digits sufix to the user name if enabled.
-	// +kubebuilder:default=false
-	RandomSufix bool `json:"randomSufix,omitempty"`
+	// SuffixSize define the size of the random suffix added after the defined username.
+	// If not specified, a random suffix of size 8 will be used.
+	// If set to 0, no suffix will be added.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=8
+	SuffixSize *int `json:"suffixSize,omitempty"`
 	// The roles to be assigned to the user (Neo4j Enterprise only).
 	// See https://neo4j.com/docs/operations-manual/current/authentication-authorization/built-in-roles/
 	// for a list of built-in roles.

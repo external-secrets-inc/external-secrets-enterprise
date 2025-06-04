@@ -22851,10 +22851,6 @@ spec:
                               enum:
                                 - native
                               type: string
-                            randomSufix:
-                              default: false
-                              description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                              type: boolean
                             roles:
                               description: |-
                                 The roles to be assigned to the user (Neo4j Enterprise only).
@@ -22865,6 +22861,14 @@ spec:
                               items:
                                 type: string
                               type: array
+                            suffixSize:
+                              default: 8
+                              description: |-
+                                SuffixSize define the size of the random suffix added after the defined username.
+                                If not specified, a random suffix of size 8 will be used.
+                                If set to 0, no suffix will be added.
+                              minimum: 0
+                              type: integer
                             user:
                               description: |-
                                 The name of the user to be created.
@@ -25533,10 +25537,6 @@ spec:
                       enum:
                         - native
                       type: string
-                    randomSufix:
-                      default: false
-                      description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                      type: boolean
                     roles:
                       description: |-
                         The roles to be assigned to the user (Neo4j Enterprise only).
@@ -25547,6 +25547,14 @@ spec:
                       items:
                         type: string
                       type: array
+                    suffixSize:
+                      default: 8
+                      description: |-
+                        SuffixSize define the size of the random suffix added after the defined username.
+                        If not specified, a random suffix of size 8 will be used.
+                        If set to 0, no suffix will be added.
+                      minimum: 0
+                      type: integer
                     user:
                       description: |-
                         The name of the user to be created.
@@ -28769,10 +28777,6 @@ spec:
                                                   enum:
                                                     - native
                                                   type: string
-                                                randomSufix:
-                                                  default: false
-                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                                                  type: boolean
                                                 roles:
                                                   description: |-
                                                     The roles to be assigned to the user (Neo4j Enterprise only).
@@ -28783,6 +28787,14 @@ spec:
                                                   items:
                                                     type: string
                                                   type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
+                                                  type: integer
                                                 user:
                                                   description: |-
                                                     The name of the user to be created.
@@ -31649,10 +31661,6 @@ spec:
                                                   enum:
                                                     - native
                                                   type: string
-                                                randomSufix:
-                                                  default: false
-                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                                                  type: boolean
                                                 roles:
                                                   description: |-
                                                     The roles to be assigned to the user (Neo4j Enterprise only).
@@ -31663,6 +31671,14 @@ spec:
                                                   items:
                                                     type: string
                                                   type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
+                                                  type: integer
                                                 user:
                                                   description: |-
                                                     The name of the user to be created.
@@ -34538,10 +34554,6 @@ spec:
                                                         enum:
                                                           - native
                                                         type: string
-                                                      randomSufix:
-                                                        default: false
-                                                        description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                                                        type: boolean
                                                       roles:
                                                         description: |-
                                                           The roles to be assigned to the user (Neo4j Enterprise only).
@@ -34552,6 +34564,14 @@ spec:
                                                         items:
                                                           type: string
                                                         type: array
+                                                      suffixSize:
+                                                        default: 8
+                                                        description: |-
+                                                          SuffixSize define the size of the random suffix added after the defined username.
+                                                          If not specified, a random suffix of size 8 will be used.
+                                                          If set to 0, no suffix will be added.
+                                                        minimum: 0
+                                                        type: integer
                                                       user:
                                                         description: |-
                                                           The name of the user to be created.
@@ -37635,10 +37655,6 @@ spec:
                                                   enum:
                                                     - native
                                                   type: string
-                                                randomSufix:
-                                                  default: false
-                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                                                  type: boolean
                                                 roles:
                                                   description: |-
                                                     The roles to be assigned to the user (Neo4j Enterprise only).
@@ -37649,6 +37665,14 @@ spec:
                                                   items:
                                                     type: string
                                                   type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
+                                                  type: integer
                                                 user:
                                                   description: |-
                                                     The name of the user to be created.
@@ -40515,10 +40539,6 @@ spec:
                                                   enum:
                                                     - native
                                                   type: string
-                                                randomSufix:
-                                                  default: false
-                                                  description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                                                  type: boolean
                                                 roles:
                                                   description: |-
                                                     The roles to be assigned to the user (Neo4j Enterprise only).
@@ -40529,6 +40549,14 @@ spec:
                                                   items:
                                                     type: string
                                                   type: array
+                                                suffixSize:
+                                                  default: 8
+                                                  description: |-
+                                                    SuffixSize define the size of the random suffix added after the defined username.
+                                                    If not specified, a random suffix of size 8 will be used.
+                                                    If set to 0, no suffix will be added.
+                                                  minimum: 0
+                                                  type: integer
                                                 user:
                                                   description: |-
                                                     The name of the user to be created.
@@ -43404,10 +43432,6 @@ spec:
                                                         enum:
                                                           - native
                                                         type: string
-                                                      randomSufix:
-                                                        default: false
-                                                        description: RandomSufix adds a random 4-digits sufix to the user name if enabled.
-                                                        type: boolean
                                                       roles:
                                                         description: |-
                                                           The roles to be assigned to the user (Neo4j Enterprise only).
@@ -43418,6 +43442,14 @@ spec:
                                                         items:
                                                           type: string
                                                         type: array
+                                                      suffixSize:
+                                                        default: 8
+                                                        description: |-
+                                                          SuffixSize define the size of the random suffix added after the defined username.
+                                                          If not specified, a random suffix of size 8 will be used.
+                                                          If set to 0, no suffix will be added.
+                                                        minimum: 0
+                                                        type: integer
                                                       user:
                                                         description: |-
                                                           The name of the user to be created.
