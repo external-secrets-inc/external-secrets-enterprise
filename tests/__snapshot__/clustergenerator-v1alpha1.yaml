@@ -151,8 +151,8 @@ spec:
       user:
         home: string
         provider: "native"
-        randomSufix: false
         roles: [] # minItems 0 of type string
+        suffixSize: 8
         user: string
     passwordSpec:
       allowRepeat: false
@@ -161,6 +161,24 @@ spec:
       noUpper: false
       symbolCharacters: string
       symbols: 1
+    postgreSqlSpec:
+      auth:
+        password:
+          key: string
+          name: string
+        username: string
+      database: "postgres"
+      host: string
+      port: "5432"
+      user:
+        attributes:
+        - name: "SUPERUSER" # "SUPERUSER", "CREATEDB", "CREATEROLE", "REPLICATION", "NOINHERIT", "BYPASSRLS", "CONNECTION_LIMIT"
+          value: string
+        destructiveCleanup: false
+        reassignTo: string
+        roles: [] # minItems 0 of type string
+        suffixSize: 8
+        username: string
     quayAccessTokenSpec:
       robotAccount: string
       serviceAccountRef:
@@ -351,4 +369,4 @@ spec:
           name: string
       timeout: string
       url: string
-  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j"
+  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j", "PostgreSql"
