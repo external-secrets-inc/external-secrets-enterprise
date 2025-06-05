@@ -66,11 +66,11 @@ type MongoDBAuth struct {
 }
 
 type MongoDBSCRAMAuth struct {
+	Username  string                `json:"username"`
 	SecretRef *MongoDBAuthSecretRef `json:"secretRef,omitempty"`
 }
 
 type MongoDBAuthSecretRef struct {
-	Username esmeta.SecretKeySelector `json:"usernameSecretRef,omitempty"`
 	Password esmeta.SecretKeySelector `json:"passwordSecretRef,omitempty"`
 }
 
