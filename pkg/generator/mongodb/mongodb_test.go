@@ -25,11 +25,10 @@ import (
 )
 
 const (
-	adminUser         = "admin"
-	adminPwd          = "strongpassword"
-	usernameSecretKey = "username"
-	pwdSecretKey      = "password"
-	secretName        = "admin-secret"
+	adminUser    = "admin"
+	adminPwd     = "strongpassword"
+	pwdSecretKey = "password"
+	secretName   = "admin-secret"
 )
 
 func setupMongoDBContainer(t *testing.T, ctx context.Context) (testcontainers.Container, string, int) {
@@ -51,10 +50,11 @@ func newGeneratorSpec(t *testing.T, host string, port int) *genv1alpha1.MongoDB 
 	t.Helper()
 	spec := &genv1alpha1.MongoDB{
 		Spec: genv1alpha1.MongoDBSpec{
-			Auth: genv1alpha1.MongoDBAuth{SCRAM: &genv1alpha1.MongoDBSCRAMAuth{SecretRef: &genv1alpha1.MongoDBAuthSecretRef{
-				Username: esmeta.SecretKeySelector{Name: secretName, Key: usernameSecretKey},
-				Password: esmeta.SecretKeySelector{Name: secretName, Key: pwdSecretKey},
-			}}},
+			Auth: genv1alpha1.MongoDBAuth{SCRAM: &genv1alpha1.MongoDBSCRAMAuth{
+				Username: adminUser,
+				SecretRef: &genv1alpha1.MongoDBAuthSecretRef{
+					Password: esmeta.SecretKeySelector{Name: secretName, Key: pwdSecretKey},
+				}}},
 			Database: genv1alpha1.MongoDBDatabase{Host: host, Port: port, AdminDB: "admin"},
 			User:     genv1alpha1.MongoDBUser{Name: "user", Roles: []genv1alpha1.MongoDBRole{{Name: "readWrite", DB: "myDB"}}},
 		},
@@ -111,8 +111,7 @@ func (s *MongoDBTestSuite) SetupTest() {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			usernameSecretKey: []byte(adminUser),
-			pwdSecretKey:      []byte(adminPwd),
+			pwdSecretKey: []byte(adminPwd),
 		},
 	}
 
@@ -161,14 +160,14 @@ func (s *MongoDBTestSuite) Test_Generate_Success_WithUsernamePrefix() {
 
 func (s *MongoDBTestSuite) Test_Generate_Failure_MissingAdminCredentials() {
 	spec := newGeneratorSpec(s.T(), s.host, s.port)
-	spec.Spec.Auth.SCRAM.SecretRef.Username = esmeta.SecretKeySelector{Name: "does_not_exist", Key: "does_not_exist"}
+	spec.Spec.Auth.SCRAM.Username = ""
 	raw, err := json.Marshal(spec)
 	require.NoError(s.T(), err)
 	jsonSpec := &apiextensionsv1.JSON{Raw: raw}
 
 	_, _, err = s.generator.Generate(s.ctx, jsonSpec, s.kubeClient, "default")
 	require.Error(s.T(), err)
-	require.ErrorContains(s.T(), err, "could not fetch secret ref")
+	require.ErrorContains(s.T(), err, "missing admin username")
 }
 
 func (s *MongoDBTestSuite) Test_Cleanup_Success() {
