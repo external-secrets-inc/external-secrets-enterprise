@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.0...v1.4.1) (2025-06-05)
+
+
+### Bug Fixes
+
+* add spiffe repo to make manifests ([#111](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/111)) ([5079fec](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5079fec335edc3ebbee2a29c084888cd1c55fa17))
+
 ## [1.4.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.3.0...v1.4.0) (2025-06-05)
 
 
