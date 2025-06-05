@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.3.0...v1.4.0) (2025-06-05)
+
+
+### Features
+
+* add postgres generator ([#95](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/95)) ([3921fed](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3921fed106f8d1c01614ddbc72840936a456c13c))
+* add spiffe support ([#103](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/103)) ([7486720](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/7486720b2b5e81b29f6a00bf3aad16d2ec26a487))
+* **aws:** Enable setting custom endpoints for AWS ECR for ECRAuthorizationToken generator ([#4821](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4821)) ([1947224](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1947224853a3cec0fc572dc59cba45d41cba3886))
+
+
+### Bug Fixes
+
+* adjust mongodb genenator spec ([#110](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/110)) ([283a756](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/283a756477849b2c6da2f9c476a2ceb8e0eeb662))
+* helm push ([#101](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/101)) ([c265e42](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c265e42eca8a5daac859b575657aeaa7db606be9))
+* sanitize user inputs; update username suffix generation ([#107](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/107)) ([9208a43](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9208a43937fcb4f28492f9b86ab23b0b9913c037))
+* update dependencies ([#100](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/100)) ([07080fb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/07080fb240ddca572a0f7f824ee93be584bfb989))
+* update dependencies ([#97](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/97)) ([066944c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/066944cbf376de3f83993b25fac0335768771bba))
+
 ## [1.3.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.2.0...v1.3.0) (2025-05-29)
 
 
