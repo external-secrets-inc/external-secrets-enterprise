@@ -37,6 +37,7 @@ const (
 	errMongoDBConnect   = "could not connect to mongoDB: %w"
 	errMissingState     = "missing generator state"
 	errCreateState      = "could not create generator state: %w"
+	errMissingAdminUser = "missing admin username"
 )
 
 const (
@@ -180,18 +181,17 @@ func getAdminCredentials(
 	kube client.Client,
 	ns string,
 ) (string, string, error) {
-	userSelector := &spec.Spec.Auth.SCRAM.SecretRef.Username
-	pwdSelector := &spec.Spec.Auth.SCRAM.SecretRef.Password
-
-	adminUser, err := getFromSecretRef(ctx, userSelector, "", kube, ns)
-	if err != nil {
-		return "", "", err
+	adminUser := &spec.Spec.Auth.SCRAM.Username
+	if adminUser == nil || *adminUser == "" {
+		return "", "", fmt.Errorf(errMissingAdminUser)
 	}
+
+	pwdSelector := &spec.Spec.Auth.SCRAM.SecretRef.Password
 	adminPwd, err := getFromSecretRef(ctx, pwdSelector, "", kube, ns)
 	if err != nil {
 		return "", "", err
 	}
-	return adminUser, adminPwd, nil
+	return *adminUser, adminPwd, nil
 }
 
 func manageUser(ctx context.Context, db *mongo.Database, action, username, password string, rolesSpec []genv1alpha1.MongoDBRole) error {
