@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.1...v1.4.2) (2025-06-06)
+
+
+### Bug Fixes
+
+* adjust esi rbac permissions ([#115](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/115)) ([c37204a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c37204ac38882c92d9fb4c706e0dce7e7636c835))
+* regenerate schema with latest plugin version ([#117](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/117)) ([146a307](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/146a3077a5bbfcd0f10510852df600c4553d4fa8))
+
 ## [1.4.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.0...v1.4.1) (2025-06-05)
 
 
