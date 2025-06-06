@@ -22,6 +22,16 @@ rules:
     - "list"
     - "watch"
   - apiGroups:
+    - "federation.external-secrets.io"
+    resources:
+    - "authorizations"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+    - "update"
+    - "patch"
+  - apiGroups:
     - "workflows.external-secrets.io"
     resources:
     - "*"
