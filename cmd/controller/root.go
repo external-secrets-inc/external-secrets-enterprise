@@ -428,7 +428,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&enableExtendedMetricLabels, "enable-extended-metric-labels", false, "Enable recommended kubernetes annotations as labels in metrics.")
 	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
 	rootCmd.Flags().StringVar(&spireAgentSocketPath, "spire-agent-socket-path", "unix:///tmp/spire-agent/public/api.sock", "Path to the Spiffe agent socket")
-	rootCmd.Flags().BoolVar(&enableFederationTLS, "enable-federation-tls", true, "Enable federation server TLS")
+	rootCmd.Flags().BoolVar(&enableFederationTLS, "enable-federation-tls", false, "Enable federation server TLS")
 
 	fs := feature.Features()
 	for _, f := range fs {
