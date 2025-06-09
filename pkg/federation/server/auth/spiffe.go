@@ -86,5 +86,5 @@ func (a *SpiffeAuthenticator) buildKubeAttributes(path string) (*KubeAttributes,
 }
 
 func init() {
-	Register("spiffe", &SpiffeAuthenticator{})
+	Register("spiffe", NewSpiffeAuthenticator())
 }

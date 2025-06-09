@@ -201,5 +201,5 @@ func readCaCrt(r *http.Request) (string, error) {
 }
 
 func init() {
-	Register("oidc", &OIDCAuthenticator{})
+	Register("oidc", NewOIDCAuthenticator())
 }
