@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"slices"
@@ -24,6 +23,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/federation/store"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	"github.com/go-logr/logr"
 	"github.com/labstack/echo/v4"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
@@ -31,6 +31,7 @@ import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -38,20 +39,25 @@ import (
 type ServerHandler struct {
 	reconciler             *externalsecrets.Reconciler
 	mu                     sync.RWMutex
+	log                    logr.Logger
 	port                   string
 	tlsPort                string
+	tlsEnabled             bool
 	spireAgentSocketPath   string
 	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
 	getSecretFn            func(ctx context.Context, storeName string, name string) ([]byte, error)
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
 
-func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string) *ServerHandler {
+func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string, tlsEnabled bool) *ServerHandler {
+	log := ctrl.Log.WithName("federationserver")
 	s := &ServerHandler{
+		log:        log,
 		reconciler: reconciler,
 		mu:         sync.RWMutex{},
 		port:       port,
 		tlsPort:    tlsPort,
+		tlsEnabled: tlsEnabled,
 	}
 	s.spireAgentSocketPath = socketPath
 	s.generateSecretFn = s.generateSecret
@@ -72,9 +78,36 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	e.DELETE("/generators/:generatorNamespace/:generatorKind/:generatorName", s.revokeSelf)
 	e.POST("/generators/:generatorNamespace/revoke", s.revokeCredentialsOf)
 
+	s.startHTTPServer(ctx, e)
+	if s.tlsEnabled {
+		s.startMTLSServer(ctx, e)
+	}
+
+	return e
+}
+
+func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
+	srv := &http.Server{
+		Addr:              s.port,
+		Handler:           e,
+		ReadHeaderTimeout: 10 * time.Second,
+		BaseContext: func(_ net.Listener) context.Context {
+			return ctx
+		},
+	}
+
+	go func() {
+		s.log.Info("Starting federation HTTP server")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			s.log.Error(err, "failed to start federation http server")
+		}
+	}()
+}
+
+func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
 	source, err := workloadapi.NewX509Source(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(s.spireAgentSocketPath)))
 	if err != nil {
-		log.Fatal(err)
+		s.log.Error(err, "failed to create x509 source")
 	}
 	tlsConfig := tlsconfig.MTLSServerConfig(source, source, tlsconfig.AuthorizeAny())
 	tlsConfig.VerifyConnection = verifyConnection
@@ -90,28 +123,11 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	}
 
 	go func() {
+		s.log.Info("Starting federation TLS server")
 		if err := tlsSrv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("failed to start tls server: %v", err)
+			s.log.Error(err, "failed to start federation tls server")
 		}
 	}()
-
-	srv := &http.Server{
-		Addr:              s.port,
-		Handler:           e,
-		TLSConfig:         tlsConfig,
-		ReadHeaderTimeout: 10 * time.Second,
-		BaseContext: func(_ net.Listener) context.Context {
-			return ctx
-		},
-	}
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("failed to start server: %v", err)
-		}
-	}()
-
-	return e
 }
 
 func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
