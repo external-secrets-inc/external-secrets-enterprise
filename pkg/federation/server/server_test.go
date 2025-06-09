@@ -29,7 +29,7 @@ type GenerateSecretsTestSuite struct {
 
 func (s *GenerateSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock")
+	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock", true)
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -845,7 +845,7 @@ type PostSecretsTestSuite struct {
 
 func (s *PostSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock")
+	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock", true)
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
