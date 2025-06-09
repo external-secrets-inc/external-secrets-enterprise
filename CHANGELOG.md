@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.3...v1.4.4) (2025-06-09)
+
+
+### Bug Fixes
+
+* federation tls server ([#125](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/125)) ([ee5206e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ee5206e43442780af53cbdbe35a06cc3509f97ce))
+
 ## [1.4.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.2...v1.4.3) (2025-06-09)
 
 
