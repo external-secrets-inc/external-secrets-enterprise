@@ -25,6 +25,7 @@ var (
 	Neo4jKind             = reflect.TypeOf(Neo4j{}).Name()
 	MongoDBKind           = reflect.TypeOf(MongoDB{}).Name()
 	PostgreSqlKind        = reflect.TypeOf(PostgreSql{}).Name()
+	KafkaKind             = reflect.TypeOf(Kafka{}).Name()
 )
 
 func init() {
