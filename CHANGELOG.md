@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.6](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.5...v1.4.6) (2025-06-10)
+
+
+### Bug Fixes
+
+* esi issues ([#130](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/130)) ([58c1185](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/58c11856d7d0c79706ad37d4592da5a81c606039))
+
 ## [1.4.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.4...v1.4.5) (2025-06-10)
 
 
