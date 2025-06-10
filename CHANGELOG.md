@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.4...v1.4.5) (2025-06-10)
+
+
+### Bug Fixes
+
+* authentication registration ([#127](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/127)) ([a16bd9c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a16bd9c056912b7150719a20ffcc2228c857fa84))
+* remove specMap from spiffe auth ([#128](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/128)) ([b19a4f9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b19a4f9e9a22f94b99c531ab16eb1ca2c6e0c62d))
+
 ## [1.4.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.3...v1.4.4) (2025-06-09)
 
 
