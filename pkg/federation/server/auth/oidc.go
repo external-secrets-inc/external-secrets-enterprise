@@ -84,8 +84,10 @@ func (a *OIDCAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 		KubeAttributes: &KubeAttributes{
 			Namespace:      claim.Namespace,
 			ServiceAccount: &ServiceAccount{Name: claim.ServiceAccount.Name, UID: claim.ServiceAccount.UID},
-			Pod:            &PodInfo{Name: claim.Pod.Name, UID: claim.Pod.UID},
 		},
+	}
+	if claim.Pod != nil {
+		authInfo.KubeAttributes.Pod = &PodInfo{Name: claim.Pod.Name, UID: claim.Pod.UID}
 	}
 	return authInfo, nil
 }
