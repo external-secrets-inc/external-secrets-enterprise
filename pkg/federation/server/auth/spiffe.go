@@ -21,19 +21,16 @@ import (
 	"regexp"
 	"sync"
 
-	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/federation/v1alpha1"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 )
 
 type SpiffeAuthenticator struct {
-	mu      sync.RWMutex
-	specMap map[string][]*fedv1alpha1.AuthorizationSpec
+	mu sync.RWMutex
 }
 
 func NewSpiffeAuthenticator() *SpiffeAuthenticator {
 	return &SpiffeAuthenticator{
-		mu:      sync.RWMutex{},
-		specMap: map[string][]*fedv1alpha1.AuthorizationSpec{},
+		mu: sync.RWMutex{},
 	}
 }
 
