@@ -32,13 +32,13 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
-	github.com/oracle/oci-go-sdk/v65 v65.93.0
+	github.com/oracle/oci-go-sdk/v65 v65.93.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
-	github.com/yandex-cloud/go-genproto v0.7.0
+	github.com/yandex-cloud/go-genproto v0.8.0
 	github.com/yandex-cloud/go-sdk v0.8.0
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	go.uber.org/zap v1.27.0
@@ -65,7 +65,7 @@ require (
 	dario.cat/mergo v1.0.2
 	github.com/1password/onepassword-sdk-go v0.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
 	github.com/BeyondTrust/go-client-library-passwordsafe v0.22.1
 	github.com/DelineaXPM/dsv-sdk-go/v2 v2.2.0
@@ -79,15 +79,15 @@ require (
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
 	github.com/aliyun/credentials-go v1.4.6
 	github.com/avast/retry-go/v4 v4.6.1
-	github.com/aws/aws-sdk-go-v2 v1.36.3
-	github.com/aws/aws-sdk-go-v2/config v1.29.15
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.68
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.44.1
-	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.33.0
-	github.com/aws/aws-sdk-go-v2/service/iam v1.42.0
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.5
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.59.1
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.20
+	github.com/aws/aws-sdk-go-v2 v1.36.4
+	github.com/aws/aws-sdk-go-v2/config v1.29.16
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.69
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.44.2
+	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.33.1
+	github.com/aws/aws-sdk-go-v2/service/iam v1.42.1
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.6
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.59.2
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.21
 	github.com/aws/smithy-go v1.22.3
 	github.com/bradleyfalzon/ghinstallation/v2 v2.16.0
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -128,7 +128,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.129.0
 	golang.org/x/sync v0.15.0
-	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff
+	k8s.io/kube-openapi v0.0.0-20250610211856-8b98d1ed966a
 	sigs.k8s.io/yaml v1.4.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
 )
@@ -155,14 +155,14 @@ require (
 	github.com/alibabacloud-go/endpoint-util v1.1.1 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.31 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.35 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.35 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.15 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.25.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.16 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.25.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.2 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
