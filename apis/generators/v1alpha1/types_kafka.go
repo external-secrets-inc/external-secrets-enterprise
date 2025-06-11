@@ -18,6 +18,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type KafkaAuthMechanismEnum string
+
+const (
+	KafkaAuthMechanismPlain    KafkaAuthMechanismEnum = "PLAIN"
+	KafkaAuthMechanismScram512 KafkaAuthMechanismEnum = "SCRAM-SHA-512"
+	KafkaAuthMechanismScram256 KafkaAuthMechanismEnum = "SCRAM-SHA-256"
+)
+
 // KafkaSpec controls the behavior of the kafka generator.
 type KafkaSpec struct {
 	// Addresses of the kafka cluster(s) (or specific broker) that the client
@@ -34,6 +42,26 @@ type KafkaAuth struct {
 	Username string `json:"username"`
 	// A basic auth password used to authenticate against the Kafka instance.
 	Password SecretKeySelector `json:"password"`
+	// Mechanism define the SASL mechanism to use (Optional.
+	// Accepted values: PLAIN, SCRAM-SHA-512, SCRAM-SHA-256
+	// +kubebuilder:validation:Enum=PLAIN;SCRAM-SHA-512;SCRAM-SHA-256
+	// +optional
+	Mechanism *KafkaAuthMechanismEnum `json:"mechanism,omitempty"`
+	// TLSConfig holds TLS configuration options for connecting securely.
+	// +optional
+	TLSConfig *KafkaTLSConfig `json:"TLSConfig,omitempty"`
+}
+
+type KafkaTLSConfig struct {
+	// CACert is the reference to the CA certificate used to verify the server certificate.
+	// +optional
+	CACert *SecretKeySelector `json:"caCert,omitempty"`
+	// ClientCert is the reference to the client certificate used for mutual TLS.
+	// +optional
+	ClientCert *SecretKeySelector `json:"clientCert,omitempty"`
+	// ClientKey is the reference to the private key used for mutual TLS.
+	// +optional
+	ClientKey *SecretKeySelector `json:"clientKey,omitempty"`
 }
 
 type KafkaUser struct {

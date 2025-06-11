@@ -7,6 +7,8 @@ import (
 	"crypto/pbkdf2"
 	"crypto/rand"
 	"crypto/sha512"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +16,8 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl"
+	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -102,13 +106,75 @@ func newClient(ctx context.Context, spec *genv1alpha1.KafkaSpec, kclient client.
 		return nil, err
 	}
 
-	mechanism, err := scram.Mechanism(scram.SHA512, spec.Auth.Username, password)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create SCRAM mechanism: %w", err)
+	var mechanism sasl.Mechanism
+	if spec.Auth.Mechanism != nil {
+		switch *spec.Auth.Mechanism {
+		case genv1alpha1.KafkaAuthMechanismPlain:
+			mechanism = plain.Mechanism{Username: spec.Auth.Username, Password: password}
+		case genv1alpha1.KafkaAuthMechanismScram256:
+			mechanism, err = scram.Mechanism(scram.SHA256, spec.Auth.Username, password)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create SCRAM-SHA-256 mechanism: %w", err)
+			}
+		case genv1alpha1.KafkaAuthMechanismScram512:
+			mechanism, err = scram.Mechanism(scram.SHA512, spec.Auth.Username, password)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create SCRAM-SHA-512 mechanism: %w", err)
+			}
+		default:
+			mechanism = nil
+		}
+	}
+
+	var tlsConfig *tls.Config
+	if spec.Auth.TLSConfig != nil {
+		tlsConfig = &tls.Config{}
+
+		if spec.Auth.TLSConfig.CACert != nil {
+			caPEM, err := resolvers.SecretKeyRef(ctx, kclient, resolvers.EmptyStoreKind, ns, &esmeta.SecretKeySelector{
+				Namespace: &ns,
+				Name:      spec.Auth.TLSConfig.CACert.Name,
+				Key:       spec.Auth.TLSConfig.CACert.Key,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to load CA cert: %w", err)
+			}
+			caPool := x509.NewCertPool()
+			if !caPool.AppendCertsFromPEM([]byte(caPEM)) {
+				return nil, fmt.Errorf("failed to parse CA cert")
+			}
+			tlsConfig.RootCAs = caPool
+		}
+
+		if spec.Auth.TLSConfig.ClientCert != nil && spec.Auth.TLSConfig.ClientKey != nil {
+			certPEM, err := resolvers.SecretKeyRef(ctx, kclient, resolvers.EmptyStoreKind, ns, &esmeta.SecretKeySelector{
+				Namespace: &ns,
+				Name:      spec.Auth.TLSConfig.ClientCert.Name,
+				Key:       spec.Auth.TLSConfig.ClientCert.Key,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to load client cert: %w", err)
+			}
+			keyPEM, err := resolvers.SecretKeyRef(ctx, kclient, resolvers.EmptyStoreKind, ns, &esmeta.SecretKeySelector{
+				Namespace: &ns,
+				Name:      spec.Auth.TLSConfig.ClientKey.Name,
+				Key:       spec.Auth.TLSConfig.ClientKey.Key,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to load client key: %w", err)
+			}
+
+			cert, err := tls.X509KeyPair([]byte(certPEM), []byte(keyPEM))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse client cert/key: %w", err)
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
 	}
 
 	sharedTransport := &kafka.Transport{
 		SASL: mechanism,
+		TLS:  tlsConfig,
 	}
 
 	return &kafka.Client{
