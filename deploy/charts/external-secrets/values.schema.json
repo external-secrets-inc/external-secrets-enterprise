@@ -651,6 +651,7 @@
                     "type": "string"
                 }
             }
+<<<<<<< HEAD
         },
         "spire": {
             "type": "object",
@@ -680,6 +681,8 @@
                     "type": "boolean"
                 }
             }
+=======
+>>>>>>> upstream/main
         },
         "tolerations": {
             "type": "array"
