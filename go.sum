@@ -248,8 +248,11 @@ github.com/aws/aws-sdk-go-v2/service/ecr v1.44.1 h1:tvGdftJBAi5sos34vphJ2EAbelTO
 github.com/aws/aws-sdk-go-v2/service/ecr v1.44.1/go.mod h1:iQ1skgw1XRK+6Lgkb0I9ODatAP72WoTILh0zXQ5DtbU=
 github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.33.0 h1:wA2O6pZ2r5smqJunFP4hp7qptMW4EQxs8O6RVHPulOE=
 github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.33.0/go.mod h1:RZL7ov7c72wSmoM8bIiVxRHgcVdzhNkVW2J36C8RF4s=
+<<<<<<< HEAD
 github.com/aws/aws-sdk-go-v2/service/iam v1.42.0 h1:G6+UzGvubaet9QOh0664E9JeT+b6Zvop3AChozRqkrA=
 github.com/aws/aws-sdk-go-v2/service/iam v1.42.0/go.mod h1:mPJkGQzeCoPs82ElNILor2JzZgYENr4UaSKUT8K27+c=
+=======
+>>>>>>> upstream/main
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.3 h1:eAh2A4b5IzM/lum78bZ590jy36+d/aFLgKF/4Vd1xPE=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.3/go.mod h1:0yKJC/kb8sAnmlYa6Zs3QVYqaC8ug2AbnNChv5Ox3uA=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.15 h1:dM9/92u2F1JbDaGooxTq18wmmFzbJRfXfVfy96/1CXM=
@@ -890,10 +893,13 @@ github.com/sclevine/spec v1.4.0 h1:z/Q9idDcay5m5irkZ28M7PtQM4aOISzOpj4bUPkDee8=
 github.com/sclevine/spec v1.4.0/go.mod h1:LvpgJaFyvQzRvc1kaDs0bulYwzC70PbiYjC4QnFHkOM=
 github.com/segmentio/asm v1.2.0 h1:9BQrFxC+YOHJlTlHGkTrFWf59nbL3XnCoFLTwDCI7ys=
 github.com/segmentio/asm v1.2.0/go.mod h1:BqMnlJP91P8d+4ibuonYZw9mfnzI9HfxselHZr5aAcs=
+<<<<<<< HEAD
 github.com/sendgrid/rest v2.6.9+incompatible h1:1EyIcsNdn9KIisLW50MKwmSRSK+ekueiEMJ7NEoxJo0=
 github.com/sendgrid/rest v2.6.9+incompatible/go.mod h1:kXX7q3jZtJXK5c5qK83bSGMdV6tsOE70KbHoqJls4lE=
 github.com/sendgrid/sendgrid-go v3.16.1+incompatible h1:zWhTmB0Y8XCDzeWIm2/BIt1GjJohAA0p6hVEaDtHWWs=
 github.com/sendgrid/sendgrid-go v3.16.1+incompatible/go.mod h1:QRQt+LX/NmgVEvmdRw0VT/QgUn499+iza2FnDca9fg8=
+=======
+>>>>>>> upstream/main
 github.com/sergi/go-diff v1.4.0 h1:n/SP9D5ad1fORl+llWyN+D6qoUETXNZARKjyY2/KVCw=
 github.com/sergi/go-diff v1.4.0/go.mod h1:A0bzQcvG0E7Rwjx0REVgAGH58e96+X0MeOfepqsbeW4=
 github.com/sethvargo/go-password v0.3.1 h1:WqrLTjo7X6AcVYfC6R7GtSyuUQR9hGyAj/f1PYQZCJU=
