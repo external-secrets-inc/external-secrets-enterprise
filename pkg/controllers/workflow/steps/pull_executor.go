@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/external-secrets/external-secrets/pkg/controllers/workflow/templates"
+	"reflect"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +34,7 @@ func NewPullStepExecutor(step *workflows.PullStep, c client.Client, manager secr
 	}
 
 	return &PullStepExecutor{
-		Step:    step,
+		Step:    step.DeepCopy(),
 		Client:  c,
 		Manager: manager,
 	}
@@ -43,6 +45,8 @@ func NewPullStepExecutor(step *workflows.PullStep, c client.Client, manager secr
 // of key/value pairs.
 func (e *PullStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
+
+	templates.ProcessTemplates(reflect.ValueOf(e.Step), inputData)
 
 	defer func() {
 		_ = e.Manager.Close(ctx)
