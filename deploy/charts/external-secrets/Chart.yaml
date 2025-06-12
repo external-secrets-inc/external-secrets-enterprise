@@ -23,7 +23,7 @@ dependencies:
     repository: https://spiffe.github.io/helm-charts-hardened
     condition: spire.enabled
   - name: esi-pod-webhook
-    version: 0.4.0
+    version: 0.4.1
     repository: oci://us-central1-docker.pkg.dev/external-secrets-inc-registry/public/charts
     condition: esi-pod-webhook.enabled
   - name: bitwarden-sdk-server
