@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.8](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.7...v1.4.8) (2025-06-13)
+
+
+### Bug Fixes
+
+* conflicts ([80a4fb5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/80a4fb5a3c5cdb115be70d8c089768e7ff8ae81b))
+* helm release running  always ([#4898](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4898)) ([955cc69](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/955cc6944cde26ac7ecf5d716ca077a62a89adb4))
+* rebuilds ubi ([80a4fb5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/80a4fb5a3c5cdb115be70d8c089768e7ff8ae81b))
+* update dependencies ([#141](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/141)) ([937b665](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/937b66546132f49f4172cb1db3c8904be1e1957d))
+* update from upstream ([1d3eaa1](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1d3eaa14829fbc1fd8447ee126f03d89aa061d64))
+* **workflows:** pull step template support ([#138](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/138)) ([1557f6b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1557f6b2d4efb7fde777eb19eb427de80bab84bf))
+
 ## [1.4.7](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.6...v1.4.7) (2025-06-12)
 
 
