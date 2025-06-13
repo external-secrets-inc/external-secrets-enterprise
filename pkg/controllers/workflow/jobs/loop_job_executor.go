@@ -98,6 +98,11 @@ func executeIteration(
 
 	// Process each step sequentially within this iteration.
 	for _, step := range loopJob.Steps {
+		// Needs to be done everytime otherwise its lost on a second step
+		iterationCtx.Data["range"] = map[string]interface{}{
+			"key":   key,
+			"value": value,
+		}
 		stepStatus := baseCtx.JobStatus.StepStatuses[step.Name]
 
 		// Skip steps that have already succeeded or failed.
@@ -118,8 +123,9 @@ func executeIteration(
 			stepStatus.Outputs = make(map[string]string)
 		}
 
-		// Store the value for this range key
-		stepStatus.Outputs[key] = fmt.Sprintf("%v", value)
+		//  TODO[gusfcarvalho]: figure out why is this needed
+		// // Store the value for this range key
+		// stepStatus.Outputs[key] = fmt.Sprintf("%v", value)
 
 		// Update the step status in the job status
 		baseCtx.JobStatus.StepStatuses[step.Name] = stepStatus

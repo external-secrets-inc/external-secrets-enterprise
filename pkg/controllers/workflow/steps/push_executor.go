@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,33 +61,47 @@ func (e *PushStepExecutor) Execute(ctx context.Context, c client.Client, wf *wor
 
 	// For each data item, resolve its value
 	for _, data := range e.Step.Data {
-		templateStr := fmt.Sprintf("{{ %s.%s }}", secretSource, data.Match.SecretKey)
-		value, err := templates.ResolveTemplate(templateStr, inputData)
-		if err != nil {
-			return nil, fmt.Errorf("error resolving value for key %s: %w", data.Match.SecretKey, err)
-		}
-
-		// Check if the value needs to be serialized as JSON
-		if v, ok := inputData[secretSource].(map[string]interface{}); ok {
-			if fieldValue, exists := v[data.Match.SecretKey]; exists {
-				switch val := fieldValue.(type) {
-				case nil, string, bool, float64, int, int64:
-					// Simple types can be converted to string directly
-					byteData[data.Match.SecretKey] = []byte(fmt.Sprintf("%v", val))
-				default:
-					// Complex types need JSON serialization
-					jsonBytes, err := json.Marshal(val)
-					if err != nil {
-						return nil, fmt.Errorf("error serializing value for key %s: %w", data.Match.SecretKey, err)
-					}
-					byteData[data.Match.SecretKey] = jsonBytes
-				}
-				continue
+		// We need to convert our whole secretSource as a Kubernetes Secret
+		// For that, we must ask the user that `secretSource` is a valid map.
+		// Pointing to a pull or generator step, this is always the case.
+		sourceKeys := strings.Split(secretSource, ".")[1:]
+		temp := inputData
+		for _, key := range sourceKeys {
+			a, ok := temp[key]
+			if !ok {
+				// Temporary Failure
+				return nil, fmt.Errorf("error getting value for key %s: no key found", key)
 			}
+			d, err := json.Marshal(a)
+			if err != nil {
+				return nil, fmt.Errorf("error getting value for key %s: %w", key, err)
+			}
+			v := map[string]interface{}{}
+			err = json.Unmarshal(d, &v)
+			if err != nil {
+				return nil, fmt.Errorf("error getting value for key %s: %w", key, err)
+			}
+			temp = v
 		}
-		// Fallback to string value if not a special type
-		byteData[data.Match.SecretKey] = []byte(value)
+		for k, v := range temp {
+			switch val := v.(type) {
+			case nil, string, bool, float64, int, int64:
+				// Simple types can be converted to string directly
+				byteData[k] = []byte(fmt.Sprintf("%v", val))
+			default:
+				// Complex types need JSON serialization
+				jsonBytes, err := json.Marshal(val)
+				if err != nil {
+					return nil, fmt.Errorf("error serializing value for key %s: %w", data.Match.SecretKey, err)
+				}
+				byteData[k] = jsonBytes
+			}
+			continue
+		}
 	}
+	// NOTE: We don't verify secretKey logic here as `PushSecret` will already fail
+	// if the Secret does not contain the key
+	// This approch also allows for pushing the entire Secret as opposed to just one key
 
 	secret = corev1.Secret{
 		Data: byteData,
