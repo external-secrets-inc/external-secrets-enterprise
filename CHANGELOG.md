@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.8...v1.5.0) (2025-06-13)
+
+
+### Features
+
+* bump esi-pod-webhook version ([#142](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/142)) ([3439c59](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3439c594f612f0ae77a9bd4a5a11ca5524c38cbf))
+
 ## [1.4.8](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.7...v1.4.8) (2025-06-13)
 
 

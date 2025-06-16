@@ -7,9 +7,9 @@ dependencies:
   version: 0.25.0
 - name: esi-pod-webhook
   repository: oci://us-central1-docker.pkg.dev/external-secrets-inc-registry/public/charts
-  version: 0.4.1
+  version: 0.4.2
 - name: bitwarden-sdk-server
   repository: oci://ghcr.io/external-secrets/charts
   version: v0.4.2
-digest: sha256:9479e1f0ec26f9c1f5081403b48a3933f28d78ee98a6101a8bff61d51e9dc50c
-generated: "2025-06-12T00:35:40.274246155-03:00"
+digest: sha256:c7ab3866703fabdf0731a63016fb65411f3939aaf2cf17100a658ad2f507fc35
+generated: "2025-06-13T14:45:38.078954605-03:00"

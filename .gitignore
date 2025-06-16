@@ -7,6 +7,7 @@
 /vendor
 cover.out
 
+.go-version
 # ignore vim swp
 *.swp
 
