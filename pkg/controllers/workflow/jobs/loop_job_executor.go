@@ -123,10 +123,6 @@ func executeIteration(
 			stepStatus.Outputs = make(map[string]string)
 		}
 
-		//  TODO[gusfcarvalho]: figure out why is this needed
-		// // Store the value for this range key
-		// stepStatus.Outputs[key] = fmt.Sprintf("%v", value)
-
 		// Update the step status in the job status
 		baseCtx.JobStatus.StepStatuses[step.Name] = stepStatus
 	}
