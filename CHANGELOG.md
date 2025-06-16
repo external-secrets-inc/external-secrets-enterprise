@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.5.0...v1.5.1) (2025-06-16)
+
+
+### Bug Fixes
+
+* update dependencies ([#151](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/151)) ([d9b7f64](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d9b7f64d1036f07d525e3974715e8d3d4dd68912))
+* update from upstream ([#149](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/149)) ([240a423](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/240a42329c4c5f9fca73af0b948abfb8d3adf7f3))
+* update go ([f821664](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f821664e355c75cace0c48dfed18faae25e15fee))
+* workflow push steps now works on more PushSecret cases ([#143](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/143)) ([fd0adeb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/fd0adeba8ba761966e2afcb0df3e260ad00ed6e6))
+
 ## [1.5.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.4.8...v1.5.0) (2025-06-13)
 
 
