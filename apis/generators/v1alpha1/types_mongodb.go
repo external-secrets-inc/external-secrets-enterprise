@@ -66,12 +66,13 @@ type MongoDBAuth struct {
 }
 
 type MongoDBSCRAMAuth struct {
-	Username  string                `json:"username"`
+	Username  *string               `json:"username,omitempty"`
 	SecretRef *MongoDBAuthSecretRef `json:"secretRef,omitempty"`
 }
 
 type MongoDBAuthSecretRef struct {
-	Password esmeta.SecretKeySelector `json:"passwordSecretRef,omitempty"`
+	Password esmeta.SecretKeySelector  `json:"passwordSecretRef,omitempty"`
+	Username *esmeta.SecretKeySelector `json:"usernameSecretRef,omitempty"`
 }
 
 // +kubebuilder:object:root=true
