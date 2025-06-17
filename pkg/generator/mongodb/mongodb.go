@@ -181,9 +181,20 @@ func getAdminCredentials(
 	kube client.Client,
 	ns string,
 ) (string, string, error) {
-	adminUser := &spec.Spec.Auth.SCRAM.Username
-	if adminUser == nil || *adminUser == "" {
-		return "", "", fmt.Errorf(errMissingAdminUser)
+	var adminUser *string
+	if spec.Spec.Auth.SCRAM.SecretRef.Username != nil {
+		userSelector := spec.Spec.Auth.SCRAM.SecretRef.Username
+		adminUserFromRef, err := getFromSecretRef(ctx, userSelector, "", kube, ns)
+
+		if err == nil {
+			adminUser = &adminUserFromRef
+		}
+	}
+	if adminUser == nil {
+		adminUser = spec.Spec.Auth.SCRAM.Username
+		if adminUser == nil || *adminUser == "" {
+			return "", "", fmt.Errorf(errMissingAdminUser)
+		}
 	}
 
 	pwdSelector := &spec.Spec.Auth.SCRAM.SecretRef.Password
