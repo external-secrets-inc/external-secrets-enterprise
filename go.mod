@@ -82,13 +82,13 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.36.4
 	github.com/aws/aws-sdk-go-v2/config v1.29.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.69
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.44.2
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.45.0
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.33.1
 	github.com/aws/aws-sdk-go-v2/service/iam v1.42.1
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.6
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.59.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.21
-	github.com/aws/smithy-go v1.22.3
+	github.com/aws/smithy-go v1.22.4
 	github.com/bradleyfalzon/ghinstallation/v2 v2.16.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudru-tech/iam-sdk v1.0.4
