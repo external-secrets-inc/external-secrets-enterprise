@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.5.1...v1.6.0) (2025-06-17)
+
+
+### Features
+
+* add username ref to mongodb auth ([#155](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/155)) ([57e0338](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/57e03389119deb698748530853519e5c91f1bda0))
+
 ## [1.5.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.5.0...v1.5.1) (2025-06-16)
 
 
