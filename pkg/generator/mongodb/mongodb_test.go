@@ -25,11 +25,13 @@ import (
 )
 
 const (
-	adminUser    = "admin"
-	adminPwd     = "strongpassword"
-	pwdSecretKey = "password"
-	secretName   = "admin-secret"
+	adminPwd      = "strongpassword"
+	pwdSecretKey  = "password"
+	userSecretKey = "username"
+	secretName    = "admin-secret"
 )
+
+var adminUser string = "admin"
 
 func setupMongoDBContainer(t *testing.T, ctx context.Context) (testcontainers.Container, string, int) {
 	t.Helper()
@@ -51,9 +53,10 @@ func newGeneratorSpec(t *testing.T, host string, port int) *genv1alpha1.MongoDB 
 	spec := &genv1alpha1.MongoDB{
 		Spec: genv1alpha1.MongoDBSpec{
 			Auth: genv1alpha1.MongoDBAuth{SCRAM: &genv1alpha1.MongoDBSCRAMAuth{
-				Username: adminUser,
+				Username: &adminUser,
 				SecretRef: &genv1alpha1.MongoDBAuthSecretRef{
 					Password: esmeta.SecretKeySelector{Name: secretName, Key: pwdSecretKey},
+					Username: &esmeta.SecretKeySelector{Name: secretName, Key: userSecretKey},
 				}}},
 			Database: genv1alpha1.MongoDBDatabase{Host: host, Port: port, AdminDB: "admin"},
 			User:     genv1alpha1.MongoDBUser{Name: "user", Roles: []genv1alpha1.MongoDBRole{{Name: "readWrite", DB: "myDB"}}},
@@ -111,7 +114,8 @@ func (s *MongoDBTestSuite) SetupTest() {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			pwdSecretKey: []byte(adminPwd),
+			pwdSecretKey:  []byte(adminPwd),
+			userSecretKey: []byte(adminUser),
 		},
 	}
 
@@ -160,7 +164,9 @@ func (s *MongoDBTestSuite) Test_Generate_Success_WithUsernamePrefix() {
 
 func (s *MongoDBTestSuite) Test_Generate_Failure_MissingAdminCredentials() {
 	spec := newGeneratorSpec(s.T(), s.host, s.port)
-	spec.Spec.Auth.SCRAM.Username = ""
+	emptyUsername := ""
+	spec.Spec.Auth.SCRAM.Username = &emptyUsername
+	spec.Spec.Auth.SCRAM.SecretRef.Username = nil
 	raw, err := json.Marshal(spec)
 	require.NoError(s.T(), err)
 	jsonSpec := &apiextensionsv1.JSON{Raw: raw}
@@ -168,6 +174,27 @@ func (s *MongoDBTestSuite) Test_Generate_Failure_MissingAdminCredentials() {
 	_, _, err = s.generator.Generate(s.ctx, jsonSpec, s.kubeClient, "default")
 	require.Error(s.T(), err)
 	require.ErrorContains(s.T(), err, "missing admin username")
+}
+
+func (s *MongoDBTestSuite) Test_Generate_Success_UsernameFallback() {
+	spec := newGeneratorSpec(s.T(), s.host, s.port)
+	spec.Spec.Auth.SCRAM.SecretRef.Username = &esmeta.SecretKeySelector{
+		Name: "inexistent-secret",
+		Key:  userSecretKey,
+	}
+	raw, err := json.Marshal(spec)
+	require.NoError(s.T(), err)
+	jsonSpec := &apiextensionsv1.JSON{Raw: raw}
+
+	out, state, err := s.generator.Generate(s.ctx, jsonSpec, s.kubeClient, "default")
+	require.NoError(s.T(), err)
+
+	require.NotEmpty(s.T(), out["username"])
+	require.NotEmpty(s.T(), out["password"])
+
+	var st genv1alpha1.MongoDBUserState
+	require.NoError(s.T(), json.Unmarshal(state.Raw, &st))
+	s.Assert().Equal(string(out["username"]), st.User)
 }
 
 func (s *MongoDBTestSuite) Test_Cleanup_Success() {
