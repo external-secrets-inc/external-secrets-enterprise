@@ -306,6 +306,15 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "WorkflowRun")
 			os.Exit(1)
 		}
+		if err = (&workflow.WorkflowRunTemplateReconciler{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowRunTemplate"),
+			Scheme:   mgr.GetScheme(),
+			Recorder: mgr.GetEventRecorderFor("workflowruntemplate-controller"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "WorkflowRunTemplate")
+			os.Exit(1)
+		}
 		if enableClusterExternalSecretReconciler {
 			cesmetrics.SetUpMetrics()
 
