@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.6.0...v1.6.1) (2025-06-18)
+
+
+### Bug Fixes
+
+* conflicts ([f0de5ed](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f0de5edef825a13f27cf0d447feafbe412bec632))
+* update dependencies ([#158](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/158)) ([351d8ba](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/351d8ba9b3d91cf6adce34ac4fab9ad57ce39692))
+* update from upstream ([#157](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/157)) ([1c3da76](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1c3da76577f7e2a00d0b89014ce7948f33b5c822))
+
 ## [1.6.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.5.1...v1.6.0) (2025-06-17)
 
 
