@@ -57,6 +57,7 @@ rules:
     - "workflows/status"
     - "workflowruns/status"
     - "workflowtemplates/status"
+    - "workflowruntemplates/status"
     verbs:
     - "get"
     - "update"
