@@ -49,30 +49,30 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, err
 	}
 	// if we should not reconcile, just skip and leave it as is
-	if !r.shouldReconcile(ctx, run) {
+	if !r.shouldReconcile(run) {
 		// Updating Run Status otherwise this is a bit pointless lol :)
-		if r.needsStatusUpdate(ctx, run, workflowRuns) {
+		if r.needsStatusUpdate(run, workflowRuns) {
 			defer func() {
 				if err := r.updateWorkflowRunTemplate(ctx, run, workflowRuns, run.Status.LastRunTime.Time); err != nil {
 					r.Log.Error(err, "Failed to update WorkflowRunTemplate", "namespace", run.Namespace, "name", run.Name)
 				}
 			}()
 		}
-		return r.requeueAfter(ctx, run)
+		return r.requeueAfter(run)
 	}
 	// Check if this reconcile is a fake one (due to this being a change on the owned WorkflowRun being processed)
 	for _, workflowRun := range workflowRuns {
 		if workflowRun.Status.WorkflowRef == nil {
 			// False alarm
-			return r.requeueAfter(ctx, run)
+			return r.requeueAfter(run)
 		}
 		if workflowRun.Status.Conditions == nil {
 			// False alarm
-			return r.requeueAfter(ctx, run)
+			return r.requeueAfter(run)
 		}
 	}
 
-	revision, err := r.generateRevision(ctx, workflowRuns)
+	revision, err := r.generateRevision(workflowRuns)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -95,10 +95,10 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 		}
 	}()
 	// Get
-	return r.requeueAfter(ctx, run)
+	return r.requeueAfter(run)
 }
 
-func (r *WorkflowRunTemplateReconciler) needsStatusUpdate(ctx context.Context, run *workflows.WorkflowRunTemplate, workflowRuns []workflows.WorkflowRun) bool {
+func (r *WorkflowRunTemplateReconciler) needsStatusUpdate(run *workflows.WorkflowRunTemplate, workflowRuns []workflows.WorkflowRun) bool {
 	newStatus := []workflows.WorkflowRunStatus{}
 	for _, run := range workflowRuns {
 		newStatus = append(newStatus, run.Status)
@@ -163,7 +163,7 @@ func sortWorkflowsByRevision(workflowRuns []workflows.WorkflowRun, totalToDelete
 	return remaining, del, nil
 }
 
-func (r *WorkflowRunTemplateReconciler) generateRevision(ctx context.Context, workflowRuns []workflows.WorkflowRun) (string, error) {
+func (r *WorkflowRunTemplateReconciler) generateRevision(workflowRuns []workflows.WorkflowRun) (string, error) {
 	currentRevision := 0
 	for _, run := range workflowRuns {
 		revString, ok := run.Annotations["workflowruntemplate.external-secrets.io/revision"]
@@ -220,7 +220,7 @@ func (r *WorkflowRunTemplateReconciler) updateWorkflowRunTemplate(ctx context.Co
 	return r.Status().Update(ctx, run)
 }
 
-func (r *WorkflowRunTemplateReconciler) requeueAfter(ctx context.Context, run *workflows.WorkflowRunTemplate) (ctrl.Result, error) {
+func (r *WorkflowRunTemplateReconciler) requeueAfter(run *workflows.WorkflowRunTemplate) (ctrl.Result, error) {
 	if run.Spec.RunPolicy.Once != nil || run.Spec.RunPolicy.OnChange != nil {
 		// Never Requeue these
 		return ctrl.Result{}, nil
@@ -271,7 +271,7 @@ func (r *WorkflowRunTemplateReconciler) requeueAfter(ctx context.Context, run *w
 	return ctrl.Result{}, nil
 }
 
-func (r *WorkflowRunTemplateReconciler) shouldReconcile(ctx context.Context, run *workflows.WorkflowRunTemplate) bool {
+func (r *WorkflowRunTemplateReconciler) shouldReconcile(run *workflows.WorkflowRunTemplate) bool {
 	if run.Spec.RunPolicy.Once != nil {
 		return run.Status.SyncedResourceVersion == ""
 	}
