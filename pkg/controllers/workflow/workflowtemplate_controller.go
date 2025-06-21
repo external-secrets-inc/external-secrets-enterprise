@@ -6,14 +6,12 @@ package workflow
 import (
 	"context"
 	"fmt"
-
+	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 )
 
 // WorkflowTemplateReconciler reconciles a WorkflowTemplate object.
@@ -23,9 +21,6 @@ type WorkflowTemplateReconciler struct {
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
-
-//+kubebuilder:rbac:groups=workflows.external-secrets.io,resources=workflowtemplates,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=workflows.external-secrets.io,resources=workflowtemplates/status,verbs=get;update;patch
 
 // Reconcile handles WorkflowTemplate resources.
 func (r *WorkflowTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -54,35 +49,78 @@ func (r *WorkflowTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Req
 func (r *WorkflowTemplateReconciler) validateTemplate(template *workflows.WorkflowTemplate) error {
 	// TODO: The same validation logic for the workflows needs to be applied here too - jobs, dependencies, etc.
 
-	// Check that the template has a name
+	if err := r.validateBasicTemplateFields(template); err != nil {
+		return err
+	}
+
+	if err := r.validateParameterGroups(template.Spec.ParameterGroups); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateBasicTemplateFields validates the basic required fields of a template.
+func (r *WorkflowTemplateReconciler) validateBasicTemplateFields(template *workflows.WorkflowTemplate) error {
 	if template.Spec.Name == "" {
 		return fmt.Errorf("template must have a name")
 	}
 
-	// Check that the template has a version
 	if template.Spec.Version == "" {
 		return fmt.Errorf("template must have a version")
 	}
 
-	// Check that the template has at least one job
 	if len(template.Spec.Jobs) == 0 {
 		return fmt.Errorf("template must have at least one job")
 	}
 
-	// Validate parameters
-	paramNames := make(map[string]bool)
-	for _, param := range template.Spec.Parameters {
-		// Check for duplicate parameter names
-		if paramNames[param.Name] {
-			return fmt.Errorf("duplicate parameter name: %s", param.Name)
-		}
-		paramNames[param.Name] = true
+	return nil
+}
 
-		// Check that required parameters don't have empty names
-		if param.Name == "" {
-			return fmt.Errorf("parameter must have a name")
+// validateParameterGroups validates all parameter groups and their parameters.
+func (r *WorkflowTemplateReconciler) validateParameterGroups(groups []workflows.ParameterGroup) error {
+	paramNames := make(map[string]bool)
+	groupNames := make(map[string]bool)
+
+	for _, group := range groups {
+		if err := r.validateParameterGroup(group, groupNames, paramNames); err != nil {
+			return err
 		}
 	}
+
+	return nil
+}
+
+// validateParameterGroup validates a single parameter group.
+func (r *WorkflowTemplateReconciler) validateParameterGroup(group workflows.ParameterGroup, groupNames, paramNames map[string]bool) error {
+	if group.Name == "" {
+		return fmt.Errorf("parameter group must have a name")
+	}
+
+	if groupNames[group.Name] {
+		return fmt.Errorf("duplicate parameter group name: %s", group.Name)
+	}
+	groupNames[group.Name] = true
+
+	for _, param := range group.Parameters {
+		if err := r.validateParameter(param, paramNames); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateParameter validates a single parameter.
+func (r *WorkflowTemplateReconciler) validateParameter(param workflows.Parameter, paramNames map[string]bool) error {
+	if param.Name == "" {
+		return fmt.Errorf("parameter must have a name")
+	}
+
+	if paramNames[param.Name] {
+		return fmt.Errorf("duplicate parameter name: %s", param.Name)
+	}
+	paramNames[param.Name] = true
 
 	return nil
 }

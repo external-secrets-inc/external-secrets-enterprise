@@ -20,7 +20,7 @@ stringData:
       "universe_domain": "googleapis.com"
     }
 ---
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: gcp-store
@@ -45,7 +45,7 @@ stringData:
   secret-access-key: "QPju/wHORvMPpcQqMFNGGiQUlqm+tQSxMUNpwKEg"
 ---
 # SecretStore for AWS Secrets Manager authentication
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: aws-store
@@ -109,25 +109,31 @@ metadata:
 spec:
   version: v1
   name: "Push to Multiple Stores"
-  parameters:
-    - name: passwordLength
-      description: "Length of the generated password"
-      default: "42"
-    - name: digitCount
-      description: "Number of digits in the password"
-      default: "5"
-    - name: symbolCount
-      description: "Number of symbols in the password"
-      default: "5"
-    - name: symbolCharacters
-      description: "Characters to use for symbols"
-      default: "-_$@"
-    - name: targetStores
-      description: "JSON array of target store names"
-      default: '["gcp-store", "aws-store"]'
-    - name: remoteKey
-      description: "Remote key to store the secret under"
-      default: "new-secret"
+  parameterGroups:
+    - name: "Password Configuration"
+      description: "Parameters for configuring the generated password"
+      parameters:
+        - name: passwordLength
+          description: "Length of the generated password"
+          default: "42"
+        - name: digitCount
+          description: "Number of digits in the password"
+          default: "5"
+        - name: symbolCount
+          description: "Number of symbols in the password"
+          default: "5"
+        - name: symbolCharacters
+          description: "Characters to use for symbols"
+          default: "-_$@"
+    - name: "Store Configuration"
+      description: "Parameters for configuring the target stores"
+      parameters:
+        - name: targetStores
+          description: "JSON array of target store names"
+          default: '["gcp-store", "aws-store"]'
+        - name: remoteKey
+          description: "Remote key to store the secret under"
+          default: "new-secret"
   jobs:
     generateSecret:
       standard:

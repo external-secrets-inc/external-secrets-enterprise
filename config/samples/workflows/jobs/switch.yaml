@@ -1,4 +1,4 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: example-store
@@ -19,16 +19,22 @@ metadata:
 spec:
   version: v1
   name: "Environment Configuration Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "production"
-    - name: symbolCharacters
-      description: "Characters to use for symbols"
-      default: "-_$@"
-    - name: remoteKey
-      description: "Remote key to store the configuration under"
-      default: "app-config"
+  parameterGroups:
+    - name: "Environment Configuration"
+      description: "Parameters for configuring the target environment"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "production"
+        - name: remoteKey
+          description: "Remote key to store the configuration under"
+          default: "app-config"
+    - name: "Security Configuration"
+      description: "Parameters for configuring security settings"
+      parameters:
+        - name: symbolCharacters
+          description: "Characters to use for symbols"
+          default: "-_$@"
   jobs:
     # First job: Generate a secret
     generateSecret:

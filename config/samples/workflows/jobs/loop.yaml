@@ -1,4 +1,4 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: loop-example-store
@@ -21,13 +21,16 @@ metadata:
 spec:
   version: v1
   name: "User Configuration Workflow"
-  parameters:
-    - name: users
-      description: "List of users to configure"
-      default: '["user1", "user2", "user3"]'
-    - name: defaultRole
-      description: "Default role for users"
-      default: "viewer"
+  parameterGroups:
+    - name: "User Configuration"
+      description: "Parameters for configuring users"
+      parameters:
+        - name: users
+          description: "List of users to configure"
+          default: '["user1", "user2", "user3"]'
+        - name: defaultRole
+          description: "Default role for users"
+          default: "viewer"
   jobs:
     processUsers:
       loop:

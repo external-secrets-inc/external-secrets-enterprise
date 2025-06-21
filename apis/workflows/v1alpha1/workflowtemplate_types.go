@@ -27,17 +27,32 @@ type WorkflowTemplateSpec struct {
 	// +required
 	Name string `json:"name"`
 
-	// Parameters that can be overridden when creating a workflow
+	// ParameterGroups that can be overridden when creating a workflow
 	// +optional
-	Parameters []TemplateParameter `json:"parameters,omitempty"`
+	ParameterGroups []ParameterGroup `json:"parameterGroups,omitempty"`
 
 	// Jobs is a map of job names to job definitions
 	// +required
 	Jobs map[string]Job `json:"jobs"`
 }
 
-// TemplateParameter defines a parameter that can be overridden when creating a workflow.
-type TemplateParameter struct {
+// ParameterGroup defines a group of parameters with a name and description.
+type ParameterGroup struct {
+	// Name of the parameter group
+	// +required
+	Name string `json:"name"`
+
+	// Description is a human-readable description of the parameter group
+	// +optional
+	Description string `json:"description,omitempty"`
+
+	// Parameters contained in this group
+	// +required
+	Parameters []Parameter `json:"parameters"`
+}
+
+// Parameter defines a parameter that can be overridden when creating a workflow.
+type Parameter struct {
 	// Name of the parameter
 	// +required
 	Name string `json:"name"`

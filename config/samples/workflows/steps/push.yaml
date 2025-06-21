@@ -1,4 +1,4 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: push-example-store
@@ -20,13 +20,16 @@ metadata:
 spec:
   version: v1
   name: "Push Step Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "development"
-    - name: configKey
-      description: "Key to store the configuration under"
-      default: "app-config"
+  parameterGroups:
+    - name: "Configuration Settings"
+      description: "Parameters for configuring the application and storage"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "development"
+        - name: configKey
+          description: "Key to store the configuration under"
+          default: "app-config"
   jobs:
     # First job: Generate data to push
     generateData:
@@ -47,7 +50,7 @@ spec:
               - name: password
                 type: string
                 sensitive: true
-          
+
           - name: generateDbPassword
             generator:
               kind: Password
@@ -63,7 +66,7 @@ spec:
               - name: password
                 type: string
                 sensitive: true
-          
+
           - name: createAppConfig
             transform:
               mappings:
@@ -84,7 +87,7 @@ spec:
                 type: string
               - name: log_level
                 type: string
-          
+
           - name: createDbCredentials
             transform:
               mappings:
@@ -105,7 +108,7 @@ spec:
                 type: string
               - name: database
                 type: string
-    
+
     # Second job: Push the generated data to the secret store
     pushData:
       dependsOn:
@@ -146,7 +149,7 @@ spec:
                     remoteRef:
                       remoteKey: "{{ .global.variables.configKey }}"
                       property: "log_level"
-          
+
           # Push database credentials
           - name: pushDbCredentials
             push:
@@ -181,12 +184,12 @@ spec:
                     remoteRef:
                       remoteKey: "database-credentials"
                       property: "database"
-          
+
           # Debug message after pushing
           - name: debugPushResult
             debug:
               message: "Successfully pushed configuration to {{ .global.variables.configKey }} and database credentials"
-    
+
     # Third job: Pull the pushed data to verify
     verifyPush:
       dependsOn:
@@ -214,7 +217,7 @@ spec:
                 type: string
               - name: log_level
                 type: string
-          
+
           - name: pullDbCredentials
             pull:
               source:
@@ -236,7 +239,7 @@ spec:
                 type: string
               - name: database
                 type: string
-          
+
           - name: verifyResults
             debug:
               message: "Verified pushed data - Environment: {{ .global.jobs.verifyPush.pullAppConfig.environment }}, DB User: {{ .global.jobs.verifyPush.pullDbCredentials.username }}"

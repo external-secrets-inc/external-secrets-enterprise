@@ -224,17 +224,19 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(template *workflows.
 	}
 
 	// Convert arguments to variables
-	for _, param := range template.Spec.Parameters {
-		value, exists := run.Spec.Arguments[param.Name]
-		if !exists {
-			if param.Required && param.Default == "" {
-				return nil, fmt.Errorf("required parameter %s not provided", param.Name)
+	for _, group := range template.Spec.ParameterGroups {
+		for _, param := range group.Parameters {
+			value, exists := run.Spec.Arguments[param.Name]
+			if !exists {
+				if param.Required && param.Default == "" {
+					return nil, fmt.Errorf("required parameter %s not provided", param.Name)
+				}
+				if param.Default != "" {
+					workflow.Spec.Variables[param.Name] = param.Default
+				}
+			} else {
+				workflow.Spec.Variables[param.Name] = value
 			}
-			if param.Default != "" {
-				workflow.Spec.Variables[param.Name] = param.Default
-			}
-		} else {
-			workflow.Spec.Variables[param.Name] = value
 		}
 	}
 

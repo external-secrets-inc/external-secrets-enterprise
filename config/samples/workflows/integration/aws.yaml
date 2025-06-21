@@ -1,6 +1,6 @@
 ---
 # SecretStore for AWS Secrets Manager authentication
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: aws-store
@@ -79,13 +79,19 @@ metadata:
 spec:
   version: v1
   name: "AWS Secrets Workflow"
-  parameters:
-    - name: inputValue
-      description: "Optional input value for script processing"
-      required: false
-    - name: concurrency
-      description: "Concurrency for loop operations"
-      default: "0"
+  parameterGroups:
+    - name: "Input Configuration"
+      description: "Parameters for script input configuration"
+      parameters:
+        - name: inputValue
+          description: "Optional input value for script processing"
+          required: false
+    - name: "Performance Settings"
+      description: "Parameters for performance configuration"
+      parameters:
+        - name: concurrency
+          description: "Concurrency for loop operations"
+          default: "0"
   jobs:
     testScript:
       standard:
@@ -151,7 +157,7 @@ spec:
             transform:
               template: |
                 totalScore: {{ index .global.jobs.testScript.runScript.scores 0 }}
-    
+
     dumpScores:
       dependsOn:
         - testScript
@@ -173,7 +179,7 @@ spec:
             javascript:
               script: |
                 console.log("script step running...");
-                
+
                 // Process any input value if provided
                 if ('{{ .global.variables.inputValue }}') {
                   setString("processedValue", "Processed: {{ .global.variables.inputValue }}");
@@ -193,4 +199,3 @@ spec:
     name: aws-secrets-workflow-template
   arguments:
     concurrency: "0"
-
