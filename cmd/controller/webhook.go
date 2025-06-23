@@ -147,6 +147,12 @@ var webhookCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// Register WorkflowRunTemplate webhook
+		if err = (&wfv1alpha1.WorkflowRunTemplate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, errCreateWebhook, "webhook", "WorkflowRunTemplate")
+			os.Exit(1)
+		}
+
 		err = mgr.AddReadyzCheck("certs", func(_ *http.Request) error {
 			return crds.CheckCerts(c, dnsName, time.Now().Add(time.Hour))
 		})

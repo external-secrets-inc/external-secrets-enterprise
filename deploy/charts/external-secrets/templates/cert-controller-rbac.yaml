@@ -31,6 +31,8 @@ rules:
     resourceNames:
     - "secretstore-validate"
     - "externalsecret-validate"
+    - "workflowrun-validate"
+    - "workflowruntemplate-validate"
     verbs:
     - "update"
     - "patch"
