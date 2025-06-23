@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.0...v1.7.1) (2025-06-23)
+
+
+### Bug Fixes
+
+* deployment issues with workflowruntemplates and webhooks ([#170](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/170)) ([0efb393](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/0efb3938b4b48a675301f486363ca8c5e598032a))
+
 ## [1.7.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.6.1...v1.7.0) (2025-06-23)
 
 
