@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.7.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.6.1...v1.7.0) (2025-06-23)
+
+
+### Features
+
+* workflow run templates ([#161](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/161)) ([1804f5c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1804f5cfec8dd1f560d7aa88ea7f46f2f3fa9390))
+* workflowtemplate parameters should allow types ([#169](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/169)) ([1ad7c09](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1ad7c091f0cb7709ec0ddfb56cfa74bb1e32d6b0))
+
+
+### Bug Fixes
+
+* lint ([1804f5c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1804f5cfec8dd1f560d7aa88ea7f46f2f3fa9390))
+* update dependencies ([#162](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/162)) ([30ad9f4](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/30ad9f4457c7c50f5f0a83430227d04eb35d98f2))
+* update dependencies ([#166](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/166)) ([21a67a4](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/21a67a4d76b5e9fc1419a266c86cb04f0a8c9bbf))
+* update dependencies ([#168](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/168)) ([68e1903](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/68e1903a34efe47c5399cb5e8cc6bfd7f3193c6b))
+* update from upstream ([#167](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/167)) ([a4bc571](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a4bc571dee8d4a04db503b8b3f6e11c6c7f70ce1))
+
 ## [1.6.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.6.0...v1.6.1) (2025-06-18)
 
 
