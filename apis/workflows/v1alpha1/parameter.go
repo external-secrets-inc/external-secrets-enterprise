@@ -17,29 +17,35 @@ import (
 	"fmt"
 )
 
-// IsPrimitive returns true if the parameter type is a primitive value
+// IsPrimitive returns true if the parameter type is a primitive value.
 func (p ParameterType) IsPrimitive() bool {
 	switch p {
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return true
+	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
+		ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+		return false
 	default:
 		return false
 	}
 }
 
-// IsKubernetesResource returns true if the parameter type represents a Kubernetes resource
+// IsKubernetesResource returns true if the parameter type represents a Kubernetes resource.
 func (p ParameterType) IsKubernetesResource() bool {
 	switch p {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeGenerator:
 		return true
+	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		return false
 	default:
 		return false
 	}
 }
 
-// GetAPIVersion returns the API version for Kubernetes resource types
+// GetAPIVersion returns the API version for Kubernetes resource types.
 func (p ParameterType) GetAPIVersion() string {
 	switch p {
 	case ParameterTypeNamespace:
@@ -50,12 +56,15 @@ func (p ParameterType) GetAPIVersion() string {
 		return "external-secrets.io/v1"
 	case ParameterTypeGenerator:
 		return "v1alpha1"
+	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		return ""
 	default:
 		return ""
 	}
 }
 
-// GetKind returns the Kind for Kubernetes resource types
+// GetKind returns the Kind for Kubernetes resource types.
 func (p ParameterType) GetKind() string {
 	switch p {
 	case ParameterTypeNamespace:
@@ -68,17 +77,20 @@ func (p ParameterType) GetKind() string {
 		return "ClusterSecretStore"
 	case ParameterTypeGenerator:
 		return "Generator"
+	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		return ""
 	default:
 		return ""
 	}
 }
 
-// IsMultiSelect returns true if the parameter allows multiple selections
+// IsMultiSelect returns true if the parameter allows multiple selections.
 func (p *Parameter) IsMultiSelect() bool {
 	return p.AllowMultiple
 }
 
-// GetExpectedFormat returns the expected format for the parameter value
+// GetExpectedFormat returns the expected format for the parameter value.
 func (p *Parameter) GetExpectedFormat() string {
 	if p.IsMultiSelect() {
 		return "array"
@@ -86,7 +98,7 @@ func (p *Parameter) GetExpectedFormat() string {
 	return string(p.Type)
 }
 
-// ValidateValue validates a parameter value against its constraints
+// ValidateValue validates a parameter value against its constraints.
 func (p *Parameter) ValidateValue(value interface{}) error {
 	if p.IsMultiSelect() {
 		// Expect an array for multi-select parameters
@@ -94,7 +106,7 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 		if !ok {
 			// Also check for string-encoded array (e.g., from JSON)
 			strVal, isStr := value.(string)
-			if isStr && (len(strVal) > 0 && strVal[0] == '[' && strVal[len(strVal)-1] == ']') {
+			if isStr && (strVal != "" && strVal[0] == '[' && strVal[len(strVal)-1] == ']') {
 				// This appears to be a JSON array string, which will be parsed later
 				return nil
 			}
@@ -126,6 +138,10 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 					return fmt.Errorf("item %d in parameter %s must be a boolean", i, p.Name)
 				}
 			}
+		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+			// No specific validation needed for these types in array context
 		}
 	} else {
 		// Type-specific validation for single values
@@ -140,6 +156,10 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			if !ok {
 				return fmt.Errorf("parameter %s must be a boolean", p.Name)
 			}
+		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+			// No specific validation needed for these types in single value context
 		}
 	}
 	return nil

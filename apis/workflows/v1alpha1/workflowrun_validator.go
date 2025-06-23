@@ -1,3 +1,17 @@
+// /*
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 package v1alpha1
 
 import (
@@ -12,16 +26,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// k8sClient is a global variable that will be set during controller initialization
+// k8sClient is a global variable that will be set during controller initialization.
 var k8sClient client.Client
 
-// SetValidationClient sets the client for validation
+// SetValidationClient sets the client for validation.
 func SetValidationClient(c client.Client) {
 	k8sClient = c
 }
 
 // validateWorkflowRunParameters validates the arguments in a WorkflowRun against the parameters
-// defined in the referenced WorkflowTemplate
+// defined in the referenced WorkflowTemplate.
 func validateWorkflowRunParameters(wr *WorkflowRun) error {
 	if k8sClient == nil {
 		return fmt.Errorf("validation client not initialized")
@@ -86,8 +100,8 @@ func validateWorkflowRunParameters(wr *WorkflowRun) error {
 	return nil
 }
 
-// validateArgumentValue validates an argument value against a parameter definition
-func validateArgumentValue(ctx context.Context, param *Parameter, argValue string, namespace string) error {
+// validateArgumentValue validates an argument value against a parameter definition.
+func validateArgumentValue(ctx context.Context, param *Parameter, argValue, namespace string) error {
 	// For array types (allowMultiple=true), parse as JSON array
 	if param.AllowMultiple {
 		var arr []interface{}
@@ -127,7 +141,9 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue strin
 				return fmt.Errorf("failed to parse as boolean: %w", err)
 			}
 			parsedValue = b
-		default:
+		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator:
 			// For string and other types, use the raw value
 			parsedValue = argValue
 		}
@@ -141,7 +157,7 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue strin
 	return nil
 }
 
-// validateSingleValue validates a single value against a parameter definition
+// validateSingleValue validates a single value against a parameter definition.
 func validateSingleValue(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
 	// For multi-select parameters, skip the ValidateValue call since array validation
 	// is already handled in validateArgumentValue. We only need to validate individual items.
@@ -163,6 +179,10 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 			if !ok {
 				return fmt.Errorf("must be a boolean")
 			}
+		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+			// No specific validation needed for these types
 		}
 	}
 
@@ -174,7 +194,7 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 	return nil
 }
 
-// validateKubernetesResource validates that a Kubernetes resource exists and matches constraints
+// validateKubernetesResource validates that a Kubernetes resource exists and matches constraints.
 func validateKubernetesResource(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
 	resourceName, ok := value.(string)
 	if !ok {
@@ -207,7 +227,14 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			Version: "v1alpha1",
 			Kind:    param.Type.GetKind(),
 		}
-	default:
+	case ParameterTypeNamespace:
+		gvk = schema.GroupVersionKind{
+			Group:   "",
+			Version: param.Type.GetAPIVersion(),
+			Kind:    param.Type.GetKind(),
+		}
+	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		// These are not Kubernetes resource types, but we need to handle them for exhaustive switch
 		gvk = schema.GroupVersionKind{
 			Group:   "",
 			Version: param.Type.GetAPIVersion(),

@@ -56,7 +56,7 @@ type ParameterGroup struct {
 type ParameterType string
 
 const (
-	// ParameterTypeString Primitive types
+	// ParameterTypeString Primitive types.
 	ParameterTypeString ParameterType = "string"
 	ParameterTypeNumber ParameterType = "number"
 	ParameterTypeBool   ParameterType = "bool"
@@ -64,7 +64,7 @@ const (
 	ParameterTypeSecret ParameterType = "secret"
 	ParameterTypeTime   ParameterType = "time"
 
-	// ParameterTypeNamespace Kubernetes resource types
+	// ParameterTypeNamespace Kubernetes resource types.
 	ParameterTypeNamespace          ParameterType = "namespace"
 	ParameterTypeSecretStore        ParameterType = "secretstore"
 	ParameterTypeExternalSecret     ParameterType = "externalsecret"
@@ -72,7 +72,7 @@ const (
 	ParameterTypeGenerator          ParameterType = "generator"
 )
 
-// ResourceConstraints defines constraints for Kubernetes resource selection
+// ResourceConstraints defines constraints for Kubernetes resource selection.
 type ResourceConstraints struct {
 	// Namespace restricts resource selection to specific namespace(s)
 	// +optional
@@ -88,7 +88,7 @@ type ResourceConstraints struct {
 	AllowCrossNamespace bool `json:"allowCrossNamespace,omitempty"`
 }
 
-// ParameterValidation defines validation rules for parameters
+// ParameterValidation defines validation rules for parameters.
 type ParameterValidation struct {
 	// MinItems minimum number of items for multi-select (only when AllowMultiple=true)
 	// +optional
