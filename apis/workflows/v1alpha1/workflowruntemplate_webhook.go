@@ -54,6 +54,5 @@ func (wr *WorkflowRunTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(wr).
 		WithValidator(&WorkflowRunTemplateValidator{}).
-		WithCustomPath("validate-workflows-external-secrets-io-v1alpha1-workflowrun-template").
 		Complete()
 }
