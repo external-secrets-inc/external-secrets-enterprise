@@ -306,6 +306,7 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "WorkflowRun")
 			os.Exit(1)
 		}
+
 		if enableClusterExternalSecretReconciler {
 			cesmetrics.SetUpMetrics()
 
