@@ -9,6 +9,7 @@ import (
 	"maps"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	cronV3 "github.com/robfig/cron/v3"
@@ -23,6 +24,8 @@ import (
 	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/util"
 )
+
+var mu = sync.Mutex{}
 
 // WorkflowRunReconciler reconciles a WorkflowRun object.
 type WorkflowRunTemplateReconciler struct {
@@ -43,13 +46,14 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 		// We'll ignore not-found errors, since they can't be fixed by an immediate requeue
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	// If workflowRunTemplate already created, check it's children
-	workflowRuns, err := r.getChildrenFor(ctx, run)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	// While we are getting Children to calculate revision, we should not allow for any other ops.
 	// if we should not reconcile, just skip and leave it as is
 	if !r.shouldReconcile(run) {
+		// If workflowRunTemplate already created, check it's children
+		workflowRuns, err := r.getChildrenFor(ctx, run)
+		if err != nil {
+			r.Log.Error(err, "Failed to Get Children for WorkflowRunTemplate")
+		}
 		// Updating Run Status otherwise this is a bit pointless lol :)
 		if r.needsStatusUpdate(run, workflowRuns) {
 			defer func() {
@@ -59,6 +63,22 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 			}()
 		}
 		return r.requeueAfter(run)
+	}
+
+	// From this moment on we need to sync multiple controllers
+	// as the deletion of Runs and updates of RunTemplates will
+	// make the `generateRevision` outputs to change
+	mu.Lock()
+	defer mu.Unlock()
+
+	// If workflowRunTemplate already created, check it's children
+	workflowRuns, err := r.getChildrenFor(ctx, run)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	revision, err := r.generateRevision(workflowRuns)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 	// Check if this reconcile is a fake one (due to this being a change on the owned WorkflowRun being processed)
 	for _, workflowRun := range workflowRuns {
@@ -72,10 +92,6 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 		}
 	}
 
-	revision, err := r.generateRevision(workflowRuns)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
 	// Revision History Limit Logic
 	if len(workflowRuns) >= run.Spec.RevisionHistoryLimit {
 		workflowRuns, err = r.cleanup(ctx, workflowRuns, run.Spec.RevisionHistoryLimit)

@@ -1,3 +1,6 @@
+// 2025
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package workflow
 
 import (
@@ -47,7 +50,6 @@ type args struct {
 	objsForClient       []client.Object
 	workflowRunTemplate *workflows.WorkflowRunTemplate
 	workflowRuns        []workflows.WorkflowRun
-	request             ctrl.Request
 	limit               int
 	totalToDelete       int
 	revision            string
