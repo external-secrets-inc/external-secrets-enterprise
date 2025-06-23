@@ -17,7 +17,6 @@ package v1alpha1
 // validateWorkflowRunParameters validates the arguments in a WorkflowRun against the parameters
 // defined in the referenced WorkflowTemplate.
 func validateWorkflowRunTemplateParameters(wr *WorkflowRunTemplate) error {
-
 	workflowrun := &WorkflowRun{
 		Spec: wr.Spec.RunSpec,
 	}
