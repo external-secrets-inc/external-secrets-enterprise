@@ -52,12 +52,16 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 		// If workflowRunTemplate already created, check it's children
 		workflowRuns, err := r.getChildrenFor(ctx, run)
 		if err != nil {
-			r.Log.Error(err, "Failed to Get Children for WorkflowRunTemplate")
+			return ctrl.Result{}, err
 		}
 		// Updating Run Status otherwise this is a bit pointless lol :)
 		if r.needsStatusUpdate(run, workflowRuns) {
 			defer func() {
-				if err := r.updateWorkflowRunTemplate(ctx, run, workflowRuns, run.Status.LastRunTime.Time); err != nil {
+				runs, err := r.getChildrenFor(ctx, run)
+				if err != nil {
+					r.Log.Error(err, "Failed to Get Children for WorkflowRunTemplate")
+				}
+				if err := r.updateWorkflowRunTemplate(ctx, run, runs, run.Status.LastRunTime.Time); err != nil {
 					r.Log.Error(err, "Failed to update WorkflowRunTemplate", "namespace", run.Namespace, "name", run.Name)
 				}
 			}()
