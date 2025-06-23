@@ -85,7 +85,7 @@ func ExecuteStep(
 	// Initialize step status
 	stepStatus := InitializeStepStatus(stepCtx.JobStatus, stepKey)
 
-	// Create executor for the step
+	// Create an executor for the step
 	stepExecutor, err := createExecutor(step, stepCtx.Client, *stepCtx.Scheme, stepCtx.Logger, stepCtx.Manager)
 	if err != nil {
 		return markStepFailed(stepCtx.JobStatus, stepKey, stepStatus, err)

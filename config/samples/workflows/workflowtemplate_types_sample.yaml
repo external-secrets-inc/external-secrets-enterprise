@@ -1,0 +1,138 @@
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: parameter-types-demo
+  annotations:
+    workflows.external-secrets.io/description: "Template demonstrating different parameter types"
+spec:
+  version: v1
+  name: "Parameter Types Demo"
+  parameterGroups:
+    - name: "Basic Configuration"
+      description: "Basic configuration parameters with primitive types"
+      parameters:
+        - name: applicationName
+          description: "Name of the application"
+          type: string
+          required: true
+        - name: enableDebug
+          description: "Enable debug mode"
+          type: bool
+          default: "false"
+        - name: requestTimeout
+          description: "API request timeout in seconds"
+          type: number
+          default: "30"
+        - name: tags
+          description: "Application tags"
+          type: string
+          allowMultiple: true
+          default: "[\"app\", \"demo\"]"
+          validation:
+            minItems: 1
+
+    - name: "Environment Resources"
+      description: "Kubernetes resources selection"
+      parameters:
+        - name: targetNamespace
+          description: "Target namespace for deployment"
+          type: namespace
+          required: true
+
+        - name: secretStores
+          description: "Secret stores to use for retrieving secrets"
+          type: secretstore
+          required: true
+          allowMultiple: true
+          validation:
+            minItems: 1
+            maxItems: 3
+          resourceConstraints:
+            labelSelector:
+              app: "example"
+
+        - name: primarySecretStore
+          description: "Primary secret store for critical secrets"
+          type: secretstore
+          required: true
+          allowMultiple: false
+          resourceConstraints:
+            namespace: "{{ .global.variables.targetNamespace }}"
+
+        - name: externalSecrets
+          description: "External secrets to process"
+          type: externalsecret
+          required: false
+          allowMultiple: true
+          validation:
+            maxItems: 5
+          resourceConstraints:
+            namespace: "{{ .global.variables.targetNamespace }}"
+            allowCrossNamespace: false
+
+  jobs:
+    echoParameters:
+      standard:
+        steps:
+          - name: logBasicConfig
+            debug:
+              message: "Application: {{ .global.variables.applicationName }}, Debug: {{ .global.variables.enableDebug }}, Timeout: {{ .global.variables.requestTimeout }}s"
+
+          - name: processResources
+            javascript:
+              script: |
+                // Handle single resource
+                const primaryStore = "{{ .global.variables.primarySecretStore }}";
+                console.log(`Using primary store: ${primaryStore}`);
+
+                // Handle multiple resources 
+                const secretStores = {{ .global.variables.secretStores | toJson }};
+                console.log(`Processing ${secretStores.length} secret stores`);
+
+                // Get tags as well (string type with allowMultiple:true)
+                const tags = {{ .global.variables.tags | toJson }};
+                console.log(`Processing ${tags.length} tags`);
+
+                secretStores.forEach((store, index) => {
+                  console.log(`Store ${index + 1}: ${store}`);
+                });
+
+                tags.forEach((tag, index) => {
+                  console.log(`Tag ${index + 1}: ${tag}`);
+                });
+
+                // Set output with resource info
+                setString("primaryStore", primaryStore);
+                setNumber("storeCount", secretStores.length);
+                setArray("storeList", secretStores);
+                setArray("tagList", tags);
+            outputs:
+              - name: primaryStore
+                type: string
+              - name: storeCount
+                type: number
+              - name: storeList
+                type: array
+              - name: tagList
+                type: array
+---
+apiVersion: workflows.external-secrets.io/v1alpha1
+kind: WorkflowRun
+metadata:
+  name: parameter-types-demo-run
+spec:
+  templateRef:
+    name: parameter-types-demo
+  arguments:
+    applicationName: "my-application"
+    enableDebug: "true"
+    requestTimeout: "60"
+    tags: "[\"production\", \"v1.0\", \"critical\"]"
+    targetNamespace: "default"
+    primarySecretStore: "aws-store"
+    secretStores:
+      - "aws-store"
+      - "vault-store"
+    externalSecrets:
+      - "database-credentials"
+      - "api-keys"

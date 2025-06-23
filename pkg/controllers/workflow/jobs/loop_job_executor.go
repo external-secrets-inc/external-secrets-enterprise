@@ -98,7 +98,7 @@ func executeIteration(
 
 	// Process each step sequentially within this iteration.
 	for _, step := range loopJob.Steps {
-		// Needs to be done everytime otherwise its lost on a second step
+		// Needs to be done everytime otherwise it's lost on a second step
 		iterationCtx.Data["range"] = map[string]interface{}{
 			"key":   key,
 			"value": value,

@@ -7,13 +7,19 @@ metadata:
 spec:
   version: v1
   name: "JavaScript Step Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "development"
-    - name: userConfig
-      description: "JSON configuration for user settings"
-      default: '{"username":"admin","role":"admin","features":["dashboard","reports","admin"]}'
+  parameterGroups:
+    - name: "Environment Settings"
+      description: "Parameters for configuring the environment"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "development"
+    - name: "User Settings"
+      description: "Parameters for configuring user settings"
+      parameters:
+        - name: userConfig
+          description: "JSON configuration for user settings"
+          default: '{"username":"admin","role":"admin","features":["dashboard","reports","admin"]}'
   jobs:
     javascriptDemo:
       standard:
@@ -24,13 +30,13 @@ spec:
               script: |
                 // Get environment from parameters
                 const env = '{{ .global.variables.environment }}';
-                
+
                 // Convert to uppercase
                 setString('env_uppercase', env.toUpperCase());
-                
+
                 // Create a formatted environment string
                 setString('env_formatted', `Environment: ${env}`);
-                
+
                 // Check if it's production
                 setBool('is_production', env === 'production');
             outputs:
@@ -40,27 +46,27 @@ spec:
                 type: string
               - name: is_production
                 type: bool
-          
+
           # Working with JSON data
           - name: jsonProcessing
             javascript:
               script: |
                 // Parse JSON from parameters
                 const userConfig = JSON.parse('{{ .global.variables.userConfig }}');
-                
+
                 // Extract and transform values
                 setString('username', userConfig.username);
                 setString('role', userConfig.role);
-                
+
                 // Create a features string
                 setString('features_list', userConfig.features.join(', '));
-                
+
                 // Count features
                 setNumber('feature_count', userConfig.features.length);
-                
+
                 // Check if user has admin role
                 setBool('is_admin', userConfig.role === 'admin');
-                
+
                 // Create a modified config
                 const enhancedConfig = {
                   ...userConfig,
@@ -68,7 +74,7 @@ spec:
                   environment: '{{ .global.variables.environment }}',
                   is_active: true
                 };
-                
+
                 // Set the enhanced config
                 setMap('enhanced_config', enhancedConfig);
             outputs:
@@ -84,22 +90,22 @@ spec:
                 type: bool
               - name: enhanced_config
                 type: map
-          
+
           # Date and time manipulation
           - name: dateTimeManipulation
             javascript:
               script: |
                 // Get current date and time
                 const now = new Date();
-                
+
                 // Format as ISO string
                 setString('current_time_iso', now.toISOString());
-                
+
                 // Create expiry time (30 days from now)
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + 30);
                 setString('expiry_date', expiryDate.toISOString());
-                
+
                 // Calculate time difference in days
                 const diffTime = Math.abs(expiryDate - now);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -111,7 +117,7 @@ spec:
                 type: string
               - name: days_until_expiry
                 type: number
-          
+
           # Conditional logic
           - name: conditionalLogic
             javascript:
@@ -120,7 +126,7 @@ spec:
                 const isProduction = {{ .global.jobs.javascriptDemo.stringManipulation.is_production }};
                 const isAdmin = {{ .global.jobs.javascriptDemo.jsonProcessing.is_admin }};
                 const username = '{{ .global.jobs.javascriptDemo.jsonProcessing.username }}';
-                
+
                 // Determine access level based on environment and role
                 let accessLevel;
                 if (isProduction) {
@@ -129,7 +135,7 @@ spec:
                   accessLevel = 'development';
                 }
                 setString('access_level', accessLevel);
-                
+
                 // Create a message based on conditions
                 let message;
                 if (isProduction && isAdmin) {
@@ -145,7 +151,7 @@ spec:
                 type: string
               - name: access_message
                 type: string
-          
+
           # Debug the results
           - name: debugResults
             debug:

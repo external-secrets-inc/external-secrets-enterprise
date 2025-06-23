@@ -78,7 +78,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.markWorkflowFailed(ctx, wf, "ValidationError", err.Error())
 	}
 
-	// If the workflow is already in a terminal phase (Succeeded or Failed)
+	// If the workflow is already in a terminal phase (Succeeded or Failed),
 	// there is nothing to do.
 	if wf.Status.Phase == workflows.PhaseSucceeded || wf.Status.Phase == workflows.PhaseFailed {
 		return ctrl.Result{}, nil
@@ -538,6 +538,10 @@ func (r *Reconciler) markJobFailed(ctx context.Context, wf *workflows.Workflow, 
 	now := metav1.Now()
 	jobStatus.CompletionTime = &now
 	wf.Status.JobStatuses[jobName] = jobStatus
+
+	// Add these lines to set the workflow phase to Failed
+	wf.Status.Phase = workflows.PhaseFailed
+	wf.Status.CompletionTime = &now
 
 	meta.SetStatusCondition(&wf.Status.Conditions, metav1.Condition{
 		Type:    "Failed",

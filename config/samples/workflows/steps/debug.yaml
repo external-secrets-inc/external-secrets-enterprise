@@ -7,13 +7,16 @@ metadata:
 spec:
   version: v1
   name: "Debug Step Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "development"
-    - name: logLevel
-      description: "Log level for the application"
-      default: "info"
+  parameterGroups:
+    - name: "Logging Configuration"
+      description: "Parameters for configuring the application environment and logging"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "development"
+        - name: logLevel
+          description: "Log level for the application"
+          default: "info"
   jobs:
     debugDemo:
       standard:
@@ -21,11 +24,11 @@ spec:
           - name: simpleDebug
             debug:
               message: "This is a simple debug message"
-          
+
           - name: debugWithVariables
             debug:
               message: "Current environment: {{ .global.variables.environment }}, log level: {{ .global.variables.logLevel }}"
-          
+
           - name: debugWithTimestamp
             javascript:
               script: |
@@ -38,11 +41,11 @@ spec:
                 type: string
               - name: formatted_time
                 type: string
-          
+
           - name: debugTimestamp
             debug:
               message: "Current time: {{ .global.jobs.debugDemo.debugWithTimestamp.formatted_time }}"
-          
+
           - name: conditionalDebug
             javascript:
               script: |
@@ -60,7 +63,7 @@ spec:
                 type: number
               - name: has_errors
                 type: bool
-          
+
           - name: debugConditionalResults
             debug:
               message: "Operation completed with status: {{ .global.jobs.debugDemo.conditionalDebug.status }}, errors: {{ .global.jobs.debugDemo.conditionalDebug.error_count }}, warnings: {{ .global.jobs.debugDemo.conditionalDebug.warning_count }}"

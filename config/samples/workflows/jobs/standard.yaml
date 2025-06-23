@@ -1,4 +1,4 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: standard-example-store
@@ -19,13 +19,16 @@ metadata:
 spec:
   version: v1
   name: "Standard Job Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "development"
-    - name: logLevel
-      description: "Log level for the application"
-      default: "info"
+  parameterGroups:
+    - name: "Application Configuration"
+      description: "Parameters for configuring the application environment"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "development"
+        - name: logLevel
+          description: "Log level for the application"
+          default: "info"
   jobs:
     # Standard job that generates a password and creates a configuration
     configureApp:
@@ -46,7 +49,7 @@ spec:
               - name: password
                 type: string
                 sensitive: true
-          
+
           - name: createConfig
             transform:
               mappings:
@@ -64,11 +67,11 @@ spec:
                 type: string
               - name: retention_days
                 type: string
-          
+
           - name: debug
             debug:
               message: "Created configuration for {{ .global.variables.environment }} environment with log level {{ .global.variables.logLevel }}"
-          
+
           - name: pushConfig
             push:
               secretSource: ".global.jobs.configureApp.createConfig"

@@ -7,19 +7,22 @@ metadata:
 spec:
   version: v1
   name: "Generator Step Workflow"
-  parameters:
-    - name: passwordLength
-      description: "Length of the generated password"
-      default: "16"
-    - name: digitCount
-      description: "Number of digits in the password"
-      default: "4"
-    - name: symbolCount
-      description: "Number of symbols in the password"
-      default: "4"
-    - name: symbolCharacters
-      description: "Characters to use for symbols"
-      default: "-_$@!*"
+  parameterGroups:
+    - name: "Password Generation"
+      description: "Parameters for configuring password generation"
+      parameters:
+        - name: passwordLength
+          description: "Length of the generated password"
+          default: "16"
+        - name: digitCount
+          description: "Number of digits in the password"
+          default: "4"
+        - name: symbolCount
+          description: "Number of symbols in the password"
+          default: "4"
+        - name: symbolCharacters
+          description: "Characters to use for symbols"
+          default: "-_$@!*"
   jobs:
     generatorDemo:
       standard:
@@ -40,7 +43,7 @@ spec:
               - name: password
                 type: string
                 sensitive: true
-          
+
           # UUID generator
           - name: generateUUID
             generator:
@@ -50,12 +53,12 @@ spec:
             outputs:
               - name: uuid
                 type: string
-          
+
           # Debug the generated values (only non-sensitive ones)
           - name: debugGeneratedValues
             debug:
               message: "Generated UUID: {{ .global.jobs.generatorDemo.generateUUID.uuid }}"
-          
+
           # Transform the generated values into a configuration
           - name: createConfig
             transform:

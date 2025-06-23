@@ -27,17 +27,80 @@ type WorkflowTemplateSpec struct {
 	// +required
 	Name string `json:"name"`
 
-	// Parameters that can be overridden when creating a workflow
+	// ParameterGroups that can be overridden when creating a workflow
 	// +optional
-	Parameters []TemplateParameter `json:"parameters,omitempty"`
+	ParameterGroups []ParameterGroup `json:"parameterGroups,omitempty"`
 
 	// Jobs is a map of job names to job definitions
 	// +required
 	Jobs map[string]Job `json:"jobs"`
 }
 
-// TemplateParameter defines a parameter that can be overridden when creating a workflow.
-type TemplateParameter struct {
+// ParameterGroup defines a group of parameters with a name and description.
+type ParameterGroup struct {
+	// Name of the parameter group
+	// +required
+	Name string `json:"name"`
+
+	// Description is a human-readable description of the parameter group
+	// +optional
+	Description string `json:"description,omitempty"`
+
+	// Parameters contained in this group
+	// +required
+	Parameters []Parameter `json:"parameters"`
+}
+
+// ParameterType represents the data type of a parameter
+// +kubebuilder:validation:Enum=string;number;bool;object;secret;time;namespace;secretstore;externalsecret;clustersecretstore;k8ssecret
+type ParameterType string
+
+const (
+	// ParameterTypeString Primitive types.
+	ParameterTypeString ParameterType = "string"
+	ParameterTypeNumber ParameterType = "number"
+	ParameterTypeBool   ParameterType = "bool"
+	ParameterTypeObject ParameterType = "object"
+	ParameterTypeSecret ParameterType = "secret"
+	ParameterTypeTime   ParameterType = "time"
+
+	// ParameterTypeNamespace Kubernetes resource types.
+	ParameterTypeNamespace          ParameterType = "namespace"
+	ParameterTypeSecretStore        ParameterType = "secretstore"
+	ParameterTypeExternalSecret     ParameterType = "externalsecret"
+	ParameterTypeClusterSecretStore ParameterType = "clustersecretstore"
+	ParameterTypeGenerator          ParameterType = "generator"
+)
+
+// ResourceConstraints defines constraints for Kubernetes resource selection.
+type ResourceConstraints struct {
+	// Namespace restricts resource selection to specific namespace(s)
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	// LabelSelector for filtering resources
+	// +optional
+	LabelSelector map[string]string `json:"labelSelector,omitempty"`
+
+	// AllowCrossNamespace indicates if resources from other namespaces can be selected
+	// Only applies to cluster-scoped selections
+	// +optional
+	AllowCrossNamespace bool `json:"allowCrossNamespace,omitempty"`
+}
+
+// ParameterValidation defines validation rules for parameters.
+type ParameterValidation struct {
+	// MinItems minimum number of items for multi-select (only when AllowMultiple=true)
+	// +optional
+	MinItems *int `json:"minItems,omitempty"`
+
+	// MaxItems maximum number of items for multi-select (only when AllowMultiple=true)
+	// +optional
+	MaxItems *int `json:"maxItems,omitempty"`
+}
+
+// Parameter defines a parameter that can be overridden when creating a workflow.
+type Parameter struct {
 	// Name of the parameter
 	// +required
 	Name string `json:"name"`
@@ -46,6 +109,11 @@ type TemplateParameter struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 
+	// Type specifies the data type of the parameter
+	// For array/multi-value parameters, use allowMultiple: true with the appropriate type
+	// +optional
+	Type ParameterType `json:"type,omitempty"`
+
 	// Required indicates whether the parameter must be provided
 	// +optional
 	Required bool `json:"required,omitempty"`
@@ -53,6 +121,20 @@ type TemplateParameter struct {
 	// Default value to use if not provided
 	// +optional
 	Default string `json:"default,omitempty"`
+
+	// AllowMultiple indicates if multiple values can be selected
+	// When true, the parameter accepts an array of values of the specified type
+	// +optional
+	AllowMultiple bool `json:"allowMultiple,omitempty"`
+
+	// ResourceConstraints for Kubernetes resource types
+	// +optional
+	ResourceConstraints *ResourceConstraints `json:"resourceConstraints,omitempty"`
+
+	// Validation constraints
+	// MinItems and MaxItems apply when allowMultiple is true
+	// +optional
+	Validation *ParameterValidation `json:"validation,omitempty"`
 }
 
 // +kubebuilder:object:root=true

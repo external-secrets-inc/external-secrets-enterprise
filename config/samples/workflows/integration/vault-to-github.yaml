@@ -1,5 +1,5 @@
 # Github Store
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: github-store
@@ -16,7 +16,7 @@ spec:
           key: private-key
 ---
 # Vault Store
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: vault-store
@@ -32,7 +32,7 @@ spec:
           key: token
 ---
 # 1Password Store
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: 1password-store
@@ -56,19 +56,25 @@ metadata:
 spec:
   version: v1
   name: "Sync Secrets Across Providers"
-  parameters:
-    - name: onePasswordGithubTag
-      description: "Tag to filter 1Password secrets for GitHub"
-      default: "github-actions"
-    - name: onePasswordVaultTag
-      description: "Tag to filter 1Password secrets for Vault"
-      default: "vault"
-    - name: scheduleInterval
-      description: "How often to run the workflow"
-      default: "1h"
-    - name: concurrency
-      description: "Number of concurrent operations (0 for unlimited)"
-      default: "0"
+  parameterGroups:
+    - name: "Provider Configuration"
+      description: "Parameters for configuring secret providers"
+      parameters:
+        - name: onePasswordGithubTag
+          description: "Tag to filter 1Password secrets for GitHub"
+          default: "github-actions"
+        - name: onePasswordVaultTag
+          description: "Tag to filter 1Password secrets for Vault"
+          default: "vault"
+    - name: "Workflow Settings"
+      description: "Parameters for configuring workflow behavior"
+      parameters:
+        - name: scheduleInterval
+          description: "How often to run the workflow"
+          default: "1h"
+        - name: concurrency
+          description: "Number of concurrent operations (0 for unlimited)"
+          default: "0"
   jobs:
     onePasswordToGithub:
       standard:
@@ -86,7 +92,7 @@ spec:
               - name: data
                 type: map
                 sensitive: true
-    
+
     pushToGithub:
       dependsOn:
         - onePasswordToGithub
@@ -105,7 +111,7 @@ spec:
               destination:
                 storeRef:
                   name: github-store
-    
+
     onePasswordToVault:
       standard:
         steps:
@@ -122,7 +128,7 @@ spec:
               - name: data
                 type: map
                 sensitive: true
-    
+
     pushToVault:
       dependsOn:
         - onePasswordToVault

@@ -28,7 +28,7 @@ func (e *DebugStepExecutor) Execute(ctx context.Context, client client.Client, w
 	if err != nil {
 		return nil, fmt.Errorf("resolving message: %w", err)
 	}
-	fmt.Println("Debug message:", message) // Replace with your logger
+	fmt.Println("Debug message:", message)
 
 	// Return the message as an output
 	return map[string]interface{}{

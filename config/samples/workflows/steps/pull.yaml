@@ -1,4 +1,4 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: pull-example-store
@@ -22,10 +22,13 @@ metadata:
 spec:
   version: v1
   name: "Pull Step Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "development"
+  parameterGroups:
+    - name: "Environment Settings"
+      description: "Parameters for configuring the environment"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "development"
   jobs:
     pullDemo:
       standard:
@@ -70,7 +73,7 @@ spec:
                 type: number
               - name: db_name
                 type: string
-          
+
           # Pull an entire secret as JSON
           - name: pullApiCredentials
             pull:
@@ -89,7 +92,7 @@ spec:
                 type: string
               - name: rate_limit
                 type: number
-          
+
           # Pull and process app configuration
           - name: pullAppConfig
             pull:
@@ -109,12 +112,12 @@ spec:
                 type: number
               - name: features
                 type: map
-          
+
           # Debug the pulled values
           - name: debugPulledValues
             debug:
               message: "Database connection: {{ .global.jobs.pullDemo.pullDatabaseCredentials.db_username }}@{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_host }}:{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_port }}/{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_name }}"
-          
+
           # Create a connection string using pulled values
           - name: createConnectionString
             javascript:
@@ -125,11 +128,11 @@ spec:
                 const host = '{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_host }}';
                 const port = {{ .global.jobs.pullDemo.pullDatabaseCredentials.db_port }};
                 const dbName = '{{ .global.jobs.pullDemo.pullDatabaseCredentials.db_name }}';
-                
+
                 // Create PostgreSQL connection string
                 const pgConnString = `postgresql://${username}:${password}@${host}:${port}/${dbName}`;
                 setString('pg_connection_string', pgConnString);
-                
+
                 // Create MySQL connection string
                 const mysqlConnString = `mysql://${username}:${password}@${host}:${port}/${dbName}`;
                 setString('mysql_connection_string', mysqlConnString);
@@ -140,7 +143,7 @@ spec:
               - name: mysql_connection_string
                 type: string
                 sensitive: true
-          
+
           # Create application configuration using pulled values
           - name: createAppConfig
             transform:

@@ -7,19 +7,25 @@ metadata:
 spec:
   version: v1
   name: "Transform Step Workflow"
-  parameters:
-    - name: environment
-      description: "Target environment (production, staging, development)"
-      default: "development"
-    - name: region
-      description: "Deployment region"
-      default: "us-west-1"
-    - name: appName
-      description: "Application name"
-      default: "my-app"
-    - name: dbConfig
-      description: "Database configuration as JSON"
-      default: '{"host":"db.example.com","port":5432,"username":"db_user","database":"app_db"}'
+  parameterGroups:
+    - name: "Application Settings"
+      description: "Parameters for configuring the application environment"
+      parameters:
+        - name: environment
+          description: "Target environment (production, staging, development)"
+          default: "development"
+        - name: region
+          description: "Deployment region"
+          default: "us-west-1"
+        - name: appName
+          description: "Application name"
+          default: "my-app"
+    - name: "Database Configuration"
+      description: "Parameters for configuring the database connection"
+      parameters:
+        - name: dbConfig
+          description: "Database configuration as JSON"
+          default: '{"host":"db.example.com","port":5432,"username":"db_user","database":"app_db"}'
   jobs:
     transformDemo:
       standard:
@@ -40,7 +46,7 @@ spec:
               - name: password
                 type: string
                 sensitive: true
-          
+
           # Simple key-value transform
           - name: basicTransform
             transform:
@@ -61,7 +67,7 @@ spec:
                 type: string
               - name: timestamp
                 type: string
-          
+
           # Transform with conditional logic
           - name: conditionalTransform
             transform:
@@ -79,7 +85,7 @@ spec:
                 type: string
               - name: retention_days
                 type: string
-          
+
           # Transform with nested objects
           - name: nestedTransform
             transform:
@@ -87,11 +93,10 @@ spec:
                 "app.name": "{{ .global.variables.appName }}"
                 "app.environment": "{{ .global.variables.environment }}"
                 "app.region": "{{ .global.variables.region }}"
-                "database.host": "{{ fromJson .global.variables.dbConfig | get \"host\" }}"
-                "database.port": "{{ fromJson .global.variables.dbConfig | get \"port\" }}"
-                "database.username": "{{ fromJson .global.variables.dbConfig | get \"username\" }}"
-                "database.password": "{{ .global.jobs.transformDemo.generateCredentials.password }}"
-                "database.database": "{{ fromJson .global.variables.dbConfig | get \"database\" }}"
+                "database.host": "{{ (fromJson .global.variables.dbConfig).host }}"
+                "database.port": "{{ (fromJson .global.variables.dbConfig).port }}"
+                "database.username": "{{ (fromJson .global.variables.dbConfig).username }}"
+                "database.database": "{{ (fromJson .global.variables.dbConfig).database }}"
                 "database.ssl_enabled": "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
                 "features.audit_logging": "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
                 "features.multi_region": "{{ if eq .global.variables.environment \"production\" }}true{{ else }}false{{ end }}"
@@ -105,7 +110,7 @@ spec:
                 sensitive: true
               - name: features
                 type: map
-          
+
           # Transform with template
           - name: templateTransform
             transform:
@@ -130,10 +135,10 @@ spec:
                     "DEBUG_MODE": "{{ .global.jobs.transformDemo.conditionalTransform.debug_mode }}",
                     "METRICS_ENABLED": "{{ .global.jobs.transformDemo.conditionalTransform.metrics_enabled }}",
                     "RETENTION_DAYS": "{{ .global.jobs.transformDemo.conditionalTransform.retention_days }}",
-                    "DATABASE_HOST": "{{ fromJson .global.variables.dbConfig | get \"host\" }}",
-                    "DATABASE_PORT": "{{ fromJson .global.variables.dbConfig | get \"port\" }}",
-                    "DATABASE_NAME": "{{ fromJson .global.variables.dbConfig | get \"database\" }}",
-                    "DATABASE_USER": "{{ fromJson .global.variables.dbConfig | get \"username\" }}",
+                    "DATABASE_HOST": "{{ (fromJson .global.variables.dbConfig).host }}",
+                    "DATABASE_PORT": "{{ (fromJson .global.variables.dbConfig).port }}",
+                    "DATABASE_NAME": "{{ (fromJson .global.variables.dbConfig).database }}",
+                    "DATABASE_USER": "{{ (fromJson .global.variables.dbConfig).username }}",
                     "DEPLOYMENT_ID": "{{ .global.jobs.transformDemo.basicTransform.deployment_id }}",
                     "TIMESTAMP": "{{ .global.jobs.transformDemo.basicTransform.timestamp }}"
                   }
@@ -141,7 +146,7 @@ spec:
             outputs:
               - name: config
                 type: map
-          
+
           # Debug the transformed values
           - name: debugTransformedValues
             debug:

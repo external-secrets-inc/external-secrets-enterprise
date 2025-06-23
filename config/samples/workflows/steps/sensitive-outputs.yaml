@@ -1,4 +1,4 @@
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: sensitive-example-store
@@ -21,22 +21,28 @@ metadata:
 spec:
   version: v1
   name: "Sensitive Data Handling Workflow"
-  parameters:
-    - name: passwordLength
-      description: "Length of the generated password"
-      default: "32"
-    - name: digitCount
-      description: "Number of digits in the password"
-      default: "5"
-    - name: symbolCount
-      description: "Number of symbols in the password"
-      default: "5"
-    - name: symbolCharacters
-      description: "Characters to use for symbols"
-      default: "-_$@"
-    - name: remoteKey
-      description: "Remote key to store the configuration under"
-      default: "user-config"
+  parameterGroups:
+    - name: "Password Generation"
+      description: "Parameters for configuring password generation"
+      parameters:
+        - name: passwordLength
+          description: "Length of the generated password"
+          default: "32"
+        - name: digitCount
+          description: "Number of digits in the password"
+          default: "5"
+        - name: symbolCount
+          description: "Number of symbols in the password"
+          default: "5"
+        - name: symbolCharacters
+          description: "Characters to use for symbols"
+          default: "-_$@"
+    - name: "Storage Configuration"
+      description: "Parameters for configuring where data is stored"
+      parameters:
+        - name: remoteKey
+          description: "Remote key to store the configuration under"
+          default: "user-config"
   jobs:
     # First job: Pull existing secrets from the store
     pullSecrets:
