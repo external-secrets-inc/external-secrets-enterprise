@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.1...v1.7.2) (2025-06-23)
+
+
+### Bug Fixes
+
+* custom path ([#172](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/172)) ([e1b1568](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e1b156890a573402545e0271344991a15fd20325))
+
 ## [1.7.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.0...v1.7.1) (2025-06-23)
 
 
