@@ -145,7 +145,7 @@ webhooks:
     service:
       namespace: {{ template "external-secrets.namespace" . }}
       name: {{ include "external-secrets.fullname" . }}-webhook
-      path: /validate-workflows-external-secrets-io-v1alpha1-workflowrun-template
+      path: /validate-workflows-external-secrets-io-v1alpha1-workflowruntemplate
   admissionReviewVersions: ["v1", "v1beta1"]
   sideEffects: None
   timeoutSeconds: 5

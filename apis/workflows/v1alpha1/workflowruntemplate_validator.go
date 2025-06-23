@@ -18,7 +18,8 @@ package v1alpha1
 // defined in the referenced WorkflowTemplate.
 func validateWorkflowRunTemplateParameters(wr *WorkflowRunTemplate) error {
 	workflowrun := &WorkflowRun{
-		Spec: wr.Spec.RunSpec,
+		ObjectMeta: wr.ObjectMeta,
+		Spec:       wr.Spec.RunSpec,
 	}
 	return validateWorkflowRunParameters(workflowrun)
 }
