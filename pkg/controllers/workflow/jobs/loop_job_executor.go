@@ -106,9 +106,11 @@ func executeIteration(
 		stepStatus := baseCtx.JobStatus.StepStatuses[step.Name]
 
 		// Skip steps that have already succeeded or failed.
-		if stepStatus.Phase == workflows.StepPhaseSucceeded || stepStatus.Phase == workflows.StepPhaseFailed {
-			continue
-		}
+		// TODO[gusfcarvalho] - this blocks concurrent jobs to actually run
+		// Need to add steps for each range input here.
+		// if stepStatus.Phase == workflows.StepPhaseSucceeded || stepStatus.Phase == workflows.StepPhaseFailed {
+		// 	continue
+		// }
 
 		// Execute the step.
 		if err := ExecuteStepWithContext(ctx, iterationCtx, step, step.Name); err != nil {
