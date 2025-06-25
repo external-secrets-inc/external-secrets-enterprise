@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.3...v1.7.4) (2025-06-25)
+
+
+### Bug Fixes
+
+* update dependencies ([#178](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/178)) ([76cf36d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/76cf36dda5a43e00eaf5a07efa542b25cfeecee9))
+* update from upstream ([#177](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/177)) ([b4b0fd7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b4b0fd7808738415cb6187ffd0a2ccd65b315e91))
+* workflow  run templates issues ([#176](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/176)) ([59d2723](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/59d2723e6eb3dd3009a4bae3c5741cf478b77acf))
+
 ## [1.7.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.2...v1.7.3) (2025-06-23)
 
 
