@@ -199,14 +199,17 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 func validateKubernetesResource(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
 	resourceName, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("kubernetes resource name must be a string")
+		return fmt.Errorf("kubernetes resource name must be a string. received: %T", value)
 	}
 	if param.Type == ParameterTypeSecretStoreArray {
 		resourceList := strings.Split(resourceName, ",")
-		for _, resource := range resourceList {
-			if err := validateKubernetesResource(ctx, param, resource, namespace); err != nil {
-				return err
+		if len(resourceList) > 1 {
+			for i := range resourceList {
+				if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+					return err
+				}
 			}
+			return nil
 		}
 	}
 
