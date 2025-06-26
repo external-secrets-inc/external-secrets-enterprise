@@ -35,7 +35,7 @@ func (p ParameterType) IsPrimitive() bool {
 func (p ParameterType) IsKubernetesResource() bool {
 	switch p {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-		ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+		ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
 		return true
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
@@ -69,7 +69,7 @@ func (p ParameterType) GetKind() string {
 	switch p {
 	case ParameterTypeNamespace:
 		return "Namespace"
-	case ParameterTypeSecretStore:
+	case ParameterTypeSecretStore, ParameterTypeSecretStoreArray:
 		return "SecretStore"
 	case ParameterTypeExternalSecret:
 		return "ExternalSecret"

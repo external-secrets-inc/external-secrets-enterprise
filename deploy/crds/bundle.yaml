@@ -46008,6 +46008,7 @@ spec:
                                 - externalsecret
                                 - clustersecretstore
                                 - k8ssecret
+                                - array[secretstore]
                               type: string
                             validation:
                               description: |-

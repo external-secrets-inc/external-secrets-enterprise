@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -181,7 +182,7 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 			}
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
 			// No specific validation needed for these types
 		}
 	}
@@ -196,9 +197,18 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 
 // validateKubernetesResource validates that a Kubernetes resource exists and matches constraints.
 func validateKubernetesResource(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
+
 	resourceName, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("kubernetes resource name must be a string")
+	}
+	if param.Type == ParameterTypeSecretStoreArray {
+		resourceList := strings.Split(resourceName, ",")
+		for _, resource := range resourceList {
+			if err := validateKubernetesResource(ctx, param, resource, namespace); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Determine the resource namespace
@@ -215,7 +225,7 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 	// Get the GVK for the resource type
 	var gvk schema.GroupVersionKind
 	switch param.Type {
-	case ParameterTypeSecretStore, ParameterTypeExternalSecret, ParameterTypeClusterSecretStore:
+	case ParameterTypeSecretStore, ParameterTypeSecretStoreArray, ParameterTypeExternalSecret, ParameterTypeClusterSecretStore:
 		gvk = schema.GroupVersionKind{
 			Group:   "external-secrets.io",
 			Version: "v1",
