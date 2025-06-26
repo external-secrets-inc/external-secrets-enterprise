@@ -71,7 +71,7 @@ const (
 	ParameterTypeClusterSecretStore ParameterType = "clustersecretstore"
 	ParameterTypeGenerator          ParameterType = "generator"
 
-	// Array Types (add as needed)
+	// Array Types (add as needed).
 	ParameterTypeSecretStoreArray ParameterType = "array[secretstore]"
 )
 

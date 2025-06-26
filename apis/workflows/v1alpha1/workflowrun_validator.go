@@ -144,7 +144,7 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue, name
 			parsedValue = b
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator:
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
 			// For string and other types, use the raw value
 			parsedValue = argValue
 		}
@@ -197,7 +197,6 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 
 // validateKubernetesResource validates that a Kubernetes resource exists and matches constraints.
 func validateKubernetesResource(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
-
 	resourceName, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("kubernetes resource name must be a string")
