@@ -678,7 +678,6 @@
                 }
             },
             "type": "object"
-<<<<<<< HEAD
         },
         "spire": {
             "properties": {
@@ -708,8 +707,6 @@
                 }
             },
             "type": "object"
-=======
->>>>>>> upstream/main
         },
         "tolerations": {
             "type": "array"
