@@ -43,6 +43,7 @@ rules:
     - "workflows.external-secrets.io"
     resources:
     - "workflows"
+    - "workflowruns"
     verbs:
     - "get"
     - "list"
