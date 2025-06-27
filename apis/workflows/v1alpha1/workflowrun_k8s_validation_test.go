@@ -58,6 +58,24 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 		},
 	}
 
+	// Create a test SecretStore
+	testSecondSecretStore := &esv1.SecretStore{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-second-store",
+			Namespace: "test-namespace",
+			Labels: map[string]string{
+				"app": "test",
+			},
+		},
+		Spec: esv1.SecretStoreSpec{
+			Provider: &esv1.SecretStoreProvider{
+				AWS: &esv1.AWSProvider{
+					Region: "us-west-2",
+				},
+			},
+		},
+	}
+
 	// Create a test ClusterSecretStore
 	testClusterSecretStore := &esv1.ClusterSecretStore{
 		ObjectMeta: metav1.ObjectMeta{
@@ -105,6 +123,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 							},
 						},
 						{
+							Name:     "secretStoreArray",
+							Type:     ParameterTypeSecretStoreArray,
+							Required: false,
+						},
+						{
 							Name:     "clusterSecretStore",
 							Type:     ParameterTypeClusterSecretStore,
 							Required: false,
@@ -145,7 +168,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 	// Create a fake client with test objects
 	client := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(testNamespace, testSecretStore, testClusterSecretStore, template).
+		WithObjects(testNamespace, testSecretStore, testSecondSecretStore, testClusterSecretStore, template).
 		Build()
 
 	// Set the validation client
@@ -158,6 +181,68 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 		wantErr     bool
 		errMsg      string
 	}{
+		{
+			name: "valid secretStoreArray",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: map[string]string{
+						"targetNamespace":  "test-namespace",
+						"secretStore":      "test-store",
+						"secretStoreArray": "test-store,test-second-store",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid secretStoreArray with one element",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: map[string]string{
+						"targetNamespace":  "test-namespace",
+						"secretStore":      "test-store",
+						"secretStoreArray": "test-second-store",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid StoreArray",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: map[string]string{
+						"targetNamespace":  "test-namespace",
+						"secretStore":      "test-store",
+						"secretStoreArray": "test-second-store,unexisting-store",
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource unexisting-store of type array[secretstore] not found in namespace test-namespace",
+		},
+
 		{
 			name: "valid k8s resources",
 			workflowRun: &WorkflowRun{
