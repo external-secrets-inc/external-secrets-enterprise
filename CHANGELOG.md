@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.4...v1.8.0) (2025-06-27)
+
+
+### Features
+
+* secretstore array type for workflowruntemplate ([#183](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/183)) ([16edf1a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/16edf1a34693eb3b5adb38ea716a2bc71e878e54))
+
+
+### Bug Fixes
+
+* update dependencies ([#181](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/181)) ([628a04a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/628a04af16db76878895b76b1c21fef8d56c57af))
+* update from upstream ([#180](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/180)) ([a6caa4c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a6caa4cca00b751f89d6a9ad400e3a061da1b216))
+
 ## [1.7.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.3...v1.7.4) (2025-06-25)
 
 
