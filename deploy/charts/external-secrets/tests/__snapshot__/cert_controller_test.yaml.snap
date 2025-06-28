@@ -7,8 +7,13 @@ should match snapshot of default values:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: external-secrets-cert-controller
+<<<<<<< HEAD
         app.kubernetes.io/version: v1.8.0
         helm.sh/chart: external-secrets-1.8.0
+=======
+        app.kubernetes.io/version: v0.18.1
+        helm.sh/chart: external-secrets-0.18.1
+>>>>>>> upstream/main
       name: RELEASE-NAME-external-secrets-cert-controller
       namespace: NAMESPACE
     spec:
@@ -24,8 +29,13 @@ should match snapshot of default values:
             app.kubernetes.io/instance: RELEASE-NAME
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: external-secrets-cert-controller
+<<<<<<< HEAD
             app.kubernetes.io/version: v1.8.0
             helm.sh/chart: external-secrets-1.8.0
+=======
+            app.kubernetes.io/version: v0.18.1
+            helm.sh/chart: external-secrets-0.18.1
+>>>>>>> upstream/main
         spec:
           automountServiceAccountToken: true
           containers:
@@ -41,7 +51,11 @@ should match snapshot of default values:
                 - --loglevel=info
                 - --zap-time-encoding=epoch
                 - --enable-partial-cache=true
+<<<<<<< HEAD
               image: us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets:v1.8.0
+=======
+              image: oci.external-secrets.io/external-secrets/external-secrets:v0.18.1
+>>>>>>> upstream/main
               imagePullPolicy: IfNotPresent
               name: cert-controller
               ports:
