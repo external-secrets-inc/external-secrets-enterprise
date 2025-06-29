@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.8.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.8.0...v1.8.1) (2025-06-29)
+
+
+### Bug Fixes
+
+* conflicts ([d34f9a1](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d34f9a1b530b56ca3927cb54d9efb331fc95f577))
+* update dependencies ([#193](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/193)) ([4d0a808](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4d0a808fca8d08dd1914053a2219952d580f0e85))
+* update from upstream ([#192](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/192)) ([a64cec7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a64cec7e2438f31f2a143442ba3398957b9e9790))
+* webhook permissions ([#189](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/189)) ([9911d94](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9911d94f0824fe1359f609da8f74db901b2af126))
+* workflowrun permissions ([#187](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/187)) ([1f5cce3](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1f5cce3d025a79527187984f1a6cb9dcdb7f2830))
+
 ## [1.8.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.7.4...v1.8.0) (2025-06-27)
 
 
