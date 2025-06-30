@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.8.1...v1.9.0) (2025-06-30)
+
+
+### Features
+
+* add phase, start time, and completion time tracking for workflow runs ([#198](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/198)) ([2ad7a6f](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2ad7a6f85f9843e996545e102e98eaafc5c9cf83))
+
 ## [1.8.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.8.0...v1.8.1) (2025-06-29)
 
 
