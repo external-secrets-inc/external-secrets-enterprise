@@ -54,6 +54,19 @@ type WorkflowRunStatus struct {
 	// Conditions represent the latest available observations of the WorkflowRun's state
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Phase represents the current phase of the WorkflowRun
+	// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed
+	// +optional
+	Phase Phase `json:"phase,omitempty"`
+
+	// StartTime represents when the WorkflowRun started
+	// +optional
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// CompletionTime represents when the WorkflowRun completed
+	// +optional
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 }
 
 // WorkflowRef is a reference to a Workflow.
@@ -69,6 +82,7 @@ type WorkflowRef struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="PHASE",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="TEMPLATE",type="string",JSONPath=".spec.templateRef.name"
 // +kubebuilder:printcolumn:name="WORKFLOW",type="string",JSONPath=".status.workflowRef.name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"

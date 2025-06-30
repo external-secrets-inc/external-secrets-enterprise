@@ -27801,6 +27801,9 @@ spec:
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
+        - jsonPath: .status.phase
+          name: PHASE
+          type: string
         - jsonPath: .spec.templateRef.name
           name: TEMPLATE
           type: string
@@ -27862,6 +27865,10 @@ spec:
             status:
               description: WorkflowRunStatus defines the observed state of WorkflowRun.
               properties:
+                completionTime:
+                  description: CompletionTime represents when the WorkflowRun completed
+                  format: date-time
+                  type: string
                 conditions:
                   description: Conditions represent the latest available observations of the WorkflowRun's state
                   items:
@@ -27918,11 +27925,23 @@ spec:
                       - type
                     type: object
                   type: array
+                phase:
+                  description: Phase represents the current phase of the WorkflowRun
+                  enum:
+                    - Pending
+                    - Running
+                    - Succeeded
+                    - Failed
+                  type: string
                 sensitiveValuesSecrets:
                   description: SensitiveValuesSecrets is a list of secret names containing sensitive values
                   items:
                     type: string
                   type: array
+                startTime:
+                  description: StartTime represents when the WorkflowRun started
+                  format: date-time
+                  type: string
                 workflowRef:
                   description: WorkflowRef is a reference to the created workflow
                   properties:
@@ -28117,6 +28136,10 @@ spec:
                       status:
                         description: WorkflowRunStatus defines the observed state of WorkflowRun.
                         properties:
+                          completionTime:
+                            description: CompletionTime represents when the WorkflowRun completed
+                            format: date-time
+                            type: string
                           conditions:
                             description: Conditions represent the latest available observations of the WorkflowRun's state
                             items:
@@ -28173,11 +28196,23 @@ spec:
                                 - type
                               type: object
                             type: array
+                          phase:
+                            description: Phase represents the current phase of the WorkflowRun
+                            enum:
+                              - Pending
+                              - Running
+                              - Succeeded
+                              - Failed
+                            type: string
                           sensitiveValuesSecrets:
                             description: SensitiveValuesSecrets is a list of secret names containing sensitive values
                             items:
                               type: string
                             type: array
+                          startTime:
+                            description: StartTime represents when the WorkflowRun started
+                            format: date-time
+                            type: string
                           workflowRef:
                             description: WorkflowRef is a reference to the created workflow
                             properties:

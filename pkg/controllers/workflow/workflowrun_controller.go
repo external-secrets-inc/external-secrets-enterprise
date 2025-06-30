@@ -174,8 +174,26 @@ func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *wo
 	}
 
 	// Check if the workflow status has changed
-	// TODO: Probably need to check for all of the possible status values for the workflow
 	statusChanged := false
+
+	// Copy the workflow phase directly to WorkflowRun
+	if run.Status.Phase != workflow.Status.Phase {
+		run.Status.Phase = workflow.Status.Phase
+		statusChanged = true
+	}
+
+	// Copy timing information
+	if workflow.Status.StartTime != nil && run.Status.StartTime == nil {
+		run.Status.StartTime = workflow.Status.StartTime
+		statusChanged = true
+	}
+
+	if workflow.Status.CompletionTime != nil && run.Status.CompletionTime == nil {
+		run.Status.CompletionTime = workflow.Status.CompletionTime
+		statusChanged = true
+	}
+
+	// Copy workflow conditions to WorkflowRun
 	for _, cond := range workflow.Status.Conditions {
 		// Check if this condition already exists in the WorkflowRun
 		exists := false
@@ -188,6 +206,67 @@ func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *wo
 
 		if !exists {
 			run.Status.Conditions = append(run.Status.Conditions, cond)
+			statusChanged = true
+		}
+	}
+
+	// Translate workflow phase into WorkflowRun conditions
+	switch workflow.Status.Phase {
+	case workflows.PhaseFailed:
+		// Check if Failed condition already exists
+		failedExists := false
+		for _, runCond := range run.Status.Conditions {
+			if runCond.Type == "Failed" && runCond.Status == metav1.ConditionTrue {
+				failedExists = true
+				break
+			}
+		}
+		if !failedExists {
+			run.Status.Conditions = append(run.Status.Conditions, metav1.Condition{
+				Type:               "Failed",
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+				Reason:             "WorkflowFailed",
+				Message:            fmt.Sprintf("Workflow %s failed", workflow.Name),
+			})
+			statusChanged = true
+		}
+	case workflows.PhaseSucceeded:
+		// Check if Succeeded condition already exists
+		succeededExists := false
+		for _, runCond := range run.Status.Conditions {
+			if runCond.Type == "Succeeded" && runCond.Status == metav1.ConditionTrue {
+				succeededExists = true
+				break
+			}
+		}
+		if !succeededExists {
+			run.Status.Conditions = append(run.Status.Conditions, metav1.Condition{
+				Type:               "Succeeded",
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+				Reason:             "WorkflowSucceeded",
+				Message:            fmt.Sprintf("Workflow %s completed successfully", workflow.Name),
+			})
+			statusChanged = true
+		}
+	case workflows.PhaseRunning:
+		// Check if Running condition already exists
+		runningExists := false
+		for _, runCond := range run.Status.Conditions {
+			if runCond.Type == "Running" && runCond.Status == metav1.ConditionTrue {
+				runningExists = true
+				break
+			}
+		}
+		if !runningExists {
+			run.Status.Conditions = append(run.Status.Conditions, metav1.Condition{
+				Type:               "Running",
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+				Reason:             "WorkflowRunning",
+				Message:            fmt.Sprintf("Workflow %s is running", workflow.Name),
+			})
 			statusChanged = true
 		}
 	}
