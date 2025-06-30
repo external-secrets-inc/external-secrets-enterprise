@@ -212,6 +212,25 @@ func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *wo
 
 	// Translate workflow phase into WorkflowRun conditions
 	switch workflow.Status.Phase {
+	case workflows.PhasePending:
+		// Check if Pending condition already exists
+		pendingExists := false
+		for _, runCond := range run.Status.Conditions {
+			if runCond.Type == "Pending" && runCond.Status == metav1.ConditionTrue {
+				pendingExists = true
+				break
+			}
+		}
+		if !pendingExists {
+			run.Status.Conditions = append(run.Status.Conditions, metav1.Condition{
+				Type:               "Pending",
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+				Reason:             "WorkflowPending",
+				Message:            fmt.Sprintf("Workflow %s is pending", workflow.Name),
+			})
+			statusChanged = true
+		}
 	case workflows.PhaseFailed:
 		// Check if Failed condition already exists
 		failedExists := false
