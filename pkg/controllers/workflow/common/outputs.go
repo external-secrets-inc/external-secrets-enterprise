@@ -18,19 +18,19 @@ import (
 // that should be automatically masked.
 var sensitivePatterns = []*regexp.Regexp{
 	// Common sensitive patterns
-	regexp.MustCompile(`(?i)password|passwd`),
-	regexp.MustCompile(`(?i)token`),
-	regexp.MustCompile(`(?i)key`),
-	regexp.MustCompile(`(?i)secret`),
-	regexp.MustCompile(`(?i)credential`),
-	regexp.MustCompile(`(?i)auth`),
+	// regexp.MustCompile(`(?i)password|passwd`),
+	// regexp.MustCompile(`(?i)token`),
+	// regexp.MustCompile(`(?i)key`),
+	// regexp.MustCompile(`(?i)secret`),
+	// regexp.MustCompile(`(?i)credential`),
+	// regexp.MustCompile(`(?i)auth`),
 
-	// More specific patterns
-	regexp.MustCompile(`(?i)api[-_]?key`),
-	regexp.MustCompile(`(?i)access[-_]?key`),
-	regexp.MustCompile(`(?i)auth[-_]?token`),
-	regexp.MustCompile(`(?i)service[-_]?account`),
-	regexp.MustCompile(`(?i)private[-_]?key`),
+	// // More specific patterns
+	// regexp.MustCompile(`(?i)api[-_]?key`),
+	// regexp.MustCompile(`(?i)access[-_]?key`),
+	// regexp.MustCompile(`(?i)auth[-_]?token`),
+	// regexp.MustCompile(`(?i)service[-_]?account`),
+	// regexp.MustCompile(`(?i)private[-_]?key`),
 }
 
 // SetSensitivePatterns allows configuring the sensitive regexps via flags.
