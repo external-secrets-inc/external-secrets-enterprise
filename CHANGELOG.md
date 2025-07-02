@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.1...v1.9.2) (2025-07-02)
+
+
+### Bug Fixes
+
+* remove masking ([#205](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/205)) ([332c52a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/332c52a96f0b5a7ca8310a1b5d1409be55344db4))
+
 ## [1.9.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.0...v1.9.1) (2025-07-01)
 
 
