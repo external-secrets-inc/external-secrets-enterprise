@@ -32,7 +32,7 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
-	github.com/oracle/oci-go-sdk/v65 v65.94.0
+	github.com/oracle/oci-go-sdk/v65 v65.95.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/spf13/cobra v1.9.1
@@ -93,7 +93,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudru-tech/iam-sdk v1.0.4
 	github.com/cloudru-tech/secret-manager-sdk v1.1.1
-	github.com/cyberark/conjur-api-go v0.13.0
+	github.com/cyberark/conjur-api-go v0.13.1
 	github.com/docker/go-connections v0.5.0
 	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994
 	github.com/fortanix/sdkms-client-go v0.4.1
@@ -128,9 +128,9 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/neo4j v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/tidwall/sjson v1.2.5
-	gitlab.com/gitlab-org/api/client-go v0.130.1
+	gitlab.com/gitlab-org/api/client-go v0.131.0
 	golang.org/x/sync v0.15.0
-	k8s.io/kube-openapi v0.0.0-20250628140032-d90c4fd18f59
+	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911
 	sigs.k8s.io/yaml v1.5.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
 )
@@ -208,8 +208,8 @@ require (
 	github.com/go-openapi/runtime v0.28.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
-	github.com/go-playground/validator/v10 v10.26.0 // indirect
-	github.com/go-resty/resty/v2 v2.13.1 // indirect
+	github.com/go-playground/validator/v10 v10.27.0 // indirect
+	github.com/go-resty/resty/v2 v2.16.5 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
