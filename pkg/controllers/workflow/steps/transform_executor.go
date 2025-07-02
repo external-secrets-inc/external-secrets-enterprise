@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
+	estemplatev2 "github.com/external-secrets/external-secrets/pkg/template/v2"
 )
 
 // TransformStepExecutor handles the execution of transform steps in a workflow.
@@ -31,10 +31,10 @@ func NewTransformStepExecutor(step *workflows.TransformStep) *TransformStepExecu
 func (e *TransformStepExecutor) Execute(ctx context.Context, client client.Client, wf *workflows.Workflow, data map[string]interface{}) (map[string]interface{}, error) {
 	outputs := make(map[string]interface{})
 
-	// Create template engine with sprig functions
+	// Create template engine with es template functions
 	tmplEngine := template.New("transform").
-		Funcs(sprig.TxtFuncMap()). // Add sprig functions
-		Option("missingkey=error") // Fail on missing keys
+		Funcs(estemplatev2.FuncMap()). // Add sprig functions
+		Option("missingkey=error")     // Fail on missing keys
 
 	// If full template is provided, process it
 	if e.Step.Template != "" {

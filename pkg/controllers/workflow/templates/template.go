@@ -44,6 +44,10 @@ func init() {
 	esFuncs["loopRangeKeys"] = loopRangeKeys
 }
 
+func Functions() template.FuncMap {
+	return esFuncs
+}
+
 // getLoopOutput retrieves an output from a loop job step by range key.
 func getLoopOutput(data map[string]interface{}, jobName, stepName, rangeKey, outputKey string) (interface{}, error) {
 	// Get the job
