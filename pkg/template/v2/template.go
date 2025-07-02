@@ -47,6 +47,7 @@ var tplFuncs = tpl.FuncMap{
 
 	"toYaml":   toYAML,
 	"fromYaml": fromYAML,
+	"isJson":   isJson,
 }
 
 var leftDelim, rightDelim string
