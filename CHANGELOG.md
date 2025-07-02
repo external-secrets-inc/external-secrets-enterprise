@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.3...v1.9.4) (2025-07-02)
+
+
+### Bug Fixes
+
+* use es templates on transform step ([#209](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/209)) ([482b186](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/482b186cc6af6ca0ba41c3254f8f1ba4de9fcde6))
+
 ## [1.9.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.2...v1.9.3) (2025-07-02)
 
 
