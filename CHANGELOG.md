@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.2...v1.9.3) (2025-07-02)
+
+
+### Bug Fixes
+
+* add isjson template function ([#207](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/207)) ([c4d52e9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c4d52e94d783d70fbe9fb7f982e343ad7c84aee0))
+
 ## [1.9.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.1...v1.9.2) (2025-07-02)
 
 
