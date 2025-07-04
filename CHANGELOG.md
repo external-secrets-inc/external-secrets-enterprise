@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.4...v1.9.5) (2025-07-04)
+
+
+### Bug Fixes
+
+* release new version ([#220](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/220)) ([affd0d5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/affd0d5538f95b78d175b24f377a74f9039b8df9))
+
 ## [1.9.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.3...v1.9.4) (2025-07-02)
 
 
