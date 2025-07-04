@@ -150,11 +150,7 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-<<<<<<< HEAD
 	github.com/google/pprof v0.0.0-20250630185457-6e76a2b096b5 // indirect
-=======
-	github.com/google/pprof v0.0.0-20250629210550-e611ec304b22 // indirect
->>>>>>> upstream/main
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect

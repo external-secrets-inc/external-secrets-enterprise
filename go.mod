@@ -129,10 +129,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.130.1
-<<<<<<< HEAD
 	golang.org/x/sync v0.15.0
-=======
->>>>>>> upstream/main
 	k8s.io/kube-openapi v0.0.0-20250628140032-d90c4fd18f59
 	sigs.k8s.io/yaml v1.5.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
@@ -212,12 +209,8 @@ require (
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-playground/validator/v10 v10.26.0 // indirect
-<<<<<<< HEAD
-	github.com/go-resty/resty/v2 v2.13.1 // indirect
-	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
-=======
 	github.com/go-resty/resty/v2 v2.16.5 // indirect
->>>>>>> upstream/main
+	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -237,11 +230,8 @@ require (
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20250628045327-2d64ad6b7ec5 // indirect
-<<<<<<< HEAD
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-=======
->>>>>>> upstream/main
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
@@ -361,11 +351,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-<<<<<<< HEAD
 	github.com/google/pprof v0.0.0-20250630185457-6e76a2b096b5 // indirect
-=======
-	github.com/google/pprof v0.0.0-20250629210550-e611ec304b22 // indirect
->>>>>>> upstream/main
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
