@@ -16,6 +16,7 @@ replicaCount: 1
 
 bitwarden-sdk-server:
   enabled: false
+  namespaceOverride: ""
 
 spire-crds:
   enabled: false
