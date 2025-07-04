@@ -16,7 +16,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	v1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/apis/externalsecrets/v1alpha1"
 	generatorsv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 )
@@ -87,8 +87,9 @@ type WorkflowStatus struct {
 	JobStatuses    map[string]JobStatus `json:"jobStatuses"`
 	ExecutionOrder []string             `json:"executionOrder,omitempty"`
 
-	StartTime      *metav1.Time `json:"startTime,omitempty"`
-	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+	StartTime          *metav1.Time `json:"startTime,omitempty"`
+	CompletionTime     *metav1.Time `json:"completionTime,omitempty"`
+	ExecutionTimeNanos *int64       `json:"executionTimeNanos,omitempty"`
 }
 
 type Job struct {
@@ -294,19 +295,21 @@ type JobStatus struct {
 	// +kubebuilder:validation:Enum=Pending;Waiting;Running;Succeeded;Failed
 	Phase JobPhase `json:"phase,omitempty"`
 
-	StepStatuses   map[string]StepStatus `json:"stepStatuses"`
-	StartTime      *metav1.Time          `json:"startTime,omitempty"`
-	CompletionTime *metav1.Time          `json:"completionTime,omitempty"`
+	StepStatuses       map[string]StepStatus `json:"stepStatuses"`
+	StartTime          *metav1.Time          `json:"startTime,omitempty"`
+	CompletionTime     *metav1.Time          `json:"completionTime,omitempty"`
+	ExecutionTimeNanos *int64                `json:"executionTimeNanos,omitempty"`
 }
 
 type StepStatus struct {
 	// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed
 	Phase StepPhase `json:"phase,omitempty"`
 	// +optional
-	Outputs        map[string]string `json:"outputs,omitempty"`
-	Message        string            `json:"message,omitempty"`
-	StartTime      *metav1.Time      `json:"startTime,omitempty"`
-	CompletionTime *metav1.Time      `json:"completionTime,omitempty"`
+	Outputs            map[string]string `json:"outputs,omitempty"`
+	Message            string            `json:"message,omitempty"`
+	StartTime          *metav1.Time      `json:"startTime,omitempty"`
+	CompletionTime     *metav1.Time      `json:"completionTime,omitempty"`
+	ExecutionTimeNanos *int64            `json:"executionTimeNanos,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -190,6 +190,7 @@ func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *wo
 
 	if workflow.Status.CompletionTime != nil && run.Status.CompletionTime == nil {
 		run.Status.CompletionTime = workflow.Status.CompletionTime
+		run.Status.ExecutionTimeNanos = workflow.Status.ExecutionTimeNanos
 		statusChanged = true
 	}
 

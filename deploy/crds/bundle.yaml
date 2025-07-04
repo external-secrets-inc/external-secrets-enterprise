@@ -28047,6 +28047,10 @@ spec:
                       - type
                     type: object
                   type: array
+                executionTimeNanos:
+                  description: ExecutionTimeNanos represents the duration between the start and completion of the WorkflowRun, in nanoseconds
+                  format: int64
+                  type: integer
                 phase:
                   description: Phase represents the current phase of the WorkflowRun
                   enum:
@@ -28318,6 +28322,10 @@ spec:
                                 - type
                               type: object
                             type: array
+                          executionTimeNanos:
+                            description: ExecutionTimeNanos represents the duration between the start and completion of the WorkflowRun, in nanoseconds
+                            format: int64
+                            type: integer
                           phase:
                             description: Phase represents the current phase of the WorkflowRun
                             enum:
@@ -37315,12 +37323,18 @@ spec:
                   items:
                     type: string
                   type: array
+                executionTimeNanos:
+                  format: int64
+                  type: integer
                 jobStatuses:
                   additionalProperties:
                     properties:
                       completionTime:
                         format: date-time
                         type: string
+                      executionTimeNanos:
+                        format: int64
+                        type: integer
                       phase:
                         description: JobPhase types for job state machine.
                         enum:
@@ -37339,6 +37353,9 @@ spec:
                             completionTime:
                               format: date-time
                               type: string
+                            executionTimeNanos:
+                              format: int64
+                              type: integer
                             message:
                               type: string
                             outputs:

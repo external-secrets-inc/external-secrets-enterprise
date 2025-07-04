@@ -67,6 +67,9 @@ type WorkflowRunStatus struct {
 	// CompletionTime represents when the WorkflowRun completed
 	// +optional
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+	// ExecutionTimeNanos represents the duration between the start and completion of the WorkflowRun, in nanoseconds
+	// +optional
+	ExecutionTimeNanos *int64 `json:"executionTimeNanos,omitempty"`
 }
 
 // WorkflowRef is a reference to a Workflow.
