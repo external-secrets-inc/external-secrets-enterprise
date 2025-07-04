@@ -108,7 +108,9 @@ func ExecuteStep(
 	stepStatus.Phase = workflows.StepPhaseSucceeded
 	now := metav1.Now()
 	stepStatus.CompletionTime = &now
-	stepStatus.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(stepStatus.StartTime.Time).Nanoseconds())
+	if stepStatus.StartTime != nil {
+		stepStatus.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(stepStatus.StartTime.Time).Nanoseconds())
+	}
 	stepStatus.Outputs = serializedOutputs
 	stepCtx.JobStatus.StepStatuses[stepKey] = stepStatus
 
@@ -141,7 +143,9 @@ func MarkJobCompleted(jobStatus *workflows.JobStatus) {
 	jobStatus.Phase = workflows.JobPhaseSucceeded
 	now := metav1.Now()
 	jobStatus.CompletionTime = &now
-	jobStatus.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(jobStatus.StartTime.Time).Nanoseconds())
+	if jobStatus.StartTime != nil {
+		jobStatus.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(jobStatus.StartTime.Time).Nanoseconds())
+	}
 }
 
 // flattenJobStatuses returns a nested map of job and step outputs.

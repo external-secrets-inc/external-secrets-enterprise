@@ -539,13 +539,17 @@ func (r *Reconciler) markJobFailed(ctx context.Context, wf *workflows.Workflow, 
 	jobStatus.Phase = workflows.JobPhaseFailed
 	now := metav1.Now()
 	jobStatus.CompletionTime = &now
-	jobStatus.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(jobStatus.StartTime.Time).Nanoseconds())
+	if jobStatus.StartTime != nil {
+		jobStatus.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(jobStatus.StartTime.Time).Nanoseconds())
+	}
 	wf.Status.JobStatuses[jobName] = jobStatus
 
 	// Add these lines to set the workflow phase to Failed
 	wf.Status.Phase = workflows.PhaseFailed
 	wf.Status.CompletionTime = &now
-	wf.Status.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(wf.Status.StartTime.Time).Nanoseconds())
+	if wf.Status.StartTime != nil {
+		wf.Status.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(wf.Status.StartTime.Time).Nanoseconds())
+	}
 
 	meta.SetStatusCondition(&wf.Status.Conditions, metav1.Condition{
 		Type:    "Failed",
@@ -564,7 +568,9 @@ func (r *Reconciler) markWorkflowFailed(ctx context.Context, wf *workflows.Workf
 	wf.Status.Phase = workflows.PhaseFailed
 	now := metav1.Now()
 	wf.Status.CompletionTime = &now
-	wf.Status.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(wf.Status.StartTime.Time).Nanoseconds())
+	if wf.Status.StartTime != nil {
+		wf.Status.ExecutionTimeNanos = ptr.Int64(now.Time.Sub(wf.Status.StartTime.Time).Nanoseconds())
+	}
 	meta.SetStatusCondition(&wf.Status.Conditions, metav1.Condition{
 		Type:    "Failed",
 		Status:  metav1.ConditionTrue,
