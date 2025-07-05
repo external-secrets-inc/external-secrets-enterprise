@@ -7,8 +7,13 @@ should match snapshot of default values:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: external-secrets-webhook
+<<<<<<< HEAD
         app.kubernetes.io/version: v1.9.5
         helm.sh/chart: external-secrets-1.9.5
+=======
+        app.kubernetes.io/version: v0.18.2
+        helm.sh/chart: external-secrets-0.18.2
+>>>>>>> upstream/main
       name: RELEASE-NAME-external-secrets-webhook
       namespace: NAMESPACE
     spec:
@@ -24,8 +29,13 @@ should match snapshot of default values:
             app.kubernetes.io/instance: RELEASE-NAME
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: external-secrets-webhook
+<<<<<<< HEAD
             app.kubernetes.io/version: v1.9.5
             helm.sh/chart: external-secrets-1.9.5
+=======
+            app.kubernetes.io/version: v0.18.2
+            helm.sh/chart: external-secrets-0.18.2
+>>>>>>> upstream/main
         spec:
           automountServiceAccountToken: true
           containers:
@@ -39,7 +49,11 @@ should match snapshot of default values:
                 - --healthz-addr=:8081
                 - --loglevel=info
                 - --zap-time-encoding=epoch
+<<<<<<< HEAD
               image: us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets:v1.9.5
+=======
+              image: oci.external-secrets.io/external-secrets/external-secrets:v0.18.2
+>>>>>>> upstream/main
               imagePullPolicy: IfNotPresent
               name: webhook
               ports:
@@ -83,8 +97,14 @@ should match snapshot of default values:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: external-secrets-webhook
+<<<<<<< HEAD
         app.kubernetes.io/version: v1.9.5
         external-secrets.io/component: webhook
         helm.sh/chart: external-secrets-1.9.5
+=======
+        app.kubernetes.io/version: v0.18.2
+        external-secrets.io/component: webhook
+        helm.sh/chart: external-secrets-0.18.2
+>>>>>>> upstream/main
       name: RELEASE-NAME-external-secrets-webhook
       namespace: NAMESPACE
