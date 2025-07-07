@@ -9,6 +9,7 @@ rules:
   - apiGroups:
     - "workflows.external-secrets.io"
     - "external-secrets.io"
+    - "generators.external-secrets.io"
     resources:
     - "*"
     verbs:

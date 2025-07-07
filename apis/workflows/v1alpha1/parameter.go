@@ -15,16 +15,51 @@ package v1alpha1
 
 import (
 	"fmt"
+	"regexp"
 )
+
+var generatorPattern = regexp.MustCompile(fmt.Sprintf(`^%s\[([a-zA-Z0-9_-]+)\]$`, ParameterTypeGenerator))
+var generatorArrayPattern = regexp.MustCompile(`array\[generator\[([a-zA-Z0-9_-]+)\]\]`)
+
+// IsGeneratorType checks if the value matches the pattern generator[kind]
+func (p ParameterType) IsGeneratorType() bool {
+	return generatorPattern.MatchString(string(p))
+}
+
+// IsGeneratorType checks if the value matches the pattern array[generator[kind]]
+func (p ParameterType) IsGeneratorArrayType() bool {
+	return generatorArrayPattern.MatchString(string(p))
+}
+
+// ExtractGeneratorKind returns the kind inside generator[kind] or array[generator[kind]], or empty string if invalid
+func (p ParameterType) ExtractGeneratorKind() string {
+	str := string(p)
+
+	// Try direct generator[kind]
+	if matches := generatorPattern.FindStringSubmatch(str); len(matches) == 2 {
+		return matches[1]
+	}
+
+	// Try array[generator[kind]]
+	if matches := generatorArrayPattern.FindStringSubmatch(str); len(matches) == 2 {
+		return matches[1]
+	}
+
+	return ""
+}
 
 // IsPrimitive returns true if the parameter type is a primitive value.
 func (p ParameterType) IsPrimitive() bool {
+	if p.IsGeneratorType() || p.IsGeneratorArrayType() {
+		return false
+	}
+
 	switch p {
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return true
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-		ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
+		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray:
 		return false
 	default:
 		return false
@@ -33,9 +68,13 @@ func (p ParameterType) IsPrimitive() bool {
 
 // IsKubernetesResource returns true if the parameter type represents a Kubernetes resource.
 func (p ParameterType) IsKubernetesResource() bool {
+	if p.IsGeneratorType() || p.IsGeneratorArrayType() {
+		return true
+	}
+
 	switch p {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-		ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
+		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray:
 		return true
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
@@ -47,6 +86,10 @@ func (p ParameterType) IsKubernetesResource() bool {
 
 // GetAPIVersion returns the API version for Kubernetes resource types.
 func (p ParameterType) GetAPIVersion() string {
+	if p.IsGeneratorType() || p.IsGeneratorArrayType() {
+		return "v1alpha1"
+	}
+
 	switch p {
 	case ParameterTypeNamespace:
 		return "v1"
@@ -54,8 +97,6 @@ func (p ParameterType) GetAPIVersion() string {
 		return "external-secrets.io/v1"
 	case ParameterTypeClusterSecretStore:
 		return "external-secrets.io/v1"
-	case ParameterTypeGenerator:
-		return "v1alpha1"
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return ""
@@ -66,6 +107,10 @@ func (p ParameterType) GetAPIVersion() string {
 
 // GetKind returns the Kind for Kubernetes resource types.
 func (p ParameterType) GetKind() string {
+	if p.IsGeneratorType() || p.IsGeneratorArrayType() {
+		return p.ExtractGeneratorKind()
+	}
+
 	switch p {
 	case ParameterTypeNamespace:
 		return "Namespace"
@@ -75,8 +120,6 @@ func (p ParameterType) GetKind() string {
 		return "ExternalSecret"
 	case ParameterTypeClusterSecretStore:
 		return "ClusterSecretStore"
-	case ParameterTypeGenerator:
-		return "Generator"
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return ""
@@ -140,7 +183,8 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			}
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray,
+			ParameterTypeGeneratorArray:
 			// No specific validation needed for these types in array context
 		}
 	} else {
@@ -158,7 +202,8 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			}
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
+			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray,
+			ParameterTypeGeneratorArray:
 			// No specific validation needed for these types in single value context
 		}
 	}

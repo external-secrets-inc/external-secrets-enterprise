@@ -144,8 +144,12 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue, name
 			parsedValue = b
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
+			ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray:
 			// For string and other types, use the raw value
+			parsedValue = argValue
+		}
+
+		if param.Type.IsGeneratorType() || param.Type.IsGeneratorArrayType() {
 			parsedValue = argValue
 		}
 
@@ -213,6 +217,19 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 		}
 	}
 
+	if param.Type.IsGeneratorArrayType() {
+		resourceList := strings.Split(resourceName, ",")
+		if len(resourceList) > 1 {
+			param.Type = ParameterType(fmt.Sprintf("generator[%s]", param.Type.ExtractGeneratorKind()))
+			for i := range resourceList {
+				if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
 	// Determine the resource namespace
 	resourceNamespace := namespace
 	if param.ResourceConstraints != nil && param.ResourceConstraints.Namespace != "" {
@@ -233,12 +250,6 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			Version: "v1",
 			Kind:    param.Type.GetKind(),
 		}
-	case ParameterTypeGenerator:
-		gvk = schema.GroupVersionKind{
-			Group:   "generators.external-secrets.io",
-			Version: "v1alpha1",
-			Kind:    param.Type.GetKind(),
-		}
 	case ParameterTypeNamespace:
 		gvk = schema.GroupVersionKind{
 			Group:   "",
@@ -251,6 +262,18 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			Group:   "",
 			Version: param.Type.GetAPIVersion(),
 			Kind:    param.Type.GetKind(),
+		}
+	}
+
+	// Special case for Generator type
+	if param.Type.IsGeneratorType() {
+		kind := param.Type.ExtractGeneratorKind()
+		if !strings.EqualFold(kind, "any") {
+			gvk = schema.GroupVersionKind{
+				Group:   "generators.external-secrets.io",
+				Version: "v1alpha1",
+				Kind:    kind,
+			}
 		}
 	}
 
@@ -267,7 +290,9 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 
 	// Create an unstructured object to fetch the resource
 	obj := &unstructured.Unstructured{}
-	obj.SetGroupVersionKind(gvk)
+	if !gvk.Empty() {
+		obj.SetGroupVersionKind(gvk)
+	}
 
 	// Fetch the resource
 	err := k8sClient.Get(ctx, types.NamespacedName{
