@@ -43,7 +43,7 @@ func init() {
 		===============================================================================
 	*/
 
-	SchemeBuilder.Register(&AWSIAMKey{}, &AWSIAMKeysList{})
+	SchemeBuilder.Register(&AWSIAMKey{}, &AWSIAMKeyList{})
 	SchemeBuilder.Register(&SendgridAuthorizationToken{}, &SendgridAuthorizationTokenList{})
 	SchemeBuilder.Register(&RabbitMQ{}, &RabbitMQList{})
 	SchemeBuilder.Register(&MongoDB{}, &MongoDBList{})

@@ -43,8 +43,8 @@ type AWSIAMKey struct {
 
 // +kubebuilder:object:root=true
 
-// IAMKeysList contains a list of IAMKeys resources.
-type AWSIAMKeysList struct {
+// IAMKeyList contains a list of IAMKeys resources.
+type AWSIAMKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []AWSIAMKey `json:"items"`
