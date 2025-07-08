@@ -351,7 +351,7 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 		}
 
 		if !generatorFound {
-			return fmt.Errorf("resource %s of type %s not found in namespace %s",
+			return fmt.Errorf("no resource %s of type %s found in namespace %s",
 				resourceName, param.Type, resourceNamespace)
 		}
 	}

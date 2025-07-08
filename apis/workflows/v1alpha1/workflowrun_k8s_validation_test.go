@@ -142,6 +142,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 							Type:     ParameterTypeSecretStore,
 							Required: false,
 							ResourceConstraints: &ResourceConstraints{
+								Namespace:           "test-namespace",
 								AllowCrossNamespace: false,
 							},
 						},
