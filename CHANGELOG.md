@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.10.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.5...v1.10.0) (2025-07-08)
+
+
+### Features
+
+* add scan jobs and scan findings ([afff536](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/afff536af569546d7452e7c474dc795095855a0d))
+* add scan jobs and scan findings ([#232](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/232)) ([e276eed](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e276eedccb184e4d7599bc5fe4868f1966c04723))
+
+
+### Bug Fixes
+
+* add rbac ([f3284ef](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f3284efbba7c0e4c38e5f56ac36ffc309d536546))
+* boilerplate for findings ([ef1fb0a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ef1fb0a78f0c6b9ad2b521c088d37d8f24c76088))
+* conflicts ([7352d07](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/7352d079c6305e2bf8ebd22c5967c28c580c937e))
+* license ([2eea927](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2eea927a622e685c75902bf6b5406afff4a6a717))
+* lint ([f8a0ffd](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f8a0ffd389932486abcd8463e62cb9c298be679f))
+* lint and package move ([d80d8ef](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d80d8efbaa541815bde6f4cf767021c6a3bddeee))
+* only update findings if needed ([31ef272](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/31ef2720e2bce95d9d9ff6d42c06c35374e8f590))
+* support runtime for workflow run and workflow ([#222](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/222)) ([daeea59](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/daeea59df59e12c02c4524c3bf1f17e5759009ad))
+* typo on aws key list resource ([#229](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/229)) ([e3f9534](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e3f95341492a9d39398b9cccdd268c1d6be55a6f))
+* update dependencies ([#233](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/233)) ([b6c75ed](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b6c75ed067483ecceafd33dc479e278138102623))
+* update from upstream ([#231](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/231)) ([ed6c52a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ed6c52a34b738c4ed9295c2e1ea200303934a37e))
+
 ## [1.9.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.4...v1.9.5) (2025-07-04)
 
 
