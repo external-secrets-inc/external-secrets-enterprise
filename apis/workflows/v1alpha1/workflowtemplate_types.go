@@ -69,11 +69,11 @@ const (
 	ParameterTypeSecretStore        ParameterType = "secretstore"
 	ParameterTypeExternalSecret     ParameterType = "externalsecret"
 	ParameterTypeClusterSecretStore ParameterType = "clustersecretstore"
-	ParameterTypeGenerator          ParameterType = "generator"
+	ParameterTypeGenerator          ParameterType = `^generator\[([a-zA-Z0-9_-]+)\]$`
 
 	// Array Types (add as needed).
 	ParameterTypeSecretStoreArray ParameterType = "array[secretstore]"
-	ParameterTypeGeneratorArray   ParameterType = "array[generator]"
+	ParameterTypeGeneratorArray   ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
 )
 
 // ResourceConstraints defines constraints for Kubernetes resource selection.

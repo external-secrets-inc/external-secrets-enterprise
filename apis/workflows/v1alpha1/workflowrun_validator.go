@@ -22,37 +22,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 )
-
-var knownGeneratorKinds = []string{
-	genv1alpha1.ECRAuthorizationTokenKind,
-	genv1alpha1.STSSessionTokenKind,
-	genv1alpha1.GCRAccessTokenKind,
-	genv1alpha1.ACRAccessTokenKind,
-	genv1alpha1.PasswordKind,
-	genv1alpha1.WebhookKind,
-	genv1alpha1.FakeKind,
-	genv1alpha1.VaultDynamicSecretKind,
-	genv1alpha1.GithubAccessTokenKind,
-	genv1alpha1.QuayAccessTokenKind,
-	genv1alpha1.UUIDKind,
-	genv1alpha1.GrafanaKind,
-	genv1alpha1.MFAKind,
-	genv1alpha1.ClusterGeneratorKind,
-	genv1alpha1.AWSIAMKeysKind,
-	genv1alpha1.SendgridKind,
-	genv1alpha1.RabbitMQGeneratorKind,
-	genv1alpha1.BasicAuthKind,
-	genv1alpha1.SSHKind,
-	genv1alpha1.Neo4jKind,
-	genv1alpha1.MongoDBKind,
-	genv1alpha1.PostgreSqlKind,
-}
 
 // k8sClient is a global variable that will be set during controller initialization.
 var k8sClient client.Client
@@ -171,7 +147,8 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue, name
 			parsedValue = b
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray:
+			ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
+			ParameterTypeGenerator, ParameterTypeGeneratorArray:
 			// For string and other types, use the raw value
 			parsedValue = argValue
 		}
@@ -213,7 +190,8 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 			}
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray:
+			ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
+			ParameterTypeGenerator, ParameterTypeGeneratorArray:
 			// No specific validation needed for these types
 		}
 	}
@@ -246,15 +224,13 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 
 	if param.Type.IsGeneratorArrayType() {
 		resourceList := strings.Split(resourceName, ",")
-		if len(resourceList) > 1 {
-			param.Type = ParameterType(fmt.Sprintf("generator[%s]", param.Type.ExtractGeneratorKind()))
-			for i := range resourceList {
-				if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
-					return err
-				}
+		param.Type = ParameterType(fmt.Sprintf("generator[%s]", param.Type.ExtractGeneratorKind()))
+		for i := range resourceList {
+			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+				return err
 			}
-			return nil
 		}
+		return nil
 	}
 
 	// Determine the resource namespace
@@ -290,15 +266,20 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			Version: param.Type.GetAPIVersion(),
 			Kind:    param.Type.GetKind(),
 		}
+	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
+		gvk = schema.GroupVersionKind{
+			Group:   "generators.external-secrets.io",
+			Version: "v1alpha1",
+			Kind:    param.Type.ExtractGeneratorKind(),
+		}
 	}
 
 	// Special case for Generator type
 	if param.Type.IsGeneratorType() {
-		kind := param.Type.ExtractGeneratorKind()
 		gvk = schema.GroupVersionKind{
 			Group:   "generators.external-secrets.io",
 			Version: "v1alpha1",
-			Kind:    kind,
+			Kind:    param.Type.ExtractGeneratorKind(),
 		}
 	}
 
@@ -331,10 +312,26 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			}
 			return fmt.Errorf("error fetching resource: %w", err)
 		}
-
 	} else if gvk.Group == "generators.external-secrets.io" { // Handle generator[any]
 		generatorFound := false
-		for _, kind := range knownGeneratorKinds {
+		scheme := runtime.NewScheme()
+		_ = genv1alpha1.AddToScheme(scheme)
+
+		kinds := scheme.KnownTypes(genv1alpha1.SchemeGroupVersion)
+
+		for kind := range kinds {
+			// Ignore kubernetes default types and generators lists
+			if strings.HasSuffix(kind, "List") ||
+				kind == "CreateOptions" ||
+				kind == "DeleteOptions" ||
+				kind == "GetOptions" ||
+				kind == "ListOptions" ||
+				kind == "PatchOptions" ||
+				kind == "UpdateOptions" ||
+				kind == "WatchEvent" {
+				continue
+			}
+
 			gvk.Kind = kind
 			obj.SetGroupVersionKind(gvk)
 			err := k8sClient.Get(ctx, types.NamespacedName{

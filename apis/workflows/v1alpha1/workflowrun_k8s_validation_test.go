@@ -420,10 +420,10 @@ func TestValidateKubernetesResourceTypes(t *testing.T) {
 		},
 		{
 			name:          "generator type",
-			paramType:     ParameterTypeGenerator,
+			paramType:     ParameterType("generator[Password]"),
 			isK8sResource: true,
 			apiVersion:    "v1alpha1",
-			kind:          "Generator",
+			kind:          "Password",
 		},
 		{
 			name:          "string type",
@@ -438,6 +438,20 @@ func TestValidateKubernetesResourceTypes(t *testing.T) {
 			isK8sResource: false,
 			apiVersion:    "",
 			kind:          "",
+		},
+		{
+			name:          "secret store array type",
+			paramType:     ParameterTypeSecretStoreArray,
+			isK8sResource: true,
+			apiVersion:    "external-secrets.io/v1",
+			kind:          "SecretStore",
+		},
+		{
+			name:          "generator array type",
+			paramType:     ParameterType("array[generator[Password]]"),
+			isK8sResource: true,
+			apiVersion:    "v1alpha1",
+			kind:          "Password",
 		},
 	}
 

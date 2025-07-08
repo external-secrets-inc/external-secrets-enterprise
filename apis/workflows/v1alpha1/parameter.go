@@ -18,20 +18,20 @@ import (
 	"regexp"
 )
 
-var generatorPattern = regexp.MustCompile(fmt.Sprintf(`^%s\[([a-zA-Z0-9_-]+)\]$`, ParameterTypeGenerator))
-var generatorArrayPattern = regexp.MustCompile(`array\[generator\[([a-zA-Z0-9_-]+)\]\]`)
+var generatorPattern = regexp.MustCompile(string(ParameterTypeGenerator))
+var generatorArrayPattern = regexp.MustCompile(string(ParameterTypeGeneratorArray))
 
-// IsGeneratorType checks if the value matches the pattern generator[kind]
+// IsGeneratorType checks if the value matches the pattern generator[kind].
 func (p ParameterType) IsGeneratorType() bool {
 	return generatorPattern.MatchString(string(p))
 }
 
-// IsGeneratorType checks if the value matches the pattern array[generator[kind]]
+// IsGeneratorType checks if the value matches the pattern array[generator[kind]].
 func (p ParameterType) IsGeneratorArrayType() bool {
 	return generatorArrayPattern.MatchString(string(p))
 }
 
-// ExtractGeneratorKind returns the kind inside generator[kind] or array[generator[kind]], or empty string if invalid
+// ExtractGeneratorKind returns the kind inside generator[kind] or array[generator[kind]], or empty string if invalid.
 func (p ParameterType) ExtractGeneratorKind() string {
 	str := string(p)
 
@@ -59,7 +59,8 @@ func (p ParameterType) IsPrimitive() bool {
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return true
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray:
+		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
+		ParameterTypeGenerator, ParameterTypeGeneratorArray:
 		return false
 	default:
 		return false
@@ -74,7 +75,8 @@ func (p ParameterType) IsKubernetesResource() bool {
 
 	switch p {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray:
+		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
+		ParameterTypeGenerator, ParameterTypeGeneratorArray:
 		return true
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
@@ -100,6 +102,8 @@ func (p ParameterType) GetAPIVersion() string {
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return ""
+	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
+		return "v1alpha1"
 	default:
 		return ""
 	}
@@ -123,6 +127,8 @@ func (p ParameterType) GetKind() string {
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
 		return ""
+	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
+		return p.ExtractGeneratorKind()
 	default:
 		return ""
 	}
