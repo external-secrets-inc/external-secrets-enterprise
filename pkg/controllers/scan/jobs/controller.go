@@ -53,10 +53,12 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 		if err := c.Get(ctx, req, existing); err != nil {
 			if apierrors.IsNotFound(err) {
 				// Create Finding
-				if err := c.Create(ctx, &finding); err != nil {
+				create := finding.DeepCopy()
+				if err := c.Create(ctx, create); err != nil {
 					return ctrl.Result{}, err
 				}
-				if err := c.Status().Update(ctx, &finding); err != nil {
+				create.Status.Locations = finding.Status.Locations
+				if err := c.Status().Update(ctx, create); err != nil {
 					return ctrl.Result{}, err
 				}
 			} else {
@@ -69,6 +71,7 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 					return ctrl.Result{}, err
 				}
 			}
+
 		}
 	}
 	jobSpec.Status = v1alpha1.JobStatus{
