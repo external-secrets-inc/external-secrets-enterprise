@@ -1,0 +1,47 @@
+// Copyright External Secrets Inc. 2025
+// All rights reserved
+package v1alpha1
+
+import (
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type VirtualMachineSpec struct {
+	URL      string          `json:"url"`
+	CABundle []byte          `json:"caBundle"`
+	Auth     *Authentication `json:"auth,omitempty"`
+}
+
+type Authentication struct {
+	Basic       *BasicAuth       `json:"basic,omitempty"`
+	Certificate *CertificateAuth `json:"certificate,omitempty"`
+}
+
+type CertificateAuth struct {
+	ClientCertificateSecretRef *esmeta.SecretKeySelector `json:"clientCertificateSecretRef"`
+	ClientKeySecretRef         *esmeta.SecretKeySelector `json:"clientKeySecretRef"`
+}
+type BasicAuth struct {
+	UsernameSecretRef *esmeta.SecretKeySelector `json:"usernameSecretRef"`
+	PasswordSecretRef *esmeta.SecretKeySelector `json:"passwordSecretRef"`
+}
+
+// VirtualMachine is the schema to scan target virtual machines
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:metadata:labels="external-secrets.io/component=controller"
+// +kubebuilder:resource:scope=Namespaced,categories={external-secrets, external-secrets-target}
+type VirtualMachine struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              VirtualMachineSpec `json:"spec,omitempty"`
+}
+
+// VirtualMachineList contains a list of VirtualMachine resources.
+// +kubebuilder:object:root=true
+type VirtualMachineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []VirtualMachine `json:"items"`
+}

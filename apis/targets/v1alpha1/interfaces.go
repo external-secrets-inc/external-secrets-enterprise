@@ -12,7 +12,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
 
-type ScanClient interface {
+type ScanTarget interface {
 	Scan(ctx context.Context, regexes []string) ([]SecretInStoreRef, error)
 }
 

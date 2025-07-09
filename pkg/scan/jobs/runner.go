@@ -9,6 +9,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	store "github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -79,16 +80,37 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 			j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
 		}
 	}
+	// Check All duplicates on all created targets
+	targets := &tgtv1alpha1.VirtualMachineList{}
+	if err := j.Client.List(ctx, targets); err != nil {
+		return nil, err
+	}
+	for _, target := range targets.Items {
+		client, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
+		if !ok {
+			return nil, fmt.Errorf("target %q not found", target.GroupVersionKind().Kind)
+		}
+		regexMap := j.memset.Regexes()
+		for key, regexes := range regexMap {
+			locations, err := client.Scan(ctx, regexes)
+			if err != nil {
+				return nil, err
+			}
+			for _, location := range locations {
+				j.memset.AddByRegex(key, location)
+			}
+		}
+	}
 
 	return j.memset.GetDuplicates(), nil
 }
 
-func newStoreInRef(store, key, property string) v1alpha1.SecretInStoreRef {
-	return v1alpha1.SecretInStoreRef{
+func newStoreInRef(store, key, property string) tgtv1alpha1.SecretInStoreRef {
+	return tgtv1alpha1.SecretInStoreRef{
 		Name:       store,
 		Kind:       "SecretStore",
 		APIVersion: "externalsecrets.io/v1",
-		RemoteRef: v1alpha1.RemoteRef{
+		RemoteRef: tgtv1alpha1.RemoteRef{
 			Key:      key,
 			Property: property,
 		},

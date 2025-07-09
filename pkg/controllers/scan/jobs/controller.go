@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	utils "github.com/external-secrets/external-secrets/pkg/scan/jobs"
 )
 
@@ -94,7 +95,7 @@ func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 	}
 	loc1 := existing.Status.Locations
 	loc2 := finding.Status.Locations
-	return !slices.EqualFunc(loc1, loc2, func(a, b v1alpha1.SecretInStoreRef) bool {
+	return !slices.EqualFunc(loc1, loc2, func(a, b tgtv1alpha1.SecretInStoreRef) bool {
 		return a.Name == b.Name && a.Kind == b.Kind && a.APIVersion == b.APIVersion && a.RemoteRef.Key == b.RemoteRef.Key && a.RemoteRef.Property == b.RemoteRef.Property
 	})
 }
