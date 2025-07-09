@@ -71,7 +71,6 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 					return ctrl.Result{}, err
 				}
 			}
-
 		}
 	}
 	jobSpec.Status = v1alpha1.JobStatus{
