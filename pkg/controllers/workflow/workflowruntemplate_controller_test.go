@@ -845,7 +845,7 @@ func (s *TestSuite) TestGetChildrenFor() {
 			name: "three objects",
 			expect: expect{
 				result: []workflows.WorkflowRun{
-					workflows.WorkflowRun{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:            "test-1",
 							Namespace:       "test",
@@ -855,7 +855,7 @@ func (s *TestSuite) TestGetChildrenFor() {
 							},
 						},
 					},
-					workflows.WorkflowRun{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:            "test-2",
 							Namespace:       "test",
@@ -865,7 +865,7 @@ func (s *TestSuite) TestGetChildrenFor() {
 							},
 						},
 					},
-					workflows.WorkflowRun{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:            "test-3",
 							Namespace:       "test",

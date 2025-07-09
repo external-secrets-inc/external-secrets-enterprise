@@ -14,6 +14,7 @@
 package v1alpha1
 
 import (
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
@@ -41,8 +42,8 @@ type WorkflowSpec struct {
 	// +kubebuilder:validation:Required
 	Version string `json:"version"`
 	// +kubebuilder:validation:Required
-	Name      string            `json:"name"`
-	Variables map[string]string `json:"variables,omitempty"`
+	Name      string               `json:"name"`
+	Variables apiextensionsv1.JSON `json:"variables,omitempty"`
 	// +kubebuilder:validation:Required
 	Jobs map[string]Job `json:"jobs"`
 }

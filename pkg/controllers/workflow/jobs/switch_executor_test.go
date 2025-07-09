@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -58,7 +59,7 @@ func TestSwitchJobExecutor(t *testing.T) {
 	tests := []struct {
 		name         string
 		job          *workflows.SwitchJob
-		variables    map[string]string
+		variables    apiextensionsv1.JSON
 		expectedCase int
 		expectError  bool
 	}{
@@ -183,8 +184,10 @@ func TestSwitchJobExecutor(t *testing.T) {
 					},
 				},
 			},
-			variables: map[string]string{
-				"environment": "production",
+			variables: apiextensionsv1.JSON{
+				Raw: []byte(`{
+					"environment": "production"
+				}`),
 			},
 			expectedCase: 0,
 			expectError:  false,

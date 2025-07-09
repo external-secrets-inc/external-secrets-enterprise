@@ -178,7 +178,10 @@ func (e *LoopJobExecutor) Execute(ctx context.Context, client client.Client, wf 
 	}
 
 	// Create job execution context.
-	jobCtx := NewJobExecutionContext(client, wf, jobName, jobStatus, e.scheme, e.log, e.manager)
+	jobCtx, err := NewJobExecutionContext(client, wf, jobName, jobStatus, e.scheme, e.log, e.manager)
+	if err != nil {
+		return fmt.Errorf("error creating new job execution context: %w", err)
+	}
 
 	// Resolve the range template.
 	resolvedRange, err := templates.ResolveTemplate(e.job.Range, jobCtx.Data)

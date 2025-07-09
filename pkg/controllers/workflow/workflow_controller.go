@@ -285,10 +285,21 @@ func (r *Reconciler) jobDependenciesMet(job workflows.Job, statuses map[string]w
 
 // resolveJobVariables resolves any templates in the job's variables using a data context.
 func (r *Reconciler) resolveJobVariables(job *workflows.Job, wf *workflows.Workflow) (map[string]interface{}, error) {
+	toParseWfVariables, err := json.Marshal(wf.Spec.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling variables from workflow %s: %w", wf.Name, err)
+	}
+	var parsedWfVariables map[string]interface{}
+	err = json.Unmarshal(toParseWfVariables, &parsedWfVariables)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling variables from workflow %s: %w", wf.Name, err)
+	}
+
 	variables := make(map[string]interface{}, len(job.Variables))
+
 	data := map[string]interface{}{
 		"global": map[string]interface{}{
-			"variables": wf.Spec.Variables,
+			"variables": parsedWfVariables,
 			"jobs":      wf.Status.JobStatuses,
 		},
 	}

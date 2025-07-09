@@ -28294,12 +28294,10 @@ spec:
               description: WorkflowRunSpec defines the desired state of WorkflowRun.
               properties:
                 arguments:
-                  additionalProperties:
-                    type: string
                   description: |-
                     Arguments are the values for template parameters
                     Each argument corresponds to a parameter defined in the template
-                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 templateRef:
                   description: TemplateRef is a reference to the template to use
                   properties:
@@ -28498,12 +28496,10 @@ spec:
                   description: WorkflowRunSpec defines the desired state of WorkflowRun.
                   properties:
                     arguments:
-                      additionalProperties:
-                        type: string
                       description: |-
                         Arguments are the values for template parameters
                         Each argument corresponds to a parameter defined in the template
-                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     templateRef:
                       description: TemplateRef is a reference to the template to use
                       properties:
@@ -37570,9 +37566,7 @@ spec:
                 name:
                   type: string
                 variables:
-                  additionalProperties:
-                    type: string
-                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 version:
                   type: string
               required:

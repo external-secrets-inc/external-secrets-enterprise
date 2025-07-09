@@ -14,6 +14,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,7 +27,7 @@ type WorkflowRunSpec struct {
 	// Arguments are the values for template parameters
 	// Each argument corresponds to a parameter defined in the template
 	// +optional
-	Arguments map[string]string `json:"arguments,omitempty"`
+	Arguments apiextensionsv1.JSON `json:"arguments,omitempty"`
 }
 
 // TemplateRef is a reference to a WorkflowTemplate.

@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 func TestValidateKubernetesResourceValidation(t *testing.T) {
@@ -193,10 +194,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":  "test-namespace",
-						"secretStore":      "test-store",
-						"secretStoreArray": "test-store,test-second-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretStoreArray": [{"name": "test-store"}, {"name": "test-second-store"}]
+						}`),
 					},
 				},
 			},
@@ -213,10 +216,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":  "test-namespace",
-						"secretStore":      "test-store",
-						"secretStoreArray": "test-second-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretStoreArray": [{"name": "test-second-store"}]
+						}`),
 					},
 				},
 			},
@@ -233,15 +238,17 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":  "test-namespace",
-						"secretStore":      "test-store",
-						"secretStoreArray": "test-second-store,unexisting-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretStoreArray": [{"name": "test-second-store"}, {"name": "unexisting-store"}]
+						}`),
 					},
 				},
 			},
 			wantErr: true,
-			errMsg:  "resource unexisting-store of type array[secretstore] not found in namespace test-namespace",
+			errMsg:  "resource unexisting-store of type secretstore not found in namespace test-namespace",
 		},
 
 		{
@@ -255,10 +262,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":    "test-namespace",
-						"secretStore":        "test-store",
-						"clusterSecretStore": "test-cluster-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":    "test-namespace",
+							"secretStore":        {"name": "test-store"},
+							"clusterSecretStore": {"name": "test-cluster-store"}
+						}`),
 					},
 				},
 			},
@@ -275,9 +284,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace": "non-existent-namespace",
-						"secretStore":     "test-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace": "non-existent-namespace",
+							"secretStore":     {"name": "test-store"}
+						}`),
 					},
 				},
 			},
@@ -295,9 +306,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace": "test-namespace",
-						"secretStore":     "non-existent-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace": "test-namespace",
+							"secretStore":     {"name": "non-existent-store"}
+						}`),
 					},
 				},
 			},
@@ -315,9 +328,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace": "test-namespace",
-						"secretStore":     "test-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace": "test-namespace",
+							"secretStore":     {"name": "test-store"}
+						}`),
 					},
 				},
 			},
@@ -334,10 +349,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":    "test-namespace",
-						"secretStore":        "test-store",
-						"clusterSecretStore": "test-cluster-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":    "test-namespace",
+							"secretStore":        {"name": "test-store"},
+							"clusterSecretStore": {"name": "test-cluster-store"}
+						}`),
 					},
 				},
 			},
@@ -355,11 +372,13 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 						Name:      "k8s-resource-template",
 						Namespace: "test-namespace",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":      "test-namespace",
-						"secretStore":          "test-store",
-						"secretStoreNoCrossNS": "test-store", // This should fail because it's in a different namespace
-					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":      "test-namespace",
+							"secretStore":          {"name": "test-store"},
+							"secretStoreNoCrossNS": {"name": "test-store"}
+						}`),
+					}, // This should fail because it's in a different namespace
 				},
 			},
 			wantErr: true,

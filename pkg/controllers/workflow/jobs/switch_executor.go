@@ -46,7 +46,10 @@ func (e *SwitchJobExecutor) Execute(ctx context.Context, client client.Client, w
 	}
 
 	// Create job execution context
-	jobCtx := NewJobExecutionContext(client, wf, jobName, jobStatus, e.scheme, e.log, e.manager)
+	jobCtx, err := NewJobExecutionContext(client, wf, jobName, jobStatus, e.scheme, e.log, e.manager)
+	if err != nil {
+		return fmt.Errorf("error creating new job execution context: %w", err)
+	}
 
 	// Evaluate each case's condition in order
 	for i, switchCase := range e.job.Cases {

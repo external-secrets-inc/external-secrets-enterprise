@@ -48,7 +48,10 @@ func (e *StandardJobExecutor) Execute(ctx context.Context, client client.Client,
 	}
 
 	// Create job execution context
-	jobCtx := NewJobExecutionContext(client, wf, jobName, jobStatus, e.scheme, e.log, e.manager)
+	jobCtx, err := NewJobExecutionContext(client, wf, jobName, jobStatus, e.scheme, e.log, e.manager)
+	if err != nil {
+		return fmt.Errorf("error creating new job execution context: %w", err)
+	}
 
 	// Process each step sequentially
 	for _, step := range e.job.Steps {
