@@ -79,10 +79,10 @@ const (
 // GeneratorParameter defines a parameter to be passed to a generator type.
 type GeneratorParameterType struct {
 	// Name is the name of the generator.
-	Name string `json:"name"`
+	Name *string `json:"name,omitempty"`
 
 	// Kind defines the kind of the generator. It can be 'any'
-	Kind string `json:"kind"`
+	Kind *string `json:"kind,omitempty"`
 }
 
 // SecretStoreParameter defines a parameter to be passed to a secret store type.

@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/external-secrets/external-secrets/pkg/controllers/workflow/templates"
 	"reflect"
+
+	"github.com/external-secrets/external-secrets/pkg/controllers/workflow/templates"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,13 +74,18 @@ func (e *PullStepExecutor) Execute(ctx context.Context, c client.Client, wf *wor
 			return nil, fmt.Errorf("error decoding secret for spec.data entry [%d]: %w", i, err)
 		}
 
-		// Try to parse as JSON first
-		var jsonValue interface{}
+		// Default to string value
+		output[dataItem.SecretKey] = string(decodedSecret)
+
+		// Try to parse as JSON
+		var jsonValue map[string]interface{}
 		if err := json.Unmarshal(decodedSecret, &jsonValue); err == nil {
 			output[dataItem.SecretKey] = jsonValue
-		} else {
-			// If not valid JSON, store as string
-			output[dataItem.SecretKey] = string(decodedSecret)
+		}
+		// Try to parse as JSON array
+		var arrayValue []interface{}
+		if err := json.Unmarshal(decodedSecret, &arrayValue); err == nil {
+			output[dataItem.SecretKey] = arrayValue
 		}
 	}
 

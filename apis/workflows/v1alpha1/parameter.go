@@ -294,6 +294,11 @@ func (p Parameter) ToGeneratorParameterType(value interface{}) (*GeneratorParame
 	if err != nil {
 		return nil, fmt.Errorf("parameter %s must be an object of the format {\"name\": \"store-name\", \"kind\":\"Kind\"}. received: %T", p.Type, value)
 	}
+
+	if resource.Name == nil || resource.Kind == nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format {\"name\": \"store-name\", \"kind\":\"Kind\"}. received: %T", p.Type, value)
+	}
+
 	return &resource, nil
 }
 

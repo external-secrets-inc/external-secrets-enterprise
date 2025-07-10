@@ -252,8 +252,8 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			return err
 		}
 
-		resourceName = resource.Name
-		param.Type = ParameterType(fmt.Sprintf("generator[%s]", resource.Kind))
+		resourceName = *resource.Name
+		param.Type = ParameterType(fmt.Sprintf("generator[%s]", *resource.Kind))
 	} else {
 		resource, ok := value.(string)
 		if !ok {

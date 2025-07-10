@@ -216,9 +216,9 @@ func serializeAndMaskValues(inputs map[string]interface{}, sensitiveKeys []strin
 				strValue = ""
 			case bool:
 				strValue = fmt.Sprintf("%v", val)
-			case float64:
-				strValue = fmt.Sprintf("%v", val)
 			case int, int64, uint, uint64:
+				strValue = fmt.Sprintf("%v", val)
+			case float64:
 				strValue = fmt.Sprintf("%v", val)
 			case time.Time:
 				strValue = val.Format(time.RFC3339)
