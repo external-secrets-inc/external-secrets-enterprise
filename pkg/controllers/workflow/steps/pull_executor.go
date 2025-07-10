@@ -113,12 +113,8 @@ func (e *PullStepExecutor) Execute(ctx context.Context, c client.Client, wf *wor
 
 		// Merge the returned secret map into our output, attempting JSON parsing
 		for k, v := range secretMap {
-			var jsonValue interface{}
-			if err := json.Unmarshal(v, &jsonValue); err == nil {
-				output[k] = jsonValue
-			} else {
-				output[k] = string(v)
-			}
+			// Default to string value
+			output[k] = string(v)
 		}
 	}
 
