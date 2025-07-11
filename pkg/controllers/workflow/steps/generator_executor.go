@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,6 +16,7 @@ import (
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
+	"github.com/external-secrets/external-secrets/pkg/controllers/workflow/templates"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -55,6 +57,7 @@ func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf
 	defer func() {
 		_ = e.Manager.Close(ctx)
 	}()
+	templates.ProcessTemplates(reflect.ValueOf(e.Step), inputData)
 
 	// Use the workflow's namespace
 	namespace := wf.ObjectMeta.Namespace
