@@ -28,6 +28,17 @@ func init() {
 	builder = make(map[string]Provider)
 }
 
+func RegisterByKind(s Provider, kind string) {
+	buildlock.Lock()
+	defer buildlock.Unlock()
+	_, exists := builder[kind]
+	if exists {
+		panic(fmt.Sprintf("store %q already registered", kind))
+	}
+
+	builder[kind] = s
+}
+
 // Register a store backend type. Register panics if a
 // backend with the same store is already registered.
 func Register(s Provider, storeSpec *SecretStoreProvider, maintenanceStatus MaintenanceStatus) {
@@ -71,6 +82,23 @@ func GetProviderByName(name string) (Provider, bool) {
 
 // GetProvider returns the provider from the generic store.
 func GetProvider(s GenericStore) (Provider, error) {
+	kind := s.GetKind()
+	if kind != SecretStoreKind && kind != ClusterSecretStoreKind {
+		// This Store is of its own kind via a group
+		// Like providers.external-secrets.io or
+		// targets.external-secrets.io
+		// The kind is the identifying key here
+		buildlock.RLock()
+		f, ok := builder[kind]
+		buildlock.RUnlock()
+
+		if !ok {
+			return nil, fmt.Errorf("failed to find registered store backend for type: %s, name: %s", kind, s.GetName())
+		}
+
+		return f, nil
+
+	}
 	if s == nil {
 		return nil, nil
 	}

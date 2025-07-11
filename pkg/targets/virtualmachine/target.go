@@ -14,9 +14,11 @@ import (
 	"net/url"
 	"time"
 
+	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type Provider struct{}
@@ -33,6 +35,11 @@ type ScanTarget struct {
 	AuthClientKey     []byte
 	Paths             []string
 }
+
+const (
+	errNotImplemented    = "not implemented"
+	errPropertyMandatory = "property is mandatory"
+)
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
 	converted, ok := target.(*tgtv1alpha1.VirtualMachine)
@@ -76,6 +83,58 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 	}, nil
 }
 
+type SecretStoreProvider struct {
+}
+
+func (p *SecretStoreProvider) Capabilities() esv1.SecretStoreCapabilities {
+	return esv1.SecretStoreWriteOnly
+}
+
+func (p *SecretStoreProvider) ValidateStore(_ esv1.GenericStore) (admission.Warnings, error) {
+	return nil, nil
+}
+
+func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericStore, client client.Client, _ string) (esv1.SecretsClient, error) {
+	converted, ok := store.(*tgtv1alpha1.VirtualMachine)
+	if !ok {
+		return nil, fmt.Errorf("target %q not found", store.GetObjectKind().GroupVersionKind().Kind)
+	}
+	var uname, pass string
+	var cert, key string
+	var err error
+	if converted.Spec.Auth != nil {
+		if converted.Spec.Auth.Basic != nil {
+			uname, err = resolvers.SecretKeyRef(ctx, client, "", converted.GetNamespace(), converted.Spec.Auth.Basic.UsernameSecretRef)
+			if err != nil {
+				return nil, err
+			}
+			pass, err = resolvers.SecretKeyRef(ctx, client, "", converted.GetNamespace(), converted.Spec.Auth.Basic.PasswordSecretRef)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if converted.Spec.Auth.Certificate != nil {
+			cert, err = resolvers.SecretKeyRef(ctx, client, "", converted.GetNamespace(), converted.Spec.Auth.Certificate.ClientCertificateSecretRef)
+			if err != nil {
+				return nil, err
+			}
+			key, err = resolvers.SecretKeyRef(ctx, client, "", converted.GetNamespace(), converted.Spec.Auth.Certificate.ClientKeySecretRef)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &ScanTarget{
+		URL:               converted.Spec.URL,
+		CABundle:          []byte(converted.Spec.CABundle),
+		AuthBasicUsername: &uname,
+		AuthBasicPassword: &pass,
+		AuthClientCert:    []byte(cert),
+		AuthClientKey:     []byte(key),
+		Paths:             converted.Spec.Paths,
+		Name:              converted.GetName(),
+	}, nil
+}
 func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
@@ -209,7 +268,8 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 			Kind:       tgtv1alpha1.VirtualMachineKind,
 			Name:       s.Name,
 			RemoteRef: tgtv1alpha1.RemoteRef{
-				Key: match.EntryId,
+				Key:      match.Key,
+				Property: match.Property,
 			},
 		}
 		secrets = append(secrets, secret)
@@ -225,4 +285,6 @@ func (e JobNotReadyErr) Error() string {
 
 func init() {
 	tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
+	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)
+
 }

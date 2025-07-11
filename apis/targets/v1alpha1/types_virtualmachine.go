@@ -3,6 +3,9 @@
 package v1alpha1
 
 import (
+	"fmt"
+
+	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,4 +50,39 @@ type VirtualMachineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []VirtualMachine `json:"items"`
+}
+
+func (c *VirtualMachine) GetObjectMeta() *metav1.ObjectMeta {
+	return &c.ObjectMeta
+}
+
+func (c *VirtualMachine) GetTypeMeta() *metav1.TypeMeta {
+	return &c.TypeMeta
+}
+
+func (c *VirtualMachine) GetSpec() *esv1.SecretStoreSpec {
+	return &esv1.SecretStoreSpec{}
+}
+
+func (c *VirtualMachine) GetStatus() esv1.SecretStoreStatus {
+	return esv1.SecretStoreStatus{}
+}
+
+func (c *VirtualMachine) SetStatus(_ esv1.SecretStoreStatus) {
+}
+
+func (c *VirtualMachine) GetNamespacedName() string {
+	return fmt.Sprintf("%s/%s", c.Namespace, c.Name)
+}
+
+func (c *VirtualMachine) GetKind() string {
+	return VirtualMachineKind
+}
+
+func (c *VirtualMachine) Copy() esv1.GenericStore {
+	return c.DeepCopy()
+}
+
+func init() {
+	RegisterObjKind(VirtualMachineKind, &VirtualMachine{})
 }

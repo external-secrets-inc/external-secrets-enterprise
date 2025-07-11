@@ -29,8 +29,10 @@ type SecretStoreRef struct {
 	// Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
 	// Defaults to `SecretStore`
 	// +optional
-	// +kubebuilder:validation:Enum=SecretStore;ClusterSecretStore
 	Kind string `json:"kind,omitempty"`
+	// Group if usign other elements such as Targets
+	// +optional
+	Group string `json:"group,omitempty"`
 }
 
 // ExternalSecretCreationPolicy defines rules on how to create the resulting Secret.

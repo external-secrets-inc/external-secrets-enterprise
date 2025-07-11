@@ -22,15 +22,10 @@ type ScanJobResponse struct {
 }
 
 type Match struct {
-	CreatedAt      string   `json:"createdAt"`
-	UpdatedAt      string   `json:"updatedAt"`
-	DeletedAt      string   `json:"deletedAt"`
-	EntryId        string   `json:"entryId"`
-	SuperseededBy  string   `json:"superseededBy"`
-	FilePath       string   `json:"filePath"`
-	MatchedRegexes []string `json:"matchedRegexes"`
-	StartLine      int      `json:"startLine"`
-	EndLine        int      `json:"endLine"`
-	StartColumn    int      `json:"startColumn"`
-	EndColumn      int      `json:"endColumn"`
+	Key      string `json:"key"`
+	Property string `json:"property"`
+}
+
+type PushRequest struct {
+	Value string `json:"value"`
 }

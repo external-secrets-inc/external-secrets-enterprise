@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 )
 
 const (
@@ -177,6 +178,15 @@ func storeKey(storeProvider esv1.Provider) clientKey {
 func (m *Manager) getStore(ctx context.Context, storeRef *esv1.SecretStoreRef, namespace string) (esv1.GenericStore, error) {
 	ref := types.NamespacedName{
 		Name: storeRef.Name,
+	}
+	if storeRef.Group == "target.external-secrets.io" {
+		obj := tgtv1alpha1.GetObjFromKind(storeRef.Kind)
+		ref.Namespace = namespace
+		err := m.client.Get(ctx, ref, obj)
+		if err != nil {
+			return nil, fmt.Errorf(errGetSecretStore, ref.Name, err)
+		}
+		return obj, nil
 	}
 	if storeRef.Kind == esv1.ClusterSecretStoreKind {
 		var store esv1.ClusterSecretStore

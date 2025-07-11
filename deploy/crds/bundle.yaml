@@ -182,13 +182,13 @@ spec:
                               storeRef:
                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                 properties:
+                                  group:
+                                    description: Group if usign other elements such as Targets
+                                    type: string
                                   kind:
                                     description: |-
                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                       Defaults to `SecretStore`
-                                    enum:
-                                      - SecretStore
-                                      - ClusterSecretStore
                                     type: string
                                   name:
                                     description: Name of the SecretStore resource
@@ -401,13 +401,13 @@ spec:
                               storeRef:
                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                 properties:
+                                  group:
+                                    description: Group if usign other elements such as Targets
+                                    type: string
                                   kind:
                                     description: |-
                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                       Defaults to `SecretStore`
-                                    enum:
-                                      - SecretStore
-                                      - ClusterSecretStore
                                     type: string
                                   name:
                                     description: Name of the SecretStore resource
@@ -442,13 +442,13 @@ spec:
                     secretStoreRef:
                       description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                       properties:
+                        group:
+                          description: Group if usign other elements such as Targets
+                          type: string
                         kind:
                           description: |-
                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                             Defaults to `SecretStore`
-                          enum:
-                            - SecretStore
-                            - ClusterSecretStore
                           type: string
                         name:
                           description: Name of the SecretStore resource
@@ -1683,12 +1683,12 @@ spec:
                     secretStoreRefs:
                       items:
                         properties:
+                          group:
+                            description: Group of the SecretStore resource (SecretStore or ClusterSecretStore, or any Target)
+                            type: string
                           kind:
                             default: SecretStore
                             description: Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
-                            enum:
-                              - SecretStore
-                              - ClusterSecretStore
                             type: string
                           labelSelector:
                             description: Optionally, sync to secret stores with label selector
@@ -11064,13 +11064,13 @@ spec:
                           storeRef:
                             description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                             properties:
+                              group:
+                                description: Group if usign other elements such as Targets
+                                type: string
                               kind:
                                 description: |-
                                   Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                   Defaults to `SecretStore`
-                                enum:
-                                  - SecretStore
-                                  - ClusterSecretStore
                                 type: string
                               name:
                                 description: Name of the SecretStore resource
@@ -11283,13 +11283,13 @@ spec:
                           storeRef:
                             description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                             properties:
+                              group:
+                                description: Group if usign other elements such as Targets
+                                type: string
                               kind:
                                 description: |-
                                   Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                   Defaults to `SecretStore`
-                                enum:
-                                  - SecretStore
-                                  - ClusterSecretStore
                                 type: string
                               name:
                                 description: Name of the SecretStore resource
@@ -11324,13 +11324,13 @@ spec:
                 secretStoreRef:
                   description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                   properties:
+                    group:
+                      description: Group if usign other elements such as Targets
+                      type: string
                     kind:
                       description: |-
                         Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                         Defaults to `SecretStore`
-                      enum:
-                        - SecretStore
-                        - ClusterSecretStore
                       type: string
                     name:
                       description: Name of the SecretStore resource
@@ -12266,12 +12266,12 @@ spec:
                 secretStoreRefs:
                   items:
                     properties:
+                      group:
+                        description: Group of the SecretStore resource (SecretStore or ClusterSecretStore, or any Target)
+                        type: string
                       kind:
                         default: SecretStore
                         description: Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
-                        enum:
-                          - SecretStore
-                          - ClusterSecretStore
                         type: string
                       labelSelector:
                         description: Optionally, sync to secret stores with label selector
@@ -31481,13 +31481,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -31698,13 +31698,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -31768,13 +31768,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -31837,13 +31837,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -34406,13 +34406,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -34623,13 +34623,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -34693,13 +34693,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -34762,13 +34762,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -37340,13 +37340,13 @@ spec:
                                                     storeRef:
                                                       description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                       properties:
+                                                        group:
+                                                          description: Group if usign other elements such as Targets
+                                                          type: string
                                                         kind:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -37557,13 +37557,13 @@ spec:
                                                     storeRef:
                                                       description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                       properties:
+                                                        group:
+                                                          description: Group if usign other elements such as Targets
+                                                          type: string
                                                         kind:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -37627,13 +37627,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -37696,13 +37696,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -40489,13 +40489,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -40706,13 +40706,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -40776,13 +40776,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -40845,13 +40845,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -43414,13 +43414,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -43631,13 +43631,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -43701,13 +43701,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -43770,13 +43770,13 @@ spec:
                                         storeRef:
                                           description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                           properties:
+                                            group:
+                                              description: Group if usign other elements such as Targets
+                                              type: string
                                             kind:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -46348,13 +46348,13 @@ spec:
                                                     storeRef:
                                                       description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                       properties:
+                                                        group:
+                                                          description: Group if usign other elements such as Targets
+                                                          type: string
                                                         kind:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -46565,13 +46565,13 @@ spec:
                                                     storeRef:
                                                       description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                       properties:
+                                                        group:
+                                                          description: Group if usign other elements such as Targets
+                                                          type: string
                                                         kind:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -46635,13 +46635,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -46704,13 +46704,13 @@ spec:
                                               storeRef:
                                                 description: SecretStoreRef defines which SecretStore to fetch the ExternalSecret data.
                                                 properties:
+                                                  group:
+                                                    description: Group if usign other elements such as Targets
+                                                    type: string
                                                   kind:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
