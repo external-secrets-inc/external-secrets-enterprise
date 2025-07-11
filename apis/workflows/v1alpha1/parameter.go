@@ -14,6 +14,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 )
@@ -188,10 +189,41 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				}
 			}
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
-			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray,
-			ParameterTypeGeneratorArray:
-			// No specific validation needed for these types in array context
+			ParameterTypeNamespace, ParameterTypeExternalSecret:
+			for i, item := range arr {
+				_, ok := item.(string)
+				if !ok {
+					return fmt.Errorf("item %d in parameter %s must be a string", i, p.Name)
+				}
+			}
+		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
+			for i, item := range arr {
+				_, err := p.ToSecretStoreParameterType(item)
+				if err != nil {
+					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
+		case ParameterTypeSecretStoreArray:
+			for i, item := range arr {
+				_, err := p.ToSecretStoreParameterTypeArray(item)
+				if err != nil {
+					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
+		case ParameterTypeGenerator:
+			for i, item := range arr {
+				_, err := p.ToGeneratorParameterType(item)
+				if err != nil {
+					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
+		case ParameterTypeGeneratorArray:
+			for i, item := range arr {
+				_, err := p.ToGeneratorParameterTypeArray(item)
+				if err != nil {
+					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
 		}
 	} else {
 		// Type-specific validation for single values
@@ -207,11 +239,93 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				return fmt.Errorf("parameter %s must be a boolean", p.Name)
 			}
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
-			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
-			ParameterTypeClusterSecretStore, ParameterTypeGenerator, ParameterTypeSecretStoreArray,
-			ParameterTypeGeneratorArray:
-			// No specific validation needed for these types in single value context
+			ParameterTypeNamespace, ParameterTypeExternalSecret:
+			_, ok := value.(string)
+			if !ok {
+				return fmt.Errorf("parameter %s must be a string", p.Name)
+			}
+		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
+			_, err := p.ToSecretStoreParameterType(value)
+			if err != nil {
+				return err
+			}
+		case ParameterTypeSecretStoreArray:
+			_, err := p.ToSecretStoreParameterTypeArray(value)
+			if err != nil {
+				return err
+			}
+		case ParameterTypeGenerator:
+			_, err := p.ToGeneratorParameterType(value)
+			if err != nil {
+				return err
+			}
+		case ParameterTypeGeneratorArray:
+			_, err := p.ToGeneratorParameterTypeArray(value)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+func (p Parameter) ToSecretStoreParameterType(value interface{}) (*SecretStoreParameterType, error) {
+	var resource SecretStoreParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format {\"name\": \"store-name\"}. received: %T", p.Type, value)
+	}
+	return &resource, nil
+}
+
+func (p Parameter) ToGeneratorParameterType(value interface{}) (*GeneratorParameterType, error) {
+	var resource GeneratorParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format {\"name\": \"store-name\", \"kind\":\"Kind\"}. received: %T", p.Type, value)
+	}
+
+	if resource.Name == nil || resource.Kind == nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format {\"name\": \"store-name\", \"kind\":\"Kind\"}. received: %T", p.Type, value)
+	}
+
+	return &resource, nil
+}
+
+func (p Parameter) ToSecretStoreParameterTypeArray(value interface{}) ([]SecretStoreParameterType, error) {
+	var resource []SecretStoreParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format [{\"name\": \"store-name\"}]. received: %T", p.Type, value)
+	}
+	return resource, nil
+}
+
+func (p Parameter) ToGeneratorParameterTypeArray(value interface{}) ([]GeneratorParameterType, error) {
+	var resource []GeneratorParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format [{\"name\": \"store-name\", \"kind\":\"Kind\"}]. received: %T", p.Type, value)
+	}
+	return resource, nil
 }

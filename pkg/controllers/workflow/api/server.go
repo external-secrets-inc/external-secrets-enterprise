@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +39,7 @@ type WorkflowRunRequest struct {
 
 	// Arguments are the values for template parameters.
 	// Each argument corresponds to a parameter defined in the template.
-	Arguments map[string]string `json:"arguments,omitempty"`
+	Arguments map[string]any `json:"arguments,omitempty"`
 }
 
 // WorkflowRunResponse is the response body for a workflow run request.
@@ -166,6 +167,12 @@ func (s *Server) createWorkflowRun(w http.ResponseWriter, r *http.Request, names
 	}
 
 	// Create WorkflowRun
+	argumentBytes, err := json.Marshal(req.Arguments)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error marshaling arguments: %v", err), http.StatusBadRequest)
+		return
+	}
+
 	run := &workflows.WorkflowRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-", req.TemplateName),
@@ -183,7 +190,9 @@ func (s *Server) createWorkflowRun(w http.ResponseWriter, r *http.Request, names
 				Name:      req.TemplateName,
 				Namespace: templateNamespace,
 			},
-			Arguments: req.Arguments,
+			Arguments: apiextensionsv1.JSON{
+				Raw: argumentBytes,
+			},
 		},
 	}
 

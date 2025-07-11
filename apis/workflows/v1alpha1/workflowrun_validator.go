@@ -18,16 +18,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 )
 
 // k8sClient is a global variable that will be set during controller initialization.
@@ -74,8 +70,18 @@ func validateWorkflowRunParameters(wr *WorkflowRun) error {
 		}
 	}
 
+	toParseArguments, err := json.Marshal(wr.Spec.Arguments)
+	if err != nil {
+		return fmt.Errorf("error marshaling arguments from run %s: %w", wr.Name, err)
+	}
+	var parsedArguments map[string]interface{}
+	err = json.Unmarshal(toParseArguments, &parsedArguments)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling arguments from run %s: %w", wr.Name, err)
+	}
+
 	// Validate each argument against its corresponding parameter
-	for argName, argValue := range wr.Spec.Arguments {
+	for argName, argValue := range parsedArguments {
 		param, exists := paramMap[argName]
 		if !exists {
 			return fmt.Errorf("argument %q is not defined in the template", argName)
@@ -91,7 +97,7 @@ func validateWorkflowRunParameters(wr *WorkflowRun) error {
 	for _, group := range template.Spec.ParameterGroups {
 		for _, param := range group.Parameters {
 			if param.Required {
-				if _, exists := wr.Spec.Arguments[param.Name]; !exists {
+				if _, exists := parsedArguments[param.Name]; !exists {
 					// If a default value is provided, it's okay
 					if param.Default == "" {
 						return fmt.Errorf("required parameter %q is missing", param.Name)
@@ -105,12 +111,12 @@ func validateWorkflowRunParameters(wr *WorkflowRun) error {
 }
 
 // validateArgumentValue validates an argument value against a parameter definition.
-func validateArgumentValue(ctx context.Context, param *Parameter, argValue, namespace string) error {
+func validateArgumentValue(ctx context.Context, param *Parameter, argValue interface{}, namespace string) error {
 	// For array types (allowMultiple=true), parse as JSON array
 	if param.AllowMultiple {
-		var arr []interface{}
-		if err := json.Unmarshal([]byte(argValue), &arr); err != nil {
-			return fmt.Errorf("failed to parse as array: %w", err)
+		arr, ok := argValue.([]interface{})
+		if !ok {
+			return fmt.Errorf("failed to parse as array")
 		}
 
 		// Validate each item in the array
@@ -134,15 +140,15 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue, name
 		var parsedValue interface{}
 		switch param.Type {
 		case ParameterTypeNumber:
-			var num float64
-			if err := json.Unmarshal([]byte(argValue), &num); err != nil {
-				return fmt.Errorf("failed to parse as number: %w", err)
+			num, ok := argValue.(float64)
+			if !ok {
+				return fmt.Errorf("failed to parse as number")
 			}
 			parsedValue = num
 		case ParameterTypeBool:
-			var b bool
-			if err := json.Unmarshal([]byte(argValue), &b); err != nil {
-				return fmt.Errorf("failed to parse as boolean: %w", err)
+			b, ok := argValue.(bool)
+			if !ok {
+				return fmt.Errorf("failed to parse as boolean")
 			}
 			parsedValue = b
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
@@ -206,24 +212,26 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 
 // validateKubernetesResource validates that a Kubernetes resource exists and matches constraints.
 func validateKubernetesResource(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
-	resourceName, ok := value.(string)
-	if !ok {
-		return fmt.Errorf("kubernetes resource name must be a string. received: %T", value)
-	}
+	var resourceName string
 	if param.Type == ParameterTypeSecretStoreArray {
-		resourceList := strings.Split(resourceName, ",")
-		if len(resourceList) > 1 {
-			for i := range resourceList {
-				if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
-					return err
-				}
-			}
-			return nil
+		resourceList, err := param.ToSecretStoreParameterTypeArray(value)
+		if err != nil {
+			return err
 		}
-	}
 
-	if param.Type.IsGeneratorArrayType() {
-		resourceList := strings.Split(resourceName, ",")
+		param.Type = ParameterTypeSecretStore
+		for i := range resourceList {
+			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+				return err
+			}
+		}
+		return nil
+	} else if param.Type.IsGeneratorArrayType() {
+		resourceList, err := param.ToGeneratorParameterTypeArray(value)
+		if err != nil {
+			return err
+		}
+
 		param.Type = ParameterType(fmt.Sprintf("generator[%s]", param.Type.ExtractGeneratorKind()))
 		for i := range resourceList {
 			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
@@ -231,6 +239,27 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			}
 		}
 		return nil
+	} else if param.Type == ParameterTypeSecretStore || param.Type == ParameterTypeClusterSecretStore {
+		resource, err := param.ToSecretStoreParameterType(value)
+		if err != nil {
+			return err
+		}
+
+		resourceName = resource.Name
+	} else if param.Type.IsGeneratorType() {
+		resource, err := param.ToGeneratorParameterType(value)
+		if err != nil {
+			return err
+		}
+
+		resourceName = *resource.Name
+		param.Type = ParameterType(fmt.Sprintf("generator[%s]", *resource.Kind))
+	} else {
+		resource, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("kubernetes resource name must be a string. received: %T", value)
+		}
+		resourceName = resource
 	}
 
 	// Determine the resource namespace
@@ -296,64 +325,20 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 
 	// Create an unstructured object to fetch the resource
 	obj := &unstructured.Unstructured{}
-	if !strings.EqualFold(gvk.Kind, "any") {
-		obj.SetGroupVersionKind(gvk)
+	obj.SetGroupVersionKind(gvk)
 
-		// Fetch the resource
-		err := k8sClient.Get(ctx, types.NamespacedName{
-			Namespace: resourceNamespace,
-			Name:      resourceName,
-		}, obj)
+	// Fetch the resource
+	err := k8sClient.Get(ctx, types.NamespacedName{
+		Namespace: resourceNamespace,
+		Name:      resourceName,
+	}, obj)
 
-		if err != nil {
-			if errors.IsNotFound(err) {
-				return fmt.Errorf("resource %s of type %s not found in namespace %s",
-					resourceName, param.Type, resourceNamespace)
-			}
-			return fmt.Errorf("error fetching resource: %w", err)
-		}
-	} else if gvk.Group == "generators.external-secrets.io" { // Handle generator[any]
-		generatorFound := false
-		scheme := runtime.NewScheme()
-		_ = genv1alpha1.AddToScheme(scheme)
-
-		kinds := scheme.KnownTypes(genv1alpha1.SchemeGroupVersion)
-
-		for kind := range kinds {
-			// Ignore kubernetes default types and generators lists
-			if strings.HasSuffix(kind, "List") ||
-				kind == "CreateOptions" ||
-				kind == "DeleteOptions" ||
-				kind == "GetOptions" ||
-				kind == "ListOptions" ||
-				kind == "PatchOptions" ||
-				kind == "UpdateOptions" ||
-				kind == "WatchEvent" {
-				continue
-			}
-
-			gvk.Kind = kind
-			obj.SetGroupVersionKind(gvk)
-			err := k8sClient.Get(ctx, types.NamespacedName{
-				Namespace: resourceNamespace,
-				Name:      resourceName,
-			}, obj)
-
-			if err != nil {
-				if errors.IsNotFound(err) {
-					continue
-				}
-				return fmt.Errorf("error fetching resource: %w", err)
-			}
-
-			generatorFound = true
-			break
-		}
-
-		if !generatorFound {
-			return fmt.Errorf("no resource %s of type %s found in namespace %s",
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("resource %s of type %s not found in namespace %s",
 				resourceName, param.Type, resourceNamespace)
 		}
+		return fmt.Errorf("error fetching resource: %w", err)
 	}
 
 	// Check label selector constraints if specified

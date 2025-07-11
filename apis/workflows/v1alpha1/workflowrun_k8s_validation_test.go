@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 func TestValidateKubernetesResourceValidation(t *testing.T) {
@@ -32,6 +34,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 	_ = AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
 	_ = esv1.AddToScheme(scheme)
+	_ = genv1alpha1.AddToScheme(scheme)
 
 	// Create the test namespace
 	testNamespace := &corev1.Namespace{
@@ -93,6 +96,27 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 		},
 	}
 
+	// Create a test Generator
+	testGenerator := &genv1alpha1.Password{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-password-gen",
+			Namespace: "test-namespace",
+			Labels: map[string]string{
+				"env": "test",
+			},
+		},
+	}
+
+	testSecondGenerator := &genv1alpha1.Fake{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-password-gen-2",
+			Namespace: "test-namespace",
+			Labels: map[string]string{
+				"env": "test",
+			},
+		},
+	}
+
 	// Create a test template with Kubernetes resource parameters
 	template := &WorkflowTemplate{
 		ObjectMeta: metav1.ObjectMeta{
@@ -146,6 +170,16 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 								AllowCrossNamespace: false,
 							},
 						},
+						{
+							Name:     "generator",
+							Type:     ParameterType("generator[Password]"),
+							Required: false,
+						},
+						{
+							Name:     "generatorArray",
+							Type:     ParameterType("array[generator[any]]"),
+							Required: false,
+						},
 					},
 				},
 			},
@@ -169,7 +203,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 	// Create a fake client with test objects
 	client := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(testNamespace, testSecretStore, testSecondSecretStore, testClusterSecretStore, template).
+		WithObjects(testNamespace, testSecretStore, testSecondSecretStore, testClusterSecretStore, testGenerator, testSecondGenerator, template).
 		Build()
 
 	// Set the validation client
@@ -193,10 +227,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":  "test-namespace",
-						"secretStore":      "test-store",
-						"secretStoreArray": "test-store,test-second-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretStoreArray": [{"name": "test-store"}, {"name": "test-second-store"}]
+						}`),
 					},
 				},
 			},
@@ -213,10 +249,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":  "test-namespace",
-						"secretStore":      "test-store",
-						"secretStoreArray": "test-second-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretStoreArray": [{"name": "test-second-store"}]
+						}`),
 					},
 				},
 			},
@@ -233,15 +271,17 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":  "test-namespace",
-						"secretStore":      "test-store",
-						"secretStoreArray": "test-second-store,unexisting-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretStoreArray": [{"name": "test-second-store"}, {"name": "unexisting-store"}]
+						}`),
 					},
 				},
 			},
 			wantErr: true,
-			errMsg:  "resource unexisting-store of type array[secretstore] not found in namespace test-namespace",
+			errMsg:  "resource unexisting-store of type secretstore not found in namespace test-namespace",
 		},
 
 		{
@@ -255,10 +295,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":    "test-namespace",
-						"secretStore":        "test-store",
-						"clusterSecretStore": "test-cluster-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":    "test-namespace",
+							"secretStore":        {"name": "test-store"},
+							"clusterSecretStore": {"name": "test-cluster-store"}
+						}`),
 					},
 				},
 			},
@@ -275,9 +317,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace": "non-existent-namespace",
-						"secretStore":     "test-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace": "non-existent-namespace",
+							"secretStore":     {"name": "test-store"}
+						}`),
 					},
 				},
 			},
@@ -295,9 +339,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace": "test-namespace",
-						"secretStore":     "non-existent-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace": "test-namespace",
+							"secretStore":     {"name": "non-existent-store"}
+						}`),
 					},
 				},
 			},
@@ -315,9 +361,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace": "test-namespace",
-						"secretStore":     "test-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace": "test-namespace",
+							"secretStore":     {"name": "test-store"}
+						}`),
 					},
 				},
 			},
@@ -334,10 +382,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "k8s-resource-template",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":    "test-namespace",
-						"secretStore":        "test-store",
-						"clusterSecretStore": "test-cluster-store",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":    "test-namespace",
+							"secretStore":        {"name": "test-store"},
+							"clusterSecretStore": {"name": "test-cluster-store"}
+						}`),
 					},
 				},
 			},
@@ -355,15 +405,224 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 						Name:      "k8s-resource-template",
 						Namespace: "test-namespace",
 					},
-					Arguments: map[string]string{
-						"targetNamespace":      "test-namespace",
-						"secretStore":          "test-store",
-						"secretStoreNoCrossNS": "test-store", // This should fail because it's in a different namespace
-					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":      "test-namespace",
+							"secretStore":          {"name": "test-store"},
+							"secretStoreNoCrossNS": {"name": "test-store"}
+						}`),
+					}, // This should fail because it's in a different namespace
 				},
 			},
 			wantErr: true,
 			errMsg:  "cross-namespace resource references are not allowed for this parameter",
+		},
+		{
+			name: "valid generator",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generator": {"name": "test-password-gen-2", "kind": "Fake"}
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid Generator without kind",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generator": {"name": "test-password-gen-2"}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "must be an object of the format {\"name\": \"store-name\", \"kind\":\"Kind\"}",
+		},
+		{
+			name: "invalid Generator with wrong kind",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generator": {"name": "test-password-gen-2", "kind": "Password"}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource test-password-gen-2 of type generator[Password] not found in namespace test-namespace",
+		},
+		{
+			name: "invalid Generator with inexistent generator",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generator": {"name": "test-password-gen-3", "kind": "Fake"}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource test-password-gen-3 of type generator[Fake] not found in namespace test-namespace",
+		},
+		{
+			name: "valid generatorArray",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generatorArray": [
+								{"name": "test-password-gen", "kind": "Password"},
+								{"name": "test-password-gen-2", "kind": "Fake"}
+							]
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid generatorArray with one element",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generatorArray": [{"name": "test-password-gen-2", "kind": "Fake"}]
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid GeneratorArray without kind",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generatorArray": [{"name": "test-password-gen-2"}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "must be an object of the format {\"name\": \"store-name\", \"kind\":\"Kind\"}",
+		},
+		{
+			name: "invalid GeneratorArray with wrong kind",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generatorArray": [{"name": "test-password-gen-2", "kind": "Password"}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource test-password-gen-2 of type generator[Password] not found in namespace test-namespace",
+		},
+		{
+			name: "invalid GeneratorArray with inexistent generator",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"generatorArray": [{"name": "test-password-gen-3", "kind": "Fake"}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource test-password-gen-3 of type generator[Fake] not found in namespace test-namespace",
 		},
 	}
 

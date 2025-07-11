@@ -44,7 +44,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.39.0
 	golang.org/x/oauth2 v0.30.0
-	google.golang.org/api v0.240.0
+	google.golang.org/api v0.241.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
 	google.golang.org/grpc v1.73.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -72,7 +72,7 @@ require (
 	github.com/DelineaXPM/tss-sdk-go/v2 v2.0.3
 	github.com/Onboardbase/go-cryptojs-aes-decrypt v0.0.0-20230430095000-27c0d3a9016d
 	github.com/akeylesslabs/akeyless-go/v3 v3.6.3
-	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.7
+	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.8
 	github.com/alibabacloud-go/kms-20160120/v3 v3.2.3
 	github.com/alibabacloud-go/openapi-util v0.1.1
 	github.com/alibabacloud-go/tea v1.3.9
@@ -129,7 +129,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.134.0
-	golang.org/x/sync v0.15.0
+	golang.org/x/sync v0.16.0
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911
 	sigs.k8s.io/yaml v1.5.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
@@ -397,11 +397,11 @@ require (
 	go.mongodb.org/mongo-driver v1.17.4
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/mod v0.25.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.32.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/term v0.33.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/time v0.12.0
 	golang.org/x/tools v0.34.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect

@@ -6,6 +6,7 @@ package jobs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/smithy-go/ptr"
@@ -162,13 +163,23 @@ func flattenJobStatuses(jobStatuses map[string]workflows.JobStatus) map[string]m
 }
 
 // BuildWorkflowContext builds the common data context for workflow steps.
-func BuildWorkflowContext(wf *workflows.Workflow) map[string]interface{} {
+func BuildWorkflowContext(wf *workflows.Workflow) (map[string]interface{}, error) {
+	toParseVariables, err := json.Marshal(wf.Spec.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling variables from workflow %s: %w", wf.Name, err)
+	}
+	var parsedVariables map[string]interface{}
+	err = json.Unmarshal(toParseVariables, &parsedVariables)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling variables from workflow %s: %w", wf.Name, err)
+	}
+
 	return map[string]interface{}{
 		"global": map[string]interface{}{
-			"variables": wf.Spec.Variables,
+			"variables": parsedVariables,
 			"jobs":      flattenJobStatuses(wf.Status.JobStatuses),
 		},
-	}
+	}, nil
 }
 
 // JobExecutionContext holds the common context for job execution.
@@ -192,7 +203,12 @@ func NewJobExecutionContext(
 	scheme *runtime.Scheme,
 	logger logr.Logger,
 	manager secretstore.ManagerInterface,
-) *JobExecutionContext {
+) (*JobExecutionContext, error) {
+	wfContext, err := BuildWorkflowContext(wf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &JobExecutionContext{
 		Client:    client,
 		Workflow:  wf,
@@ -200,9 +216,9 @@ func NewJobExecutionContext(
 		JobStatus: jobStatus,
 		Scheme:    scheme,
 		Logger:    logger,
-		Data:      BuildWorkflowContext(wf),
+		Data:      wfContext,
 		Manager:   manager,
-	}
+	}, nil
 }
 
 // ExecuteStepWithContext executes a single step with the provided context.
@@ -231,7 +247,10 @@ func ExecuteStepWithContext(
 
 	// Update the job context's Data map with the latest workflow context
 	// This ensures that subsequent steps can access outputs from previous steps
-	jobCtx.Data = BuildWorkflowContext(jobCtx.Workflow)
+	jobCtx.Data, err = BuildWorkflowContext(jobCtx.Workflow)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

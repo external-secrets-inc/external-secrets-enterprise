@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -224,7 +225,7 @@ func TestResolveJobVariables(t *testing.T) {
 	}
 	wf := &workflows.Workflow{
 		Spec: workflows.WorkflowSpec{
-			Variables: map[string]string{"base": "core"},
+			Variables: apiextensionsv1.JSON{Raw: []byte(`{"base": "core"}`)},
 		},
 		Status: workflows.WorkflowStatus{
 			JobStatuses: map[string]workflows.JobStatus{},

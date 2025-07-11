@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.11.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.10.0...v1.11.0) (2025-07-10)
+
+
+### Features
+
+* support objects as workflowtemplates parameters ([#240](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/240)) ([351a984](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/351a984b71e28aa0c68d2cc9cffc4364357c45df))
+* workflow template support generators ([#230](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/230)) ([a8718cb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a8718cbdf64f822d380e4b22ae445c3729b10a3e))
+
+
+### Bug Fixes
+
+* do not turn original value into string on value scope ([#5011](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5011)) ([1b3fc5d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1b3fc5d9162e1e8298bfd1b4b2e2155211390604))
+* steps mapping output ([#243](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/243)) ([e3e8cbe](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e3e8cbe58496d247d79fecf7b4af1c4a1de651d3))
+* update dependencies ([#238](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/238)) ([4a7624d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4a7624d52e7253c42d1376fdc730644cd10130e6))
+* update dependencies ([#242](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/242)) ([59a87b9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/59a87b90c23c66029305d53ec0d1a59459cf0d0f))
+* update from upstream ([#237](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/237)) ([9fa70ad](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9fa70ad235f57b064b8cf41e3d1fcaad1dd445a9))
+* update from upstream ([#241](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/241)) ([9bc024d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9bc024dda1695a96f4761cdc8af8f3f8ce31a9e0))
+* updates not working when creating new findings ([#239](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/239)) ([dd0565a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/dd0565a92fb7e03924f21b42a849c4b3225f3379))
+
 ## [1.10.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.9.5...v1.10.0) (2025-07-08)
 
 

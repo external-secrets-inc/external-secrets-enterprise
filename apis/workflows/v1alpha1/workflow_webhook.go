@@ -14,6 +14,7 @@
 package v1alpha1
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -67,8 +68,23 @@ func (wf *Workflow) validateWorkflow() error {
 
 	// 2. Scan all strings that can contain templates.
 	//    (a) Global variables
-	for key, value := range wf.Spec.Variables {
-		if err := validateTemplateReferencesInString(value, wf, fmt.Sprintf("global variable %q", key)); err != nil {
+	toParseVariables, err := json.Marshal(wf.Spec.Variables)
+	if err != nil {
+		return fmt.Errorf("error marshaling variables from workflow %s: %w", wf.Name, err)
+	}
+	var parsedVariables map[string]interface{}
+	err = json.Unmarshal(toParseVariables, &parsedVariables)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling variables from workflow %s: %w", wf.Name, err)
+	}
+
+	for key, value := range parsedVariables {
+		strValue, ok := value.(string)
+		if !ok {
+			continue
+		}
+
+		if err := validateTemplateReferencesInString(strValue, parsedVariables, wf, fmt.Sprintf("global variable %q", key)); err != nil {
 			return err
 		}
 	}
@@ -76,7 +92,7 @@ func (wf *Workflow) validateWorkflow() error {
 	for jobName, job := range wf.Spec.Jobs {
 		// Validate job-level variables.
 		for key, value := range job.Variables {
-			if err := validateTemplateReferencesInString(value, wf, fmt.Sprintf("job %q variable %q", jobName, key)); err != nil {
+			if err := validateTemplateReferencesInString(value, parsedVariables, wf, fmt.Sprintf("job %q variable %q", jobName, key)); err != nil {
 				return err
 			}
 		}
@@ -92,18 +108,18 @@ func (wf *Workflow) validateWorkflow() error {
 		for _, step := range steps {
 			// For Debug steps: check the Message field.
 			if step.Debug != nil {
-				if err := validateTemplateReferencesInString(step.Debug.Message, wf, fmt.Sprintf("job %q step %q (debug message)", jobName, step.Name)); err != nil {
+				if err := validateTemplateReferencesInString(step.Debug.Message, parsedVariables, wf, fmt.Sprintf("job %q step %q (debug message)", jobName, step.Name)); err != nil {
 					return err
 				}
 			}
 			// For Transform steps: check the mappings and full template.
 			if step.Transform != nil {
 				for mappingKey, mappingValue := range step.Transform.Mappings {
-					if err := validateTemplateReferencesInString(mappingValue, wf, fmt.Sprintf("job %q step %q (transform mapping %q)", jobName, step.Name, mappingKey)); err != nil {
+					if err := validateTemplateReferencesInString(mappingValue, parsedVariables, wf, fmt.Sprintf("job %q step %q (transform mapping %q)", jobName, step.Name, mappingKey)); err != nil {
 						return err
 					}
 				}
-				if err := validateTemplateReferencesInString(step.Transform.Template, wf, fmt.Sprintf("job %q step %q (transform template)", jobName, step.Name)); err != nil {
+				if err := validateTemplateReferencesInString(step.Transform.Template, parsedVariables, wf, fmt.Sprintf("job %q step %q (transform template)", jobName, step.Name)); err != nil {
 					return err
 				}
 			}
@@ -116,7 +132,7 @@ func (wf *Workflow) validateWorkflow() error {
 
 // validateTemplateReferencesInString scans a string for template references (if any)
 // and validates that any global references to jobs or variables exist in the workflow.
-func validateTemplateReferencesInString(templateStr string, wf *Workflow, context string) error {
+func validateTemplateReferencesInString(templateStr string, parsedVariables map[string]interface{}, wf *Workflow, context string) error {
 	// If there is no template marker, skip validation.
 	if !strings.Contains(templateStr, "{{") {
 		return nil
@@ -147,7 +163,7 @@ func validateTemplateReferencesInString(templateStr string, wf *Workflow, contex
 			continue
 		}
 		varName := match[1]
-		if _, exists := wf.Spec.Variables[varName]; !exists {
+		if _, exists := parsedVariables[varName]; !exists {
 			return fmt.Errorf("%s: references global variable %q which does not exist", context, varName)
 		}
 	}

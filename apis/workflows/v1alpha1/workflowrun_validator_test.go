@@ -19,6 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -116,9 +117,11 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
-						"numberParam": "42",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value",
+							"numberParam": 42
+						}`),
 					},
 				},
 			},
@@ -135,9 +138,10 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
-						// numberParam is missing
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value"
+						}`), // numberParam is missing
 					},
 				},
 			},
@@ -155,9 +159,11 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
-						"numberParam": "not-a-number",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value",
+							"numberParam": "not-a-number"
+						}`),
 					},
 				},
 			},
@@ -175,10 +181,12 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam":    "value",
-						"numberParam":    "42",
-						"undefinedParam": "value",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam":    "value",
+							"numberParam":    42,
+							"undefinedParam": "value"
+						}`),
 					},
 				},
 			},
@@ -196,10 +204,12 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
-						"numberParam": "42",
-						"arrayParam":  "[\"item1\", \"item2\"]",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value",
+							"numberParam": 42,
+							"arrayParam":  ["item1", "item2"]
+						}`),
 					},
 				},
 			},
@@ -216,10 +226,12 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
-						"numberParam": "42",
-						"arrayParam":  "[]",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value",
+							"numberParam": 42,
+							"arrayParam":  []
+						}`),
 					},
 				},
 			},
@@ -237,10 +249,12 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "test-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
-						"numberParam": "42",
-						"arrayParam":  "[\"item1\", \"item2\", \"item3\", \"item4\"]",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value",
+							"numberParam": 42,
+							"arrayParam":  ["item1", "item2", "item3", "item4"]
+						}`),
 					},
 				},
 			},
@@ -258,8 +272,10 @@ func TestValidateWorkflowRunParameters(t *testing.T) {
 					TemplateRef: TemplateRef{
 						Name: "non-existent-template",
 					},
-					Arguments: map[string]string{
-						"stringParam": "value",
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"stringParam": "value"
+						}`),
 					},
 				},
 			},
@@ -302,9 +318,10 @@ func TestValidateWorkflowRunParametersClientNotSet(t *testing.T) {
 			TemplateRef: TemplateRef{
 				Name: "test-template",
 			},
-			Arguments: map[string]string{
+			Arguments: apiextensionsv1.JSON{
+				Raw: []byte(`{
 				"stringParam": "value",
-			},
+			}`)},
 		},
 	}
 

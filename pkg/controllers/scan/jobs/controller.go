@@ -134,12 +134,14 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		if err := c.Get(ctx, req, existing); err != nil {
 			if apierrors.IsNotFound(err) {
 				// Create Finding
-				if err := c.Create(ctx, &finding); err != nil {
+				create := finding.DeepCopy()
+				if err := c.Create(ctx, create); err != nil {
 					jobStatus = v1alpha1.JobRunStatusFailed
 					jobTime = metav1.Now()
 					return err
 				}
-				if err := c.Status().Update(ctx, &finding); err != nil {
+				create.Status.Locations = finding.Status.Locations
+				if err := c.Status().Update(ctx, create); err != nil {
 					jobStatus = v1alpha1.JobRunStatusFailed
 					jobTime = metav1.Now()
 					return err
@@ -153,6 +155,8 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 			if needsToUpdate(existing, &finding) {
 				existing.Status.Locations = finding.Status.Locations
 				if err := c.Status().Update(ctx, existing); err != nil {
+					jobStatus = v1alpha1.JobRunStatusFailed
+					jobTime = metav1.Now()
 					return err
 				}
 			}

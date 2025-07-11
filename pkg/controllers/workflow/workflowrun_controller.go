@@ -5,11 +5,13 @@ package workflow
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -317,26 +319,49 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(template *workflows.
 		Spec: workflows.WorkflowSpec{
 			Version:   template.Spec.Version,
 			Name:      template.Spec.Name,
-			Variables: make(map[string]string),
+			Variables: apiextensionsv1.JSON{},
 			Jobs:      template.Spec.Jobs,
 		},
 	}
 
+	toParseArguments, err := json.Marshal(run.Spec.Arguments)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling arguments from run %s: %w", run.Name, err)
+	}
+	var parsedArguments map[string]interface{}
+	err = json.Unmarshal(toParseArguments, &parsedArguments)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling arguments from run %s: %w", run.Name, err)
+	}
+
 	// Convert arguments to variables
+	variables := make(map[string]any)
 	for _, group := range template.Spec.ParameterGroups {
 		for _, param := range group.Parameters {
-			value, exists := run.Spec.Arguments[param.Name]
+			value, exists := parsedArguments[param.Name]
 			if !exists {
 				if param.Required && param.Default == "" {
 					return nil, fmt.Errorf("required parameter %s not provided", param.Name)
 				}
 				if param.Default != "" {
-					workflow.Spec.Variables[param.Name] = param.Default
+					variables[param.Name] = param.Default
 				}
 			} else {
-				workflow.Spec.Variables[param.Name] = value
+				if err := param.ValidateValue(value); err != nil {
+					return nil, fmt.Errorf("invalid argument value for param %s: %v", param.Name, value)
+				} else {
+					variables[param.Name] = value
+				}
 			}
 		}
+	}
+
+	variablesBytes, err := json.Marshal(variables)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling default variables")
+	}
+	workflow.Spec.Variables = apiextensionsv1.JSON{
+		Raw: variablesBytes,
 	}
 
 	return workflow, nil

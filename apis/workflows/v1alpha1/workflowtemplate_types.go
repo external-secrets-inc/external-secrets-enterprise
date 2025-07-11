@@ -76,6 +76,21 @@ const (
 	ParameterTypeGeneratorArray   ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
 )
 
+// GeneratorParameter defines a parameter to be passed to a generator type.
+type GeneratorParameterType struct {
+	// Name is the name of the generator.
+	Name *string `json:"name,omitempty"`
+
+	// Kind defines the kind of the generator. It can be 'any'
+	Kind *string `json:"kind,omitempty"`
+}
+
+// SecretStoreParameter defines a parameter to be passed to a secret store type.
+type SecretStoreParameterType struct {
+	// Name is the name of the secretstore.
+	Name string `json:"name"`
+}
+
 // ResourceConstraints defines constraints for Kubernetes resource selection.
 type ResourceConstraints struct {
 	// Namespace restricts resource selection to specific namespace(s)
