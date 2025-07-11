@@ -61,7 +61,8 @@ func (p ParameterType) IsPrimitive() bool {
 		return true
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
-		ParameterTypeGenerator, ParameterTypeGeneratorArray:
+		ParameterTypeGenerator, ParameterTypeGeneratorArray,
+		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
 		return false
 	default:
 		return false
@@ -77,7 +78,8 @@ func (p ParameterType) IsKubernetesResource() bool {
 	switch p {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
-		ParameterTypeGenerator, ParameterTypeGeneratorArray:
+		ParameterTypeGenerator, ParameterTypeGeneratorArray,
+		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
 		return true
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
@@ -96,7 +98,8 @@ func (p ParameterType) GetAPIVersion() string {
 	switch p {
 	case ParameterTypeNamespace:
 		return "v1"
-	case ParameterTypeSecretStore, ParameterTypeExternalSecret, ParameterTypeSecretStoreArray:
+	case ParameterTypeSecretStore, ParameterTypeExternalSecret, ParameterTypeSecretStoreArray,
+		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
 		return "external-secrets.io/v1"
 	case ParameterTypeClusterSecretStore:
 		return "external-secrets.io/v1"
@@ -119,7 +122,8 @@ func (p ParameterType) GetKind() string {
 	switch p {
 	case ParameterTypeNamespace:
 		return "Namespace"
-	case ParameterTypeSecretStore, ParameterTypeSecretStoreArray:
+	case ParameterTypeSecretStore, ParameterTypeSecretStoreArray,
+		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
 		return "SecretStore"
 	case ParameterTypeExternalSecret:
 		return "ExternalSecret"
@@ -224,6 +228,20 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 					return fmt.Errorf("item %d error: %w", i, err)
 				}
 			}
+		case ParameterTypeSecretLocation:
+			for i, item := range arr {
+				_, err := p.ToSecretLocationParameterType(item)
+				if err != nil {
+					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
+		case ParameterTypeSecretLocationArray:
+			for i, item := range arr {
+				_, err := p.ToSecretLocationParameterTypeArray(item)
+				if err != nil {
+					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
 		}
 	} else {
 		// Type-specific validation for single values
@@ -261,6 +279,16 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			}
 		case ParameterTypeGeneratorArray:
 			_, err := p.ToGeneratorParameterTypeArray(value)
+			if err != nil {
+				return err
+			}
+		case ParameterTypeSecretLocation:
+			_, err := p.ToSecretLocationParameterType(value)
+			if err != nil {
+				return err
+			}
+		case ParameterTypeSecretLocationArray:
+			_, err := p.ToSecretLocationParameterTypeArray(value)
 			if err != nil {
 				return err
 			}
@@ -302,6 +330,34 @@ func (p Parameter) ToGeneratorParameterType(value interface{}) (*GeneratorParame
 	return &resource, nil
 }
 
+func (p Parameter) ToSecretLocationParameterType(value interface{}) (*SecretLocationParameterType, error) {
+	var resource SecretLocationParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"parameter %s must be an object of the format {\"name\": \"store-name\", \"apiVersion\": \"v1\", \"kind\": \"Kind\", \"remoteRef\": {\"key\": \"remote-key\", \"property\": \"remote-property\"}}. received: %T",
+			p.Type, value,
+		)
+	}
+
+	if resource.Name == "" ||
+		resource.APIVersion == "" ||
+		resource.Kind == "" ||
+		resource.RemoteRef.Key == "" {
+		return nil, fmt.Errorf(
+			"parameter %s must be an object of the format {\"name\": \"store-name\", \"apiVersion\": \"v1\", \"kind\": \"Kind\", \"remoteRef\": {\"key\": \"remote-key\"}}. received: %T",
+			p.Type, value,
+		)
+	}
+
+	return &resource, nil
+}
+
 func (p Parameter) ToSecretStoreParameterTypeArray(value interface{}) ([]SecretStoreParameterType, error) {
 	var resource []SecretStoreParameterType
 	valueBytes, err := json.Marshal(value)
@@ -326,6 +382,23 @@ func (p Parameter) ToGeneratorParameterTypeArray(value interface{}) ([]Generator
 	err = json.Unmarshal(valueBytes, &resource)
 	if err != nil {
 		return nil, fmt.Errorf("parameter %s must be an object of the format [{\"name\": \"store-name\", \"kind\":\"Kind\"}]. received: %T", p.Type, value)
+	}
+	return resource, nil
+}
+
+func (p Parameter) ToSecretLocationParameterTypeArray(value interface{}) ([]SecretLocationParameterType, error) {
+	var resource []SecretLocationParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"parameter %s must be an object of the format [{\"name\": \"store-name\", \"apiVersion\": \"v1\", \"kind\": \"Kind\", \"remoteRef\": {\"key\": \"remote-key\", \"property\": \"remote-property\"}}]. received: %T",
+			p.Type, value,
+		)
 	}
 	return resource, nil
 }

@@ -180,6 +180,16 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 							Type:     ParameterType("array[generator[any]]"),
 							Required: false,
 						},
+						{
+							Name:     "secretlocation",
+							Type:     ParameterType("secretlocation"),
+							Required: false,
+						},
+						{
+							Name:     "secretlocationArray",
+							Type:     ParameterType("array[secretlocation]"),
+							Required: false,
+						},
 					},
 				},
 			},
@@ -623,6 +633,92 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 			},
 			wantErr: true,
 			errMsg:  "resource test-password-gen-3 of type generator[Fake] not found in namespace test-namespace",
+		},
+		{
+			name: "valid secretlocation",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretlocation": {
+								"name":       "test-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore",
+								"remoteRef": {
+									"key": "/foo/bar"
+								}
+							}
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid secretlocation - no remoteRef",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretlocation": {
+								"name":       "test-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore"
+							}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "must be an object of the format {\"name\": \"store-name\", \"apiVersion\": \"v1\", \"kind\": \"Kind\", \"remoteRef\": {\"key\": \"remote-key\"}}",
+		},
+		{
+			name: "inexistent secretlocation",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretlocation": {
+								"name":       "non-existent-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore",
+								"remoteRef": {
+									"key": "/foo/bar"
+								}
+							}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource non-existent-store of type secretlocation not found in namespace test-namespace",
 		},
 	}
 

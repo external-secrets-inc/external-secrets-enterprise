@@ -186,9 +186,6 @@ spec:
                                     description: |-
                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                       Defaults to `SecretStore`
-                                    enum:
-                                      - SecretStore
-                                      - ClusterSecretStore
                                     type: string
                                   name:
                                     description: Name of the SecretStore resource
@@ -405,9 +402,6 @@ spec:
                                     description: |-
                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                       Defaults to `SecretStore`
-                                    enum:
-                                      - SecretStore
-                                      - ClusterSecretStore
                                     type: string
                                   name:
                                     description: Name of the SecretStore resource
@@ -446,9 +440,6 @@ spec:
                           description: |-
                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                             Defaults to `SecretStore`
-                          enum:
-                            - SecretStore
-                            - ClusterSecretStore
                           type: string
                         name:
                           description: Name of the SecretStore resource
@@ -942,9 +933,6 @@ spec:
                                     description: |-
                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                       Defaults to `SecretStore`
-                                    enum:
-                                      - SecretStore
-                                      - ClusterSecretStore
                                     type: string
                                   name:
                                     description: Name of the SecretStore resource
@@ -1139,9 +1127,6 @@ spec:
                                     description: |-
                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                       Defaults to `SecretStore`
-                                    enum:
-                                      - SecretStore
-                                      - ClusterSecretStore
                                     type: string
                                   name:
                                     description: Name of the SecretStore resource
@@ -1181,9 +1166,6 @@ spec:
                           description: |-
                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                             Defaults to `SecretStore`
-                          enum:
-                            - SecretStore
-                            - ClusterSecretStore
                           type: string
                         name:
                           description: Name of the SecretStore resource
@@ -1686,9 +1668,6 @@ spec:
                           kind:
                             default: SecretStore
                             description: Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
-                            enum:
-                              - SecretStore
-                              - ClusterSecretStore
                             type: string
                           labelSelector:
                             description: Optionally, sync to secret stores with label selector
@@ -11068,9 +11047,6 @@ spec:
                                 description: |-
                                   Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                   Defaults to `SecretStore`
-                                enum:
-                                  - SecretStore
-                                  - ClusterSecretStore
                                 type: string
                               name:
                                 description: Name of the SecretStore resource
@@ -11287,9 +11263,6 @@ spec:
                                 description: |-
                                   Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                   Defaults to `SecretStore`
-                                enum:
-                                  - SecretStore
-                                  - ClusterSecretStore
                                 type: string
                               name:
                                 description: Name of the SecretStore resource
@@ -11328,9 +11301,6 @@ spec:
                       description: |-
                         Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                         Defaults to `SecretStore`
-                      enum:
-                        - SecretStore
-                        - ClusterSecretStore
                       type: string
                     name:
                       description: Name of the SecretStore resource
@@ -11700,9 +11670,6 @@ spec:
                                 description: |-
                                   Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                   Defaults to `SecretStore`
-                                enum:
-                                  - SecretStore
-                                  - ClusterSecretStore
                                 type: string
                               name:
                                 description: Name of the SecretStore resource
@@ -11897,9 +11864,6 @@ spec:
                                 description: |-
                                   Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                   Defaults to `SecretStore`
-                                enum:
-                                  - SecretStore
-                                  - ClusterSecretStore
                                 type: string
                               name:
                                 description: Name of the SecretStore resource
@@ -11939,9 +11903,6 @@ spec:
                       description: |-
                         Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                         Defaults to `SecretStore`
-                      enum:
-                        - SecretStore
-                        - ClusterSecretStore
                       type: string
                     name:
                       description: Name of the SecretStore resource
@@ -12269,9 +12230,6 @@ spec:
                       kind:
                         default: SecretStore
                         description: Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
-                        enum:
-                          - SecretStore
-                          - ClusterSecretStore
                         type: string
                       labelSelector:
                         description: Optionally, sync to secret stores with label selector
@@ -31298,9 +31256,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -31515,9 +31470,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -31585,9 +31537,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -31654,9 +31603,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -34223,9 +34169,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -34440,9 +34383,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -34510,9 +34450,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -34579,9 +34516,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -37157,9 +37091,6 @@ spec:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -37374,9 +37305,6 @@ spec:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -37444,9 +37372,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -37513,9 +37438,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -40306,9 +40228,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -40523,9 +40442,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -40593,9 +40509,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -40662,9 +40575,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -43231,9 +43141,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -43448,9 +43355,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -43518,9 +43422,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -43587,9 +43488,6 @@ spec:
                                               description: |-
                                                 Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                 Defaults to `SecretStore`
-                                              enum:
-                                                - SecretStore
-                                                - ClusterSecretStore
                                               type: string
                                             name:
                                               description: Name of the SecretStore resource
@@ -46165,9 +46063,6 @@ spec:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -46382,9 +46277,6 @@ spec:
                                                           description: |-
                                                             Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                             Defaults to `SecretStore`
-                                                          enum:
-                                                            - SecretStore
-                                                            - ClusterSecretStore
                                                           type: string
                                                         name:
                                                           description: Name of the SecretStore resource
@@ -46452,9 +46344,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -46521,9 +46410,6 @@ spec:
                                                     description: |-
                                                       Kind of the SecretStore resource (SecretStore or ClusterSecretStore)
                                                       Defaults to `SecretStore`
-                                                    enum:
-                                                      - SecretStore
-                                                      - ClusterSecretStore
                                                     type: string
                                                   name:
                                                     description: Name of the SecretStore resource
@@ -46629,7 +46515,7 @@ spec:
                               description: |-
                                 Type specifies the data type of the parameter
                                 For array/multi-value parameters, use allowMultiple: true with the appropriate type
-                              pattern: ^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\])$
+                              pattern: ^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\])$
                               type: string
                             validation:
                               description: |-

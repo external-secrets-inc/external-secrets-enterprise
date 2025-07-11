@@ -14,6 +14,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,7 +53,7 @@ type ParameterGroup struct {
 }
 
 // ParameterType represents the data type of a parameter
-// +kubebuilder:validation:Pattern=`^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\])$`
+// +kubebuilder:validation:Pattern=`^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\])$`
 type ParameterType string
 
 const (
@@ -70,11 +71,19 @@ const (
 	ParameterTypeExternalSecret     ParameterType = "externalsecret"
 	ParameterTypeClusterSecretStore ParameterType = "clustersecretstore"
 	ParameterTypeGenerator          ParameterType = `^generator\[([a-zA-Z0-9_-]+)\]$`
+	ParameterTypeSecretLocation     ParameterType = "secretlocation"
 
 	// Array Types (add as needed).
-	ParameterTypeSecretStoreArray ParameterType = "array[secretstore]"
-	ParameterTypeGeneratorArray   ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
+	ParameterTypeSecretStoreArray    ParameterType = "array[secretstore]"
+	ParameterTypeGeneratorArray      ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
+	ParameterTypeSecretLocationArray ParameterType = "array[secretlocation]"
 )
+
+// SecretStoreParameter defines a parameter to be passed to a secret store type.
+type SecretStoreParameterType struct {
+	// Name is the name of the secretstore.
+	Name string `json:"name"`
+}
 
 // GeneratorParameter defines a parameter to be passed to a generator type.
 type GeneratorParameterType struct {
@@ -85,11 +94,8 @@ type GeneratorParameterType struct {
 	Kind *string `json:"kind,omitempty"`
 }
 
-// SecretStoreParameter defines a parameter to be passed to a secret store type.
-type SecretStoreParameterType struct {
-	// Name is the name of the secretstore.
-	Name string `json:"name"`
-}
+// SecretLocationParameter defines a parameter to be passed to a secret location type.
+type SecretLocationParameterType = scanv1alpha1.SecretInStoreRef
 
 // ResourceConstraints defines constraints for Kubernetes resource selection.
 type ResourceConstraints struct {
