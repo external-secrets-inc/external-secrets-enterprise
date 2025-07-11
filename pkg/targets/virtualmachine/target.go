@@ -1,12 +1,16 @@
 package virtualmachine
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -16,6 +20,8 @@ import (
 type Provider struct{}
 
 type ScanTarget struct {
+	// Virtual Machine Name
+	Name              string
 	URL               string
 	CABundle          []byte
 	AuthBasicUsername *string
@@ -23,9 +29,10 @@ type ScanTarget struct {
 	AuthBearerToken   *string
 	AuthClientCert    []byte
 	AuthClientKey     []byte
+	Paths             []string
 }
 
-func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (*ScanTarget, error) {
+func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
 	converted, ok := target.(*tgtv1alpha1.VirtualMachine)
 	if !ok {
 		return nil, fmt.Errorf("target %q not found", target.GetObjectKind().GroupVersionKind().Kind)
@@ -57,15 +64,17 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 	}
 	return &ScanTarget{
 		URL:               converted.Spec.URL,
-		CABundle:          converted.Spec.CABundle,
+		CABundle:          []byte(converted.Spec.CABundle),
 		AuthBasicUsername: &uname,
 		AuthBasicPassword: &pass,
 		AuthClientCert:    []byte(cert),
 		AuthClientKey:     []byte(key),
+		Paths:             converted.Spec.Paths,
+		Name:              converted.GetName(),
 	}, nil
 }
 
-func (s *ScanTarget) Scan(ctx context.Context, regexes []string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -74,7 +83,6 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string) ([]tgtv1alpha1.
 	client := &http.Client{}
 
 	if u.Scheme == "https" {
-		// 1. Create TLS config if CA bundle is provided
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12} //nolint
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()
@@ -82,7 +90,6 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string) ([]tgtv1alpha1.
 			tlsConfig.RootCAs = caCertPool
 		}
 
-		// 2. Configure mTLS if client cert and key are provided
 		if len(s.AuthClientCert) > 0 && len(s.AuthClientKey) > 0 {
 			cert, err := tls.X509KeyPair(s.AuthClientCert, s.AuthClientKey)
 			if err != nil {
@@ -95,23 +102,126 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string) ([]tgtv1alpha1.
 			TLSClientConfig: tlsConfig,
 		}
 	}
-
-	// 4. Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, nil)
+	r := Request{
+		Regexes:   regexes,
+		Threshold: threshold,
+		Paths:     s.Paths,
+	}
+	body, err := json.Marshal(r)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request: %w", err)
+	}
+	api := fmt.Sprintf("%s/api/v1/scan", s.URL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, api, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
 
-	// 5. Add authentication header
 	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
 		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
 	} else if s.AuthBearerToken != nil {
 		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
 	}
 
-	// TODO: execute request and process response
-	_ = client
-	_ = req
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer resp.Body.Close()
+	// Parse Response for Job ID;
+	var scanResponse ScanResponse
+	if err := json.NewDecoder(resp.Body).Decode(&scanResponse); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+	// Wait for Job to be completed (timeout of 10 minutes)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	return s.checkForJob(ctx, client, scanResponse.JobId)
+}
 
-	return nil, nil
+func (s *ScanTarget) checkForJob(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+	matches, err := s.runMatches(ctx, client, jobID)
+	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
+		return nil, err
+	}
+	// If the  first run is ready, lets go forward
+	if err == nil {
+		return matches, nil
+	}
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			matches, err := s.runMatches(ctx, client, jobID)
+			if err != nil {
+				if errors.Is(err, JobNotReadyErr{}) {
+					continue
+				}
+				return nil, err
+			}
+			return matches, nil
+		}
+	}
+}
+
+func (s *ScanTarget) runMatches(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+	matches, err := s.getJobMatches(ctx, client, jobID)
+	if err != nil {
+		return nil, err
+	}
+	return matches, nil
+
+}
+
+func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+	scanApi := fmt.Sprintf("%s/api/v1/scan/%s", s.URL, jobID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, scanApi, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
+		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
+	} else if s.AuthBearerToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer resp.Body.Close()
+	var scanJobResponse ScanJobResponse
+	if err := json.NewDecoder(resp.Body).Decode(&scanJobResponse); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+	if scanJobResponse.Status != "completed" {
+		return nil, JobNotReadyErr{}
+	}
+	var secrets []tgtv1alpha1.SecretInStoreRef
+	for _, match := range scanJobResponse.Match {
+		secret := tgtv1alpha1.SecretInStoreRef{
+			APIVersion: tgtv1alpha1.SchemeGroupVersion.String(),
+			Kind:       tgtv1alpha1.VirtualMachineKind,
+			Name:       s.Name,
+			RemoteRef: tgtv1alpha1.RemoteRef{
+				Key: match.EntryId,
+			},
+		}
+		secrets = append(secrets, secret)
+	}
+	return secrets, nil
+}
+
+type JobNotReadyErr struct{}
+
+func (e JobNotReadyErr) Error() string {
+	return "job not ready"
+}
+
+func init() {
+	tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
 }

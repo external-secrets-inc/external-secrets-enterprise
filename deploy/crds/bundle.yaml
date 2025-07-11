@@ -28412,12 +28412,15 @@ spec:
                       type: object
                   type: object
                 caBundle:
-                  format: byte
                   type: string
+                paths:
+                  items:
+                    type: string
+                  type: array
                 url:
                   type: string
               required:
-                - caBundle
+                - paths
                 - url
               type: object
           type: object

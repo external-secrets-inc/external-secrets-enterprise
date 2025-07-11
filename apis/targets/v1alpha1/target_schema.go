@@ -7,16 +7,16 @@ import (
 	"sync"
 )
 
-var builder map[string]ScanTarget
+var builder map[string]TargetProvider
 var buildlock sync.RWMutex
 
 func init() {
-	builder = make(map[string]ScanTarget)
+	builder = make(map[string]TargetProvider)
 }
 
 // Register a generator type. Register panics if a
 // backend with the same generator is already registered.
-func Register(kind string, g ScanTarget) {
+func Register(kind string, g TargetProvider) {
 	buildlock.Lock()
 	defer buildlock.Unlock()
 	_, exists := builder[kind]
@@ -29,14 +29,14 @@ func Register(kind string, g ScanTarget) {
 
 // ForceRegister adds to the schema, overwriting a generator if
 // already registered. Should only be used for testing.
-func ForceRegister(kind string, g ScanTarget) {
+func ForceRegister(kind string, g TargetProvider) {
 	buildlock.Lock()
 	builder[kind] = g
 	buildlock.Unlock()
 }
 
 // GetTargetByName returns the provider implementation by name.
-func GetTargetByName(kind string) (ScanTarget, bool) {
+func GetTargetByName(kind string) (TargetProvider, bool) {
 	buildlock.RLock()
 	f, ok := builder[kind]
 	buildlock.RUnlock()

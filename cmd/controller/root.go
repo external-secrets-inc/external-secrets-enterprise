@@ -38,6 +38,7 @@ import (
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/federation/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	wfv1alpha1 "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterexternalsecret"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterexternalsecret/cesmetrics"
@@ -128,6 +129,7 @@ func init() {
 	utilruntime.Must(fedv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(wfv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(scanv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(tgtv1alpha1.AddToScheme(scheme))
 }
 
 var rootCmd = &cobra.Command{

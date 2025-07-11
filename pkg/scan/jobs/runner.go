@@ -86,13 +86,18 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 		return nil, err
 	}
 	for _, target := range targets.Items {
-		client, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
+		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
 		if !ok {
 			return nil, fmt.Errorf("target %q not found", target.GroupVersionKind().Kind)
 		}
+		client, err := prov.NewClient(ctx, j.Client, &target)
+		if err != nil {
+			return nil, err
+		}
 		regexMap := j.memset.Regexes()
 		for key, regexes := range regexMap {
-			locations, err := client.Scan(ctx, regexes)
+			// TODO Fix Threshold
+			locations, err := client.Scan(ctx, regexes, j.memset.GetThreshold())
 			if err != nil {
 				return nil, err
 			}

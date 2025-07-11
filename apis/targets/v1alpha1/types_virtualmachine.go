@@ -7,9 +7,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var VirtualMachineKind = "VirtualMachine"
+
 type VirtualMachineSpec struct {
 	URL      string          `json:"url"`
-	CABundle []byte          `json:"caBundle"`
+	Paths    []string        `json:"paths"`
+	CABundle string          `json:"caBundle,omitempty"`
 	Auth     *Authentication `json:"auth,omitempty"`
 }
 
