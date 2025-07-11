@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.12.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.11.0...v1.12.0) (2025-07-11)
+
+
+### Features
+
+* add secretlocation and secretlocation array ([#250](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/250)) ([e422b11](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e422b11e5e9725ca02c5633e1b3d2dbc05cfc9b1))
+
+
+### Bug Fixes
+
+* generator executor ([#251](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/251)) ([662394a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/662394ad5dbd1b4209a1905ef34bf5382fa37fe8))
+
 ## [1.11.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.10.0...v1.11.0) (2025-07-10)
 
 
