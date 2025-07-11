@@ -4,12 +4,12 @@
 package job
 
 import (
+	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"math/rand"
+	"math/big"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
@@ -44,15 +44,7 @@ func NewMemorySet() *MemorySet {
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*_+='\"{}"
 
-var r *rand.Rand
-
-func init() {
-	source := rand.NewSource(time.Now().UnixNano())
-	r = rand.New(source)
-}
-
 func generateRegexes(val []byte) []string {
-
 	regexes := make([]string, 0, GOOD_REGEXES+BAD_REGEXES)
 	var sb strings.Builder
 
@@ -64,12 +56,16 @@ func generateRegexes(val []byte) []string {
 			charSet := make([]byte, charsPerRune)
 			charSet[0] = char
 			for j := 1; j < charsPerRune; j++ {
-				charSet[j] = alphabet[r.Intn(len(alphabet))]
+				n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
+				charSet[j] = alphabet[n.Int64()]
 			}
 
-			r.Shuffle(len(charSet), func(i, j int) {
-				charSet[i], charSet[j] = charSet[j], charSet[i]
-			})
+			// Fisher-Yates shuffle
+			for k := len(charSet) - 1; k > 0; k-- {
+				n, _ := rand.Int(rand.Reader, big.NewInt(int64(k+1)))
+				j := n.Int64()
+				charSet[k], charSet[j] = charSet[j], charSet[k]
+			}
 
 			sb.Write(charSet)
 			sb.WriteString("]")
@@ -83,9 +79,13 @@ func generateRegexes(val []byte) []string {
 		for _, char := range val {
 			sb.WriteString("[")
 			for j := 0; j < charsPerRune; j++ {
-				randomChar := alphabet[r.Intn(len(alphabet))]
-				for randomChar == char {
-					randomChar = alphabet[r.Intn(len(alphabet))]
+				var randomChar byte
+				for {
+					n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
+					randomChar = alphabet[n.Int64()]
+					if randomChar != char {
+						break
+					}
 				}
 				sb.WriteByte(randomChar)
 			}
@@ -94,9 +94,12 @@ func generateRegexes(val []byte) []string {
 		regexes = append(regexes, sb.String())
 	}
 
-	r.Shuffle(len(regexes), func(i, j int) {
+	// Fisher-Yates shuffle for the regexes slice
+	for i := len(regexes) - 1; i > 0; i-- {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(i+1)))
+		j := n.Int64()
 		regexes[i], regexes[j] = regexes[j], regexes[i]
-	})
+	}
 
 	return regexes
 }

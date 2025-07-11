@@ -1,3 +1,5 @@
+// Copyright External Secrets Inc. 2025
+// All Rights reserved.
 package virtualmachine
 
 import (
@@ -83,7 +85,7 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) 
 	client := &http.Client{}
 
 	if u.Scheme == "https" {
-		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12} //nolint
+		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()
 			caCertPool.AppendCertsFromPEM(s.CABundle)
@@ -128,7 +130,7 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) 
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	// Parse Response for Job ID;
 	var scanResponse ScanResponse
 	if err := json.NewDecoder(resp.Body).Decode(&scanResponse); err != nil {
@@ -174,12 +176,11 @@ func (s *ScanTarget) runMatches(ctx context.Context, client *http.Client, jobID 
 		return nil, err
 	}
 	return matches, nil
-
 }
 
 func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	scanApi := fmt.Sprintf("%s/api/v1/scan/%s", s.URL, jobID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, scanApi, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, scanApi, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
@@ -193,7 +194,7 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var scanJobResponse ScanJobResponse
 	if err := json.NewDecoder(resp.Body).Decode(&scanJobResponse); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
@@ -201,7 +202,7 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	if scanJobResponse.Status != "completed" {
 		return nil, JobNotReadyErr{}
 	}
-	var secrets []tgtv1alpha1.SecretInStoreRef
+	secrets := []tgtv1alpha1.SecretInStoreRef{}
 	for _, match := range scanJobResponse.Match {
 		secret := tgtv1alpha1.SecretInStoreRef{
 			APIVersion: tgtv1alpha1.SchemeGroupVersion.String(),
