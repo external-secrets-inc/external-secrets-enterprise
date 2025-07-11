@@ -341,7 +341,7 @@ func (r *Reconciler) PushSecretToProviders(ctx context.Context, stores map[esapi
 	return out, nil
 }
 
-func (r *Reconciler) handlePushSecretDataForStore(ctx context.Context, ps esapi.PushSecret, secret *v1.Secret, out esapi.SyncedPushSecretsMap, mgr *secretstore.Manager, storeName, refKind string, refGroup string) (esapi.SyncedPushSecretsMap, error) {
+func (r *Reconciler) handlePushSecretDataForStore(ctx context.Context, ps esapi.PushSecret, secret *v1.Secret, out esapi.SyncedPushSecretsMap, mgr *secretstore.Manager, storeName, refKind, refGroup string) (esapi.SyncedPushSecretsMap, error) {
 	storeKey := fmt.Sprintf("%v/%v", refKind, storeName)
 	out[storeKey] = make(map[string]esapi.PushSecretData)
 	storeRef := esv1.SecretStoreRef{

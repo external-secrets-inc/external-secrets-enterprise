@@ -1,3 +1,5 @@
+// Copyright External Secrets Inc. 2025
+// All rights reserved.
 package virtualmachine
 
 import (

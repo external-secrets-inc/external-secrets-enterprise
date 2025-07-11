@@ -97,7 +97,6 @@ func GetProvider(s GenericStore) (Provider, error) {
 		}
 
 		return f, nil
-
 	}
 	if s == nil {
 		return nil, nil
