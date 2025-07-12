@@ -32,12 +32,17 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
+<<<<<<< HEAD
 	github.com/oracle/oci-go-sdk/v65 v65.95.1
+=======
+	github.com/oracle/oci-go-sdk/v65 v65.95.0
+>>>>>>> upstream/main
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
+<<<<<<< HEAD
 	github.com/yandex-cloud/go-genproto v0.14.0
 	github.com/yandex-cloud/go-sdk v0.15.0
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
@@ -46,6 +51,16 @@ require (
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.241.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
+=======
+	github.com/yandex-cloud/go-genproto v0.13.0
+	github.com/yandex-cloud/go-sdk v0.12.0
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+	go.uber.org/zap v1.27.0
+	golang.org/x/crypto v0.39.0
+	golang.org/x/oauth2 v0.30.0
+	google.golang.org/api v0.240.0
+	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
+>>>>>>> upstream/main
 	google.golang.org/grpc v1.73.0
 	gopkg.in/yaml.v3 v3.0.1
 	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
@@ -94,8 +109,11 @@ require (
 	github.com/cloudru-tech/iam-sdk v1.0.4
 	github.com/cloudru-tech/secret-manager-sdk v1.1.1
 	github.com/cyberark/conjur-api-go v0.13.1
+<<<<<<< HEAD
 	github.com/docker/go-connections v0.5.0
 	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994
+=======
+>>>>>>> upstream/main
 	github.com/fortanix/sdkms-client-go v0.4.1
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -128,8 +146,12 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/neo4j v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/tidwall/sjson v1.2.5
+<<<<<<< HEAD
 	gitlab.com/gitlab-org/api/client-go v0.134.0
 	golang.org/x/sync v0.16.0
+=======
+	gitlab.com/gitlab-org/api/client-go v0.133.0
+>>>>>>> upstream/main
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911
 	sigs.k8s.io/yaml v1.5.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0

@@ -825,8 +825,13 @@ github.com/opentracing/basictracer-go v1.1.0/go.mod h1:V2HZueSJEp879yv285Aap1BS6
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b h1:FfH+VrHHk6Lxt9HdVS0PXzSXFyS2NbZKXv33FYPol0A=
 github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b/go.mod h1:AC62GU6hc0BrNm+9RK9VSiwa/EUe1bkIeFORAMcHvJU=
+<<<<<<< HEAD
 github.com/oracle/oci-go-sdk/v65 v65.95.1 h1:KCYeX+c+A0ezLVgXKpEcgXNukn6wBkD9oWoSV2FlaUs=
 github.com/oracle/oci-go-sdk/v65 v65.95.1/go.mod h1:u6XRPsw9tPziBh76K7GrrRXPa8P8W3BQeqJ6ZZt9VLA=
+=======
+github.com/oracle/oci-go-sdk/v65 v65.95.0 h1:fI+/mfJOS2DkQ+/AFSyJAfn1XFR4TTGm2AhN6xbsi00=
+github.com/oracle/oci-go-sdk/v65 v65.95.0/go.mod h1:u6XRPsw9tPziBh76K7GrrRXPa8P8W3BQeqJ6ZZt9VLA=
+>>>>>>> upstream/main
 github.com/passbolt/go-passbolt v0.7.2 h1:1kmtMq9Banqj5b6dFHV5M4M/1dOzdY0/gEjuj/JKDRs=
 github.com/passbolt/go-passbolt v0.7.2/go.mod h1:hWlTwpH5vuFKRHQdOZL5GfphqTc4O/z2iLHpSWSuqUk=
 github.com/pgavlin/fx v0.1.6 h1:r9jEg69DhNoCd3Xh0+5mIbdbS3PqWrVWujkY76MFRTU=
@@ -1006,10 +1011,17 @@ github.com/xdg-go/stringprep v1.0.4 h1:XLI/Ng3O1Atzq0oBs3TWm+5ZVgkq2aqdlvP9JtoZ6
 github.com/xdg-go/stringprep v1.0.4/go.mod h1:mPGuuIYwz7CmR2bT9j4GbQqutWS1zV24gijq1dTyGkM=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
+<<<<<<< HEAD
 github.com/yandex-cloud/go-genproto v0.14.0 h1:yDqD260mICkjodXyAaDhESfrLr6gIGwwRc9MYE0jvW0=
 github.com/yandex-cloud/go-genproto v0.14.0/go.mod h1:0LDD/IZLIUIV4iPH+YcF+jysO3jkSvADFGm4dCAuwQo=
 github.com/yandex-cloud/go-sdk v0.15.0 h1:qw4DIjB9R5kFxAM41oRX6fR6Peu3+NJJ+8Hq0HweAUk=
 github.com/yandex-cloud/go-sdk v0.15.0/go.mod h1:FrGFoK1NSOGjW5k/ga811r3UPACWPiDhMLL5B5GKeNA=
+=======
+github.com/yandex-cloud/go-genproto v0.13.0 h1:KbMyonhUDvyHpQLjBsaTt9RT3wZdHjTbAZxUHGvQBog=
+github.com/yandex-cloud/go-genproto v0.13.0/go.mod h1:0LDD/IZLIUIV4iPH+YcF+jysO3jkSvADFGm4dCAuwQo=
+github.com/yandex-cloud/go-sdk v0.12.0 h1:A3zqY5F+j2YQCSRcXMLYonQNvguI0JVgHIM1JII3b4U=
+github.com/yandex-cloud/go-sdk v0.12.0/go.mod h1:ZrBErlTPctwdRJ6SS5OsY7pLEF/Q3HtLwCJXyoDeDOY=
+>>>>>>> upstream/main
 github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 h1:ilQV1hzziu+LLM3zUTJ0trRztfwgjqKnBWNtSRkbmwM=
 github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78/go.mod h1:aL8wCCfTfSfmXjznFBSZNN13rSJjlIOI1fUNAtF7rmI=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
@@ -1024,10 +1036,15 @@ github.com/zalando/go-keyring v0.2.6 h1:r7Yc3+H+Ux0+M72zacZoItR3UDxeWfKTcabvkI8u
 github.com/zalando/go-keyring v0.2.6/go.mod h1:2TCrxYrbUNYfNS/Kgy/LSrkSQzZ5UPVH85RwfczwvcI=
 github.com/zclconf/go-cty v1.16.3 h1:osr++gw2T61A8KVYHoQiFbFd1Lh3JOCXc/jFLJXKTxk=
 github.com/zclconf/go-cty v1.16.3/go.mod h1:VvMs5i0vgZdhYawQNq5kePSpLAoz8u1xvZgrPIxfnZE=
+<<<<<<< HEAD
 github.com/zeebo/errs v1.4.0 h1:XNdoD/RRMKP7HD0UhJnIzUy74ISdGGxURlYG8HSWSfM=
 github.com/zeebo/errs v1.4.0/go.mod h1:sgbWHsvVuTPHcqJJGQ1WhI5KbWlHYz+2+2C/LSEtCw4=
 gitlab.com/gitlab-org/api/client-go v0.134.0 h1:J4i6qPN5hRLsqatPxVbe9w2C0A3JEItyCQrzsP52S2k=
 gitlab.com/gitlab-org/api/client-go v0.134.0/go.mod h1:crkp9sCwMQ8gDwuMLgk11sDT336t6U3kESBT0BGsOBo=
+=======
+gitlab.com/gitlab-org/api/client-go v0.133.0 h1:Y+t86XrCUY24A1yLMU1mYgC1/kvUTohLPG7bUJs692M=
+gitlab.com/gitlab-org/api/client-go v0.133.0/go.mod h1:crkp9sCwMQ8gDwuMLgk11sDT336t6U3kESBT0BGsOBo=
+>>>>>>> upstream/main
 go.mongodb.org/mongo-driver v1.17.4 h1:jUorfmVzljjr0FLzYQsGP8cgN/qzzxlY9Vh0C9KFXVw=
 go.mongodb.org/mongo-driver v1.17.4/go.mod h1:Hy04i7O2kC4RS06ZrhPRqj/u4DTYkFDAAccj+rVKqgQ=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
@@ -1429,8 +1446,13 @@ google.golang.org/api v0.40.0/go.mod h1:fYKFpnQN0DsDSKRVRcQSDQNtqWPfM9i+zNPxepjR
 google.golang.org/api v0.41.0/go.mod h1:RkxM5lITDfTzmyKFPt+wGrCJbVfniCr2ool8kTBzRTU=
 google.golang.org/api v0.43.0/go.mod h1:nQsDGjRXMo4lvh5hP0TKqF244gqhGcr/YSIykhUk/94=
 google.golang.org/api v0.45.0/go.mod h1:ISLIJCedJolbZvDfAk+Ctuq5hf+aJ33WgtUsfyFoLXA=
+<<<<<<< HEAD
 google.golang.org/api v0.241.0 h1:QKwqWQlkc6O895LchPEDUSYr22Xp3NCxpQRiWTB6avE=
 google.golang.org/api v0.241.0/go.mod h1:cOVEm2TpdAGHL2z+UwyS+kmlGr3bVWQQ6sYEqkKje50=
+=======
+google.golang.org/api v0.240.0 h1:PxG3AA2UIqT1ofIzWV2COM3j3JagKTKSwy7L6RHNXNU=
+google.golang.org/api v0.240.0/go.mod h1:cOVEm2TpdAGHL2z+UwyS+kmlGr3bVWQQ6sYEqkKje50=
+>>>>>>> upstream/main
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/appengine v1.5.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=

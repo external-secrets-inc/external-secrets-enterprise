@@ -42,6 +42,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | certController.deploymentAnnotations | object | `{}` | Annotations to add to Deployment |
 | certController.extraArgs | object | `{}` |  |
 | certController.extraEnv | list | `[]` |  |
+| certController.extraInitContainers | list | `[]` |  |
 | certController.extraVolumeMounts | list | `[]` |  |
 | certController.extraVolumes | list | `[]` |  |
 | certController.fullnameOverride | string | `""` |  |
@@ -103,6 +104,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | extraArgs | object | `{}` |  |
 | extraContainers | list | `[]` |  |
 | extraEnv | list | `[]` |  |
+| extraInitContainers | list | `[]` |  |
 | extraObjects | list | `[]` |  |
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
@@ -198,6 +200,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | webhook.deploymentAnnotations | object | `{}` | Annotations to add to Deployment |
 | webhook.extraArgs | object | `{}` |  |
 | webhook.extraEnv | list | `[]` |  |
+| webhook.extraInitContainers | list | `[]` |  |
 | webhook.extraVolumeMounts | list | `[]` |  |
 | webhook.extraVolumes | list | `[]` |  |
 | webhook.failurePolicy | string | `"Fail"` | Specifies whether validating webhooks should be created with failurePolicy: Fail or Ignore |
