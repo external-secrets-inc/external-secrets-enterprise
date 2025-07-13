@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.13.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.12.0...v1.13.0) (2025-07-13)
+
+
+### Features
+
+* adds target CRDs and VirtualMachine Target logic ([#247](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/247)) ([50dc548](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/50dc54895fbb433074cc842cae21d97fa1270c96))
+
+
+### Bug Fixes
+
+* conflicts ([90f2290](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/90f2290471ffdfa5a08c4704e6981e92c61cf023))
+* types ([#258](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/258)) ([624b159](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/624b159e9b48630c3f1ceb696f99bdcaf597fcee))
+* update dependencies ([#256](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/256)) ([1f152f3](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1f152f38eb4466bc28e4e00be0ff2296d540bdab))
+* update from upstream ([#255](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/255)) ([2daf7ba](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2daf7ba3f3b7daa280735f48b0f86241776ecc8b))
+
 ## [1.12.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.11.0...v1.12.0) (2025-07-11)
 
 
