@@ -14,7 +14,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -95,7 +95,7 @@ type GeneratorParameterType struct {
 }
 
 // SecretLocationParameter defines a parameter to be passed to a secret location type.
-type SecretLocationParameterType = scanv1alpha1.SecretInStoreRef
+type SecretLocationParameterType = tgtv1alpha1.SecretInStoreRef
 
 // ResourceConstraints defines constraints for Kubernetes resource selection.
 type ResourceConstraints struct {
