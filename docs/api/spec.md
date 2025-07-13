@@ -8231,6 +8231,18 @@ string
 Defaults to <code>SecretStore</code></p>
 </td>
 </tr>
+<tr>
+<td>
+<code>group</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Group if usign other elements such as Targets</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="external-secrets.io/v1.SecretStoreRetrySettings">SecretStoreRetrySettings
