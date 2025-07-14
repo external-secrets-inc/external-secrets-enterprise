@@ -166,13 +166,20 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 
 func getNameFor(keys []tgtv1alpha1.SecretInStoreRef) string {
 	slices.SortFunc(keys, func(a, b tgtv1alpha1.SecretInStoreRef) int {
+
 		aIdx := fmt.Sprintf("%s-%s-%s", a.Name, a.RemoteRef.Key, a.RemoteRef.Property)
+		if a.RemoteRef.Property == "" {
+			aIdx = fmt.Sprintf("%s-%s", a.Name, a.RemoteRef.Key)
+		}
 		bIdx := fmt.Sprintf("%s-%s-%s", b.Name, b.RemoteRef.Key, b.RemoteRef.Property)
+		if b.RemoteRef.Property == "" {
+			bIdx = fmt.Sprintf("%s-%s", b.Name, b.RemoteRef.Key)
+		}
 		return strings.Compare(aIdx, bIdx)
 	})
 	return sanitize(fmt.Sprintf("%s-%s-%s", keys[0].Name, keys[0].RemoteRef.Key, keys[0].RemoteRef.Property))
 }
 
 func sanitize(name string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(name, "_", "."), "/", ".")
+	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(name, "_", "."), "/", "."))
 }

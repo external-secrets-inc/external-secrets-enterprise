@@ -36,6 +36,10 @@ func NewJobRunner(client client.Client, logger logr.Logger, namespace string, co
 	}
 }
 
+func (j *JobRunner) Close(ctx context.Context) error {
+	return j.mgr.Close(ctx)
+}
+
 func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 	// List Secret Stores
 	// TODO - apply constraints

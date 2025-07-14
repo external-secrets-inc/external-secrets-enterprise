@@ -107,6 +107,12 @@ func (c *JobController) SetupWithManager(mgr ctrl.Manager, opts controller.Optio
 }
 
 func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *utils.JobRunner) error {
+	defer func() {
+		err := j.Close(context.Background())
+		if err != nil {
+			c.Log.Error(err, "failed to close job runner")
+		}
+	}()
 	var jobTime metav1.Time
 	var jobStatus v1alpha1.JobRunStatus
 	defer func() {
