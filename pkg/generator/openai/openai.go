@@ -163,7 +163,12 @@ func (c *openAiClient) createServiceAccount(ctx context.Context, name string) (*
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("failed to create service account: %s", resp.Status)
@@ -180,7 +185,7 @@ func (c *openAiClient) createServiceAccount(ctx context.Context, name string) (*
 func (c *openAiClient) deleteServiceAccount(ctx context.Context, serviceAccountID string) error {
 	url := fmt.Sprintf("%s%s/%s", c.baseURL, fmt.Sprintf(serviceAccountsEndpointFmt, c.projectID), serviceAccountID)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, http.NoBody)
 	if err != nil {
 		return err
 	}
@@ -192,7 +197,12 @@ func (c *openAiClient) deleteServiceAccount(ctx context.Context, serviceAccountI
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("failed to delete service account: %s", resp.Status)
