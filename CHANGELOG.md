@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.4...v1.13.5) (2025-07-14)
+
+
+### Bug Fixes
+
+* sanitize names ([#273](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/273)) ([3c369c1](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3c369c1425286d7c8f48671f195f336e55a2c6cd))
+
 ## [1.13.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.3...v1.13.4) (2025-07-14)
 
 
