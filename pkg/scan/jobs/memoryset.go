@@ -170,5 +170,9 @@ func getNameFor(keys []tgtv1alpha1.SecretInStoreRef) string {
 		bIdx := fmt.Sprintf("%s-%s-%s", b.Name, b.RemoteRef.Key, b.RemoteRef.Property)
 		return strings.Compare(aIdx, bIdx)
 	})
-	return fmt.Sprintf("%s-%s-%s", keys[0].Name, keys[0].RemoteRef.Key, keys[0].RemoteRef.Property)
+	return sanitize(fmt.Sprintf("%s-%s-%s", keys[0].Name, keys[0].RemoteRef.Key, keys[0].RemoteRef.Property))
+}
+
+func sanitize(name string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(name, "_", "."), "/", ".")
 }
