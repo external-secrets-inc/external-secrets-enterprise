@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.1...v1.13.2) (2025-07-14)
+
+
+### Bug Fixes
+
+* findings names ([#264](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/264)) ([cd5b7ef](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/cd5b7ef471212ffa9f79666c765a025fa99b6bad))
+* only scan for objects in the same namespace ([cd5b7ef](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/cd5b7ef471212ffa9f79666c765a025fa99b6bad))
+
 ## [1.13.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.0...v1.13.1) (2025-07-14)
 
 
