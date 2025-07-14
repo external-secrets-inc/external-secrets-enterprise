@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -154,7 +155,8 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue inter
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 			ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
-			ParameterTypeGenerator, ParameterTypeGeneratorArray:
+			ParameterTypeGenerator, ParameterTypeGeneratorArray,
+			ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
 			// For string and other types, use the raw value
 			parsedValue = argValue
 		}
@@ -197,7 +199,8 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 		case ParameterTypeString, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
 			ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 			ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
-			ParameterTypeGenerator, ParameterTypeGeneratorArray:
+			ParameterTypeGenerator, ParameterTypeGeneratorArray,
+			ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
 			// No specific validation needed for these types
 		}
 	}
@@ -213,7 +216,8 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 // validateKubernetesResource validates that a Kubernetes resource exists and matches constraints.
 func validateKubernetesResource(ctx context.Context, param *Parameter, value interface{}, namespace string) error {
 	var resourceName string
-	if param.Type == ParameterTypeSecretStoreArray {
+	switch param.Type {
+	case ParameterTypeSecretStoreArray:
 		resourceList, err := param.ToSecretStoreParameterTypeArray(value)
 		if err != nil {
 			return err
@@ -226,7 +230,44 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			}
 		}
 		return nil
-	} else if param.Type.IsGeneratorArrayType() {
+	case ParameterTypeSecretLocationArray:
+		resourceList, err := param.ToSecretLocationParameterTypeArray(value)
+		if err != nil {
+			return err
+		}
+
+		param.Type = ParameterTypeSecretLocation
+		for i := range resourceList {
+			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+				return err
+			}
+		}
+		return nil
+	case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
+		resource, err := param.ToSecretStoreParameterType(value)
+		if err != nil {
+			return err
+		}
+		resourceName = resource.Name
+	case ParameterTypeSecretLocation:
+		resource, err := param.ToSecretLocationParameterType(value)
+		if err != nil {
+			return err
+		}
+		resourceName = resource.Name
+	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
+		// should not happen. Generator types will be processed later
+	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+		ParameterTypeNamespace, ParameterTypeExternalSecret:
+		str, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("kubernetes resource name must be a string. received: %T", value)
+		}
+		resourceName = str
+	}
+
+	if param.Type.IsGeneratorArrayType() {
 		resourceList, err := param.ToGeneratorParameterTypeArray(value)
 		if err != nil {
 			return err
@@ -239,27 +280,15 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			}
 		}
 		return nil
-	} else if param.Type == ParameterTypeSecretStore || param.Type == ParameterTypeClusterSecretStore {
-		resource, err := param.ToSecretStoreParameterType(value)
-		if err != nil {
-			return err
-		}
+	}
 
-		resourceName = resource.Name
-	} else if param.Type.IsGeneratorType() {
+	if param.Type.IsGeneratorType() {
 		resource, err := param.ToGeneratorParameterType(value)
 		if err != nil {
 			return err
 		}
-
 		resourceName = *resource.Name
 		param.Type = ParameterType(fmt.Sprintf("generator[%s]", *resource.Kind))
-	} else {
-		resource, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("kubernetes resource name must be a string. received: %T", value)
-		}
-		resourceName = resource
 	}
 
 	// Determine the resource namespace
@@ -301,6 +330,22 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			Version: "v1alpha1",
 			Kind:    param.Type.ExtractGeneratorKind(),
 		}
+	case ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
+		resource, err := param.ToSecretLocationParameterType(value)
+		if err != nil {
+			return err
+		}
+
+		splittedApiVersion := strings.Split(resource.APIVersion, "/")
+		if len(splittedApiVersion) != 2 {
+			return fmt.Errorf("invalid apiVersion for secretlocation: %s", resource.APIVersion)
+		}
+
+		gvk = schema.GroupVersionKind{
+			Group:   splittedApiVersion[0],
+			Version: splittedApiVersion[1],
+			Kind:    resource.Kind,
+		}
 	}
 
 	// Special case for Generator type
@@ -326,7 +371,6 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 	// Create an unstructured object to fetch the resource
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(gvk)
-
 	// Fetch the resource
 	err := k8sClient.Get(ctx, types.NamespacedName{
 		Namespace: resourceNamespace,
