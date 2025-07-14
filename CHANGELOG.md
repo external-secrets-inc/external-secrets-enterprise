@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.2...v1.13.3) (2025-07-14)
+
+
+### Bug Fixes
+
+* sanitize name for k8s ([#267](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/267)) ([4cf3088](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4cf3088e7560d4109259672cf71541c82083132e))
+
 ## [1.13.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.1...v1.13.2) (2025-07-14)
 
 
