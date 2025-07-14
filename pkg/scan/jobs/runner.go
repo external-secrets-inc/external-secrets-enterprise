@@ -57,7 +57,8 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 
 		secrets, err := client.GetAllSecrets(ctx, ref)
 		if err != nil {
-			return nil, err
+			j.Logger.Error(err, "failed to get secrets from store", "store", store.GetName())
+			continue
 		}
 		// For Each Secret, Calculate Duplicates
 
