@@ -64,7 +64,8 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 	// Run the Job applying constraints after leaving the reconcile loop
 	defer func() {
 		go func() {
-			err := c.runJob(ctx, jobSpec, j)
+			c.Log.V(1).Info("Starting async job", "job", jobSpec.GetName())
+			err := c.runJob(context.Background(), jobSpec, j)
 			if err != nil {
 				c.Log.Error(err, "failed to run job")
 			}
@@ -145,6 +146,7 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 					return err
 				}
 				create.Status.Locations = finding.Status.Locations
+				c.Log.V(1).Info("Updating finding status", "finding", create.GetName())
 				if err := c.Status().Update(ctx, create); err != nil {
 					jobStatus = v1alpha1.JobRunStatusFailed
 					jobTime = metav1.Now()
@@ -158,6 +160,7 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		} else {
 			if needsToUpdate(existing, &finding) {
 				existing.Status.Locations = finding.Status.Locations
+				c.Log.V(1).Info("Updating finding", "finding", existing.GetName())
 				if err := c.Status().Update(ctx, existing); err != nil {
 					jobStatus = v1alpha1.JobRunStatusFailed
 					jobTime = metav1.Now()
