@@ -166,7 +166,6 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 
 func getNameFor(keys []tgtv1alpha1.SecretInStoreRef) string {
 	slices.SortFunc(keys, func(a, b tgtv1alpha1.SecretInStoreRef) int {
-
 		aIdx := fmt.Sprintf("%s-%s-%s", a.Name, a.RemoteRef.Key, a.RemoteRef.Property)
 		if a.RemoteRef.Property == "" {
 			aIdx = fmt.Sprintf("%s-%s", a.Name, a.RemoteRef.Key)
