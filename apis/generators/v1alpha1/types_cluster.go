@@ -27,7 +27,7 @@ type ClusterGeneratorSpec struct {
 }
 
 // GeneratorKind represents a kind of generator.
-// +kubebuilder:validation:Enum=ACRAccessToken;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;Federation;MFA;BasicAuth;SSH;Neo4j;PostgreSql
+// +kubebuilder:validation:Enum=ACRAccessToken;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;Federation;MFA;BasicAuth;SSH;Neo4j;PostgreSql;OpenAI
 type GeneratorKind string
 
 const (
@@ -49,6 +49,7 @@ const (
 	GeneratorKindSSH                   GeneratorKind = "SSH"
 	GeneratorKindNeo4j                 GeneratorKind = "Neo4j"
 	GeneratorKindPostgreSql            GeneratorKind = "PostgreSql"
+	GeneratorKindOpenAI                GeneratorKind = "OpenAI"
 )
 
 // +kubebuilder:validation:MaxProperties=1
@@ -72,6 +73,7 @@ type GeneratorSpec struct {
 	SSHSpec                   *SSHSpec                   `json:"sshSpec,omitempty"`
 	Neo4jSpec                 *Neo4jSpec                 `json:"neo4jSpec,omitempty"`
 	PostgreSqlSpec            *PostgreSqlSpec            `json:"postgreSqlSpec,omitempty"`
+	OpenAISpec                *OpenAISpec                `json:"openAISpec,omitempty"`
 }
 
 // ClusterGenerator represents a cluster-wide generator which can be referenced as part of `generatorRef` fields.

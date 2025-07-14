@@ -25,6 +25,7 @@ var (
 	Neo4jKind             = reflect.TypeOf(Neo4j{}).Name()
 	MongoDBKind           = reflect.TypeOf(MongoDB{}).Name()
 	PostgreSqlKind        = reflect.TypeOf(PostgreSql{}).Name()
+	OpenAiKind            = reflect.TypeOf(OpenAI{}).Name()
 )
 
 func init() {
@@ -51,4 +52,5 @@ func init() {
 	SchemeBuilder.Register(&SSH{}, &SSHList{})
 	SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
 	SchemeBuilder.Register(&PostgreSql{}, &PostgreSqlList{})
+	SchemeBuilder.Register(&OpenAI{}, &OpenAIList{})
 }

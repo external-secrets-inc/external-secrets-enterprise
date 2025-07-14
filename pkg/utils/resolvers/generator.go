@@ -333,6 +333,17 @@ func clusterGeneratorToVirtual(gen *genv1alpha1.ClusterGenerator) (client.Object
 			},
 			Spec: *gen.Spec.Generator.PostgreSqlSpec,
 		}, nil
+	case genv1alpha1.GeneratorKindOpenAI:
+		if gen.Spec.Generator.OpenAISpec == nil {
+			return nil, fmt.Errorf("when kind is %s, OpenAISpec must be set", gen.Spec.Kind)
+		}
+		return &genv1alpha1.OpenAI{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
+				Kind:       genv1alpha1.OpenAiKind,
+			},
+			Spec: *gen.Spec.Generator.OpenAISpec,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown kind %s", gen.Spec.Kind)
 	}
