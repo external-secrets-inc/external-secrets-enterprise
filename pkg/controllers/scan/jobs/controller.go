@@ -113,16 +113,19 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 			LastRunTime: jobTime,
 			RunStatus:   jobStatus,
 		}
+		c.Log.V(1).Info("Updating Job Status", "RunStatus", jobStatus)
 		if err := c.Status().Update(ctx, jobSpec); err != nil {
 			c.Log.Error(err, "failed to update job status")
 		}
 	}()
+	c.Log.V(1).Info("Running Job", "job", jobSpec.GetName())
 	findings, err := j.Run(ctx)
 	if err != nil {
 		jobStatus = v1alpha1.JobRunStatusFailed
 		jobTime = metav1.Now()
 		return err
 	}
+	c.Log.V(1).Info("Found findings for job", "total findings", len(findings))
 	// for each finding, see if it already exists and update it if it does;
 	for _, finding := range findings {
 		req := client.ObjectKey{
@@ -135,6 +138,7 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 			if apierrors.IsNotFound(err) {
 				// Create Finding
 				create := finding.DeepCopy()
+				c.Log.V(1).Info("Creating finding", "finding", create.GetName())
 				if err := c.Create(ctx, create); err != nil {
 					jobStatus = v1alpha1.JobRunStatusFailed
 					jobTime = metav1.Now()

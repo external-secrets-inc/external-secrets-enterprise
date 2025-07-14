@@ -7,7 +7,9 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
 	"math/big"
+	"slices"
 	"strings"
 	"sync"
 
@@ -147,7 +149,7 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 		if len(keys) > 1 {
 			finding := v1alpha1.Finding{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: hash[:16],
+					Name: getNameFor(keys),
 				},
 				Spec: v1alpha1.FindingSpec{
 					Hash: hash,
@@ -160,4 +162,13 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 		}
 	}
 	return findings
+}
+
+func getNameFor(keys []tgtv1alpha1.SecretInStoreRef) string {
+	slices.SortFunc(keys, func(a, b tgtv1alpha1.SecretInStoreRef) int {
+		aIdx := fmt.Sprintf("%s-%s-%s", a.Name, a.RemoteRef.Key, a.RemoteRef.Property)
+		bIdx := fmt.Sprintf("%s-%s-%s", b.Name, b.RemoteRef.Key, b.RemoteRef.Property)
+		return strings.Compare(aIdx, bIdx)
+	})
+	return fmt.Sprintf("%s-%s-%s", keys[0].Name, keys[0].RemoteRef.Key, keys[0].RemoteRef.Property)
 }

@@ -39,8 +39,9 @@ func NewJobRunner(client client.Client, logger logr.Logger, namespace string, co
 func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 	// List Secret Stores
 	// TODO - apply constraints
+	j.Logger.V(1).Info("Listing Secret Stores")
 	stores := &esv1.SecretStoreList{}
-	if err := j.Client.List(ctx, stores); err != nil {
+	if err := j.Client.List(ctx, stores, client.InNamespace(j.Namespace)); err != nil {
 		return nil, err
 	}
 	for _, store := range stores.Items {
@@ -54,7 +55,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 			},
 		}
 		// For Each Secret Store, Get All Secrets;
-
+		j.Logger.V(1).Info("Getting Secrets for store", "store", store.GetName())
 		secrets, err := client.GetAllSecrets(ctx, ref)
 		if err != nil {
 			j.Logger.Error(err, "failed to get secrets from store", "store", store.GetName())
@@ -62,6 +63,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 		}
 		// For Each Secret, Calculate Duplicates
 
+		j.Logger.V(1).Info("Calculating duplicates for store", "store", store.GetName())
 		for key, value := range secrets {
 			valueAsMap := map[string]interface{}{}
 			if err := json.Unmarshal(value, &valueAsMap); err == nil {
@@ -82,11 +84,13 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 		}
 	}
 	// Check All duplicates on all created targets
+	j.Logger.V(1).Info("Getting Virtual Machine Targets")
 	targets := &tgtv1alpha1.VirtualMachineList{}
-	if err := j.Client.List(ctx, targets); err != nil {
+	if err := j.Client.List(ctx, targets, client.InNamespace(j.Namespace)); err != nil {
 		return nil, err
 	}
 	for _, target := range targets.Items {
+		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
 		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
 		if !ok {
 			return nil, fmt.Errorf("target %q not found", target.GroupVersionKind().Kind)
@@ -107,7 +111,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 			}
 		}
 	}
-
+	j.Logger.V(1).Info("Run Complete")
 	return j.memset.GetDuplicates(), nil
 }
 
