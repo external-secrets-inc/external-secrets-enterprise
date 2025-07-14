@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.0...v1.13.1) (2025-07-14)
+
+
+### Bug Fixes
+
+* skip stores with unsupported methods ([#260](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/260)) ([4f32448](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4f324481ee2aee4669025678ec18232c7baf97e9))
+
 ## [1.13.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.12.0...v1.13.0) (2025-07-13)
 
 
