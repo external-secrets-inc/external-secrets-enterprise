@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.3...v1.13.4) (2025-07-14)
+
+
+### Bug Fixes
+
+* close manager so jobs do not get stuck for locking stores like gcp ([#269](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/269)) ([9fcbb16](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9fcbb165ca53e2b3801591424136e860b1452ab7))
+* lint ([#271](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/271)) ([48284bb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/48284bb6ecae5921e8b9fa7fc2442fd197226f4a))
+
 ## [1.13.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.2...v1.13.3) (2025-07-14)
 
 
