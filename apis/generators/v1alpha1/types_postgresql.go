@@ -15,6 +15,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,7 +42,7 @@ type PostgreSqlAuth struct {
 	// A basic auth username used to authenticate against the PostgreSql instance.
 	Username string `json:"username"`
 	// A basic auth password used to authenticate against the PostgreSql instance.
-	Password SecretKeySelector `json:"password"`
+	Password esmeta.SecretKeySelector `json:"password"`
 }
 
 type PostgreSqlUserAttributesEnum string

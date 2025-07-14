@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
 const (
@@ -127,7 +128,7 @@ func newGeneratorSpec(t *testing.T, host, port, username string, destructive boo
 			Database: "postgres",
 			Auth: genv1alpha1.PostgreSqlAuth{
 				Username: "postgres",
-				Password: genv1alpha1.SecretKeySelector{
+				Password: esmeta.SecretKeySelector{
 					Name: testSecretName,
 					Key:  testSecretKey,
 				},
@@ -337,7 +338,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
 	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
 		Username: generatedUsername,
-		Password: genv1alpha1.SecretKeySelector{
+		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
 		},
@@ -403,7 +404,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
 	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
 		Username: generatedUsername,
-		Password: genv1alpha1.SecretKeySelector{
+		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
 		},
@@ -458,7 +459,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithNonExistentReassignUser
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
 	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
 		Username: generatedUsername,
-		Password: genv1alpha1.SecretKeySelector{
+		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
 		},
@@ -513,7 +514,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, true, nil)
 	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
 		Username: generatedUsername,
-		Password: genv1alpha1.SecretKeySelector{
+		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
 		},

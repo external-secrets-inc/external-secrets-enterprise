@@ -15,6 +15,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,12 +50,12 @@ type Neo4jBasicAuth struct {
 	// A basic auth username used to authenticate against the Neo4j instance.
 	Username string `json:"username"`
 	// A basic auth password used to authenticate against the Neo4j instance.
-	Password SecretKeySelector `json:"password"`
+	Password esmeta.SecretKeySelector `json:"password"`
 }
 
 type Neo4jBearerAuth struct {
 	// A bearer auth token used to authenticate against the Neo4j instance.
-	Token SecretKeySelector `json:"token"`
+	Token esmeta.SecretKeySelector `json:"token"`
 }
 
 type Neo4jAuthProvider string

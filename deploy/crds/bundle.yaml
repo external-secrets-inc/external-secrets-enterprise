@@ -22921,7 +22921,9 @@ spec:
                                   description: A basic auth password used to authenticate against the Neo4j instance.
                                   properties:
                                     key:
-                                      description: The key where the token is found.
+                                      description: |-
+                                        A key in the referenced Secret.
+                                        Some instances of this field may be defaulted, in others it may be required.
                                       maxLength: 253
                                       minLength: 1
                                       pattern: ^[-._a-zA-Z0-9]+$
@@ -22931,6 +22933,14 @@ spec:
                                       maxLength: 253
                                       minLength: 1
                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                      type: string
+                                    namespace:
+                                      description: |-
+                                        The namespace of the Secret resource being referred to.
+                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                      maxLength: 63
+                                      minLength: 1
+                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                       type: string
                                   type: object
                                 username:
@@ -22947,7 +22957,9 @@ spec:
                                   description: A bearer auth token used to authenticate against the Neo4j instance.
                                   properties:
                                     key:
-                                      description: The key where the token is found.
+                                      description: |-
+                                        A key in the referenced Secret.
+                                        Some instances of this field may be defaulted, in others it may be required.
                                       maxLength: 253
                                       minLength: 1
                                       pattern: ^[-._a-zA-Z0-9]+$
@@ -22957,6 +22969,14 @@ spec:
                                       maxLength: 253
                                       minLength: 1
                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                      type: string
+                                    namespace:
+                                      description: |-
+                                        The namespace of the Secret resource being referred to.
+                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                      maxLength: 63
+                                      minLength: 1
+                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                       type: string
                                   type: object
                               required:
@@ -23041,7 +23061,9 @@ spec:
                           description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                           properties:
                             key:
-                              description: The key where the token is found.
+                              description: |-
+                                A key in the referenced Secret.
+                                Some instances of this field may be defaulted, in others it may be required.
                               maxLength: 253
                               minLength: 1
                               pattern: ^[-._a-zA-Z0-9]+$
@@ -23051,6 +23073,14 @@ spec:
                               maxLength: 253
                               minLength: 1
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                            namespace:
+                              description: |-
+                                The namespace of the Secret resource being referred to.
+                                Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                              maxLength: 63
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                           type: object
                         projectId:
@@ -23117,7 +23147,9 @@ spec:
                               description: A basic auth password used to authenticate against the PostgreSql instance.
                               properties:
                                 key:
-                                  description: The key where the token is found.
+                                  description: |-
+                                    A key in the referenced Secret.
+                                    Some instances of this field may be defaulted, in others it may be required.
                                   maxLength: 253
                                   minLength: 1
                                   pattern: ^[-._a-zA-Z0-9]+$
@@ -23127,6 +23159,14 @@ spec:
                                   maxLength: 253
                                   minLength: 1
                                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                                namespace:
+                                  description: |-
+                                    The namespace of the Secret resource being referred to.
+                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                   type: string
                               type: object
                             username:
@@ -25652,7 +25692,9 @@ spec:
                           description: A basic auth password used to authenticate against the Neo4j instance.
                           properties:
                             key:
-                              description: The key where the token is found.
+                              description: |-
+                                A key in the referenced Secret.
+                                Some instances of this field may be defaulted, in others it may be required.
                               maxLength: 253
                               minLength: 1
                               pattern: ^[-._a-zA-Z0-9]+$
@@ -25662,6 +25704,14 @@ spec:
                               maxLength: 253
                               minLength: 1
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                            namespace:
+                              description: |-
+                                The namespace of the Secret resource being referred to.
+                                Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                              maxLength: 63
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                           type: object
                         username:
@@ -25678,7 +25728,9 @@ spec:
                           description: A bearer auth token used to authenticate against the Neo4j instance.
                           properties:
                             key:
-                              description: The key where the token is found.
+                              description: |-
+                                A key in the referenced Secret.
+                                Some instances of this field may be defaulted, in others it may be required.
                               maxLength: 253
                               minLength: 1
                               pattern: ^[-._a-zA-Z0-9]+$
@@ -25688,6 +25740,14 @@ spec:
                               maxLength: 253
                               minLength: 1
                               pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                            namespace:
+                              description: |-
+                                The namespace of the Secret resource being referred to.
+                                Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                              maxLength: 63
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                               type: string
                           type: object
                       required:
@@ -25823,7 +25883,9 @@ spec:
                   description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                   properties:
                     key:
-                      description: The key where the token is found.
+                      description: |-
+                        A key in the referenced Secret.
+                        Some instances of this field may be defaulted, in others it may be required.
                       maxLength: 253
                       minLength: 1
                       pattern: ^[-._a-zA-Z0-9]+$
@@ -25833,6 +25895,14 @@ spec:
                       maxLength: 253
                       minLength: 1
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                    namespace:
+                      description: |-
+                        The namespace of the Secret resource being referred to.
+                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                       type: string
                   type: object
                 projectId:
@@ -26001,7 +26071,9 @@ spec:
                       description: A basic auth password used to authenticate against the PostgreSql instance.
                       properties:
                         key:
-                          description: The key where the token is found.
+                          description: |-
+                            A key in the referenced Secret.
+                            Some instances of this field may be defaulted, in others it may be required.
                           maxLength: 253
                           minLength: 1
                           pattern: ^[-._a-zA-Z0-9]+$
@@ -26011,6 +26083,14 @@ spec:
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        namespace:
+                          description: |-
+                            The namespace of the Secret resource being referred to.
+                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                          maxLength: 63
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                           type: string
                       type: object
                     username:
@@ -29816,7 +29896,9 @@ spec:
                                                       description: A basic auth password used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -29826,6 +29908,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                     username:
@@ -29842,7 +29932,9 @@ spec:
                                                       description: A bearer auth token used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -29852,6 +29944,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                   required:
@@ -29936,7 +30036,9 @@ spec:
                                               description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                                               properties:
                                                 key:
-                                                  description: The key where the token is found.
+                                                  description: |-
+                                                    A key in the referenced Secret.
+                                                    Some instances of this field may be defaulted, in others it may be required.
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[-._a-zA-Z0-9]+$
@@ -29946,6 +30048,14 @@ spec:
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                  type: string
+                                                namespace:
+                                                  description: |-
+                                                    The namespace of the Secret resource being referred to.
+                                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                  maxLength: 63
+                                                  minLength: 1
+                                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                   type: string
                                               type: object
                                             projectId:
@@ -30012,7 +30122,9 @@ spec:
                                                   description: A basic auth password used to authenticate against the PostgreSql instance.
                                                   properties:
                                                     key:
-                                                      description: The key where the token is found.
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[-._a-zA-Z0-9]+$
@@ -30022,6 +30134,14 @@ spec:
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                       type: string
                                                   type: object
                                                 username:
@@ -32684,7 +32804,9 @@ spec:
                                                       description: A basic auth password used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -32694,6 +32816,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                     username:
@@ -32710,7 +32840,9 @@ spec:
                                                       description: A bearer auth token used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -32720,6 +32852,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                   required:
@@ -32804,7 +32944,9 @@ spec:
                                               description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                                               properties:
                                                 key:
-                                                  description: The key where the token is found.
+                                                  description: |-
+                                                    A key in the referenced Secret.
+                                                    Some instances of this field may be defaulted, in others it may be required.
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[-._a-zA-Z0-9]+$
@@ -32814,6 +32956,14 @@ spec:
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                  type: string
+                                                namespace:
+                                                  description: |-
+                                                    The namespace of the Secret resource being referred to.
+                                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                  maxLength: 63
+                                                  minLength: 1
+                                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                   type: string
                                               type: object
                                             projectId:
@@ -32880,7 +33030,9 @@ spec:
                                                   description: A basic auth password used to authenticate against the PostgreSql instance.
                                                   properties:
                                                     key:
-                                                      description: The key where the token is found.
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[-._a-zA-Z0-9]+$
@@ -32890,6 +33042,14 @@ spec:
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                       type: string
                                                   type: object
                                                 username:
@@ -35561,7 +35721,9 @@ spec:
                                                             description: A basic auth password used to authenticate against the Neo4j instance.
                                                             properties:
                                                               key:
-                                                                description: The key where the token is found.
+                                                                description: |-
+                                                                  A key in the referenced Secret.
+                                                                  Some instances of this field may be defaulted, in others it may be required.
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[-._a-zA-Z0-9]+$
@@ -35571,6 +35733,14 @@ spec:
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                              namespace:
+                                                                description: |-
+                                                                  The namespace of the Secret resource being referred to.
+                                                                  Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                                maxLength: 63
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                                 type: string
                                                             type: object
                                                           username:
@@ -35587,7 +35757,9 @@ spec:
                                                             description: A bearer auth token used to authenticate against the Neo4j instance.
                                                             properties:
                                                               key:
-                                                                description: The key where the token is found.
+                                                                description: |-
+                                                                  A key in the referenced Secret.
+                                                                  Some instances of this field may be defaulted, in others it may be required.
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[-._a-zA-Z0-9]+$
@@ -35597,6 +35769,14 @@ spec:
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                              namespace:
+                                                                description: |-
+                                                                  The namespace of the Secret resource being referred to.
+                                                                  Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                                maxLength: 63
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                                 type: string
                                                             type: object
                                                         required:
@@ -35681,7 +35861,9 @@ spec:
                                                     description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                                                     properties:
                                                       key:
-                                                        description: The key where the token is found.
+                                                        description: |-
+                                                          A key in the referenced Secret.
+                                                          Some instances of this field may be defaulted, in others it may be required.
                                                         maxLength: 253
                                                         minLength: 1
                                                         pattern: ^[-._a-zA-Z0-9]+$
@@ -35691,6 +35873,14 @@ spec:
                                                         maxLength: 253
                                                         minLength: 1
                                                         pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                        type: string
+                                                      namespace:
+                                                        description: |-
+                                                          The namespace of the Secret resource being referred to.
+                                                          Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                        maxLength: 63
+                                                        minLength: 1
+                                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                         type: string
                                                     type: object
                                                   projectId:
@@ -35757,7 +35947,9 @@ spec:
                                                         description: A basic auth password used to authenticate against the PostgreSql instance.
                                                         properties:
                                                           key:
-                                                            description: The key where the token is found.
+                                                            description: |-
+                                                              A key in the referenced Secret.
+                                                              Some instances of this field may be defaulted, in others it may be required.
                                                             maxLength: 253
                                                             minLength: 1
                                                             pattern: ^[-._a-zA-Z0-9]+$
@@ -35767,6 +35959,14 @@ spec:
                                                             maxLength: 253
                                                             minLength: 1
                                                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                          namespace:
+                                                            description: |-
+                                                              The namespace of the Secret resource being referred to.
+                                                              Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                            maxLength: 63
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                             type: string
                                                         type: object
                                                       username:
@@ -38653,7 +38853,9 @@ spec:
                                                       description: A basic auth password used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -38663,6 +38865,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                     username:
@@ -38679,7 +38889,9 @@ spec:
                                                       description: A bearer auth token used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -38689,6 +38901,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                   required:
@@ -38773,7 +38993,9 @@ spec:
                                               description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                                               properties:
                                                 key:
-                                                  description: The key where the token is found.
+                                                  description: |-
+                                                    A key in the referenced Secret.
+                                                    Some instances of this field may be defaulted, in others it may be required.
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[-._a-zA-Z0-9]+$
@@ -38783,6 +39005,14 @@ spec:
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                  type: string
+                                                namespace:
+                                                  description: |-
+                                                    The namespace of the Secret resource being referred to.
+                                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                  maxLength: 63
+                                                  minLength: 1
+                                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                   type: string
                                               type: object
                                             projectId:
@@ -38849,7 +39079,9 @@ spec:
                                                   description: A basic auth password used to authenticate against the PostgreSql instance.
                                                   properties:
                                                     key:
-                                                      description: The key where the token is found.
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[-._a-zA-Z0-9]+$
@@ -38859,6 +39091,14 @@ spec:
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                       type: string
                                                   type: object
                                                 username:
@@ -41521,7 +41761,9 @@ spec:
                                                       description: A basic auth password used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -41531,6 +41773,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                     username:
@@ -41547,7 +41797,9 @@ spec:
                                                       description: A bearer auth token used to authenticate against the Neo4j instance.
                                                       properties:
                                                         key:
-                                                          description: The key where the token is found.
+                                                          description: |-
+                                                            A key in the referenced Secret.
+                                                            Some instances of this field may be defaulted, in others it may be required.
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[-._a-zA-Z0-9]+$
@@ -41557,6 +41809,14 @@ spec:
                                                           maxLength: 253
                                                           minLength: 1
                                                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                          type: string
+                                                        namespace:
+                                                          description: |-
+                                                            The namespace of the Secret resource being referred to.
+                                                            Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                          maxLength: 63
+                                                          minLength: 1
+                                                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                           type: string
                                                       type: object
                                                   required:
@@ -41641,7 +41901,9 @@ spec:
                                               description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                                               properties:
                                                 key:
-                                                  description: The key where the token is found.
+                                                  description: |-
+                                                    A key in the referenced Secret.
+                                                    Some instances of this field may be defaulted, in others it may be required.
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[-._a-zA-Z0-9]+$
@@ -41651,6 +41913,14 @@ spec:
                                                   maxLength: 253
                                                   minLength: 1
                                                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                  type: string
+                                                namespace:
+                                                  description: |-
+                                                    The namespace of the Secret resource being referred to.
+                                                    Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                  maxLength: 63
+                                                  minLength: 1
+                                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                   type: string
                                               type: object
                                             projectId:
@@ -41717,7 +41987,9 @@ spec:
                                                   description: A basic auth password used to authenticate against the PostgreSql instance.
                                                   properties:
                                                     key:
-                                                      description: The key where the token is found.
+                                                      description: |-
+                                                        A key in the referenced Secret.
+                                                        Some instances of this field may be defaulted, in others it may be required.
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[-._a-zA-Z0-9]+$
@@ -41727,6 +41999,14 @@ spec:
                                                       maxLength: 253
                                                       minLength: 1
                                                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                      type: string
+                                                    namespace:
+                                                      description: |-
+                                                        The namespace of the Secret resource being referred to.
+                                                        Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                      maxLength: 63
+                                                      minLength: 1
+                                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                       type: string
                                                   type: object
                                                 username:
@@ -44398,7 +44678,9 @@ spec:
                                                             description: A basic auth password used to authenticate against the Neo4j instance.
                                                             properties:
                                                               key:
-                                                                description: The key where the token is found.
+                                                                description: |-
+                                                                  A key in the referenced Secret.
+                                                                  Some instances of this field may be defaulted, in others it may be required.
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[-._a-zA-Z0-9]+$
@@ -44408,6 +44690,14 @@ spec:
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                              namespace:
+                                                                description: |-
+                                                                  The namespace of the Secret resource being referred to.
+                                                                  Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                                maxLength: 63
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                                 type: string
                                                             type: object
                                                           username:
@@ -44424,7 +44714,9 @@ spec:
                                                             description: A bearer auth token used to authenticate against the Neo4j instance.
                                                             properties:
                                                               key:
-                                                                description: The key where the token is found.
+                                                                description: |-
+                                                                  A key in the referenced Secret.
+                                                                  Some instances of this field may be defaulted, in others it may be required.
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[-._a-zA-Z0-9]+$
@@ -44434,6 +44726,14 @@ spec:
                                                                 maxLength: 253
                                                                 minLength: 1
                                                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                                type: string
+                                                              namespace:
+                                                                description: |-
+                                                                  The namespace of the Secret resource being referred to.
+                                                                  Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                                maxLength: 63
+                                                                minLength: 1
+                                                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                                 type: string
                                                             type: object
                                                         required:
@@ -44518,7 +44818,9 @@ spec:
                                                     description: OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
                                                     properties:
                                                       key:
-                                                        description: The key where the token is found.
+                                                        description: |-
+                                                          A key in the referenced Secret.
+                                                          Some instances of this field may be defaulted, in others it may be required.
                                                         maxLength: 253
                                                         minLength: 1
                                                         pattern: ^[-._a-zA-Z0-9]+$
@@ -44528,6 +44830,14 @@ spec:
                                                         maxLength: 253
                                                         minLength: 1
                                                         pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                        type: string
+                                                      namespace:
+                                                        description: |-
+                                                          The namespace of the Secret resource being referred to.
+                                                          Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                        maxLength: 63
+                                                        minLength: 1
+                                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                         type: string
                                                     type: object
                                                   projectId:
@@ -44594,7 +44904,9 @@ spec:
                                                         description: A basic auth password used to authenticate against the PostgreSql instance.
                                                         properties:
                                                           key:
-                                                            description: The key where the token is found.
+                                                            description: |-
+                                                              A key in the referenced Secret.
+                                                              Some instances of this field may be defaulted, in others it may be required.
                                                             maxLength: 253
                                                             minLength: 1
                                                             pattern: ^[-._a-zA-Z0-9]+$
@@ -44604,6 +44916,14 @@ spec:
                                                             maxLength: 253
                                                             minLength: 1
                                                             pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                                            type: string
+                                                          namespace:
+                                                            description: |-
+                                                              The namespace of the Secret resource being referred to.
+                                                              Ignored if referent is not cluster-scoped, otherwise defaults to the namespace of the referent.
+                                                            maxLength: 63
+                                                            minLength: 1
+                                                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                                                             type: string
                                                         type: object
                                                       username:

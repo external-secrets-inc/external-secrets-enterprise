@@ -15,6 +15,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,7 +28,7 @@ type OpenAISpec struct {
 	// +kubebuilder:default="https://api.openai.com/v1"
 	Host string `json:"host"`
 	// OpenAiAdminKey contains the Admin API Key used to authenticate against the OpenAI server.
-	OpenAiAdminKey SecretKeySelector `json:"openAiAdminKey"`
+	OpenAiAdminKey esmeta.SecretKeySelector `json:"openAiAdminKey"`
 	// ServiceAccountNamePrefix define a prefix to add before the generated name for the service account
 	// +optional
 	ServiceAccountNamePrefix *string `json:"serviceAccountNamePrefix,omitempty"`

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	neo4jSDK "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,7 +87,7 @@ func newGeneratorSpec(t *testing.T, uri, user string, randomSuffix bool) *genv1a
 				URI: uri,
 				Basic: &genv1alpha1.Neo4jBasicAuth{
 					Username: "neo4j",
-					Password: genv1alpha1.SecretKeySelector{
+					Password: esmeta.SecretKeySelector{
 						Name: testSecretName,
 						Key:  testSecretKey,
 					},
@@ -157,7 +158,7 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 		URI: s.uri,
 		Basic: &genv1alpha1.Neo4jBasicAuth{
 			Username: string(result["user"]),
-			Password: genv1alpha1.SecretKeySelector{
+			Password: esmeta.SecretKeySelector{
 				Name: testGeneratedSecretName,
 				Key:  testSecretKey,
 			},
@@ -211,7 +212,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 
 	userAuth := &genv1alpha1.Neo4jBasicAuth{
 		Username: string(result["user"]),
-		Password: genv1alpha1.SecretKeySelector{
+		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
 		},
@@ -262,7 +263,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 
 	userAuth := &genv1alpha1.Neo4jBasicAuth{
 		Username: string(result["user"]),
-		Password: genv1alpha1.SecretKeySelector{
+		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
 			Key:  testSecretKey,
 		},

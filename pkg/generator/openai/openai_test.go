@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -70,7 +71,7 @@ func TestOpenAiGenerator_GenerateAndCleanup(t *testing.T) {
 		Spec: genv1alpha1.OpenAISpec{
 			Host:      mockServer.URL, // override to mock server
 			ProjectId: mockProjectID,
-			OpenAiAdminKey: genv1alpha1.SecretKeySelector{
+			OpenAiAdminKey: esmeta.SecretKeySelector{
 				Name: "openai-admin-key",
 				Key:  "api-key",
 			},
