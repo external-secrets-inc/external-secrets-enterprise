@@ -10,11 +10,15 @@ type JobSpec struct {
 	// Constrains this job to a given set of SecretStores / Targets.
 	// By default it will run against all SecretStores / Targets on the Job namespace.
 	Constraints *JobConstraints `json:"constraints,omitempty"`
-	// Defines the RunPolicy for this job (Scheduled/OnChange/Once)
+	// Defines the RunPolicy for this job (Poll/OnChange/Once)
+	// +kubebuilder:validation:Enum=Poll;OnChange;Once
 	RunPolicy JobRunPolicy `json:"runPolicy,omitempty"`
-	// Defines the interval for this job if Policy is Scheduled(Scheduled/OnChange/Once)
+	// Defines the interval for this job if Policy is Poll(Poll/OnChange/Once)
 	Interval metav1.Duration `json:"interval,omitempty"`
 	// TODO - also implement Cron Schedulingf
+	// Define the interval to wait before forcing reconcile if job froze at running state
+	// +kubebuilder:default="10m"
+	JobTimeout metav1.Duration `json:"jobTimeout,omitempty"`
 }
 
 type JobRunPolicy string

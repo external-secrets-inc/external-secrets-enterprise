@@ -54,8 +54,12 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 			}
 		}
 	}
-	//TODO: Add ShouldReconcile Method checking if Job already has ran at least once
 	if jobSpec.Status.RunStatus == v1alpha1.JobRunStatusRunning {
+		runningTime := time.Since(jobSpec.Status.LastRunTime.Time)
+		if runningTime > jobSpec.Spec.JobTimeout.Duration {
+			return ctrl.Result{RequeueAfter: time.Second}, nil
+		}
+
 		// Ignore because the job is still running - wait it to finish with the appropriate Update Call
 		return ctrl.Result{}, nil
 	}

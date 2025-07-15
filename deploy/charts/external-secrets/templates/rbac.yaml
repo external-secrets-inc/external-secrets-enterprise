@@ -14,6 +14,14 @@ metadata:
     {{- include "external-secrets.labels" . | nindent 4 }}
 rules:
   - apiGroups:
+    - "target.external-secrets.io"
+    resources:
+    - "*"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+  - apiGroups:
     - "scan.external-secrets.io"
     resources:
     - "jobs"
