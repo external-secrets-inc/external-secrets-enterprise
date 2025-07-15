@@ -22,6 +22,7 @@ import (
 	_ "github.com/external-secrets/external-secrets/pkg/generator/federation"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/mongodb"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/neo4j"
+	_ "github.com/external-secrets/external-secrets/pkg/generator/openai"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/postgresql"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/rabbitmq"
 	_ "github.com/external-secrets/external-secrets/pkg/generator/sendgrid"
