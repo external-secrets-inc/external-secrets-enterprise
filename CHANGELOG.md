@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.14.0...v1.15.0) (2025-07-15)
+
+
+### Features
+
+* add openAI generator ([#266](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/266)) ([14fb4a5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/14fb4a58d69cb145b5f6e39ddac4d6413444ed15))
+
 ## [1.14.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.5...v1.14.0) (2025-07-15)
 
 
