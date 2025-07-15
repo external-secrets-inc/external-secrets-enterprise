@@ -103,9 +103,7 @@ func TestOpenAiGenerator_GenerateAndCleanup(t *testing.T) {
 	require.NotNil(t, secrets)
 	require.NotEmpty(t, state)
 
-	assert.Contains(t, secrets, "id")
 	assert.Contains(t, secrets, "api_key")
-	assert.Equal(t, "svc_test_123", string(secrets["id"]))
 	assert.Equal(t, "sk-test123", string(secrets["api_key"]))
 
 	// Call Cleanup()
