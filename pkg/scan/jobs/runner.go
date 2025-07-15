@@ -84,9 +84,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 			} else {
 				// For Each duplicate found, create a Finding bound to that hash;
 				j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
-
 			}
-
 		}
 	}
 	// Check All duplicates on all created targets
