@@ -123,7 +123,7 @@ func newStoreInRef(store, key, property string) tgtv1alpha1.SecretInStoreRef {
 	return tgtv1alpha1.SecretInStoreRef{
 		Name:       store,
 		Kind:       "SecretStore",
-		APIVersion: "externalsecrets.io/v1",
+		APIVersion: "external-secrets.io/v1",
 		RemoteRef: tgtv1alpha1.RemoteRef{
 			Key:      key,
 			Property: property,
