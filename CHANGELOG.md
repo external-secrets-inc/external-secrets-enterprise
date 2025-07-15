@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.5...v1.14.0) (2025-07-15)
+
+
+### Features
+
+* adds vm pushsecret ([#249](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/249)) ([8253af7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8253af72d93999246608240ac542fa4a2458cd7c))
+* **wip:** adds vm target ([8253af7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8253af72d93999246608240ac542fa4a2458cd7c))
+
+
+### Bug Fixes
+
+* add timeout to job; change scheduled to poll ([#284](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/284)) ([dd30aa8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/dd30aa8ad572d1331c603fb7744f956269a7cf3b))
+* cleanup findings if no longer valid ([#282](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/282)) ([3d8414c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3d8414c3161e77744b8eb91e741d9585ebe17954))
+
 ## [1.13.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.13.4...v1.13.5) (2025-07-14)
 
 
