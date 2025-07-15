@@ -4,11 +4,9 @@ package mongodb
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 
 	"gopkg.in/yaml.v2"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -17,6 +15,7 @@ import (
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
+	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	"github.com/labstack/gommon/log"
 
@@ -244,24 +243,8 @@ func getFromSecretRef(ctx context.Context, keySelector *esmeta.SecretKeySelector
 	return value, err
 }
 
-func generateRandomString(size int) (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	limit := big.NewInt(int64(len(charset)))
-
-	b := make([]byte, size)
-	for i := range b {
-		n, err := rand.Int(rand.Reader, limit)
-		if err != nil {
-			return "", err
-		}
-		b[i] = charset[n.Int64()]
-	}
-	return string(b), nil
-}
-
 func buildUsername(prefix string) (string, error) {
-	suffix, err := generateRandomString(DefaultUsernameLength)
+	suffix, err := utils.GenerateRandomString(DefaultUsernameLength)
 	if err != nil {
 		return "", fmt.Errorf(errGenerateUsername, err)
 	}

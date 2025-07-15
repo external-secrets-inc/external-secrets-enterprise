@@ -4,10 +4,8 @@ package postgresql
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"slices"
 	"strings"
 
@@ -21,6 +19,7 @@ import (
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
+	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
 
@@ -264,7 +263,7 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlS
 	if spec.User.SuffixSize != nil {
 		suffixSize = *spec.User.SuffixSize
 	}
-	suffix, err := generateRandomString(suffixSize)
+	suffix, err := utils.GenerateRandomString(suffixSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random suffix: %w", err)
 	}
@@ -406,22 +405,6 @@ func generatePassword(
 		return nil, fmt.Errorf("password not found in generated map")
 	}
 	return pass, nil
-}
-
-func generateRandomString(size int) (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	limit := big.NewInt(int64(len(charset)))
-
-	b := make([]byte, size)
-	for i := range b {
-		n, err := rand.Int(rand.Reader, limit)
-		if err != nil {
-			return "", err
-		}
-		b[i] = charset[n.Int64()]
-	}
-	return string(b), nil
 }
 
 func parseSpec(data []byte) (*genv1alpha1.PostgreSql, error) {

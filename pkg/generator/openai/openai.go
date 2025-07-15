@@ -5,10 +5,8 @@ package openai
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net/http"
 	"time"
 
@@ -18,6 +16,7 @@ import (
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
 
@@ -53,7 +52,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		nameSize = *(res.Spec.ServiceAccountNameSize)
 	}
 
-	name, err := generateRandomString(nameSize)
+	name, err := utils.GenerateRandomString(nameSize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error generating random string: %w", err)
 	}
@@ -75,8 +74,6 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	}
 
 	return map[string][]byte{
-		"id":      []byte(serviceAccount.ID),
-		"name":    []byte(serviceAccount.Name),
 		"api_key": []byte(serviceAccount.APIKey.Value),
 	}, &apiextensions.JSON{Raw: rawState}, nil
 }
@@ -209,22 +206,6 @@ func (c *openAiClient) deleteServiceAccount(ctx context.Context, serviceAccountI
 	}
 
 	return nil
-}
-
-func generateRandomString(size int) (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	limit := big.NewInt(int64(len(charset)))
-
-	b := make([]byte, size)
-	for i := range b {
-		n, err := rand.Int(rand.Reader, limit)
-		if err != nil {
-			return "", err
-		}
-		b[i] = charset[n.Int64()]
-	}
-	return string(b), nil
 }
 
 func parseSpec(data []byte) (*genv1alpha1.OpenAI, error) {

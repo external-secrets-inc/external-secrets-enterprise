@@ -17,6 +17,7 @@ package utils
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha3"
 	"crypto/x509"
 	"encoding/base64"
@@ -25,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math/big"
 	"net"
 	"net/url"
 	"reflect"
@@ -827,4 +829,20 @@ func getCertFromConfigMap(ctx context.Context, namespace string, c client.Client
 	}
 
 	return []byte(val), nil
+}
+
+func GenerateRandomString(size int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	limit := big.NewInt(int64(len(charset)))
+
+	b := make([]byte, size)
+	for i := range b {
+		n, err := rand.Int(rand.Reader, limit)
+		if err != nil {
+			return "", err
+		}
+		b[i] = charset[n.Int64()]
+	}
+	return string(b), nil
 }
