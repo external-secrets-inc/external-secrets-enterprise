@@ -140,11 +140,13 @@ spec:
           password:
             key: string
             name: string
+            namespace: string
           username: string
         bearer:
           token:
             key: string
             name: string
+            namespace: string
         uri: string
       database: "neo4j"
       enterprise: false
@@ -154,6 +156,15 @@ spec:
         roles: [] # minItems 0 of type string
         suffixSize: 8
         user: string
+    openAISpec:
+      host: "https://api.openai.com/v1"
+      openAiAdminKey:
+        key: string
+        name: string
+        namespace: string
+      projectId: string
+      serviceAccountNamePrefix: string
+      serviceAccountNameSize: 12
     passwordSpec:
       allowRepeat: false
       digits: 1
@@ -166,6 +177,7 @@ spec:
         password:
           key: string
           name: string
+          namespace: string
         username: string
       database: "postgres"
       host: string
@@ -369,4 +381,4 @@ spec:
           name: string
       timeout: string
       url: string
-  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j", "PostgreSql"
+  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j", "PostgreSql", "OpenAI"
