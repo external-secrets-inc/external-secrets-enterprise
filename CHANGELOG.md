@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.0...v1.15.1) (2025-07-15)
+
+
+### Bug Fixes
+
+* api version for secretstores ([#288](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/288)) ([be1d306](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/be1d3065f959cb0326391fbf38f3d0e1eb956bdb))
+* register openai controller ([#286](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/286)) ([7678e36](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/7678e3665ba060e04360cce97ddefdbddef1894e))
+
 ## [1.15.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.14.0...v1.15.0) (2025-07-15)
 
 
