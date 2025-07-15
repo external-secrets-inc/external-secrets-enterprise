@@ -81,10 +81,12 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 						return nil, fmt.Errorf("no conversion for value of type %T", v)
 					}
 				}
+			} else {
+				// For Each duplicate found, create a Finding bound to that hash;
+				j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
+
 			}
 
-			// For Each duplicate found, create a Finding bound to that hash;
-			j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
 		}
 	}
 	// Check All duplicates on all created targets

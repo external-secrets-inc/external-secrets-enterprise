@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -134,44 +133,62 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 	}
 	c.Log.V(1).Info("Found findings for job", "total findings", len(findings))
 	// for each finding, see if it already exists and update it if it does;
+	currentFindings := &v1alpha1.FindingList{}
+	currentFindingsMap := make(map[string]*v1alpha1.Finding)
+	findingsMap := make(map[string]*v1alpha1.Finding)
+	c.Log.V(1).Info("Listing Current findings")
+	if err := c.List(ctx, currentFindings, client.InNamespace(jobSpec.Namespace)); err != nil {
+		return err
+	}
+	c.Log.V(1).Info("Found Current findings", "total findings", len(currentFindings.Items))
+	for _, finding := range currentFindings.Items {
+		currentFindingsMap[finding.Spec.Hash] = &finding
+	}
 	for _, finding := range findings {
-		req := client.ObjectKey{
-			Name:      finding.Name,
-			Namespace: jobSpec.Namespace,
+		findingsMap[finding.Spec.Hash] = &finding
+	}
+	// Delete Findings that are no longer found
+	c.Log.V(1).Info("Deleting Current findings")
+	for _, current := range currentFindingsMap {
+		if _, ok := findingsMap[current.Spec.Hash]; !ok {
+			c.Log.V(1).Info("Deleting finding", "finding", current.GetName())
+			if err := c.Delete(ctx, current); err != nil {
+				jobStatus = v1alpha1.JobRunStatusFailed
+				jobTime = metav1.Now()
+				return err
+			}
 		}
-		existing := &v1alpha1.Finding{}
-		finding.SetNamespace(jobSpec.Namespace)
-		if err := c.Get(ctx, req, existing); err != nil {
-			if apierrors.IsNotFound(err) {
-				// Create Finding
-				create := finding.DeepCopy()
-				c.Log.V(1).Info("Creating finding", "finding", create.GetName())
-				if err := c.Create(ctx, create); err != nil {
-					jobStatus = v1alpha1.JobRunStatusFailed
-					jobTime = metav1.Now()
-					return err
-				}
-				create.Status.Locations = finding.Status.Locations
-				c.Log.V(1).Info("Updating finding status", "finding", create.GetName())
-				if err := c.Status().Update(ctx, create); err != nil {
-					jobStatus = v1alpha1.JobRunStatusFailed
-					jobTime = metav1.Now()
-					return err
-				}
-			} else {
+	}
+	// Create or Update Findings that exist
+	for _, finding := range findingsMap {
+		if current, ok := currentFindingsMap[finding.Spec.Hash]; ok {
+			if !needsToUpdate(current, finding) {
+				continue
+			}
+			// Update Finding
+			current.Status.Locations = finding.Status.Locations
+			c.Log.V(1).Info("Updating finding", "finding", current.GetName())
+			if err := c.Update(ctx, current); err != nil {
 				jobStatus = v1alpha1.JobRunStatusFailed
 				jobTime = metav1.Now()
 				return err
 			}
 		} else {
-			if needsToUpdate(existing, &finding) {
-				existing.Status.Locations = finding.Status.Locations
-				c.Log.V(1).Info("Updating finding", "finding", existing.GetName())
-				if err := c.Status().Update(ctx, existing); err != nil {
-					jobStatus = v1alpha1.JobRunStatusFailed
-					jobTime = metav1.Now()
-					return err
-				}
+			// Create Finding
+			create := finding.DeepCopy()
+			create.SetNamespace(jobSpec.Namespace)
+			c.Log.V(1).Info("Creating finding", "finding", create.GetName())
+			if err := c.Create(ctx, create); err != nil {
+				jobStatus = v1alpha1.JobRunStatusFailed
+				jobTime = metav1.Now()
+				return err
+			}
+			create.Status.Locations = finding.Status.Locations
+			c.Log.V(1).Info("Updating finding status", "finding", create.GetName())
+			if err := c.Status().Update(ctx, create); err != nil {
+				jobStatus = v1alpha1.JobRunStatusFailed
+				jobTime = metav1.Now()
+				return err
 			}
 		}
 	}
