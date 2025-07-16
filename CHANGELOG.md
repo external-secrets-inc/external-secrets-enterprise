@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.2...v1.15.3) (2025-07-16)
+
+
+### Bug Fixes
+
+* allow vms to work ([#296](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/296)) ([884f6c1](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/884f6c1ff118a2167cd9809f3d8db93690f85cb4))
+* just in case ([#298](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/298)) ([18d7e1c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/18d7e1c8da36526a32a68c0decc674295a01491a))
+
 ## [1.15.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.1...v1.15.2) (2025-07-16)
 
 
