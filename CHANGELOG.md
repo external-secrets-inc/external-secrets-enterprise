@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.3...v1.15.4) (2025-07-16)
+
+
+### Bug Fixes
+
+* add targets to webhook rbac ([#299](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/299)) ([b38d15e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b38d15e35301e4e876face39e2e6859ecc06a48b))
+
 ## [1.15.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.2...v1.15.3) (2025-07-16)
 
 
