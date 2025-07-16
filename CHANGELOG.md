@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.1...v1.15.2) (2025-07-16)
+
+
+### Bug Fixes
+
+* recreate findings if name changes ([#294](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/294)) ([b16b3cc](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b16b3ccf2045f796a0a2f8f95f10dc7ca70e55d4))
+
 ## [1.15.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.0...v1.15.1) (2025-07-15)
 
 
