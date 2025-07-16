@@ -154,7 +154,17 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 	// Delete Findings that are no longer found
 	c.Log.V(1).Info("Deleting Current findings")
 	for _, current := range currentFindingsMap {
-		if _, ok := findingsMap[current.Spec.Hash]; !ok {
+		finding, ok := findingsMap[current.Spec.Hash]
+		if !ok {
+			c.Log.V(1).Info("Deleting finding", "finding", current.GetName())
+			if err := c.Delete(ctx, current); err != nil {
+				jobStatus = v1alpha1.JobRunStatusFailed
+				jobTime = metav1.Now()
+				return err
+			}
+		}
+		// If names changed, we should recreate
+		if finding != nil && finding.GetName() != current.GetName() {
 			c.Log.V(1).Info("Deleting finding", "finding", current.GetName())
 			if err := c.Delete(ctx, current); err != nil {
 				jobStatus = v1alpha1.JobRunStatusFailed
