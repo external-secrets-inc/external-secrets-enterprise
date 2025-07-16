@@ -10,6 +10,7 @@ rules:
     - "workflows.external-secrets.io"
     - "external-secrets.io"
     - "generators.external-secrets.io"
+    - "target.external-secrets.io"
     resources:
     - "*"
     verbs:
