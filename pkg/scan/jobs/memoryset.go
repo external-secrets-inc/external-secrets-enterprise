@@ -44,7 +44,7 @@ func NewMemorySet() *MemorySet {
 	}
 }
 
-const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*_+='\"{}"
+const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generateRegexes(val []byte) []string {
 	regexes := make([]string, 0, GOOD_REGEXES+BAD_REGEXES)
@@ -188,5 +188,5 @@ func sanitize(ref tgtv1alpha1.SecretInStoreRef) string {
 		cleanedProperty := strings.TrimSuffix(strings.TrimPrefix(ref.RemoteRef.Property, "/"), "/")
 		ans += "." + cleanedProperty
 	}
-	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(ans, "_", "-"), "/", "-"))
+	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ans, "_", "-"), "/", "-"), ":", "-"))
 }
