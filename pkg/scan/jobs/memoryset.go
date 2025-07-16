@@ -69,6 +69,17 @@ func generateRegexes(val []byte) []string {
 				charSet[k], charSet[j] = charSet[j], charSet[k]
 			}
 
+			// If the character is not in the alphabet, it's a special character.
+			// We need to move it to the front of the charSet to avoid regex errors.
+			if !strings.ContainsRune(alphabet, rune(char)) {
+				for i, c := range charSet {
+					if c == char {
+						charSet[i], charSet[0] = charSet[0], charSet[i]
+						break
+					}
+				}
+			}
+
 			sb.Write(charSet)
 			sb.WriteString("]")
 		}
