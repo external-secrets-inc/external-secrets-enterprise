@@ -72,11 +72,13 @@ const (
 	ParameterTypeClusterSecretStore ParameterType = "clustersecretstore"
 	ParameterTypeGenerator          ParameterType = `^generator\[([a-zA-Z0-9_-]+)\]$`
 	ParameterTypeSecretLocation     ParameterType = "secretlocation"
+	ParameterTypeFinding            ParameterType = "finding"
 
 	// Array Types (add as needed).
 	ParameterTypeSecretStoreArray    ParameterType = "array[secretstore]"
 	ParameterTypeGeneratorArray      ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
 	ParameterTypeSecretLocationArray ParameterType = "array[secretlocation]"
+	ParameterTypeFindingArray        ParameterType = "array[finding]"
 )
 
 // SecretStoreParameter defines a parameter to be passed to a secret store type.
@@ -96,6 +98,12 @@ type GeneratorParameterType struct {
 
 // SecretLocationParameter defines a parameter to be passed to a secret location type.
 type SecretLocationParameterType = tgtv1alpha1.SecretInStoreRef
+
+// FindingParameter defines a parameter to be passed to a secret store type.
+type FindingParameterType struct {
+	// Name is the name of the secretstore.
+	Name string `json:"name"`
+}
 
 // ResourceConstraints defines constraints for Kubernetes resource selection.
 type ResourceConstraints struct {

@@ -17,6 +17,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+
+	"k8s.io/utils/ptr"
 )
 
 var generatorPattern = regexp.MustCompile(string(ParameterTypeGenerator))
@@ -62,7 +64,8 @@ func (p ParameterType) IsPrimitive() bool {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
 		ParameterTypeGenerator, ParameterTypeGeneratorArray,
-		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
+		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray,
+		ParameterTypeFinding, ParameterTypeFindingArray:
 		return false
 	default:
 		return false
@@ -79,7 +82,8 @@ func (p ParameterType) IsKubernetesResource() bool {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
 		ParameterTypeGenerator, ParameterTypeGeneratorArray,
-		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray:
+		ParameterTypeSecretLocation, ParameterTypeSecretLocationArray,
+		ParameterTypeFinding, ParameterTypeFindingArray:
 		return true
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
 		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
@@ -108,6 +112,8 @@ func (p ParameterType) GetAPIVersion() string {
 		return ""
 	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
 		return "v1alpha1"
+	case ParameterTypeFinding, ParameterTypeFindingArray:
+		return "scan.external-secrets.io/v1alpha1"
 	default:
 		return ""
 	}
@@ -134,8 +140,56 @@ func (p ParameterType) GetKind() string {
 		return ""
 	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
 		return p.ExtractGeneratorKind()
+	case ParameterTypeFinding, ParameterTypeFindingArray:
+		return "Finding"
 	default:
 		return ""
+	}
+}
+
+// GetArrayForm returns the Array type of the ParameterType.
+func (p ParameterType) GetArrayForm() *ParameterType {
+	if p.IsGeneratorType() {
+		return ptr.To(ParameterTypeGeneratorArray)
+	}
+
+	switch p {
+	case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
+		return ptr.To(ParameterTypeSecretStoreArray)
+	case ParameterTypeSecretLocation:
+		return ptr.To(ParameterTypeSecretLocationArray)
+	case ParameterTypeFinding:
+		return ptr.To(ParameterTypeFindingArray)
+	case ParameterTypeNamespace, ParameterTypeExternalSecret, ParameterTypeString, ParameterTypeNumber,
+		ParameterTypeBool, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+		ParameterTypeGenerator, ParameterTypeGeneratorArray,
+		ParameterTypeSecretStoreArray, ParameterTypeSecretLocationArray:
+		return nil
+	default:
+		return nil
+	}
+}
+
+// GetNonArrayForm returns the NonArray type of the ParameterType.
+func (p ParameterType) GetNonArrayForm() *ParameterType {
+	if p.IsGeneratorArrayType() {
+		return ptr.To(ParameterTypeGenerator)
+	}
+
+	switch p {
+	case ParameterTypeSecretStoreArray:
+		return ptr.To(ParameterTypeSecretStore)
+	case ParameterTypeSecretLocationArray:
+		return ptr.To(ParameterTypeSecretLocation)
+	case ParameterTypeFindingArray:
+		return ptr.To(ParameterTypeFinding)
+	case ParameterTypeNamespace, ParameterTypeExternalSecret, ParameterTypeString, ParameterTypeNumber,
+		ParameterTypeBool, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+		ParameterTypeGenerator, ParameterTypeGeneratorArray, ParameterTypeClusterSecretStore,
+		ParameterTypeSecretStore, ParameterTypeSecretLocation:
+		return nil
+	default:
+		return nil
 	}
 }
 
@@ -200,49 +254,40 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 					return fmt.Errorf("item %d in parameter %s must be a string", i, p.Name)
 				}
 			}
-		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
+		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
+			ParameterTypeGenerator, ParameterTypeGeneratorArray,
+			ParameterTypeSecretLocation, ParameterTypeSecretLocationArray,
+			ParameterTypeFinding, ParameterTypeFindingArray:
+
+			converters := p.GetConverters()
+			converter := converters[p.Type]
+
 			for i, item := range arr {
-				_, err := p.ToSecretStoreParameterType(item)
+				_, err := converter(item)
 				if err != nil {
 					return fmt.Errorf("item %d error: %w", i, err)
 				}
 			}
-		case ParameterTypeSecretStoreArray:
-			for i, item := range arr {
-				_, err := p.ToSecretStoreParameterTypeArray(item)
-				if err != nil {
-					return fmt.Errorf("item %d error: %w", i, err)
-				}
-			}
-		case ParameterTypeGenerator:
+		}
+
+		if p.Type.IsGeneratorType() {
 			for i, item := range arr {
 				_, err := p.ToGeneratorParameterType(item)
 				if err != nil {
 					return fmt.Errorf("item %d error: %w", i, err)
 				}
 			}
-		case ParameterTypeGeneratorArray:
+		}
+
+		if p.Type.IsGeneratorArrayType() {
 			for i, item := range arr {
 				_, err := p.ToGeneratorParameterTypeArray(item)
 				if err != nil {
 					return fmt.Errorf("item %d error: %w", i, err)
 				}
 			}
-		case ParameterTypeSecretLocation:
-			for i, item := range arr {
-				_, err := p.ToSecretLocationParameterType(item)
-				if err != nil {
-					return fmt.Errorf("item %d error: %w", i, err)
-				}
-			}
-		case ParameterTypeSecretLocationArray:
-			for i, item := range arr {
-				_, err := p.ToSecretLocationParameterTypeArray(item)
-				if err != nil {
-					return fmt.Errorf("item %d error: %w", i, err)
-				}
-			}
 		}
+
 	} else {
 		// Type-specific validation for single values
 		switch p.Type {
@@ -262,33 +307,28 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			if !ok {
 				return fmt.Errorf("parameter %s must be a string", p.Name)
 			}
-		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
-			_, err := p.ToSecretStoreParameterType(value)
+		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
+			ParameterTypeGenerator, ParameterTypeGeneratorArray,
+			ParameterTypeSecretLocation, ParameterTypeSecretLocationArray,
+			ParameterTypeFinding, ParameterTypeFindingArray:
+
+			converters := p.GetConverters()
+			converter := converters[p.Type]
+			_, err := converter(value)
 			if err != nil {
 				return err
 			}
-		case ParameterTypeSecretStoreArray:
-			_, err := p.ToSecretStoreParameterTypeArray(value)
-			if err != nil {
-				return err
-			}
-		case ParameterTypeGenerator:
+		}
+
+		if p.Type.IsGeneratorType() {
 			_, err := p.ToGeneratorParameterType(value)
 			if err != nil {
 				return err
 			}
-		case ParameterTypeGeneratorArray:
+		}
+
+		if p.Type.IsGeneratorArrayType() {
 			_, err := p.ToGeneratorParameterTypeArray(value)
-			if err != nil {
-				return err
-			}
-		case ParameterTypeSecretLocation:
-			_, err := p.ToSecretLocationParameterType(value)
-			if err != nil {
-				return err
-			}
-		case ParameterTypeSecretLocationArray:
-			_, err := p.ToSecretLocationParameterTypeArray(value)
 			if err != nil {
 				return err
 			}
@@ -358,6 +398,20 @@ func (p Parameter) ToSecretLocationParameterType(value interface{}) (*SecretLoca
 	return &resource, nil
 }
 
+func (p Parameter) ToFindingParameterType(value interface{}) (*FindingParameterType, error) {
+	var resource FindingParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format {\"name\": \"finding-name\"}. received: %T", p.Type, value)
+	}
+	return &resource, nil
+}
+
 func (p Parameter) ToSecretStoreParameterTypeArray(value interface{}) ([]SecretStoreParameterType, error) {
 	var resource []SecretStoreParameterType
 	valueBytes, err := json.Marshal(value)
@@ -401,4 +455,46 @@ func (p Parameter) ToSecretLocationParameterTypeArray(value interface{}) ([]Secr
 		)
 	}
 	return resource, nil
+}
+
+func (p Parameter) ToFindingParameterTypeArray(value interface{}) ([]FindingParameterType, error) {
+	var resource []FindingParameterType
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &resource)
+	if err != nil {
+		return nil, fmt.Errorf("parameter %s must be an object of the format [{\"name\": \"finding-name\"}]. received: %T", p.Type, value)
+	}
+	return resource, nil
+}
+
+type converterFunc func(value interface{}) (any, error)
+
+func wrapConverter[T any](fn func(value interface{}) (*T, error)) converterFunc {
+	return func(value interface{}) (any, error) {
+		return fn(value)
+	}
+}
+
+func wrapConverterArray[T any](fn func(value interface{}) ([]T, error)) converterFunc {
+	return func(value interface{}) (any, error) {
+		return fn(value)
+	}
+}
+
+func (p Parameter) GetConverters() map[ParameterType]converterFunc {
+	return map[ParameterType]converterFunc{
+		ParameterTypeSecretStore:         wrapConverter(p.ToSecretStoreParameterType),
+		ParameterTypeClusterSecretStore:  wrapConverter(p.ToSecretStoreParameterType),
+		ParameterTypeSecretStoreArray:    wrapConverterArray(p.ToSecretStoreParameterTypeArray),
+		ParameterTypeGenerator:           wrapConverter(p.ToGeneratorParameterType),
+		ParameterTypeGeneratorArray:      wrapConverterArray(p.ToGeneratorParameterTypeArray),
+		ParameterTypeSecretLocation:      wrapConverter(p.ToSecretLocationParameterType),
+		ParameterTypeSecretLocationArray: wrapConverterArray(p.ToSecretLocationParameterTypeArray),
+		ParameterTypeFinding:             wrapConverter(p.ToFindingParameterType),
+		ParameterTypeFindingArray:        wrapConverterArray(p.ToFindingParameterTypeArray),
+	}
 }
