@@ -38,7 +38,7 @@ func NewPushStepExecutor(step *workflows.PushStep, c client.Client, manager secr
 }
 
 // Execute pushes secret values to the destination store.
-func (e *PushStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}) (map[string]interface{}, error) {
+func (e *PushStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
 
 	if e.Manager == nil {

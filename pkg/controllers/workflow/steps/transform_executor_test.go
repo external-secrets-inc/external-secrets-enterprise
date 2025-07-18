@@ -113,7 +113,7 @@ func TestTransformStepExecutor_Execute(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			executor := &TransformStepExecutor{Step: test.step}
-			output, err := executor.Execute(context.TODO(), &mockClient{}, &esapi.Workflow{}, test.data)
+			output, err := executor.Execute(context.TODO(), &mockClient{}, &esapi.Workflow{}, test.data, "job-test")
 
 			if test.expectsError {
 				assert.NotNil(t, err)

@@ -28,7 +28,7 @@ func NewTransformStepExecutor(step *workflows.TransformStep) *TransformStepExecu
 }
 
 // Execute processes the transform step using templatev2 engine.
-func (e *TransformStepExecutor) Execute(ctx context.Context, client client.Client, wf *workflows.Workflow, data map[string]interface{}) (map[string]interface{}, error) {
+func (e *TransformStepExecutor) Execute(ctx context.Context, client client.Client, wf *workflows.Workflow, data map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	outputs := make(map[string]interface{})
 
 	// Create template engine with es template functions

@@ -44,7 +44,7 @@ func NewPullStepExecutor(step *workflows.PullStep, c client.Client, manager secr
 // Execute retrieves secret values from both spec.data and spec.dataFrom entries,
 // applies rewriting, conversion, validation, and decoding steps, and returns a map
 // of key/value pairs.
-func (e *PullStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}) (map[string]interface{}, error) {
+func (e *PullStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
 
 	templates.ProcessTemplates(reflect.ValueOf(e.Step), inputData)

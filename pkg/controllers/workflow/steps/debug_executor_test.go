@@ -57,7 +57,7 @@ func TestDebugStepExecutor_Execute(t *testing.T) {
 			executor := &DebugStepExecutor{Step: tt.step}
 			client := fake.NewClientBuilder().Build()
 			wf := &esapi.Workflow{}
-			_, err := executor.Execute(context.Background(), client, wf, tt.data)
+			_, err := executor.Execute(context.Background(), client, wf, tt.data, "test-job")
 
 			if tt.expectedError != nil {
 				assert.ErrorContains(t, err, tt.expectedError.Error())

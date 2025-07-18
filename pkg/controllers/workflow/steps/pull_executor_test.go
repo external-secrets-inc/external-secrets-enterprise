@@ -308,7 +308,7 @@ func TestPullStepExecutor_Execute(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 				},
-			}, map[string]interface{}{})
+			}, map[string]interface{}{}, "test-job")
 
 			if test.expectsError {
 				assert.Error(t, err)

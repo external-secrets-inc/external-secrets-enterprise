@@ -23,7 +23,7 @@ import (
 
 // StepExecutor abstracts the execution of a workflow step.
 type StepExecutor interface {
-	Execute(ctx context.Context, client client.Client, wf *workflows.Workflow, data map[string]interface{}) (map[string]interface{}, error)
+	Execute(ctx context.Context, client client.Client, wf *workflows.Workflow, data map[string]interface{}, jobName string) (map[string]interface{}, error)
 }
 
 // createExecutor returns a StepExecutor based on the step type.
@@ -83,6 +83,7 @@ func ExecuteStep(
 	stepCtx StepContext,
 	step workflows.Step,
 	stepKey string,
+	jobName string,
 ) error {
 	// Initialize step status
 	stepStatus := InitializeStepStatus(stepCtx.JobStatus, stepKey)
@@ -94,7 +95,7 @@ func ExecuteStep(
 	}
 
 	// Execute the step
-	outputs, err := stepExecutor.Execute(ctx, stepCtx.Client, stepCtx.Workflow, stepCtx.Data)
+	outputs, err := stepExecutor.Execute(ctx, stepCtx.Client, stepCtx.Workflow, stepCtx.Data, jobName)
 	if err != nil {
 		return markStepFailed(stepCtx.JobStatus, stepKey, stepStatus, err)
 	}
@@ -240,7 +241,7 @@ func ExecuteStepWithContext(
 	}
 
 	// Execute the step using the existing ExecuteStep function
-	err := ExecuteStep(ctx, stepCtx, step, stepKey)
+	err := ExecuteStep(ctx, stepCtx, step, stepKey, jobCtx.JobName)
 	if err != nil {
 		return err
 	}

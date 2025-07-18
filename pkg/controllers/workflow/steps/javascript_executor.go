@@ -34,7 +34,7 @@ func NewJavaScriptExecutor(step *workflows.JavaScriptStep, logger logr.Logger) *
 }
 
 // Execute runs the JavaScript code with the provided input data and returns the outputs.
-func (e *JavaScriptExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}) (map[string]interface{}, error) {
+func (e *JavaScriptExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	// Reset outputs for each new execution.
 	e.outputs = make(map[string]interface{})
 

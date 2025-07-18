@@ -28,7 +28,7 @@ type simplePushStepExecutor struct {
 }
 
 // Execute implements a simplified version of the PushStepExecutor's Execute method.
-func (e *simplePushStepExecutor) Execute(_ context.Context, _ client.Client, _ *workflows.Workflow, inputData map[string]interface{}) (map[string]interface{}, error) {
+func (e *simplePushStepExecutor) Execute(_ context.Context, _ client.Client, _ *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
 
 	// Check for configured error
@@ -353,7 +353,7 @@ func TestPushStepExecutor_Execute(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 				},
-			}, test.inputData)
+			}, test.inputData, "job-test")
 
 			// Check expectations
 			if test.shouldError {
@@ -475,7 +475,7 @@ func TestValueSerializationTypes(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 				},
-			}, inputData)
+			}, inputData, "job-test")
 
 			// Assert no error
 			assert.NoError(t, err)

@@ -23,7 +23,7 @@ func NewDebugStepExecutor(step *esapi.DebugStep) *DebugStepExecutor {
 	}
 }
 
-func (e *DebugStepExecutor) Execute(ctx context.Context, client client.Client, wf *esapi.Workflow, data map[string]interface{}) (map[string]interface{}, error) {
+func (e *DebugStepExecutor) Execute(ctx context.Context, client client.Client, wf *esapi.Workflow, data map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	message, err := templates.ResolveTemplate(e.Step.Message, data)
 	if err != nil {
 		return nil, fmt.Errorf("resolving message: %w", err)
