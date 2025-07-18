@@ -29050,6 +29050,10 @@ spec:
                                 generator:
                                   description: GeneratorStep defines a step that generates secrets using a configured generator.
                                   properties:
+                                    autoCleanup:
+                                      default: true
+                                      description: AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+                                      type: boolean
                                     generatorRef:
                                       description: GeneratorRef points to a generator custom resource.
                                       properties:
@@ -31970,6 +31974,10 @@ spec:
                                 generator:
                                   description: GeneratorStep defines a step that generates secrets using a configured generator.
                                   properties:
+                                    autoCleanup:
+                                      default: true
+                                      description: AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+                                      type: boolean
                                     generatorRef:
                                       description: GeneratorRef points to a generator custom resource.
                                       properties:
@@ -34899,6 +34907,10 @@ spec:
                                       generator:
                                         description: GeneratorStep defines a step that generates secrets using a configured generator.
                                         properties:
+                                          autoCleanup:
+                                            default: true
+                                            description: AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+                                            type: boolean
                                           generatorRef:
                                             description: GeneratorRef points to a generator custom resource.
                                             properties:
@@ -38043,6 +38055,10 @@ spec:
                                 generator:
                                   description: GeneratorStep defines a step that generates secrets using a configured generator.
                                   properties:
+                                    autoCleanup:
+                                      default: true
+                                      description: AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+                                      type: boolean
                                     generatorRef:
                                       description: GeneratorRef points to a generator custom resource.
                                       properties:
@@ -40963,6 +40979,10 @@ spec:
                                 generator:
                                   description: GeneratorStep defines a step that generates secrets using a configured generator.
                                   properties:
+                                    autoCleanup:
+                                      default: true
+                                      description: AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+                                      type: boolean
                                     generatorRef:
                                       description: GeneratorRef points to a generator custom resource.
                                       properties:
@@ -43892,6 +43912,10 @@ spec:
                                       generator:
                                         description: GeneratorStep defines a step that generates secrets using a configured generator.
                                         properties:
+                                          autoCleanup:
+                                            default: true
+                                            description: AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+                                            type: boolean
                                           generatorRef:
                                             description: GeneratorRef points to a generator custom resource.
                                             properties:

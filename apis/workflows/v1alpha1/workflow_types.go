@@ -246,6 +246,11 @@ type GeneratorStep struct {
 	// Rewrite contains rules for rewriting the generated keys.
 	// +optional
 	Rewrite []v1.ExternalSecretRewrite `json:"rewrite,omitempty"`
+
+	// AutoCleanup indicates whether to delete the old generated secrets at when creating a new one.
+	// +optional
+	// +kubebuilder:default=true
+	AutoCleanup bool `json:"autoCleanup,omitempty"`
 }
 
 type PullStep struct {
