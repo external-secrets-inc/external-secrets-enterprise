@@ -124,13 +124,18 @@ jobs:
         shell: bash
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-          IMAGE_REGISTRY: us-central1-docker.pkg.dev/external-secrets-inc-registry/external
           IMAGE_TAG: ${{ steps.container_info.outputs.image-tag }}
           BUILD_ARGS: ${{ inputs.build-args }}
-          DOCKER_BUILD_ARGS: >-
-            --push
-            --platform ${{ inputs.build-platform }}
-        run: make docker.build
+        run: |
+          # Build and push to external registry
+          IMAGE_REGISTRY=us-central1-docker.pkg.dev/external-secrets-inc-registry/external \
+          DOCKER_BUILD_ARGS="--push --platform ${{ inputs.build-platform }}" \
+          make docker.build
+          
+          # Build and push to public registry
+          IMAGE_REGISTRY=us-central1-docker.pkg.dev/external-secrets-inc-registry/public \
+          DOCKER_BUILD_ARGS="--push --platform ${{ inputs.build-platform }}" \
+          make docker.build
 
       - name: Build & Publish Artifacts fork
         if: env.IS_FORK == ''
