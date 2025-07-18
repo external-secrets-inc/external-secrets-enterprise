@@ -25,6 +25,8 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
@@ -35,6 +37,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 	_ = corev1.AddToScheme(scheme)
 	_ = esv1.AddToScheme(scheme)
 	_ = genv1alpha1.AddToScheme(scheme)
+	_ = scanv1alpha1.AddToScheme(scheme)
 
 	// Create the test namespace
 	testNamespace := &corev1.Namespace{
@@ -117,6 +120,41 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 		},
 	}
 
+	// Create a test Finding
+	testFinding := &scanv1alpha1.Finding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-finding",
+			Namespace: "test-namespace",
+			Labels: map[string]string{
+				"env": "test",
+			},
+		},
+		Spec: scanv1alpha1.FindingSpec{
+			Hash:           "abc123",
+			RunTemplateRef: &scanv1alpha1.RunTemplateReference{Name: "sample-template"},
+		},
+		Status: scanv1alpha1.FindingStatus{
+			Locations: []tgtv1alpha1.SecretInStoreRef{}, // empty list acceptable
+		},
+	}
+
+	testSecondFinding := &scanv1alpha1.Finding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-finding-2",
+			Namespace: "test-namespace",
+			Labels: map[string]string{
+				"env": "test",
+			},
+		},
+		Spec: scanv1alpha1.FindingSpec{
+			Hash:           "def456",
+			RunTemplateRef: &scanv1alpha1.RunTemplateReference{Name: "another-template"},
+		},
+		Status: scanv1alpha1.FindingStatus{
+			Locations: []tgtv1alpha1.SecretInStoreRef{},
+		},
+	}
+
 	// Create a test template with Kubernetes resource parameters
 	template := &WorkflowTemplate{
 		ObjectMeta: metav1.ObjectMeta{
@@ -190,6 +228,16 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 							Type:     ParameterType("array[secretlocation]"),
 							Required: false,
 						},
+						{
+							Name:     "finding",
+							Type:     ParameterType("finding"),
+							Required: false,
+						},
+						{
+							Name:     "findingArray",
+							Type:     ParameterType("array[finding]"),
+							Required: false,
+						},
 					},
 				},
 			},
@@ -213,7 +261,16 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 	// Create a fake client with test objects
 	client := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(testNamespace, testSecretStore, testSecondSecretStore, testClusterSecretStore, testGenerator, testSecondGenerator, template).
+		WithObjects(
+			testNamespace,
+			testSecretStore,
+			testSecondSecretStore,
+			testClusterSecretStore,
+			testGenerator,
+			testSecondGenerator,
+			testFinding,
+			testSecondFinding,
+			template).
 		Build()
 
 	// Set the validation client
@@ -719,6 +776,189 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 			},
 			wantErr: true,
 			errMsg:  "resource non-existent-store of type secretlocation not found in namespace test-namespace",
+		},
+		{
+			name: "valid secretlocation array",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretlocationArray": [{
+								"name":       "test-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore",
+								"remoteRef": {
+									"key": "/foo/bar"
+								}
+							}, {
+								"name":       "test-second-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore",
+								"remoteRef": {
+									"key": "/foo/bar"
+								}
+							}]
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid secretlocation array - no remoteRef",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretlocationArray": [{
+								"name":       "test-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore"
+							}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "must be an object of the format {\"name\": \"store-name\", \"apiVersion\": \"v1\", \"kind\": \"Kind\", \"remoteRef\": {\"key\": \"remote-key\"}}",
+		},
+		{
+			name: "inexistent secretlocation array",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"secretlocationArray": [{
+								"name":       "non-existent-store",
+								"apiVersion": "external-secrets.io/v1",
+								"kind":       "SecretStore",
+								"remoteRef": {
+									"key": "/foo/bar"
+								}
+							}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource non-existent-store of type secretlocation not found in namespace test-namespace",
+		},
+		{
+			name: "valid finding",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"finding": {"name": "test-finding"}
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "inexistent finding",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"finding": {"name": "non-existent-finding"}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource non-existent-finding of type finding not found in namespace test-namespace",
+		},
+		{
+			name: "valid finding array",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"findingArray": [{"name": "test-finding"}, {"name": "test-finding-2"}]
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "inexistent finding in array",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"findingArray": [{"name": "non-existent-finding"}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource non-existent-finding of type finding not found in namespace test-namespace",
 		},
 	}
 

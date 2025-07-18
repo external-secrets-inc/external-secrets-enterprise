@@ -367,6 +367,14 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			Version: splittedApiVersion[1],
 			Kind:    resource.Kind,
 		}
+	case ParameterTypeFinding, ParameterTypeFindingArray:
+		apiVersion := param.Type.GetAPIVersion()
+		groupVersion := strings.Split(apiVersion, "/")
+		gvk = schema.GroupVersionKind{
+			Group:   groupVersion[0],
+			Version: groupVersion[1],
+			Kind:    param.Type.GetKind(),
+		}
 	}
 
 	// Special case for Generator type
