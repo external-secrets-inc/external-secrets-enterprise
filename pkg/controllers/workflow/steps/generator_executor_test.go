@@ -289,7 +289,7 @@ func TestGeneratorStepExecutor_Execute(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "default",
 				},
-			}, test.data)
+			}, test.data, "job-test")
 
 			// Verify results
 			if test.expectsError {
