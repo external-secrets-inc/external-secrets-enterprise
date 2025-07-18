@@ -17,8 +17,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-
-	"k8s.io/utils/ptr"
 )
 
 var generatorPattern = regexp.MustCompile(string(ParameterTypeGenerator))
@@ -147,52 +145,6 @@ func (p ParameterType) GetKind() string {
 	}
 }
 
-// GetArrayForm returns the Array type of the ParameterType.
-func (p ParameterType) GetArrayForm() *ParameterType {
-	if p.IsGeneratorType() {
-		return ptr.To(ParameterTypeGeneratorArray)
-	}
-
-	switch p {
-	case ParameterTypeSecretStore, ParameterTypeClusterSecretStore:
-		return ptr.To(ParameterTypeSecretStoreArray)
-	case ParameterTypeSecretLocation:
-		return ptr.To(ParameterTypeSecretLocationArray)
-	case ParameterTypeFinding:
-		return ptr.To(ParameterTypeFindingArray)
-	case ParameterTypeNamespace, ParameterTypeExternalSecret, ParameterTypeString, ParameterTypeNumber,
-		ParameterTypeBool, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
-		ParameterTypeGenerator, ParameterTypeGeneratorArray,
-		ParameterTypeSecretStoreArray, ParameterTypeSecretLocationArray:
-		return nil
-	default:
-		return nil
-	}
-}
-
-// GetNonArrayForm returns the NonArray type of the ParameterType.
-func (p ParameterType) GetNonArrayForm() *ParameterType {
-	if p.IsGeneratorArrayType() {
-		return ptr.To(ParameterTypeGenerator)
-	}
-
-	switch p {
-	case ParameterTypeSecretStoreArray:
-		return ptr.To(ParameterTypeSecretStore)
-	case ParameterTypeSecretLocationArray:
-		return ptr.To(ParameterTypeSecretLocation)
-	case ParameterTypeFindingArray:
-		return ptr.To(ParameterTypeFinding)
-	case ParameterTypeNamespace, ParameterTypeExternalSecret, ParameterTypeString, ParameterTypeNumber,
-		ParameterTypeBool, ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
-		ParameterTypeGenerator, ParameterTypeGeneratorArray, ParameterTypeClusterSecretStore,
-		ParameterTypeSecretStore, ParameterTypeSecretLocation:
-		return nil
-	default:
-		return nil
-	}
-}
-
 // IsMultiSelect returns true if the parameter allows multiple selections.
 func (p *Parameter) IsMultiSelect() bool {
 	return p.AllowMultiple
@@ -287,7 +239,6 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				}
 			}
 		}
-
 	} else {
 		// Type-specific validation for single values
 		switch p.Type {
