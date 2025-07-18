@@ -53,7 +53,7 @@ type ParameterGroup struct {
 }
 
 // ParameterType represents the data type of a parameter
-// +kubebuilder:validation:Pattern=`^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\])$`
+// +kubebuilder:validation:Pattern=`^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\]|finding|array\[finding\])$`
 type ParameterType string
 
 const (
