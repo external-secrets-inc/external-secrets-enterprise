@@ -130,7 +130,6 @@ func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf
 			generatorState.EnqueueSetLatest(ctx, genStateKey, namespace, obj, gen, newGenState)
 			generatorState.EnqueueMoveStateToGC(genStateKey)
 		}
-
 	}
 
 	// rewrite the keys if needed
