@@ -323,6 +323,10 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(template *workflows.
 			Jobs:      template.Spec.Jobs,
 		},
 	}
+	runLabels := run.GetLabels()
+	if _, ok := runLabels["workflowruntemplate.external-secrets.io/owner"]; ok {
+		workflow.Labels["workflows.external-secrets.io/runtemplate"] = runLabels["workflowruntemplate.external-secrets.io/owner"]
+	}
 
 	toParseArguments, err := json.Marshal(run.Spec.Arguments)
 	if err != nil {

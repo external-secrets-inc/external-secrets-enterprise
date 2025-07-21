@@ -162,40 +162,16 @@ func getWorkflowRunTemplateFromWorkflow(
 	c client.Client,
 	wf *workflows.Workflow,
 ) (*workflows.WorkflowRunTemplate, error) {
-	var run *workflows.WorkflowRun
-	for _, or := range wf.OwnerReferences {
-		if or.Kind == "WorkflowRun" {
-			run = &workflows.WorkflowRun{}
-			if err := c.Get(ctx,
-				client.ObjectKey{Namespace: wf.Namespace, Name: or.Name},
-				run,
-			); err != nil {
-				return nil, fmt.Errorf("error fetching WorkflowRun %q: %w", or.Name, err)
-			}
-			break
-		}
+	runTemplate, ok := wf.GetLabels()["workflows.external-secrets.io/runtemplate"]
+	if !ok {
+		return nil, fmt.Errorf("workflow %q has no WorkflowRunTemplate", wf.Name)
 	}
-	if run == nil {
-		return nil, fmt.Errorf("there is no WorkflowRun owner reference in %s/%s", wf.Namespace, wf.Name)
-	}
-
-	var tmplName string
-	for _, or := range run.OwnerReferences {
-		if or.Kind == "WorkflowRunTemplate" {
-			tmplName = or.Name
-			break
-		}
-	}
-	if tmplName == "" {
-		return nil, fmt.Errorf("there is no WorkflowRunTemplate owner reference in %s/%s", run.Namespace, run.Name)
-	}
-
 	tmpl := &workflows.WorkflowRunTemplate{}
 	if err := c.Get(ctx,
-		client.ObjectKey{Namespace: wf.Namespace, Name: tmplName},
+		client.ObjectKey{Namespace: wf.Namespace, Name: runTemplate},
 		tmpl,
 	); err != nil {
-		return nil, fmt.Errorf("error fetching WorkflowRunTemplate %q: %w", tmplName, err)
+		return nil, fmt.Errorf("error fetching WorkflowRunTemplate %q: %w", runTemplate, err)
 	}
 
 	return tmpl, nil
