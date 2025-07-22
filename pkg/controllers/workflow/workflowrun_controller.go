@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 )
 
@@ -88,7 +90,7 @@ func (r *WorkflowRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Create workflow from template
-	workflow, err := r.resolveWorkflowFromTemplate(template, run)
+	workflow, err := r.resolveWorkflowFromTemplate(ctx, template, run)
 	if err != nil {
 		r.Recorder.Event(run, corev1.EventTypeWarning, "ResolutionFailed",
 			fmt.Sprintf("Failed to resolve workflow from template: %v", err))
@@ -305,7 +307,7 @@ func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *wo
 }
 
 // resolveWorkflowFromTemplate creates a new Workflow from a WorkflowTemplate and WorkflowRun.
-func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(template *workflows.WorkflowTemplate, run *workflows.WorkflowRun) (*workflows.Workflow, error) {
+func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(ctx context.Context, template *workflows.WorkflowTemplate, run *workflows.WorkflowRun) (*workflows.Workflow, error) {
 	// Create a new workflow
 	workflow := &workflows.Workflow{
 		ObjectMeta: metav1.ObjectMeta{
@@ -353,9 +355,45 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(template *workflows.
 			} else {
 				if err := param.ValidateValue(value); err != nil {
 					return nil, fmt.Errorf("invalid argument value for param %s: %v", param.Name, value)
-				} else {
-					variables[param.Name] = value
 				}
+
+				if param.Type == workflows.ParameterTypeFinding {
+					findingValue, err := param.ToFindingParameterType(value)
+					if err != nil {
+						return nil, fmt.Errorf("error converting value %v to finding type: %w", value, err)
+					}
+
+					locations, err := r.getLocationsArrayFromFindingParam(
+						ctx, run.Namespace, param, findingValue,
+					)
+					if err != nil {
+						return nil, fmt.Errorf("error getting locations from finding param: %w", err)
+					}
+
+					value = locations
+				}
+
+				if param.Type == workflows.ParameterTypeFindingArray {
+					findingArrayValue, err := param.ToFindingParameterTypeArray(value)
+					if err != nil {
+						return nil, fmt.Errorf("error converting value %v to finding array type: %w", value, err)
+					}
+
+					locations := make([]tgtv1alpha1.SecretInStoreRef, 0, len(findingArrayValue))
+					for _, findingValue := range findingArrayValue {
+						location, err := r.getLocationsArrayFromFindingParam(
+							ctx, run.Namespace, param, &findingValue,
+						)
+						if err != nil {
+							return nil, fmt.Errorf("error getting locations from finding param: %w", err)
+						}
+						locations = append(locations, location...)
+					}
+
+					value = locations
+				}
+
+				variables[param.Name] = value
 			}
 		}
 	}
@@ -369,6 +407,24 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(template *workflows.
 	}
 
 	return workflow, nil
+}
+
+func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Context, resourceNamespace string, param workflows.Parameter, findingValue *workflows.FindingParameterType) ([]tgtv1alpha1.SecretInStoreRef, error) {
+	if param.ResourceConstraints != nil && param.ResourceConstraints.Namespace != "" {
+		resourceNamespace = param.ResourceConstraints.Namespace
+	}
+
+	finding := &scanv1alpha1.Finding{}
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: resourceNamespace,
+		Name:      findingValue.Name,
+	}, finding)
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting finding %s: %w", findingValue.Name, err)
+	}
+
+	return finding.Status.Locations, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
