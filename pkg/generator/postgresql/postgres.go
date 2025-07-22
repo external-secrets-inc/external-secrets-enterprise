@@ -122,6 +122,13 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"username": "PostgreSQL database username",
+		"password": "PostgreSQL user password",
+	}
+}
+
 func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclient client.Client, ns string) (*pgx.Conn, error) {
 	dbName := defaultDbName
 	if spec.Database != "" {

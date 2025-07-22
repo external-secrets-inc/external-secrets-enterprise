@@ -49,6 +49,8 @@ type Generator interface {
 		kube client.Client,
 		namespace string,
 	) error
+
+	GetKeys() map[string]string
 }
 
 type GeneratorProviderState *apiextensions.JSON

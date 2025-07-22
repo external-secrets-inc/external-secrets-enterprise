@@ -55,6 +55,13 @@ func (g *Generator) Cleanup(_ context.Context, jsonSpec *apiextensions.JSON, sta
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"username": "Basic Auth username",
+		"password": "Basic Auth password",
+	}
+}
+
 func (g *Generator) generate(
 	jsonSpec *apiextensions.JSON,
 	userGen usernameGenerateFunc,

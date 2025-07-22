@@ -55,6 +55,14 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, _
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"username": "Default login username for Google Container Registry (GCR)",
+		"password": "Generated GCR access token",
+		"expiry":   "Expiration time of the access token (RFC3339 format)",
+	}
+}
+
 func (g *Generator) generate(
 	ctx context.Context,
 	jsonSpec *apiextensions.JSON,

@@ -60,6 +60,15 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, _
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"username":       "AWS ECR default username",
+		"password":       "AWS ECR authorization token (base64-encoded)",
+		"proxy_endpoint": "Authorization proxy endpoint for private scopes",
+		"expires_at":     "Expiration timestamp of the token (Unix epoch seconds)",
+	}
+}
+
 func (g *Generator) generate(
 	ctx context.Context,
 	jsonSpec *apiextensions.JSON,

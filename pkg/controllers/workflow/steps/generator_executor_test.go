@@ -72,6 +72,11 @@ func (m *mockGenerator) Cleanup(ctx context.Context, obj *apiextensions.JSON, st
 	return nil
 }
 
+// GetKey implements the Generator interface.
+func (m *mockGenerator) GetKeys() map[string]string {
+	return nil
+}
+
 // Register the mock generator for testing.
 func registerMockGenerator(secretMap map[string][]byte, err error) {
 	// Use ForceRegister to overwrite if already registered

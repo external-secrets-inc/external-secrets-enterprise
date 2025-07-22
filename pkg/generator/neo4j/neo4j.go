@@ -142,6 +142,13 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"user":     "Neo4j database username",
+		"password": "Password for the Neo4j user",
+	}
+}
+
 func EscapeNeo4jIdentifier(input string) (string, error) {
 	if input == "" {
 		return "", errors.New("identifier cannot be empty")

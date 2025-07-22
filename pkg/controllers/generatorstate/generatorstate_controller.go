@@ -60,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		return ctrl.Result{}, err
 	}
 	if requeue {
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Millisecond}, nil
 	}
 
 	if generatorState.Spec.GarbageCollectionDeadline != nil {
@@ -70,18 +70,25 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			}
 
 			if err := r.Client.Delete(ctx, generatorState, &client.DeleteOptions{}); err != nil {
-				r.markAsFailed("could not delete GeneratorState", err, generatorState)
+				r.markAsFailed(genv1alpha1.GeneratorStateReady, genv1alpha1.ConditionReasonError, "Could not delete GeneratorState", err, generatorState)
 				return ctrl.Result{}, fmt.Errorf("could not delete GeneratorState: %w", err)
 			}
-			r.markSuccess("Reached gc deadline", generatorState)
+			r.markSuccess(genv1alpha1.GeneratorStateTerminating, genv1alpha1.ConditionReasonDeadlineReached, "Reached garbage collection deadline", generatorState)
 			return ctrl.Result{}, nil
 		}
+		r.markSuccess(
+			genv1alpha1.GeneratorStateDeletionScheduled,
+			genv1alpha1.ConditionReasonGarbageCollectionSetted,
+			fmt.Sprintf("Deletion scheduled to: %s", generatorState.Spec.GarbageCollectionDeadline.Time.String()),
+			generatorState,
+		)
 		return ctrl.Result{
 			RequeueAfter: time.Until(generatorState.Spec.GarbageCollectionDeadline.Time),
 		}, nil
 	}
 
-	r.markSuccess("GeneratorState created", generatorState)
+	// Add active status here
+	r.markSuccess(genv1alpha1.GeneratorStateReady, genv1alpha1.ConditionReasonCreated, "GeneratorState created", generatorState)
 	return ctrl.Result{}, nil
 }
 
@@ -96,12 +103,12 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, generatorState *genv1a
 	} else if controllerutil.ContainsFinalizer(generatorState, generatorStateFinalizer) {
 		gen, err := r.getGenerator(generatorState.Spec.Resource.Raw)
 		if err != nil {
-			r.markAsFailed("could not get generator", err, generatorState)
+			r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, genv1alpha1.ConditionReasonError, "Could not get generator", err, generatorState)
 			return false, fmt.Errorf("could not get generator: %w", err)
 		}
 
 		if err := gen.Cleanup(ctx, generatorState.Spec.Resource, generatorState.Spec.State, r.Client, generatorState.Namespace); err != nil {
-			r.markAsFailed("could not cleanup generator state", err, generatorState)
+			r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, genv1alpha1.ConditionReasonError, "Could not cleanup generator state", err, generatorState)
 			return false, fmt.Errorf("could not cleanup generator state: %w", err)
 		}
 
@@ -125,14 +132,14 @@ func (r *Reconciler) getGenerator(resource []byte) (genv1alpha1.Generator, error
 	return gen, nil
 }
 
-func (r *Reconciler) markAsFailed(msg string, err error, gs *genv1alpha1.GeneratorState) {
-	conditionSynced := NewGeneratorStateCondition(genv1alpha1.GeneratorStateReady, v1.ConditionFalse, genv1alpha1.ConditionReasonError, fmt.Sprintf("%s: %v", msg, err))
+func (r *Reconciler) markAsFailed(conditionType genv1alpha1.GeneratorStateConditionType, conditionReason, msg string, err error, gs *genv1alpha1.GeneratorState) {
+	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionFalse, conditionReason, fmt.Sprintf("%s: %v", msg, err))
 	SetGeneratorStateCondition(gs, *conditionSynced)
 }
 
-func (r *Reconciler) markSuccess(msg string, gs *genv1alpha1.GeneratorState) {
-	newReadyCondition := NewGeneratorStateCondition(genv1alpha1.GeneratorStateReady, v1.ConditionTrue, genv1alpha1.ConditionReasonCreated, msg)
-	SetGeneratorStateCondition(gs, *newReadyCondition)
+func (r *Reconciler) markSuccess(conditionType genv1alpha1.GeneratorStateConditionType, conditionReason, msg string, gs *genv1alpha1.GeneratorState) {
+	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionTrue, conditionReason, msg)
+	SetGeneratorStateCondition(gs, *conditionSynced)
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.

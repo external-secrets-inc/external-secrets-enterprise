@@ -135,6 +135,12 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, s
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"<key>": "Key returned dynamically by the federated generator endpoint",
+	}
+}
+
 // Helper functions.
 func parseSpec(data []byte) (*genv1alpha1.Federation, error) {
 	var spec genv1alpha1.Federation

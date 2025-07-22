@@ -89,6 +89,13 @@ func (w *Grafana) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, pre
 	return nil
 }
 
+func (g *Grafana) GetKeys() map[string]string {
+	return map[string]string{
+		"login": "Grafana service account login username",
+		"token": "Grafana service account API token",
+	}
+}
+
 func newClient(ctx context.Context, gen *genv1alpha1.Grafana, kclient client.Client, ns string) (*grafanaclient.GrafanaHTTPAPI, error) {
 	parsedURL, err := url.Parse(gen.Spec.URL)
 	if err != nil {

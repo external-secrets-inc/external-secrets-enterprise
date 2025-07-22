@@ -58,7 +58,10 @@ type GeneratorStateSpec struct {
 type GeneratorStateConditionType string
 
 const (
-	GeneratorStateReady GeneratorStateConditionType = "Ready"
+	GeneratorStateReady             GeneratorStateConditionType = "Ready"
+	GeneratorStateDeletionScheduled GeneratorStateConditionType = "Deletion Scheduled"
+	GeneratorStatePendingDeletion   GeneratorStateConditionType = "Pending Deletion"
+	GeneratorStateTerminating       GeneratorStateConditionType = "Terminating"
 )
 
 type GeneratorStateStatusCondition struct {
@@ -76,8 +79,10 @@ type GeneratorStateStatusCondition struct {
 }
 
 const (
-	ConditionReasonCreated = "Created"
-	ConditionReasonError   = "Error"
+	ConditionReasonCreated                 = "Created"
+	ConditionReasonError                   = "Error"
+	ConditionReasonGarbageCollectionSetted = "Garbage Collection Setted"
+	ConditionReasonDeadlineReached         = "Garbage Collection deadline reached"
 )
 
 type GeneratorStateStatus struct {

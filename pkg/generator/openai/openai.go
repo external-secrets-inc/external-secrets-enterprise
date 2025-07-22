@@ -105,6 +105,12 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"api_key": "OpenAI API key for authentication",
+	}
+}
+
 func newClient(ctx context.Context, spec *genv1alpha1.OpenAISpec, kclient client.Client, ns string) (*openAiClient, error) {
 	host := defaultHost
 	if spec.Host != "" {

@@ -65,6 +65,14 @@ func (g *Generator) Cleanup(_ context.Context, jsonSpec *apiextensions.JSON, sta
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"registry": "Quay registry URL",
+		"auth":     "Base64-encoded string containing robot account and access token",
+		"expiry":   "Access token expiration timestamp (RFC3339 format)",
+	}
+}
+
 func (g *Generator) generate(
 	ctx context.Context,
 	jsonSpec *apiextensions.JSON,

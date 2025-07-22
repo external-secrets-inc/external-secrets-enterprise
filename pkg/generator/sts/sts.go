@@ -105,6 +105,15 @@ func (g *Generator) Cleanup(_ context.Context, jsonSpec *apiextensions.JSON, sta
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"access_key_id":     "Temporary AWS access key ID",
+		"secret_access_key": "Temporary AWS secret access key",
+		"session_token":     "AWS session token for temporary credentials",
+		"expiration":        "Expiration timestamp of the credentials (Unix epoch seconds)",
+	}
+}
+
 type stsFactoryFunc func(cfg *aws.Config) stsAPI
 
 func stsFactory(cfg *aws.Config) stsAPI {

@@ -79,7 +79,7 @@ func setupNeo4jContainer(t *testing.T, ctx context.Context) (testcontainers.Cont
 	return neo4jContainer, uri
 }
 
-func newGeneratorSpec(t *testing.T, uri, user string, randomSuffix bool) *genv1alpha1.Neo4j {
+func newGeneratorSpec(t *testing.T, uri, user string) *genv1alpha1.Neo4j {
 	t.Helper()
 	return &genv1alpha1.Neo4j{
 		Spec: genv1alpha1.Neo4jSpec{
@@ -132,7 +132,7 @@ func (s *Neo4jTestSuite) SetupSuite() {
 func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 	// build generator input
 	user := fmt.Sprintf("%s_TestNeo4jGeneratorIntegration", testUser)
-	spec := newGeneratorSpec(s.T(), s.uri, user, false)
+	spec := newGeneratorSpec(s.T(), s.uri, user)
 
 	specJSON, _ := yaml.Marshal(spec)
 
@@ -172,7 +172,7 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 
 func (s *Neo4jTestSuite) TestNeo4jGeneratorWithRandomSufix() {
 	// build generator input
-	spec := newGeneratorSpec(s.T(), s.uri, testUser, true)
+	spec := newGeneratorSpec(s.T(), s.uri, testUser)
 	specJSON, _ := yaml.Marshal(spec)
 
 	// call Generate()
@@ -195,7 +195,7 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorWithRandomSufix() {
 func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 	// build generator input
 	user := fmt.Sprintf("%s_TestNeo4jCleanup", testUser)
-	spec := newGeneratorSpec(s.T(), s.uri, user, false)
+	spec := newGeneratorSpec(s.T(), s.uri, user)
 	specJSON, _ := yaml.Marshal(spec)
 
 	// call Generate()
@@ -246,7 +246,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 	// build generator input
 	user := fmt.Sprintf("%s_TestNeo4jCleanupAfterUserDBManipulation", testUser)
-	spec := newGeneratorSpec(s.T(), s.uri, user, false)
+	spec := newGeneratorSpec(s.T(), s.uri, user)
 	specJSON, _ := yaml.Marshal(spec)
 
 	// call Generate()

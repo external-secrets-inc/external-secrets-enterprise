@@ -40,6 +40,12 @@ func (g *Generator) Cleanup(_ context.Context, jsonSpec *apiextensions.JSON, sta
 	return nil
 }
 
+func (g *Generator) GetKeys() map[string]string {
+	return map[string]string{
+		"uuid": "Generated UUID (Universally Unique Identifier) in string format",
+	}
+}
+
 func (g *Generator) generate(_ *apiextensions.JSON, uuidGen generateFunc) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
 	uuid, err := uuidGen()
 	if err != nil {
