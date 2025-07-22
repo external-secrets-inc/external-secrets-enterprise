@@ -268,6 +268,8 @@ spec:
                               Used to rewrite secret Keys after getting them from the secret Provider
                               Multiple Rewrite operations can be provided. They are applied in a layered order (first to last)
                             items:
+                              maxProperties: 1
+                              minProperties: 1
                               properties:
                                 merge:
                                   description: |-
@@ -1001,6 +1003,8 @@ spec:
                               Used to rewrite secret Keys after getting them from the secret Provider
                               Multiple Rewrite operations can be provided. They are applied in a layered order (first to last)
                             items:
+                              maxProperties: 1
+                              minProperties: 1
                               properties:
                                 regexp:
                                   description: |-
@@ -11077,6 +11081,8 @@ spec:
                           Used to rewrite secret Keys after getting them from the secret Provider
                           Multiple Rewrite operations can be provided. They are applied in a layered order (first to last)
                         items:
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             merge:
                               description: |-
@@ -11686,6 +11692,8 @@ spec:
                           Used to rewrite secret Keys after getting them from the secret Provider
                           Multiple Rewrite operations can be provided. They are applied in a layered order (first to last)
                         items:
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             regexp:
                               description: |-
