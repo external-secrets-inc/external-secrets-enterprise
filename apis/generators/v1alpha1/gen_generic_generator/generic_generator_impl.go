@@ -17,6 +17,7 @@ package main
 import (
 	"log"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -33,10 +34,17 @@ func main() {
 	scheme := runtime.NewScheme()
 	_ = v1alpha1.AddToScheme(scheme)
 
-	kinds := scheme.KnownTypes(v1alpha1.SchemeGroupVersion)
+	kindsMap := scheme.KnownTypes(v1alpha1.SchemeGroupVersion)
+	kinds := make([]string, 0, len(kindsMap))
+	for k := range kindsMap {
+		kinds = append(kinds, k)
+	}
+
+	sort.Strings(kinds)
+
 	generators := make([]GeneratorType, 0, len(kinds))
 
-	for kind := range kinds {
+	for _, kind := range kinds {
 		// Ignore kubernetes default types and generators lists
 		if strings.HasSuffix(kind, "List") ||
 			kind == "CreateOptions" ||

@@ -18,9 +18,9 @@ func (g *{{ .TypeName }}) SetOutputs(expectedOutput map[string]string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	g.Status.Output = &apiextensions.JSON{
-		Raw:  bytes,
+		Raw: bytes,
 	}
 	return nil
 }
