@@ -67,4 +67,5 @@ func parseSpec(data []byte) (*genv1alpha1.Fake, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.FakeKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.FakeKind, &genv1alpha1.Fake{})
 }

@@ -77,7 +77,7 @@ func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf
 	} else if e.Step.Kind != "" && e.Step.Generator != nil {
 		// Handle inline generator configuration
 		var ok bool
-		gen, ok = genv1alpha1.GetGeneratorByName(string(e.Step.Kind))
+		gen, ok = genv1alpha1.GetGeneratorByKind(string(e.Step.Kind))
 		if !ok {
 			return nil, fmt.Errorf("unknown generator kind: %s", e.Step.Kind)
 		}

@@ -77,4 +77,5 @@ func parseSpec(data []byte) (*webhook.Spec, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.WebhookKind, &Webhook{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.WebhookKind, &genv1alpha1.Webhook{})
 }

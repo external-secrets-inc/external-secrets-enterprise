@@ -214,4 +214,5 @@ func parseStatus(data []byte) (*genv1alpha1.GrafanaServiceAccountTokenState, err
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.GrafanaKind, &Grafana{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.GrafanaKind, &genv1alpha1.Grafana{})
 }

@@ -25,7 +25,7 @@ var (
 	Neo4jKind             = reflect.TypeOf(Neo4j{}).Name()
 	MongoDBKind           = reflect.TypeOf(MongoDB{}).Name()
 	PostgreSqlKind        = reflect.TypeOf(PostgreSql{}).Name()
-	OpenAiKind            = reflect.TypeOf(OpenAI{}).Name()
+	OpenAIKind            = reflect.TypeOf(OpenAI{}).Name()
 )
 
 func init() {

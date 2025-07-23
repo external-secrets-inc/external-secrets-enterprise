@@ -183,4 +183,5 @@ func parseSpec(data []byte) (*genv1alpha1.ECRAuthorizationToken, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.ECRAuthorizationTokenKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.ECRAuthorizationTokenKind, &genv1alpha1.ECRAuthorizationToken{})
 }

@@ -122,4 +122,5 @@ func parseSpec(data []byte) (*genv1alpha1.SSH, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.SSHKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.SSHKind, &genv1alpha1.SSH{})
 }

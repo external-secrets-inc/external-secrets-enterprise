@@ -96,4 +96,5 @@ func parseSpec(data []byte) (*genv1alpha1.MFA, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.MFAKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.MFAKind, &genv1alpha1.MFA{})
 }

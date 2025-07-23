@@ -222,4 +222,5 @@ func parseSpec(data []byte) (*genv1alpha1.QuayAccessToken, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.QuayAccessTokenKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.QuayAccessTokenKind, &genv1alpha1.QuayAccessToken{})
 }

@@ -304,4 +304,5 @@ func (defaultClientFactory) New(ctx context.Context, uri string) (MongoClient, e
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.MongoDBKind, &MongoDB{clientFactory: defaultClientFactory{}})
+	genv1alpha1.RegisterGeneric(genv1alpha1.MongoDBKind, &genv1alpha1.MongoDB{})
 }

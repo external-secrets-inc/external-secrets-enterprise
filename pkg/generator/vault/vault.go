@@ -171,4 +171,5 @@ func parseSpec(data []byte) (*genv1alpha1.VaultDynamicSecret, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.VaultDynamicSecretKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.VaultDynamicSecretKind, &genv1alpha1.VaultDynamicSecret{})
 }

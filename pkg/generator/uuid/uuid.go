@@ -63,4 +63,5 @@ func generateUUID() (string, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.UUIDKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.UUIDKind, &genv1alpha1.UUID{})
 }

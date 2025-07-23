@@ -396,4 +396,5 @@ func parseSpec(data []byte) (*genv1alpha1.ACRAccessToken, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.ACRAccessTokenKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.ACRAccessTokenKind, &genv1alpha1.ACRAccessToken{})
 }

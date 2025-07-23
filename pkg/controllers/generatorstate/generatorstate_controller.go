@@ -125,7 +125,7 @@ func (r *Reconciler) getGenerator(resource []byte) (genv1alpha1.Generator, error
 	if err := us.UnmarshalJSON(resource); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal resource: %w", err)
 	}
-	gen, ok := genv1alpha1.GetGeneratorByName(us.GroupVersionKind().Kind)
+	gen, ok := genv1alpha1.GetGeneratorByKind(us.GroupVersionKind().Kind)
 	if !ok {
 		return nil, fmt.Errorf("generator not found")
 	}

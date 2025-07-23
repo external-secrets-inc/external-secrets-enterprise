@@ -208,4 +208,5 @@ func handleErrorResponse(resp *http.Response) error {
 
 func init() {
 	genv1alpha1.Register(string(genv1alpha1.GeneratorKindFederation), &Generator{})
+	genv1alpha1.RegisterGeneric(string(genv1alpha1.GeneratorKindFederation), &genv1alpha1.Federation{})
 }

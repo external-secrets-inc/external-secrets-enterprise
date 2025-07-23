@@ -188,4 +188,5 @@ func (g *Generator) GetKeys() map[string]string {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.RabbitMQGeneratorKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.RabbitMQGeneratorKind, &genv1alpha1.RabbitMQ{})
 }

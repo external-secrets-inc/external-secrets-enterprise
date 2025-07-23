@@ -95,7 +95,7 @@ func getGenerator(ctx context.Context, cl client.Client, scheme *runtime.Scheme,
 
 		// get the generator interface
 		var ok bool
-		generator, ok = genv1alpha1.GetGeneratorByName(string(clusterGenerator.Spec.Kind))
+		generator, ok = genv1alpha1.GetGeneratorByKind(string(clusterGenerator.Spec.Kind))
 		if !ok {
 			return nil, nil, reconcile.TerminalError(fmt.Errorf("ClusterGenerator has unknown kind %s", clusterGenerator.Spec.Kind))
 		}
@@ -112,7 +112,7 @@ func getGenerator(ctx context.Context, cl client.Client, scheme *runtime.Scheme,
 
 		// get the generator interface
 		var ok bool
-		generator, ok = genv1alpha1.GetGeneratorByName(gvk.Kind)
+		generator, ok = genv1alpha1.GetGeneratorByKind(gvk.Kind)
 		if !ok {
 			return nil, nil, reconcile.TerminalError(fmt.Errorf("generatorRef has unknown kind %s", gvk.Kind))
 		}
@@ -340,7 +340,7 @@ func clusterGeneratorToVirtual(gen *genv1alpha1.ClusterGenerator) (client.Object
 		return &genv1alpha1.OpenAI{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: genv1alpha1.SchemeGroupVersion.String(),
-				Kind:       genv1alpha1.OpenAiKind,
+				Kind:       genv1alpha1.OpenAIKind,
 			},
 			Spec: *gen.Spec.Generator.OpenAISpec,
 		}, nil

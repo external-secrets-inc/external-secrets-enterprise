@@ -137,4 +137,5 @@ func parseSpec(data []byte) (*genv1alpha1.Password, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.PasswordKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.PasswordKind, &genv1alpha1.Password{})
 }

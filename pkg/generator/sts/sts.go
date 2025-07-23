@@ -128,4 +128,5 @@ func parseSpec(data []byte) (*genv1alpha1.STSSessionToken, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.STSSessionTokenKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.STSSessionTokenKind, &genv1alpha1.STSSessionToken{})
 }

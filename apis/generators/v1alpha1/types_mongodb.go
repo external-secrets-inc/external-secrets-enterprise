@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -84,7 +85,8 @@ type MongoDB struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec MongoDBSpec `json:"spec,omitempty"`
+	Spec   MongoDBSpec         `json:"spec,omitempty"`
+	Output *apiextensions.JSON `json:"output,omitempty"`
 }
 
 // +kubebuilder:object:root=true

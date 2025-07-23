@@ -413,4 +413,5 @@ func parseStatus(data []byte) (*genv1alpha1.Neo4jUserState, error) {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.Neo4jKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.Neo4jKind, &genv1alpha1.Neo4j{})
 }

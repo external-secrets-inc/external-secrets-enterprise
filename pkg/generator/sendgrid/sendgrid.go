@@ -231,4 +231,5 @@ func (g *Generator) GetKeys() map[string]string {
 
 func init() {
 	genv1alpha1.Register(genv1alpha1.SendgridKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.SendgridKind, &genv1alpha1.SendgridAuthorizationToken{})
 }

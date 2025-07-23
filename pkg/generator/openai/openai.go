@@ -230,5 +230,6 @@ func parseStatus(data []byte) (*genv1alpha1.OpenAiServiceAccountState, error) {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.OpenAiKind, &Generator{})
+	genv1alpha1.Register(genv1alpha1.OpenAIKind, &Generator{})
+	genv1alpha1.RegisterGeneric(genv1alpha1.OpenAIKind, &genv1alpha1.OpenAI{})
 }
