@@ -19,7 +19,7 @@ func (g *{{ .TypeName }}) SetOutputs(expectedOutput map[string]string) error {
 		return err
 	}
 	
-	g.Output = &apiextensions.JSON{
+	g.Status.Output = &apiextensions.JSON{
 		Raw:  bytes,
 	}
 	return nil

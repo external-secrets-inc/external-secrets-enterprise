@@ -34,3 +34,7 @@ func GetGenericByKind(kind string) (GenericGenerator, bool) {
 	genericLock.RUnlock()
 	return genericGenerator, ok
 }
+
+func GetAllGeneric() map[string]GenericGenerator {
+	return genericBuilder
+}

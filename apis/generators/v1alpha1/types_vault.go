@@ -77,7 +77,7 @@ type VaultDynamicSecret struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   VaultDynamicSecretSpec `json:"spec,omitempty"`
-	Output *apiextensions.JSON    `json:"output,omitempty"`
+	Status GeneratorStatus        `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

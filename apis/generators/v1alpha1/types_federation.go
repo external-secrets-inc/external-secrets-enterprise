@@ -15,7 +15,6 @@ package v1alpha1
 
 import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,13 +61,14 @@ type FederationAuthKubernetes struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
+// +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,categories={external-secrets, external-secrets-generators}
 type Federation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FederationSpec      `json:"spec"`
-	Output *apiextensions.JSON `json:"output,omitempty"`
+	Spec   FederationSpec  `json:"spec"`
+	Status GeneratorStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

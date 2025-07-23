@@ -48,6 +48,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/externalsecret"
 	"github.com/external-secrets/external-secrets/pkg/controllers/externalsecret/esmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/federation"
+	"github.com/external-secrets/external-secrets/pkg/controllers/generator"
 	"github.com/external-secrets/external-secrets/pkg/controllers/generatorstate"
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/pushsecret"
@@ -245,6 +246,24 @@ var rootCmd = &cobra.Command{
 		}); err != nil {
 			setupLog.Error(err, errCreateController, "controller", "GeneratorState")
 			os.Exit(1)
+		}
+
+		allGenericGenerators := genv1alpha1.GetAllGeneric()
+
+		for kind, genericGenerator := range allGenericGenerators {
+			if err = (&generator.Reconciler{
+				Client:     mgr.GetClient(),
+				Log:        ctrl.Log.WithName("controllers").WithName("Generator"),
+				Scheme:     mgr.GetScheme(),
+				RestConfig: mgr.GetConfig(),
+				Kind:       kind,
+			}).SetupWithManager(mgr, genericGenerator, controller.Options{
+				MaxConcurrentReconciles: concurrent,
+				RateLimiter:             ctrlcommon.BuildRateLimiter(),
+			}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "Generator")
+				os.Exit(1)
+			}
 		}
 		externalSecretReconciler := &externalsecret.Reconciler{
 			Client:                    mgr.GetClient(),

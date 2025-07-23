@@ -15,7 +15,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
@@ -54,7 +53,7 @@ type GithubAccessToken struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   GithubAccessTokenSpec `json:"spec,omitempty"`
-	Output *apiextensions.JSON   `json:"output,omitempty"`
+	Status GeneratorStatus       `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -21643,8 +21643,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: |-
                 ACRAccessTokenSpec defines how to generate the access token
@@ -21796,6 +21794,11 @@ spec:
                 - auth
                 - registry
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -21847,8 +21850,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 auth:
@@ -21996,6 +21997,11 @@ spec:
                 - iamRef
                 - region
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -22047,8 +22053,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: BasicAuthSpec controls the behavior of the basic auth generator.
               properties:
@@ -22128,6 +22132,11 @@ spec:
                     - length
                   type: object
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -22176,8 +22185,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 generator:
@@ -24517,6 +24524,11 @@ spec:
                 - generator
                 - kind
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -24571,8 +24583,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 auth:
@@ -24714,6 +24724,11 @@ spec:
               required:
                 - region
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -24764,8 +24779,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: FakeSpec contains the static data.
               properties:
@@ -24781,6 +24794,11 @@ spec:
                     Data defines the static data returned
                     by this generator.
                   type: object
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -24829,8 +24847,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: FederationSpec defines the configuration for the federation generator.
               properties:
@@ -24921,11 +24937,18 @@ spec:
                 - generator
                 - server
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           required:
             - spec
           type: object
       served: true
       storage: true
+      subresources:
+        status: {}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -24971,8 +24994,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 auth:
@@ -25055,6 +25076,11 @@ spec:
               required:
                 - auth
                 - projectID
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -25207,8 +25233,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 appID:
@@ -25274,6 +25298,11 @@ spec:
                 - auth
                 - installID
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -25321,8 +25350,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: GrafanaSpec controls the behavior of the grafana generator.
               properties:
@@ -25408,6 +25435,11 @@ spec:
                 - serviceAccount
                 - url
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -25456,8 +25488,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: MFASpec controls the behavior of the mfa generator.
               properties:
@@ -25502,6 +25532,11 @@ spec:
                   type: string
               required:
                 - secret
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -25550,8 +25585,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: MongoDBSpec controls the behavior of the MongoDB generator.
               properties:
@@ -25676,6 +25709,11 @@ spec:
                 - database
                 - user
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -25727,8 +25765,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: Neo4jSpec controls the behavior of the neo4j generator.
               properties:
@@ -25869,6 +25905,11 @@ spec:
                 - auth
                 - database
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -25920,8 +25961,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: OpenAISpec controls the behavior of the openAI generator.
               properties:
@@ -25974,6 +26013,11 @@ spec:
                 - openAiAdminKey
                 - projectId
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -26025,8 +26069,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: PasswordSpec controls the behavior of the password generator.
               properties:
@@ -26063,6 +26105,11 @@ spec:
                 - allowRepeat
                 - length
                 - noUpper
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -26115,8 +26162,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: PostgreSqlSpec controls the behavior of the postgreSQL generator.
               properties:
@@ -26241,6 +26286,11 @@ spec:
                 - host
                 - port
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -26289,8 +26339,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 robotAccount:
@@ -26330,6 +26378,11 @@ spec:
               required:
                 - robotAccount
                 - serviceAccountRef
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -26382,8 +26435,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: RabbitMQSpec user generation behavior for rabbitMQ.
               properties:
@@ -26502,6 +26553,11 @@ spec:
                 - config
                 - server
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -26551,8 +26607,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 auth:
@@ -26596,6 +26650,11 @@ spec:
                   items:
                     type: string
                   type: array
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -26648,8 +26707,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: SSHSpec controls the behavior of the password generator.
               properties:
@@ -26673,6 +26730,11 @@ spec:
                   required:
                     - bits
                   type: object
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -26726,8 +26788,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 auth:
@@ -26881,6 +26941,11 @@ spec:
               required:
                 - region
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -26929,10 +26994,13 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: UUIDSpec controls the behavior of the uuid generator.
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true
@@ -26981,8 +27049,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               properties:
                 allowEmptyResponse:
@@ -27790,6 +27856,11 @@ spec:
                 - path
                 - provider
               type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
           type: object
       served: true
       storage: true
@@ -27842,8 +27913,6 @@ spec:
               type: string
             metadata:
               type: object
-            output:
-              x-kubernetes-preserve-unknown-fields: true
             spec:
               description: WebhookSpec controls the behavior of the external generator. Any body parameters should be passed to the server through the parameters field.
               properties:
@@ -28012,6 +28081,11 @@ spec:
               required:
                 - result
                 - url
+              type: object
+            status:
+              properties:
+                output:
+                  x-kubernetes-preserve-unknown-fields: true
               type: object
           type: object
       served: true

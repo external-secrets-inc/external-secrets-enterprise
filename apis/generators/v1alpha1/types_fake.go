@@ -15,7 +15,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,8 +41,8 @@ type Fake struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FakeSpec            `json:"spec,omitempty"`
-	Output *apiextensions.JSON `json:"output,omitempty"`
+	Spec   FakeSpec        `json:"spec,omitempty"`
+	Status GeneratorStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
