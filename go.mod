@@ -40,7 +40,11 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/yandex-cloud/go-genproto v0.14.0
 	github.com/yandex-cloud/go-sdk v0.15.0
+<<<<<<< HEAD
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
+=======
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+>>>>>>> upstream/main
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.40.0
 	golang.org/x/oauth2 v0.30.0
@@ -116,10 +120,14 @@ require (
 	github.com/passbolt/go-passbolt v0.7.2
 	github.com/previder/vault-cli v0.1.2
 	github.com/pulumi/esc-sdk/sdk v0.12.1
+<<<<<<< HEAD
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.34
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
+=======
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.34
+>>>>>>> upstream/main
 	github.com/sethvargo/go-password v0.3.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spiffe/go-spiffe/v2 v2.5.0
@@ -129,7 +137,10 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.134.0
+<<<<<<< HEAD
 	golang.org/x/sync v0.16.0
+=======
+>>>>>>> upstream/main
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911
 	sigs.k8s.io/yaml v1.5.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
@@ -196,7 +207,7 @@ require (
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/extism/go-sdk v1.7.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
@@ -228,7 +239,10 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.7 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+<<<<<<< HEAD
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
+=======
+>>>>>>> upstream/main
 	github.com/hashicorp/hcl/v2 v2.24.0 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20250628045327-2d64ad6b7ec5 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -262,7 +276,10 @@ require (
 	github.com/opentracing/basictracer-go v1.1.0 // indirect
 	github.com/pgavlin/fx v0.1.6 // indirect
 	github.com/pjbgf/sha1cd v0.4.0 // indirect
+<<<<<<< HEAD
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
+=======
+>>>>>>> upstream/main
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.14.3 // indirect
 	github.com/pulumi/pulumi/sdk/v3 v3.181.0 // indirect
@@ -304,6 +321,10 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
+<<<<<<< HEAD
+=======
+	golang.org/x/sync v0.16.0 // indirect
+>>>>>>> upstream/main
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
