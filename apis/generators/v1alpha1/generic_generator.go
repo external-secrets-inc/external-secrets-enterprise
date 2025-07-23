@@ -25,7 +25,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
 
-// GenericGenerator is a common interface for interacting with Generators
+// GenericGenerator is a common interface for interacting with Generators.
 type GenericGenerator interface {
 	runtime.Object
 	metav1.Object

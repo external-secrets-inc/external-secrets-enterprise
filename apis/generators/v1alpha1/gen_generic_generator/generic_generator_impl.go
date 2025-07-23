@@ -1,3 +1,17 @@
+// /*
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 package main
 
 import (
@@ -43,20 +57,28 @@ func main() {
 	bodyTmpl := template.Must(template.ParseFiles("gen_generic_generator_body.gotmpl"))
 
 	outFile, err := os.Create("../zz_generated_generic_generators.go")
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			log.Printf("%s", err.Error())
+			return
+		}
+	}()
 	if err != nil {
-		log.Fatalf("failed to create output file: %v", err)
+		log.Printf("failed to create output file: %v", err)
+		return
 	}
-	defer outFile.Close()
 
 	// Render header once
 	if err := headerTmpl.Execute(outFile, nil); err != nil {
-		log.Fatalf("failed to execute header template: %v", err)
+		log.Printf("failed to execute header template: %v", err)
+		return
 	}
 
 	// Render each generator body
 	for _, g := range generators {
 		if err := bodyTmpl.Execute(outFile, g); err != nil {
-			log.Fatalf("failed to execute body template: %v", err)
+			log.Printf("failed to execute body template: %v", err)
+			return
 		}
 	}
 }
