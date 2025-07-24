@@ -91,7 +91,7 @@ func validateWorkflowRunParameters(wr *WorkflowRun) error {
 
 		// Validate the argument value
 		if err := validateArgumentValue(ctx, param, argValue, wr.Namespace); err != nil {
-			return fmt.Errorf("invalid value for argument %q: %w\nParam: %v\nArgValue: %v", argName, err, param, argValue)
+			return fmt.Errorf("invalid value for argument %q: %w", argName, err)
 		}
 	}
 
