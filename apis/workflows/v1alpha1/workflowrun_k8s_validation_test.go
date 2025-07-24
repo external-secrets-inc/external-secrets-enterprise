@@ -1193,7 +1193,7 @@ func TestValidateCustomObjectTypeValidation(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "invalid value for argument \"invalidCustomObject\": invalid custom object type: object[super-finding]. Expected format: object[<resource>] or object[array[<resource>]], where <resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, or generator[<kind>]",
+			errMsg:  "invalid value for argument \"invalidCustomObject\": invalid custom object type: object[invalid-type]. Expected format: object[<resource>] or object[array[<resource>]], where <resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, or generator[<kind>]",
 		},
 	}
 
