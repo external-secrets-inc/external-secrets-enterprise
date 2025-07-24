@@ -220,22 +220,27 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 						},
 						{
 							Name:     "secretlocation",
-							Type:     ParameterType("secretlocation"),
+							Type:     ParameterTypeSecretLocation,
 							Required: false,
 						},
 						{
 							Name:     "secretlocationArray",
-							Type:     ParameterType("array[secretlocation]"),
+							Type:     ParameterTypeSecretLocationArray,
 							Required: false,
 						},
 						{
 							Name:     "finding",
-							Type:     ParameterType("finding"),
+							Type:     ParameterTypeFinding,
 							Required: false,
 						},
 						{
 							Name:     "findingArray",
-							Type:     ParameterType("array[finding]"),
+							Type:     ParameterTypeFindingArray,
+							Required: false,
+						},
+						{
+							Name:     "objectFinding",
+							Type:     ParameterType("object[finding]"),
 							Required: false,
 						},
 					},
@@ -960,6 +965,51 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 			wantErr: true,
 			errMsg:  "resource non-existent-finding of type finding not found in namespace test-namespace",
 		},
+		{
+			name: "valid object[finding]",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"objectFinding": {"key": {"name": "test-finding"}}
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "inexistent object[finding]",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"objectFinding": {"key": {"name": "non-existent-finding"}}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource non-existent-finding of type finding not found in namespace test-namespace",
+		},
 	}
 
 	for _, tt := range tests {
@@ -1057,6 +1107,106 @@ func TestValidateKubernetesResourceTypes(t *testing.T) {
 			if tt.isK8sResource {
 				assert.Equal(t, tt.apiVersion, tt.paramType.GetAPIVersion())
 				assert.Equal(t, tt.kind, tt.paramType.GetKind())
+			}
+		})
+	}
+}
+
+func TestValidateCustomObjectTypeValidation(t *testing.T) {
+	// Create a test scheme
+	scheme := runtime.NewScheme()
+	_ = AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+	_ = esv1.AddToScheme(scheme)
+
+	// Create a test template with Kubernetes resource parameters
+	template := &WorkflowTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "k8s-resource-template",
+			Namespace: "test-namespace",
+		},
+		Spec: WorkflowTemplateSpec{
+			Version: "v1",
+			Name:    "K8s Resource Test",
+			ParameterGroups: []ParameterGroup{
+				{
+					Name: "Resources",
+					Parameters: []Parameter{
+						{
+							Name:     "invalidCustomObject",
+							Type:     ParameterType("object[invalid-type]"),
+							Required: true,
+						},
+					},
+				},
+			},
+			Jobs: map[string]Job{
+				"test": {
+					Standard: &StandardJob{
+						Steps: []Step{
+							{
+								Name: "test",
+								Debug: &DebugStep{
+									Message: "Test",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Create a fake client with test objects
+	client := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(
+			template).
+		Build()
+
+	// Set the validation client
+	SetValidationClient(client)
+
+	// Test cases
+	tests := []struct {
+		name        string
+		workflowRun *WorkflowRun
+		wantErr     bool
+		errMsg      string
+	}{
+		{
+			name: "invalid custom object type",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"invalidCustomObject": [{"name": "test-store"}, {"name": "test-second-store"}]
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "invalid value for argument \"invalidCustomObject\": invalid custom object type: object[super-finding]. Expected format: object[<resource>] or object[array[<resource>]], where <resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, or generator[<kind>]",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateWorkflowRunParameters(tt.workflowRun)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

@@ -21,15 +21,33 @@ import (
 
 var generatorPattern = regexp.MustCompile(string(ParameterTypeGenerator))
 var generatorArrayPattern = regexp.MustCompile(string(ParameterTypeGeneratorArray))
+var generalCustomObjectPattern = regexp.MustCompile(`^object\[([a-zA-Z0-9_-]+)\]$`)
+var customObjectPattern = regexp.MustCompile(string(ParameterTypeCustomObject))
 
 // IsGeneratorType checks if the value matches the pattern generator[kind].
 func (p ParameterType) IsGeneratorType() bool {
 	return generatorPattern.MatchString(string(p))
 }
 
-// IsGeneratorType checks if the value matches the pattern array[generator[kind]].
+// IsGeneratorArrayType checks if the value matches the pattern array[generator[kind]].
 func (p ParameterType) IsGeneratorArrayType() bool {
 	return generatorArrayPattern.MatchString(string(p))
+}
+
+// IsCustomObjectType checks if the value matches the pattern object[<kubernetes_resource>].
+func (p ParameterType) IsCustomObjectType() (bool, error) {
+	if generalCustomObjectPattern.MatchString(string(p)) {
+		if customObjectPattern.MatchString(string(p)) {
+			return true, nil
+		}
+		return false, fmt.Errorf(
+			"invalid custom object type: %s. Expected format: object[<resource>] or object[array[<resource>]], "+
+				"where <resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, "+
+				"or generator[<kind>]",
+			string(p),
+		)
+	}
+	return false, nil
 }
 
 // ExtractGeneratorKind returns the kind inside generator[kind] or array[generator[kind]], or empty string if invalid.
@@ -49,15 +67,29 @@ func (p ParameterType) ExtractGeneratorKind() string {
 	return ""
 }
 
+// ExtractCustomObjectType returns the type inside object[type], or empty string if invalid.
+func (p ParameterType) ExtractCustomObjectType() ParameterType {
+	if matches := generalCustomObjectPattern.FindStringSubmatch(string(p)); len(matches) == 2 {
+		return ParameterType(matches[1])
+	}
+
+	return ParameterType("")
+}
+
 // IsPrimitive returns true if the parameter type is a primitive value.
 func (p ParameterType) IsPrimitive() bool {
 	if p.IsGeneratorType() || p.IsGeneratorArrayType() {
 		return false
 	}
 
+	ok, err := p.IsCustomObjectType()
+	if err == nil && ok {
+		return true
+	}
+
 	switch p {
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
-		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime, ParameterTypeCustomObject:
 		return true
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
@@ -76,6 +108,11 @@ func (p ParameterType) IsKubernetesResource() bool {
 		return true
 	}
 
+	ok, err := p.IsCustomObjectType()
+	if err == nil && ok {
+		return false
+	}
+
 	switch p {
 	case ParameterTypeNamespace, ParameterTypeSecretStore, ParameterTypeExternalSecret,
 		ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
@@ -84,7 +121,7 @@ func (p ParameterType) IsKubernetesResource() bool {
 		ParameterTypeFinding, ParameterTypeFindingArray:
 		return true
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
-		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime, ParameterTypeCustomObject:
 		return false
 	default:
 		return false
@@ -106,7 +143,7 @@ func (p ParameterType) GetAPIVersion() string {
 	case ParameterTypeClusterSecretStore:
 		return "external-secrets.io/v1"
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
-		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime, ParameterTypeCustomObject:
 		return ""
 	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
 		return "v1alpha1"
@@ -134,7 +171,8 @@ func (p ParameterType) GetKind() string {
 	case ParameterTypeClusterSecretStore:
 		return "ClusterSecretStore"
 	case ParameterTypeString, ParameterTypeNumber, ParameterTypeBool,
-		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime:
+		ParameterTypeObject, ParameterTypeSecret, ParameterTypeTime,
+		ParameterTypeCustomObject:
 		return ""
 	case ParameterTypeGenerator, ParameterTypeGeneratorArray:
 		return p.ExtractGeneratorKind()
@@ -207,7 +245,6 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				}
 			}
 		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
-			ParameterTypeGenerator, ParameterTypeGeneratorArray,
 			ParameterTypeSecretLocation, ParameterTypeSecretLocationArray,
 			ParameterTypeFinding, ParameterTypeFindingArray:
 
@@ -220,6 +257,8 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 					return fmt.Errorf("item %d error: %w", i, err)
 				}
 			}
+		case ParameterTypeGenerator, ParameterTypeGeneratorArray, ParameterTypeCustomObject:
+			// Do nothing
 		}
 
 		if p.Type.IsGeneratorType() {
@@ -236,6 +275,32 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				_, err := p.ToGeneratorParameterTypeArray(item)
 				if err != nil {
 					return fmt.Errorf("item %d error: %w", i, err)
+				}
+			}
+		}
+
+		ok, err := p.Type.IsCustomObjectType()
+		if err != nil {
+			return err
+		}
+
+		if ok {
+			for i, item := range arr {
+				customObject, err := p.ParseCustomObject(item)
+				if err != nil {
+					return err
+				}
+
+				customType := p.Type.ExtractCustomObjectType()
+				tempParam := Parameter{
+					Name: p.Name,
+					Type: customType,
+				}
+				for _, customValue := range customObject {
+					err := tempParam.ValidateValue(customValue)
+					if err != nil {
+						return fmt.Errorf("item %d error: %w", i, err)
+					}
 				}
 			}
 		}
@@ -259,7 +324,6 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				return fmt.Errorf("parameter %s must be a string", p.Name)
 			}
 		case ParameterTypeSecretStore, ParameterTypeClusterSecretStore, ParameterTypeSecretStoreArray,
-			ParameterTypeGenerator, ParameterTypeGeneratorArray,
 			ParameterTypeSecretLocation, ParameterTypeSecretLocationArray,
 			ParameterTypeFinding, ParameterTypeFindingArray:
 
@@ -269,6 +333,8 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			if err != nil {
 				return err
 			}
+		case ParameterTypeGenerator, ParameterTypeGeneratorArray, ParameterTypeCustomObject:
+			// Do nothing
 		}
 
 		if p.Type.IsGeneratorType() {
@@ -284,8 +350,46 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				return err
 			}
 		}
+
+		ok, err := p.Type.IsCustomObjectType()
+		if err != nil {
+			return err
+		}
+
+		if ok {
+			customObject, err := p.ParseCustomObject(value)
+			if err != nil {
+				return err
+			}
+
+			customType := p.Type.ExtractCustomObjectType()
+			tempParam := Parameter{
+				Name: p.Name,
+				Type: customType,
+			}
+			for _, customValue := range customObject {
+				err := tempParam.ValidateValue(customValue)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
+}
+
+func (p Parameter) ParseCustomObject(value interface{}) (map[string]interface{}, error) {
+	var customObject map[string]interface{}
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling parameter %s. received: %T", p.Name, value)
+	}
+
+	err = json.Unmarshal(valueBytes, &customObject)
+	if err != nil {
+		return nil, fmt.Errorf("erro unmarshalling parameter %s. received: %T", p.Name, value)
+	}
+	return customObject, nil
 }
 
 func (p Parameter) ToSecretStoreParameterType(value interface{}) (*SecretStoreParameterType, error) {

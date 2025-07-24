@@ -357,43 +357,12 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(ctx context.Context,
 					return nil, fmt.Errorf("invalid argument value for param %s: %v", param.Name, value)
 				}
 
-				if param.Type == workflows.ParameterTypeFinding {
-					findingValue, err := param.ToFindingParameterType(value)
-					if err != nil {
-						return nil, fmt.Errorf("error converting value %v to finding type: %w", value, err)
-					}
-
-					locations, err := r.getLocationsArrayFromFindingParam(
-						ctx, run.Namespace, param, findingValue,
-					)
-					if err != nil {
-						return nil, fmt.Errorf("error getting locations from finding param: %w", err)
-					}
-
-					value = locations
+				parsedValue, err := r.parseCustomTypes(ctx, run.Namespace, param, value)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing custom types: %w", err)
 				}
 
-				if param.Type == workflows.ParameterTypeFindingArray {
-					findingArrayValue, err := param.ToFindingParameterTypeArray(value)
-					if err != nil {
-						return nil, fmt.Errorf("error converting value %v to finding array type: %w", value, err)
-					}
-
-					locations := make([]tgtv1alpha1.SecretInStoreRef, 0, len(findingArrayValue))
-					for _, findingValue := range findingArrayValue {
-						location, err := r.getLocationsArrayFromFindingParam(
-							ctx, run.Namespace, param, &findingValue,
-						)
-						if err != nil {
-							return nil, fmt.Errorf("error getting locations from finding param: %w", err)
-						}
-						locations = append(locations, location...)
-					}
-
-					value = locations
-				}
-
-				variables[param.Name] = value
+				variables[param.Name] = parsedValue
 			}
 		}
 	}
@@ -407,6 +376,69 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(ctx context.Context,
 	}
 
 	return workflow, nil
+}
+
+func (r *WorkflowRunReconciler) parseCustomTypes(ctx context.Context, namespace string, param workflows.Parameter, value interface{}) (interface{}, error) {
+	if param.Type == workflows.ParameterTypeFinding {
+		findingValue, err := param.ToFindingParameterType(value)
+		if err != nil {
+			return nil, fmt.Errorf("error converting value %v to finding type: %w", value, err)
+		}
+
+		locations, err := r.getLocationsArrayFromFindingParam(
+			ctx, namespace, param, findingValue,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error getting locations from finding param: %w", err)
+		}
+
+		value = locations
+	}
+
+	if param.Type == workflows.ParameterTypeFindingArray {
+		findingArrayValue, err := param.ToFindingParameterTypeArray(value)
+		if err != nil {
+			return nil, fmt.Errorf("error converting value %v to finding array type: %w", value, err)
+		}
+
+		locations := make([]tgtv1alpha1.SecretInStoreRef, 0, len(findingArrayValue))
+		for _, findingValue := range findingArrayValue {
+			location, err := r.getLocationsArrayFromFindingParam(
+				ctx, namespace, param, &findingValue,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("error getting locations from finding param: %w", err)
+			}
+			locations = append(locations, location...)
+		}
+
+		value = locations
+	}
+
+	ok, err := param.Type.IsCustomObjectType()
+	if err != nil {
+		return nil, fmt.Errorf("error checking if param is custom object type: %w", err)
+	}
+
+	if ok {
+		objectValue, err := param.ParseCustomObject(value)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing custom object: %w", err)
+		}
+
+		customType := param.Type.ExtractCustomObjectType()
+		param.Type = customType
+		for key, customValue := range objectValue {
+			parsedCustomValue, err := r.parseCustomTypes(ctx, namespace, param, customValue)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing value of key %s from custom object: %w", key, err)
+			}
+			objectValue[key] = parsedCustomValue
+		}
+		value = objectValue
+	}
+
+	return value, nil
 }
 
 func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Context, resourceNamespace string, param workflows.Parameter, findingValue *workflows.FindingParameterType) ([]tgtv1alpha1.SecretInStoreRef, error) {
