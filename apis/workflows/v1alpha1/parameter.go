@@ -21,7 +21,7 @@ import (
 
 var generatorPattern = regexp.MustCompile(string(ParameterTypeGenerator))
 var generatorArrayPattern = regexp.MustCompile(string(ParameterTypeGeneratorArray))
-var generalCustomObjectPattern = regexp.MustCompile(`^object\[([a-zA-Z0-9_-]+)\]$`)
+var generalCustomObjectPattern = regexp.MustCompile(`^object\[([a-zA-Z0-9_\-\[\]]+)\]$`)
 var customObjectPattern = regexp.MustCompile(string(ParameterTypeCustomObject))
 
 // IsGeneratorType checks if the value matches the pattern generator[kind].

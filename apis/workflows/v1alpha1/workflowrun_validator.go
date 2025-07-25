@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -170,16 +169,12 @@ func validateArgumentValue(ctx context.Context, param *Parameter, argValue inter
 
 		ok, err := param.Type.IsCustomObjectType()
 		if err == nil && ok {
-			log.Printf("IsCustomObjectType param: %v; parsedValue: %v", param, argValue)
 			parsedValue = argValue
 		}
 
 		// Validate the single value
 		if err := validateSingleValue(ctx, param, parsedValue, namespace); err != nil {
 			return err
-		}
-		if err == nil && ok {
-			log.Printf("WTF")
 		}
 	}
 

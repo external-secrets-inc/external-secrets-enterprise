@@ -54,6 +54,10 @@ func (s *WorkflowRunReconcilerTestSuite) SetupTest() {
 	s.builder = fake.NewClientBuilder().WithScheme(s.scheme)
 }
 
+func TestWorkflowRunReconcilerTestSuite(t *testing.T) {
+	suite.Run(t, new(WorkflowRunReconcilerTestSuite))
+}
+
 func (s *WorkflowRunReconcilerTestSuite) TestReconcileWorkflowCreated() {
 	template := &workflows.WorkflowTemplate{
 		TypeMeta: metav1.TypeMeta{
@@ -282,9 +286,33 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 		},
 	}
 
-	param := workflows.Parameter{
-		Name: "param1",
-		Type: workflows.ParameterType("object[finding]"),
+	secondFinding := &scanv1alpha1.Finding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "finding2",
+			Namespace: "default",
+		},
+		Status: scanv1alpha1.FindingStatus{
+			Locations: []targetsv1alpha1.SecretInStoreRef{{
+				Name:       "secret-store2",
+				Kind:       "SecretStore",
+				APIVersion: "external-secrets.io/v1",
+				RemoteRef: targetsv1alpha1.RemoteRef{
+					Key:      "secret-key",
+					Property: "secret-property",
+				},
+			}},
+		},
+	}
+
+	params := []workflows.Parameter{
+		{
+			Name: "param1",
+			Type: workflows.ParameterType("object[finding]"),
+		},
+		{
+			Name: "param2",
+			Type: workflows.ParameterType("object[array[finding]]"),
+		},
 	}
 
 	template := &workflows.WorkflowTemplate{
@@ -296,7 +324,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 			Version: "v1",
 			Name:    "test-template",
 			ParameterGroups: []workflows.ParameterGroup{
-				{Parameters: []workflows.Parameter{param}},
+				{Parameters: params},
 			},
 		},
 	}
@@ -304,6 +332,12 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 	argsJSON, _ := json.Marshal(map[string]any{
 		"param1": map[string]interface{}{
 			"key1": map[string]string{"name": "finding1"},
+		},
+		"param2": map[string]interface{}{
+			"key2": []map[string]string{
+				{"name": "finding1"},
+				{"name": "finding2"},
+			},
 		},
 	})
 
@@ -320,7 +354,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 		},
 	}
 
-	cl := s.builder.WithObjects(finding).Build()
+	cl := s.builder.WithObjects(finding, secondFinding).Build()
 	reconciler := &WorkflowRunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
@@ -350,8 +384,20 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 		}
 	}
 	assert.True(s.T(), found, "expected to find an object with name 'secret-store' in key1")
-}
 
-func TestWorkflowRunReconcilerTestSuite(t *testing.T) {
-	suite.Run(t, new(WorkflowRunReconcilerTestSuite))
+	param2, ok := parsed["param2"].(map[string]interface{})
+	assert.True(s.T(), ok, "param2 should be a map")
+
+	key2, ok := param2["key2"].([]interface{})
+	require.True(s.T(), ok, "key1 should be a list")
+
+	found = false
+	for _, item := range key2 {
+		if m, ok := item.(map[string]interface{}); ok && m["name"] == "secret-store" {
+			found = true
+			break
+		}
+	}
+	assert.True(s.T(), found, "expected to find an object with name 'secret-store' in key1")
+	assert.Equal(s.T(), 2, len(key2))
 }

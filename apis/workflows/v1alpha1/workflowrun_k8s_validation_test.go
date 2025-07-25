@@ -243,6 +243,11 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 							Type:     ParameterType("object[finding]"),
 							Required: false,
 						},
+						{
+							Name:     "objectFindingArray",
+							Type:     ParameterType("object[array[finding]]"),
+							Required: false,
+						},
 					},
 				},
 			},
@@ -1003,6 +1008,51 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 							"targetNamespace":  "test-namespace",
 							"secretStore":      {"name": "test-store"},
 							"objectFinding": {"key": {"name": "non-existent-finding"}}
+						}`),
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "resource non-existent-finding of type finding not found in namespace test-namespace",
+		},
+		{
+			name: "valid object[array[finding]]",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"objectFindingArray": {"key": [{"name": "test-finding"}, {"name": "test-finding-2"}]}
+						}`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "inexistent object[array[finding]]",
+			workflowRun: &WorkflowRun{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-run",
+					Namespace: "test-namespace",
+				},
+				Spec: WorkflowRunSpec{
+					TemplateRef: TemplateRef{
+						Name: "k8s-resource-template",
+					},
+					Arguments: apiextensionsv1.JSON{
+						Raw: []byte(`{
+							"targetNamespace":  "test-namespace",
+							"secretStore":      {"name": "test-store"},
+							"objectFindingArray": {"key": [{"name": "non-existent-finding"}]}
 						}`),
 					},
 				},
