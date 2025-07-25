@@ -47042,7 +47042,7 @@ spec:
                               description: |-
                                 Type specifies the data type of the parameter
                                 For array/multi-value parameters, use allowMultiple: true with the appropriate type
-                              pattern: ^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\]|finding|array\[finding\]|object\[[a-zA-Z0-9_\-\[\]]+\])$
+                              pattern: ^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\]|finding|array\[finding\]|object\[([a-zA-Z0-9_-]+)\]([a-zA-Z0-9_\-\[\]]+))$
                               type: string
                             validation:
                               description: |-

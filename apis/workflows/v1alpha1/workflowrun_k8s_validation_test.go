@@ -240,12 +240,12 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 						},
 						{
 							Name:     "objectFinding",
-							Type:     ParameterType("object[finding]"),
+							Type:     ParameterType("object[customName]finding"),
 							Required: false,
 						},
 						{
 							Name:     "objectFindingArray",
-							Type:     ParameterType("object[array[finding]]"),
+							Type:     ParameterType("object[customName]array[finding]"),
 							Required: false,
 						},
 					},
@@ -1184,7 +1184,7 @@ func TestValidateCustomObjectTypeValidation(t *testing.T) {
 					Parameters: []Parameter{
 						{
 							Name:     "invalidCustomObject",
-							Type:     ParameterType("object[invalid-type]"),
+							Type:     ParameterType("object[name]invalid-type"),
 							Required: true,
 						},
 					},
@@ -1243,7 +1243,7 @@ func TestValidateCustomObjectTypeValidation(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "invalid value for argument \"invalidCustomObject\": invalid custom object type: object[invalid-type]. Expected format: object[<resource>] or object[array[<resource>]], where <resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, or generator[<kind>]",
+			errMsg:  "invalid value for argument \"invalidCustomObject\": invalid custom object type: object[name]invalid-type. Expected format: object[<arg>]<resource> or object[<arg>]array[<resource>], where <arg> is the name of a previous argument and<resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, or generator[<kind>]",
 		},
 	}
 

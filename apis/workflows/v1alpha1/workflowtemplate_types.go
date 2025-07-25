@@ -53,7 +53,7 @@ type ParameterGroup struct {
 }
 
 // ParameterType represents the data type of a parameter
-// +kubebuilder:validation:Pattern=`^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\]|finding|array\[finding\]|object\[[a-zA-Z0-9_\-\[\]]+\])$`
+// +kubebuilder:validation:Pattern=`^(string|number|bool|object|secret|time|namespace|secretstore|externalsecret|clustersecretstore|k8ssecret|array\[secretstore\]|generator\[[a-zA-Z0-9_-]+\]|array\[generator\[[a-zA-Z0-9_-]+\]\]|secretlocation|array\[secretlocation\]|finding|array\[finding\]|object\[([a-zA-Z0-9_-]+)\]([a-zA-Z0-9_\-\[\]]+))$`
 //
 //nolint:lll
 type ParameterType string
@@ -66,7 +66,7 @@ const (
 	ParameterTypeObject       ParameterType = "object"
 	ParameterTypeSecret       ParameterType = "secret"
 	ParameterTypeTime         ParameterType = "time"
-	ParameterTypeCustomObject ParameterType = `^object\[(namespace|secretstore|externalsecret|clustersecretstore|secretlocation|finding|generator\[[a-zA-Z0-9_-]+\]|array\[(secretstore|secretlocation|finding|generator\[[a-zA-Z0-9_-]+\])\])\]$`
+	ParameterTypeCustomObject ParameterType = `^object\[([a-zA-Z0-9_-]+)\](namespace|secretstore|externalsecret|clustersecretstore|secretlocation|finding|generator\[[a-zA-Z0-9_-]+\]|array\[(?:secretstore|secretlocation|finding|generator\[[a-zA-Z0-9_-]+\])\])$`
 
 	// ParameterTypeNamespace Kubernetes resource types.
 	ParameterTypeNamespace          ParameterType = "namespace"

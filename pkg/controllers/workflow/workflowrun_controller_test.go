@@ -307,11 +307,11 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 	params := []workflows.Parameter{
 		{
 			Name: "param1",
-			Type: workflows.ParameterType("object[finding]"),
+			Type: workflows.ParameterType("object[customName]finding"),
 		},
 		{
 			Name: "param2",
-			Type: workflows.ParameterType("object[array[finding]]"),
+			Type: workflows.ParameterType("object[customName]array[finding]"),
 		},
 	}
 

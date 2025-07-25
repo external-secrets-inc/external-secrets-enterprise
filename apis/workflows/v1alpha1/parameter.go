@@ -21,7 +21,8 @@ import (
 
 var generatorPattern = regexp.MustCompile(string(ParameterTypeGenerator))
 var generatorArrayPattern = regexp.MustCompile(string(ParameterTypeGeneratorArray))
-var generalCustomObjectPattern = regexp.MustCompile(`^object\[([a-zA-Z0-9_\-\[\]]+)\]$`)
+var generalCustomObjectPattern = regexp.MustCompile(`^object\[([a-zA-Z0-9_-]+)\]([a-zA-Z0-9_\-\[\]]+)$`)
+
 var customObjectPattern = regexp.MustCompile(string(ParameterTypeCustomObject))
 
 // IsGeneratorType checks if the value matches the pattern generator[kind].
@@ -41,8 +42,9 @@ func (p ParameterType) IsCustomObjectType() (bool, error) {
 			return true, nil
 		}
 		return false, fmt.Errorf(
-			"invalid custom object type: %s. Expected format: object[<resource>] or object[array[<resource>]], "+
-				"where <resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, "+
+			"invalid custom object type: %s. Expected format: object[<arg>]<resource> or object[<arg>]array[<resource>], "+
+				"where <arg> is the name of a previous argument and"+
+				"<resource> is one of: namespace, secretstore, externalsecret, clustersecretstore, secretlocation, finding, "+
 				"or generator[<kind>]",
 			string(p),
 		)
@@ -69,8 +71,8 @@ func (p ParameterType) ExtractGeneratorKind() string {
 
 // ExtractCustomObjectType returns the type inside object[type], or empty string if invalid.
 func (p ParameterType) ExtractCustomObjectType() ParameterType {
-	if matches := generalCustomObjectPattern.FindStringSubmatch(string(p)); len(matches) == 2 {
-		return ParameterType(matches[1])
+	if matches := generalCustomObjectPattern.FindStringSubmatch(string(p)); len(matches) == 3 {
+		return ParameterType(matches[2])
 	}
 
 	return ParameterType("")
