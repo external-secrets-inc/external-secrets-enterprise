@@ -32,7 +32,11 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
+<<<<<<< HEAD
 	github.com/oracle/oci-go-sdk/v65 v65.96.0
+=======
+	github.com/oracle/oci-go-sdk/v65 v65.95.2
+>>>>>>> upstream/main
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/spf13/cobra v1.9.1
@@ -105,7 +109,10 @@ require (
 	github.com/hashicorp/vault/api/auth/aws v0.10.0
 	github.com/hashicorp/vault/api/auth/userpass v0.10.0
 	github.com/infisical/go-sdk v0.5.99
+<<<<<<< HEAD
 	github.com/jackc/pgx/v5 v5.7.5
+=======
+>>>>>>> upstream/main
 	github.com/keeper-security/secrets-manager-go/core v1.6.4
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/labstack/gommon v0.4.2
