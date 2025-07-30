@@ -14,8 +14,37 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 type ControllerClassResource struct {
 	Spec struct {
 		ControllerClass string `json:"controller"`
 	} `json:"spec"`
+}
+
+const (
+	IdleCleanupPolicy  = "idle"
+	RetainLatestPolicy = "retainLatest"
+)
+
+type CleanupPolicy struct {
+	// Type of the cleanup policy. Supported values: "idle", "retainLatest".
+	// idle: delete the secret if it has not been used for a while
+	// retainLatest: delete older secrets when a new one is created
+	// +kubebuilder:validation:Enum=idle;retainLatest
+	// +kubebuilder:default=retainLatest
+	Type string `json:"type"`
+
+	// IdleTimeout Indicates how long without activity a secret is considered inactive and can be removed.
+	// Used only when type is "idle".
+	// +optional
+	// +kubebuilder:validation:Format=duration
+	IdleTimeout metav1.Duration `json:"idleTimeout,omitempty"`
+
+	// GracePeriod is the amount of time to wait before deleting a secret.
+	// +optional
+	// +kubebuilder:validation:Format=duration
+	GracePeriod metav1.Duration `json:"gracePeriod,omitempty"`
 }
