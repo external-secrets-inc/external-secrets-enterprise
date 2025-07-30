@@ -65,7 +65,6 @@ func init() {
 
 func New(ctx context.Context, client client.Client, scheme *runtime.Scheme, namespace string,
 	resource genapi.StatefulResource) *Manager {
-
 	return &Manager{
 		ctx:       ctx,
 		scheme:    scheme,
@@ -127,39 +126,39 @@ func (m *Manager) EnqueueCreateState(stateKey, namespace string, resource *apiex
 	}
 	// Must be defined outside the closure
 	gcDeadline := m.getGCGracePeriod()
-	m.queue = append(m.queue, QueueItem{
-		Commit: func() error {
-			return m.disposeState(stateKey, gcDeadline)
+	m.queue = append(m.queue,
+		QueueItem{
+			Commit: func() error {
+				return m.disposeState(stateKey, gcDeadline)
+			},
 		},
-	})
-
-	m.queue = append(m.queue, QueueItem{
-		// Stores the state in GeneratorState resource
-		Commit: func() error {
-			genState, err := m.createGeneratorState(resource, state, namespace, stateKey)
-			if err != nil {
-				return err
-			}
-			return m.client.Create(m.ctx, genState)
+		QueueItem{
+			Commit: func() error {
+				genState, err := m.createGeneratorState(resource, state, namespace, stateKey)
+				if err != nil {
+					return err
+				}
+				return m.client.Create(m.ctx, genState)
+			},
+			// Rollback by cleaning up the state.
+			// In case of failure, create a new GeneratorState, so it will eventually be cleaned up.
+			// If that also fails we're out of luck :(
+			Rollback: func() error {
+				err := gen.Cleanup(m.ctx, resource, state, m.client, namespace)
+				if err == nil {
+					return nil
+				}
+				genState, err := m.createGeneratorState(resource, state, namespace, stateKey)
+				if err != nil {
+					return err
+				}
+				genState.Spec.GarbageCollectionDeadline = &metav1.Time{
+					Time: time.Now(),
+				}
+				return m.client.Create(m.ctx, genState)
+			},
 		},
-		// Rollback by cleaning up the state.
-		// In case of failure, create a new GeneratorState, so it will eventually be cleaned up.
-		// If that also fails we're out of luck :(
-		Rollback: func() error {
-			err := gen.Cleanup(m.ctx, resource, state, m.client, namespace)
-			if err == nil {
-				return nil
-			}
-			genState, err := m.createGeneratorState(resource, state, namespace, stateKey)
-			if err != nil {
-				return err
-			}
-			genState.Spec.GarbageCollectionDeadline = &metav1.Time{
-				Time: time.Now(),
-			}
-			return m.client.Create(m.ctx, genState)
-		},
-	})
+	)
 }
 
 func (m *Manager) createGeneratorState(resource *apiextensions.JSON, state genapi.GeneratorProviderState, namespace, stateKey string) (*genapi.GeneratorState, error) {
