@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -133,6 +134,14 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, s
 	}
 
 	return nil
+}
+
+func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return nil, nil
+}
+
+func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Time{}, false, nil
 }
 
 func (g *Generator) GetKeys() map[string]string {

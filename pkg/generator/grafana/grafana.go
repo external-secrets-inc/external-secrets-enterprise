@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	grafanaclient "github.com/grafana/grafana-openapi-client-go/client"
@@ -89,6 +90,13 @@ func (w *Grafana) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, pre
 	return nil
 }
 
+func (g *Grafana) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return nil, nil
+}
+
+func (g *Grafana) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Time{}, false, nil
+}
 func (g *Grafana) GetKeys() map[string]string {
 	return map[string]string{
 		"login": "Grafana service account login username",

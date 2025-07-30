@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v2"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -156,6 +157,13 @@ func (g *MongoDB) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, gen
 	return nil
 }
 
+func (g *MongoDB) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return nil, nil
+}
+
+func (g *MongoDB) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Time{}, false, nil
+}
 func (g *MongoDB) GetKeys() map[string]string {
 	return map[string]string{
 		"username": "MongoDB user login name",

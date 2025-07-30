@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -120,6 +121,21 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	}
 
 	return nil
+}
+
+func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return nil, err
+	}
+	if res.Spec.CleanupPolicy != nil {
+		return res.Spec.CleanupPolicy, nil
+	}
+	return nil, nil
+}
+
+func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Now(), true, nil
 }
 
 func (g *Generator) GetKeys() map[string]string {

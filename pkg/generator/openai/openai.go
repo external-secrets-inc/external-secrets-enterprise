@@ -105,6 +105,14 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
+func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return nil, nil
+}
+
+func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Time{}, false, nil
+}
+
 func (g *Generator) GetKeys() map[string]string {
 	return map[string]string{
 		"api_key": "OpenAI API key for authentication",
