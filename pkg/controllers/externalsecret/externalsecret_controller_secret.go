@@ -77,11 +77,11 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 		var errs []error
 		gen, genResource, err := resolvers.GeneratorRef(ctx, r.Client, r.Scheme, externalSecret.Namespace, remoteRef.SourceRef.GeneratorRef)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("error resolving generator for spec.dataFrom[%d], err: %w", i, err))
+			return nil, fmt.Errorf("error resolving generator for spec.dataFrom[%d], err: %w", i, err)
 		}
 		cleanupPolicy, err := gen.GetCleanupPolicy(genResource)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("error resolving cleanup policy for spec.dataFrom[%d], err: %w", i, err))
+			return nil, fmt.Errorf("error resolving cleanup policy for spec.dataFrom[%d], err: %w", i, err)
 		}
 		genState.SetCleanupPolicy(cleanupPolicy)
 
