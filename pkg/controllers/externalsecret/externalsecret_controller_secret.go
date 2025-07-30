@@ -83,7 +83,9 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 		if err != nil {
 			return nil, fmt.Errorf("error resolving cleanup policy for spec.dataFrom[%d], err: %w", i, err)
 		}
-		genState.SetCleanupPolicy(cleanupPolicy)
+		if genState != nil {
+			genState.SetCleanupPolicy(cleanupPolicy)
+		}
 
 		var secretMap map[string][]byte
 
