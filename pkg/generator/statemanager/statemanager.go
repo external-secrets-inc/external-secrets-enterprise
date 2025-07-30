@@ -71,6 +71,13 @@ func New(ctx context.Context, client client.Client, scheme *runtime.Scheme, name
 		client:    client,
 		namespace: namespace,
 		resource:  resource,
+		// Set default policy as RetainLatest
+		cleanupPolicy: &genapi.CleanupPolicy{
+			Type: genapi.RetainLatestPolicy,
+			GracePeriod: metav1.Duration{
+				Duration: defaultGCGracePeriod,
+			},
+		},
 	}
 }
 
