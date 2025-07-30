@@ -81,6 +81,7 @@ type GeneratorStateStatusCondition struct {
 const (
 	ConditionReasonCreated                 = "Created"
 	ConditionReasonError                   = "Error"
+	ConditionReasonStillActive             = "Still Active"
 	ConditionReasonGarbageCollectionSetted = "Garbage Collection Setted"
 	ConditionReasonDeadlineReached         = "Garbage Collection deadline reached"
 )
