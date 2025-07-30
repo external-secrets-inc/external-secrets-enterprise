@@ -74,13 +74,14 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 	}
 	providerData = make(map[string][]byte)
 	for i, remoteRef := range externalSecret.Spec.DataFrom {
+		var errs []error
 		gen, genResource, err := resolvers.GeneratorRef(ctx, r.Client, r.Scheme, externalSecret.Namespace, remoteRef.SourceRef.GeneratorRef)
 		if err != nil {
-			err = fmt.Errorf("error resolving generator for spec.dataFrom[%d], err: %w", i, err)
+			errs = append(errs, fmt.Errorf("error resolving generator for spec.dataFrom[%d], err: %w", i, err))
 		}
 		cleanupPolicy, err := gen.GetCleanupPolicy(genResource)
 		if err != nil {
-			err = fmt.Errorf("error fetching cleanup policy for spec.dataFrom[%d], err: %w", i, err)
+			errs = append(errs, fmt.Errorf("error resolving cleanup policy for spec.dataFrom[%d], err: %w", i, err))
 		}
 		genState.SetCleanupPolicy(cleanupPolicy)
 
@@ -89,17 +90,17 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 		if remoteRef.Find != nil {
 			secretMap, err = r.handleFindAllSecrets(ctx, externalSecret, remoteRef, mgr, genState, i)
 			if err != nil {
-				err = fmt.Errorf("error processing spec.dataFrom[%d].find, err: %w", i, err)
+				errs = append(errs, fmt.Errorf("error processing spec.dataFrom[%d].find, err: %w", i, err))
 			}
 		} else if remoteRef.Extract != nil {
 			secretMap, err = r.handleExtractSecrets(ctx, externalSecret, remoteRef, mgr, genState, i)
 			if err != nil {
-				err = fmt.Errorf("error processing spec.dataFrom[%d].extract, err: %w", i, err)
+				errs = append(errs, fmt.Errorf("error processing spec.dataFrom[%d].extract, err: %w", i, err))
 			}
 		} else if remoteRef.SourceRef != nil && remoteRef.SourceRef.GeneratorRef != nil {
 			secretMap, err = r.handleGenerateSecrets(ctx, externalSecret.Namespace, remoteRef, gen, genResource, i, genState)
 			if err != nil {
-				err = fmt.Errorf("error processing spec.dataFrom[%d].sourceRef.generatorRef, err: %w", i, err)
+				errs = append(errs, fmt.Errorf("error processing spec.dataFrom[%d].sourceRef.generatorRef, err: %w", i, err))
 			}
 		}
 
@@ -107,8 +108,8 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 			r.recorder.Eventf(externalSecret, v1.EventTypeNormal, esv1.ReasonMissingProviderSecret, eventMissingProviderSecret, i)
 			continue
 		}
-		if err != nil {
-			return nil, err
+		if len(errs) > 0 {
+			return nil, errors.Join(errs...)
 		}
 
 		providerData = utils.MergeByteMap(providerData, secretMap)
@@ -162,7 +163,6 @@ func toStoreGenSourceRef(ref *esv1.StoreSourceRef) *esv1.StoreGeneratorSourceRef
 }
 
 func (r *Reconciler) handleGenerateSecrets(ctx context.Context, namespace string, remoteRef esv1.ExternalSecretDataFromRemoteRef, impl genv1alpha1.Generator, generatorResource *apiextensions.JSON, i int, generatorState *statemanager.Manager) (map[string][]byte, error) {
-
 	secretMap, newState, err := impl.Generate(ctx, generatorResource, r.Client, namespace)
 	if err != nil {
 		return nil, fmt.Errorf(errGenerate, err)
