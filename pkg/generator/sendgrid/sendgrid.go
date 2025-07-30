@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/sendgrid/rest"
 	sendgridapi "github.com/sendgrid/sendgrid-go"
@@ -221,6 +222,14 @@ func (g *Generator) cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, previousState genv1alpha1.GeneratorProviderState, kclient client.Client, namespace string) error {
 	client := &SendGridClient{}
 	return g.cleanup(ctx, jsonSpec, previousState, kclient, namespace, client)
+}
+
+func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return nil, nil
+}
+
+func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Time{}, false, nil
 }
 
 func (g *Generator) GetKeys() map[string]string {
