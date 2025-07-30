@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -393,6 +394,7 @@ const defaultGeneratorStateKey = "__pushsecret"
 
 func (r *Reconciler) resolveSecrets(ctx context.Context, ps *esapi.PushSecret) ([]v1.Secret, error) {
 	var err error
+
 	generatorState := statemanager.New(ctx, r.Client, r.Scheme, ps.Namespace, ps)
 	defer func() {
 		if err != nil {
@@ -406,6 +408,15 @@ func (r *Reconciler) resolveSecrets(ctx context.Context, ps *esapi.PushSecret) (
 			r.Log.Error(err, "error committing generator state")
 		}
 	}()
+	gen, genResource, err := resolvers.GeneratorRef(ctx, r.Client, r.Scheme, ps.Namespace, ps.Spec.Selector.GeneratorRef)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve generator: %w", err)
+	}
+	cleanupPolicy, err := gen.GetCleanupPolicy(genResource)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get cleanup policy: %w", err)
+	}
+	generatorState.SetCleanupPolicy(cleanupPolicy)
 
 	switch {
 	case ps.Spec.Selector.Secret != nil && ps.Spec.Selector.Secret.Name != "":
@@ -418,7 +429,7 @@ func (r *Reconciler) resolveSecrets(ctx context.Context, ps *esapi.PushSecret) (
 
 		return []v1.Secret{*secret}, nil
 	case ps.Spec.Selector.GeneratorRef != nil:
-		secret, err := r.resolveSecretFromGenerator(ctx, ps.Namespace, ps.Spec.Selector.GeneratorRef, generatorState)
+		secret, err := r.resolveSecretFromGenerator(ctx, ps.Namespace, gen, genResource, generatorState)
 		if err != nil {
 			return nil, fmt.Errorf("could not resolve secret from generator ref %v: %w", ps.Spec.Selector.GeneratorRef, err)
 		}
@@ -442,28 +453,12 @@ func (r *Reconciler) resolveSecrets(ctx context.Context, ps *esapi.PushSecret) (
 	return nil, errors.New("no secret selector provided")
 }
 
-func (r *Reconciler) resolveSecretFromGenerator(ctx context.Context, namespace string, generatorRef *esv1.GeneratorRef, generatorState *statemanager.Manager) (*v1.Secret, error) {
-	gen, genResource, err := resolvers.GeneratorRef(ctx, r.Client, r.Scheme, namespace, generatorRef)
-	if err != nil {
-		return nil, fmt.Errorf("unable to resolve generator: %w", err)
-	}
-	var prevState *genv1alpha1.GeneratorState
-	if generatorState != nil {
-		prevState, err = generatorState.GetLatestState(defaultGeneratorStateKey)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get latest state: %w", err)
-		}
-	}
+func (r *Reconciler) resolveSecretFromGenerator(ctx context.Context, namespace string, gen genv1alpha1.Generator, genResource *apiextensions.JSON, generatorState *statemanager.Manager) (*v1.Secret, error) {
 	secretMap, newState, err := gen.Generate(ctx, genResource, r.Client, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate: %w", err)
 	}
-	if prevState != nil && generatorState != nil {
-		generatorState.EnqueueMoveStateToGC(defaultGeneratorStateKey)
-	}
-	if generatorState != nil {
-		generatorState.EnqueueSetLatest(ctx, defaultGeneratorStateKey, namespace, genResource, gen, newState)
-	}
+	generatorState.EnqueueCreateState(defaultGeneratorStateKey, namespace, genResource, gen, newState)
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "___generated-secret",

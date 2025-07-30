@@ -74,6 +74,16 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 	}
 	providerData = make(map[string][]byte)
 	for i, remoteRef := range externalSecret.Spec.DataFrom {
+		gen, genResource, err := resolvers.GeneratorRef(ctx, r.Client, r.Scheme, externalSecret.Namespace, remoteRef.SourceRef.GeneratorRef)
+		if err != nil {
+			err = fmt.Errorf("error resolving generator for spec.dataFrom[%d], err: %w", i, err)
+		}
+		cleanupPolicy, err := gen.GetCleanupPolicy(genResource)
+		if err != nil {
+			err = fmt.Errorf("error fetching cleanup policy for spec.dataFrom[%d], err: %w", i, err)
+		}
+		genState.SetCleanupPolicy(cleanupPolicy)
+
 		var secretMap map[string][]byte
 
 		if remoteRef.Find != nil {
@@ -87,7 +97,7 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 				err = fmt.Errorf("error processing spec.dataFrom[%d].extract, err: %w", i, err)
 			}
 		} else if remoteRef.SourceRef != nil && remoteRef.SourceRef.GeneratorRef != nil {
-			secretMap, err = r.handleGenerateSecrets(ctx, externalSecret.Namespace, remoteRef, i, genState)
+			secretMap, err = r.handleGenerateSecrets(ctx, externalSecret.Namespace, remoteRef, gen, genResource, i, genState)
 			if err != nil {
 				err = fmt.Errorf("error processing spec.dataFrom[%d].sourceRef.generatorRef, err: %w", i, err)
 			}
@@ -151,30 +161,15 @@ func toStoreGenSourceRef(ref *esv1.StoreSourceRef) *esv1.StoreGeneratorSourceRef
 	}
 }
 
-func (r *Reconciler) handleGenerateSecrets(ctx context.Context, namespace string, remoteRef esv1.ExternalSecretDataFromRemoteRef, i int, generatorState *statemanager.Manager) (map[string][]byte, error) {
-	impl, generatorResource, err := resolvers.GeneratorRef(ctx, r.Client, r.Scheme, namespace, remoteRef.SourceRef.GeneratorRef)
-	if err != nil {
-		return nil, err
-	}
-	var latestState *genv1alpha1.GeneratorState
-	if generatorState != nil {
-		latestState, err = generatorState.GetLatestState(generatorStateKey(i))
-		if err != nil {
-			return nil, fmt.Errorf("unable to get latest state: %w", err)
-		}
-	}
+func (r *Reconciler) handleGenerateSecrets(ctx context.Context, namespace string, remoteRef esv1.ExternalSecretDataFromRemoteRef, impl genv1alpha1.Generator, generatorResource *apiextensions.JSON, i int, generatorState *statemanager.Manager) (map[string][]byte, error) {
+
 	secretMap, newState, err := impl.Generate(ctx, generatorResource, r.Client, namespace)
 	if err != nil {
 		return nil, fmt.Errorf(errGenerate, err)
 	}
-	if latestState != nil {
-		if generatorState != nil {
-			generatorState.EnqueueMoveStateToGC(generatorStateKey(i))
-		}
-	}
-	if generatorState != nil {
-		generatorState.EnqueueSetLatest(ctx, generatorStateKey(i), namespace, generatorResource, impl, newState)
-	}
+
+	generatorState.EnqueueCreateState(generatorStateKey(i), namespace, generatorResource, impl, newState)
+
 	// rewrite the keys if needed
 	secretMap, err = utils.RewriteMap(remoteRef.Rewrite, secretMap)
 	if err != nil {

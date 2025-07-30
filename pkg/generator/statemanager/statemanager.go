@@ -38,11 +38,12 @@ import (
 // which is needed when we have multiple generators that need to be created or
 // other operations which can fail.
 type Manager struct {
-	ctx       context.Context
-	scheme    *runtime.Scheme
-	client    client.Client
-	namespace string
-	resource  genapi.StatefulResource
+	ctx           context.Context
+	scheme        *runtime.Scheme
+	client        client.Client
+	namespace     string
+	resource      genapi.StatefulResource
+	cleanupPolicy *genapi.CleanupPolicy
 
 	queue []QueueItem
 }
@@ -52,11 +53,11 @@ type QueueItem struct {
 	Commit   func() error
 }
 
-var gcGracePeriod time.Duration
+var defaultGCGracePeriod time.Duration
 
 func init() {
 	fs := pflag.NewFlagSet("gc", pflag.ExitOnError)
-	fs.DurationVar(&gcGracePeriod, "generator-gc-grace-period", time.Minute*2, "Duration after which generated secrets are cleaned up after they have been flagged for gc.")
+	fs.DurationVar(&defaultGCGracePeriod, "generator-gc-grace-period", time.Minute*2, "Duration after which generated secrets are cleaned up after they have been flagged for gc.")
 	feature.Register(feature.Feature{
 		Flags: fs,
 	})
@@ -64,6 +65,7 @@ func init() {
 
 func New(ctx context.Context, client client.Client, scheme *runtime.Scheme, namespace string,
 	resource genapi.StatefulResource) *Manager {
+
 	return &Manager{
 		ctx:       ctx,
 		scheme:    scheme,
@@ -71,6 +73,14 @@ func New(ctx context.Context, client client.Client, scheme *runtime.Scheme, name
 		namespace: namespace,
 		resource:  resource,
 	}
+}
+
+func (m *Manager) SetCleanupPolicy(cleanupPolicy *genapi.CleanupPolicy) {
+	if cleanupPolicy == nil {
+		cleanupPolicy = &genapi.CleanupPolicy{Type: genapi.RetainLatestPolicy, GracePeriod: metav1.Duration{Duration: defaultGCGracePeriod}}
+	}
+
+	m.cleanupPolicy = cleanupPolicy
 }
 
 // Rollback will rollback the enqueued operations.
@@ -106,26 +116,22 @@ func (m *Manager) Commit() error {
 func (m *Manager) EnqueueFlagLatestStateForGC(stateKey string) {
 	m.queue = append(m.queue, QueueItem{
 		Commit: func() error {
-			return m.disposeState(stateKey)
+			return m.disposeState(stateKey, m.getGCGracePeriod())
 		},
 	})
 }
 
-// EnqueueMoveStateToGC will move the generator state to GC if Commit() is called.
-func (m *Manager) EnqueueMoveStateToGC(stateKey string) {
-	m.queue = append(m.queue, QueueItem{
-		Commit: func() error {
-			return m.disposeState(stateKey)
-		},
-	})
-}
-
-// EnqueueSetLatest sets the latest state for the given key.
-// It will commit the state on success or move the state to GC on failure.
-func (m *Manager) EnqueueSetLatest(ctx context.Context, stateKey, namespace string, resource *apiextensions.JSON, gen genapi.Generator, state genapi.GeneratorProviderState) {
+func (m *Manager) EnqueueCreateState(stateKey, namespace string, resource *apiextensions.JSON, gen genapi.Generator, state genapi.GeneratorProviderState) {
 	if state == nil {
 		return
 	}
+	// Must be defined outside the closure
+	gcDeadline := m.getGCGracePeriod()
+	m.queue = append(m.queue, QueueItem{
+		Commit: func() error {
+			return m.disposeState(stateKey, gcDeadline)
+		},
+	})
 
 	m.queue = append(m.queue, QueueItem{
 		// Stores the state in GeneratorState resource
@@ -134,13 +140,13 @@ func (m *Manager) EnqueueSetLatest(ctx context.Context, stateKey, namespace stri
 			if err != nil {
 				return err
 			}
-			return m.client.Create(ctx, genState)
+			return m.client.Create(m.ctx, genState)
 		},
 		// Rollback by cleaning up the state.
 		// In case of failure, create a new GeneratorState, so it will eventually be cleaned up.
 		// If that also fails we're out of luck :(
 		Rollback: func() error {
-			err := gen.Cleanup(ctx, resource, state, m.client, namespace)
+			err := gen.Cleanup(m.ctx, resource, state, m.client, namespace)
 			if err == nil {
 				return nil
 			}
@@ -151,7 +157,7 @@ func (m *Manager) EnqueueSetLatest(ctx context.Context, stateKey, namespace stri
 			genState.Spec.GarbageCollectionDeadline = &metav1.Time{
 				Time: time.Now(),
 			}
-			return m.client.Create(ctx, genState)
+			return m.client.Create(m.ctx, genState)
 		},
 	})
 }
@@ -188,25 +194,14 @@ func ownerKey(resource genapi.StatefulResource, key string) string {
 	)
 }
 
-func (m *Manager) disposeState(key string) error {
+func (m *Manager) disposeState(key string, gcGracePeriod time.Duration) error {
 	allStates, err := m.GetAllStates(key)
 	if err != nil {
 		return err
 	}
 
-	latest := getLatest(allStates)
-	if latest == nil {
-		return nil
-	}
-
-	// flag all states for GC except the latest one
-	// This is to ensure that all "old" states are eventually cleaned up.
-	// This is needed due to fast reconciles and working with stale cache.
 	var errs []error
 	for _, state := range allStates {
-		if state.Name == latest.Name {
-			continue
-		}
 		if state.Spec.GarbageCollectionDeadline != nil {
 			continue
 		}
@@ -218,6 +213,24 @@ func (m *Manager) disposeState(key string) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+func (m *Manager) getGCGracePeriod() time.Duration {
+	if m.cleanupPolicy == nil {
+		return defaultGCGracePeriod
+	}
+
+	var gcDeadline time.Duration
+	switch m.cleanupPolicy.Type {
+	case genapi.RetainLatestPolicy:
+		gcDeadline = m.cleanupPolicy.GracePeriod.Duration
+	case genapi.IdleCleanupPolicy:
+		// Mark state for GC immediately, controller will check activity before deleting
+		gcDeadline = time.Duration(0)
+	default:
+		gcDeadline = defaultGCGracePeriod
+	}
+	return gcDeadline
 }
 
 // GetLatest returns the latest state for the given key.
