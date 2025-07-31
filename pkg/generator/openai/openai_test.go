@@ -166,6 +166,7 @@ func TestOpenAiGenerator_LastActivityTime(t *testing.T) {
 		ServiceAccountId: apikeyResponse.Name,
 		ApiKeyId:         apikeyResponse.ID,
 	})
+	require.NoError(t, err)
 	state := &apiextensions.JSON{Raw: rawState}
 
 	lastActivity, found, err := gen.LastActivityTime(context.Background(), &apiextensions.JSON{Raw: specRaw}, state, fakeKube, "default")
