@@ -77,7 +77,9 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 		var err error
 		var secretMap map[string][]byte
 
-		genState.SetCleanupPolicy(nil)
+		if genState != nil {
+			genState.SetCleanupPolicy(nil)
+		}
 		if remoteRef.Find != nil {
 			secretMap, err = r.handleFindAllSecrets(ctx, externalSecret, remoteRef, mgr, genState, i)
 			if err != nil {
