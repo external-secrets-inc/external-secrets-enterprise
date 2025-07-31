@@ -169,8 +169,10 @@ func (r *Reconciler) handleGenerateSecrets(ctx context.Context, namespace string
 		return nil, fmt.Errorf(errGenerate, err)
 	}
 
-	generatorState.SetCleanupPolicy(cleanupPolicy)
-	generatorState.EnqueueCreateState(generatorStateKey(i), namespace, generatorResource, impl, newState)
+	if generatorState != nil {
+		generatorState.SetCleanupPolicy(cleanupPolicy)
+		generatorState.EnqueueCreateState(generatorStateKey(i), namespace, generatorResource, impl, newState)
+	}
 
 	// rewrite the keys if needed
 	secretMap, err = utils.RewriteMap(remoteRef.Rewrite, secretMap)
