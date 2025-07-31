@@ -28,6 +28,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/utils"
 
 	_ "github.com/external-secrets/external-secrets/pkg/provider/register" // Loading registered providers.
+
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
 )
 
 const (

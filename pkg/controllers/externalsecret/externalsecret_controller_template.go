@@ -26,7 +26,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/template"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register" // Loading registered providers.
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register" // Loading registered providers.
+	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
 )
 
 // merge template in the following order:

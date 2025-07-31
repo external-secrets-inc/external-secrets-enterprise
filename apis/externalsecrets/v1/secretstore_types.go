@@ -15,6 +15,7 @@ limitations under the License.
 package v1
 
 import (
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/externalsecrets/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -211,7 +212,7 @@ type SecretStoreProvider struct {
 
 	// ExternalSecrets configures this store to sync secrets using the ExternalSecrets provider
 	// +optional
-	ExternalSecrets *ExternalSecretsProvider `json:"externalsecrets,omitempty"`
+	ExternalSecrets *enterprise.ExternalSecretsProvider `json:"externalsecrets,omitempty"`
 }
 
 type CAProviderType string
