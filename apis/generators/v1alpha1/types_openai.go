@@ -37,6 +37,9 @@ type OpenAISpec struct {
 	// +optional
 	// +kubebuilder:default=12
 	ServiceAccountNameSize *int `json:"serviceAccountNameSize,omitempty"`
+	// CleanupPolicy controls the behavior of the cleanup process
+	// +optional
+	CleanupPolicy *CleanupPolicy `json:"cleanupPolicy,omitempty"`
 }
 
 type OpenAiServiceAccount struct {
@@ -65,12 +68,15 @@ type OpenAiApiKey struct {
 	Name string `json:"name"`
 	// CreatedAt is the Unix timestamp representing creation time.
 	CreatedAt int64 `json:"created_at"`
+	// LastUsedAt is the Unix timestamp representing the last time the API key was used.
+	LastUsedAt int64 `json:"last_used_at"`
 	// ID is the unique identifier of the API key.
 	ID string `json:"id"`
 }
 
 type OpenAiServiceAccountState struct {
 	ServiceAccountId string `json:"serviceAccountId,omitempty"`
+	ApiKeyId         string `json:"apiKeyId,omitempty"`
 }
 
 // OpenAI generates a random openAI based on the
