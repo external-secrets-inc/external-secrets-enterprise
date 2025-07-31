@@ -26,6 +26,7 @@ const (
 	defaultHost                = "https://api.openai.com/v1"
 	organizationPrefix         = "/organization"
 	serviceAccountsEndpointFmt = organizationPrefix + "/projects/%s/service_accounts"
+	apiKeyEndpointFmt          = organizationPrefix + "/projects/%s/api_keys"
 	defaultNameSize            = 12
 )
 
@@ -68,6 +69,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 
 	rawState, err := json.Marshal(&genv1alpha1.OpenAiServiceAccountState{
 		ServiceAccountId: serviceAccount.ID,
+		ApiKeyId:         serviceAccount.APIKey.ID,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to marshal state: %w", err)
@@ -106,11 +108,38 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 }
 
 func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
-	return nil, nil
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return nil, err
+	}
+	return res.Spec.CleanupPolicy, nil
 }
 
-func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
-	return time.Time{}, false, nil
+func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, previousStatus genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	if previousStatus == nil {
+		return time.Time{}, false, fmt.Errorf("missing previous status")
+	}
+
+	status, err := parseStatus(previousStatus.Raw)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	client, err := newClient(ctx, &res.Spec, kube, namespace)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+
+	apiKey, err := client.retrieveAPIKey(ctx, status.ApiKeyId)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+
+	return time.Unix(apiKey.LastUsedAt, 0), true, nil
 }
 
 func (g *Generator) GetKeys() map[string]string {
@@ -220,6 +249,40 @@ func (c *openAiClient) deleteServiceAccount(ctx context.Context, serviceAccountI
 	}
 
 	return nil
+}
+
+func (c *openAiClient) retrieveAPIKey(ctx context.Context, apiKeyId string) (*genv1alpha1.OpenAiApiKey, error) {
+	url := fmt.Sprintf("%s%s/%s", c.baseURL, fmt.Sprintf(apiKeyEndpointFmt, c.projectID), apiKeyId)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", c.authHeader)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close response body: %v", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to retrieve API key: %s", resp.Status)
+	}
+
+	var result genv1alpha1.OpenAiApiKey
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func parseSpec(data []byte) (*genv1alpha1.OpenAI, error) {
