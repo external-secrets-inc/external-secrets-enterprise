@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
@@ -109,4 +110,66 @@ func TestOpenAiGenerator_GenerateAndCleanup(t *testing.T) {
 	// Call Cleanup()
 	err = gen.Cleanup(context.Background(), &apiextensions.JSON{Raw: specRaw}, state, fakeKube, "default")
 	require.NoError(t, err)
+}
+
+func TestOpenAiGenerator_LastActivityTime(t *testing.T) {
+	mockProjectID := "test-project"
+
+	// Simulate OpenAI api key retrieve response
+	apikeyResponse := genv1alpha1.OpenAiApiKey{
+		ID:         "api-key-123",
+		Value:      "sk-test123",
+		Name:       "mock-service-account",
+		CreatedAt:  123456789,
+		LastUsedAt: 0,
+	}
+
+	// Mock OpenAI Admin API Server
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(apikeyResponse)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer mockServer.Close()
+
+	// Create fake Kubernetes client with mocked secret for admin API key
+	fakeKube := fake.NewClientBuilder().Build()
+
+	// Store fake admin API key in fake secrets backend
+	adminKey := "fake-admin-key"
+	err := storeFakeSecret(fakeKube, "default", "openai-admin-key", "api-key", adminKey)
+	require.NoError(t, err)
+
+	// Prepare generator spec
+	spec := genv1alpha1.OpenAI{
+		Spec: genv1alpha1.OpenAISpec{
+			Host:      mockServer.URL, // override to mock server
+			ProjectId: mockProjectID,
+			OpenAiAdminKey: esmeta.SecretKeySelector{
+				Name: "openai-admin-key",
+				Key:  "api-key",
+			},
+		},
+	}
+
+	specRaw, _ := json.Marshal(spec)
+
+	// Initialize generator
+	gen := &Generator{}
+
+	// Call LastActivityTime
+	rawState, err := json.Marshal(&genv1alpha1.OpenAiServiceAccountState{
+		ServiceAccountId: apikeyResponse.Name,
+		ApiKeyId:         apikeyResponse.ID,
+	})
+	state := &apiextensions.JSON{Raw: rawState}
+
+	lastActivity, found, err := gen.LastActivityTime(context.Background(), &apiextensions.JSON{Raw: specRaw}, state, fakeKube, "default")
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Equal(t, time.Unix(0, 0), lastActivity)
 }
