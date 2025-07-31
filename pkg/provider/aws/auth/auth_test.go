@@ -100,7 +100,7 @@ func TestNewSession(t *testing.T) {
 		},
 		{
 			name: "configure aws using environment variables + assume role",
-			stsProvider: func(cfg aws.Config) STSprovider {
+			stsProvider: func(cfg *aws.Config) STSprovider {
 				return &fakesess.AssumeRoler{
 					AssumeRoleFunc: func(input *sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error) {
 						assert.Equal(t, *input.RoleArn, "foo-bar-baz")
@@ -416,7 +416,7 @@ func TestNewSession(t *testing.T) {
 		},
 		{
 			name: "configure aws using environment variables + assume role + check external id",
-			stsProvider: func(cfg aws.Config) STSprovider {
+			stsProvider: func(cfg *aws.Config) STSprovider {
 				return &fakesess.AssumeRoler{
 					AssumeRoleFunc: func(input *sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error) {
 						assert.Equal(t, *input.ExternalId, "12345678")
@@ -609,7 +609,7 @@ func TestSMAssumeRole(t *testing.T) {
 				},
 			},
 		},
-		AssumeRoler: func(cfg aws.Config) STSprovider {
+		AssumeRoler: func(cfg *aws.Config) STSprovider {
 			// check if the correct temporary credentials were used
 			creds, err := cfg.Credentials.Retrieve(context.Background())
 			assert.Nil(t, err)
