@@ -21,7 +21,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

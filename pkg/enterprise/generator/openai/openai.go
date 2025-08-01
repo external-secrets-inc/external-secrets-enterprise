@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -66,7 +67,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("unable to create service account: %w", err)
 	}
 
-	rawState, err := json.Marshal(&genv1alpha1.OpenAiServiceAccountState{
+	rawState, err := json.Marshal(&enterprise.OpenAiServiceAccountState{
 		ServiceAccountId: serviceAccount.ID,
 	})
 	if err != nil {
@@ -111,7 +112,7 @@ func (g *Generator) GetKeys() map[string]string {
 	}
 }
 
-func newClient(ctx context.Context, spec *genv1alpha1.OpenAISpec, kclient client.Client, ns string) (*openAiClient, error) {
+func newClient(ctx context.Context, spec *enterprise.OpenAISpec, kclient client.Client, ns string) (*openAiClient, error) {
 	host := defaultHost
 	if spec.Host != "" {
 		host = spec.Host
@@ -142,7 +143,7 @@ func newClient(ctx context.Context, spec *genv1alpha1.OpenAISpec, kclient client
 	}, nil
 }
 
-func (c *openAiClient) createServiceAccount(ctx context.Context, name string) (*genv1alpha1.OpenAiServiceAccount, error) {
+func (c *openAiClient) createServiceAccount(ctx context.Context, name string) (*enterprise.OpenAiServiceAccount, error) {
 	url := fmt.Sprintf("%s%s", c.baseURL, fmt.Sprintf(serviceAccountsEndpointFmt, c.projectID))
 
 	payload := map[string]string{
@@ -177,7 +178,7 @@ func (c *openAiClient) createServiceAccount(ctx context.Context, name string) (*
 		return nil, fmt.Errorf("failed to create service account: %s", resp.Status)
 	}
 
-	var result genv1alpha1.OpenAiServiceAccount
+	var result enterprise.OpenAiServiceAccount
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
@@ -214,14 +215,14 @@ func (c *openAiClient) deleteServiceAccount(ctx context.Context, serviceAccountI
 	return nil
 }
 
-func parseSpec(data []byte) (*genv1alpha1.OpenAI, error) {
-	var spec genv1alpha1.OpenAI
+func parseSpec(data []byte) (*enterprise.OpenAI, error) {
+	var spec enterprise.OpenAI
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
 
-func parseStatus(data []byte) (*genv1alpha1.OpenAiServiceAccountState, error) {
-	var state genv1alpha1.OpenAiServiceAccountState
+func parseStatus(data []byte) (*enterprise.OpenAiServiceAccountState, error) {
+	var state enterprise.OpenAiServiceAccountState
 	err := json.Unmarshal(data, &state)
 	if err != nil {
 		return nil, err
@@ -230,6 +231,6 @@ func parseStatus(data []byte) (*genv1alpha1.OpenAiServiceAccountState, error) {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.OpenAIKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.OpenAIKind, &genv1alpha1.OpenAI{})
+	genv1alpha1.Register(enterprise.OpenAIKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.OpenAIKind, &enterprise.OpenAI{})
 }

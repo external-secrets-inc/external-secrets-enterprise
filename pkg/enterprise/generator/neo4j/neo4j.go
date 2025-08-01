@@ -19,6 +19,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
@@ -30,7 +31,7 @@ type Generator struct{}
 
 const (
 	defaultDatabase   = "neo4j"
-	defaultProvider   = genv1alpha1.Neo4jAuthProviderNative
+	defaultProvider   = enterprise.Neo4jAuthProviderNative
 	defaultSuffixSize = 8
 )
 
@@ -89,7 +90,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("user not found in response")
 	}
 
-	rawState, err := json.Marshal(&genv1alpha1.Neo4jUserState{
+	rawState, err := json.Marshal(&enterprise.Neo4jUserState{
 		User: string(username),
 	})
 	if err != nil {
@@ -172,7 +173,7 @@ func EscapeNeo4jIdentifier(input string) (string, error) {
 	return "`" + sanitized.String() + "`", nil
 }
 
-func newDriver(ctx context.Context, auth *genv1alpha1.Neo4jAuth, kclient client.Client, ns string) (neo4j.DriverWithContext, error) {
+func newDriver(ctx context.Context, auth *enterprise.Neo4jAuth, kclient client.Client, ns string) (neo4j.DriverWithContext, error) {
 	dbUri := auth.URI
 	var authToken neo4j.AuthToken
 	if auth.Bearer != nil {
@@ -204,7 +205,7 @@ func newDriver(ctx context.Context, auth *genv1alpha1.Neo4jAuth, kclient client.
 	)
 }
 
-func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, spec *genv1alpha1.Neo4jSpec) (map[string][]byte, error) {
+func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, spec *enterprise.Neo4jSpec) (map[string][]byte, error) {
 	var query strings.Builder
 	username := spec.User.User
 	suffixSize := defaultSuffixSize
@@ -239,7 +240,7 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 
 	query.WriteString(fmt.Sprintf("SET AUTH '%s' {\n", authProvider))
 
-	if authProvider == genv1alpha1.Neo4jAuthProviderNative {
+	if authProvider == enterprise.Neo4jAuthProviderNative {
 		pass, err := generatePassword(genv1alpha1.Password{
 			Spec: genv1alpha1.PasswordSpec{
 				SymbolCharacters: ptr.To("~!@#$%^&*()_+-={}|[]:<>?,./"),
@@ -270,7 +271,7 @@ func createOrReplaceUser(ctx context.Context, driver neo4j.DriverWithContext, sp
 	return nil, fmt.Errorf("unsupported auth provider: %s", spec.User.Provider)
 }
 
-func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *genv1alpha1.Neo4jSpec) error {
+func addRolesToUser(ctx context.Context, driver neo4j.DriverWithContext, spec *enterprise.Neo4jSpec) error {
 	if len(spec.User.Roles) == 0 {
 		return nil
 	}
@@ -396,14 +397,14 @@ func generatePassword(
 	return pass, nil
 }
 
-func parseSpec(data []byte) (*genv1alpha1.Neo4j, error) {
-	var spec genv1alpha1.Neo4j
+func parseSpec(data []byte) (*enterprise.Neo4j, error) {
+	var spec enterprise.Neo4j
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
 
-func parseStatus(data []byte) (*genv1alpha1.Neo4jUserState, error) {
-	var state genv1alpha1.Neo4jUserState
+func parseStatus(data []byte) (*enterprise.Neo4jUserState, error) {
+	var state enterprise.Neo4jUserState
 	err := json.Unmarshal(data, &state)
 	if err != nil {
 		return nil, err
@@ -412,6 +413,6 @@ func parseStatus(data []byte) (*genv1alpha1.Neo4jUserState, error) {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.Neo4jKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.Neo4jKind, &genv1alpha1.Neo4j{})
+	genv1alpha1.Register(enterprise.Neo4jKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.Neo4jKind, &enterprise.Neo4j{})
 }

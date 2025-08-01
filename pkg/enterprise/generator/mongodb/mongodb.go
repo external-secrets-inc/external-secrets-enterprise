@@ -12,6 +12,7 @@ import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
@@ -99,7 +100,7 @@ func (g *MongoDB) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kc
 		return nil, nil, err
 	}
 
-	rawState, err := json.Marshal(&genv1alpha1.MongoDBUserState{
+	rawState, err := json.Marshal(&enterprise.MongoDBUserState{
 		User: username,
 	})
 	if err != nil {
@@ -163,7 +164,7 @@ func (g *MongoDB) GetKeys() map[string]string {
 	}
 }
 
-func ensureUser(ctx context.Context, db *mongo.Database, username, password string, rolesSpec []genv1alpha1.MongoDBRole) error {
+func ensureUser(ctx context.Context, db *mongo.Database, username, password string, rolesSpec []enterprise.MongoDBRole) error {
 	err := manageUser(ctx, db, "createUser", username, password, rolesSpec)
 	if err != nil {
 		if func() mongo.CommandError {
@@ -183,7 +184,7 @@ func ensureUser(ctx context.Context, db *mongo.Database, username, password stri
 
 func getAdminCredentials(
 	ctx context.Context,
-	spec *genv1alpha1.MongoDB,
+	spec *enterprise.MongoDB,
 	kube client.Client,
 	ns string,
 ) (string, string, error) {
@@ -211,7 +212,7 @@ func getAdminCredentials(
 	return *adminUser, adminPwd, nil
 }
 
-func manageUser(ctx context.Context, db *mongo.Database, action, username, password string, rolesSpec []genv1alpha1.MongoDBRole) error {
+func manageUser(ctx context.Context, db *mongo.Database, action, username, password string, rolesSpec []enterprise.MongoDBRole) error {
 	roles := make([]interface{}, len(rolesSpec))
 	for i, r := range rolesSpec {
 		roles[i] = bson.D{{Key: "role", Value: r.Name}, {Key: "db", Value: r.DB}}
@@ -229,14 +230,14 @@ func manageUser(ctx context.Context, db *mongo.Database, action, username, passw
 	return nil
 }
 
-func parseSpec(data []byte) (*genv1alpha1.MongoDB, error) {
-	var spec genv1alpha1.MongoDB
+func parseSpec(data []byte) (*enterprise.MongoDB, error) {
+	var spec enterprise.MongoDB
 	err := json.Unmarshal(data, &spec)
 	return &spec, err
 }
 
-func parseState(data []byte) (*genv1alpha1.MongoDBUserState, error) {
-	var state genv1alpha1.MongoDBUserState
+func parseState(data []byte) (*enterprise.MongoDBUserState, error) {
+	var state enterprise.MongoDBUserState
 	err := json.Unmarshal(data, &state)
 	return &state, err
 }
@@ -303,6 +304,6 @@ func (defaultClientFactory) New(ctx context.Context, uri string) (MongoClient, e
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.MongoDBKind, &MongoDB{clientFactory: defaultClientFactory{}})
-	genv1alpha1.RegisterGeneric(genv1alpha1.MongoDBKind, &genv1alpha1.MongoDB{})
+	genv1alpha1.Register(enterprise.MongoDBKind, &MongoDB{clientFactory: defaultClientFactory{}})
+	genv1alpha1.RegisterGeneric(enterprise.MongoDBKind, &enterprise.MongoDB{})
 }

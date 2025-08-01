@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
@@ -118,24 +118,24 @@ func (s *PostgresTestSuite) SetupSuite() {
 	})
 }
 
-func newGeneratorSpec(t *testing.T, host, port, username string, destructive bool, reassignTo *string) *genv1alpha1.PostgreSql {
+func newGeneratorSpec(t *testing.T, host, port, username string, destructive bool, reassignTo *string) *enterprise.PostgreSql {
 	t.Helper()
 
-	return &genv1alpha1.PostgreSql{
-		Spec: genv1alpha1.PostgreSqlSpec{
+	return &enterprise.PostgreSql{
+		Spec: enterprise.PostgreSqlSpec{
 			Host:     host,
 			Port:     port,
 			Database: "postgres",
-			Auth: genv1alpha1.PostgreSqlAuth{
+			Auth: enterprise.PostgreSqlAuth{
 				Username: "postgres",
 				Password: esmeta.SecretKeySelector{
 					Name: testSecretName,
 					Key:  testSecretKey,
 				},
 			},
-			User: &genv1alpha1.PostgreSqlUser{
+			User: &enterprise.PostgreSqlUser{
 				Username: username,
-				Attributes: []genv1alpha1.PostgreSqlUserAttribute{
+				Attributes: []enterprise.PostgreSqlUserAttribute{
 					{Name: "CREATEDB"},
 				},
 				Roles:              []string{"pg_read_all_data", "customrole"},
@@ -268,7 +268,7 @@ func (s *PostgresTestSuite) TestGenerateUserWithSameUsername() {
 
 	// Call Generate again with new attributes
 	spec.Spec.User.SuffixSize = ptr.To(0)
-	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{
+	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{
 		{Name: "NOINHERIT"},
 		{Name: "CONNECTION_LIMIT", Value: ptr.To("5")},
 	}
@@ -322,7 +322,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	username := fmt.Sprintf("%s_NonDestructive", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, nil)
-	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -336,7 +336,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
-	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -378,7 +378,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 
 	// Generate reassign user as `username` without suffix
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, nil)
-	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	spec.Spec.User.SuffixSize = ptr.To(0)
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
@@ -388,7 +388,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 	require.NoError(s.T(), err)
 
 	spec = newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, &username)
-	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err = yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -402,7 +402,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
-	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -443,7 +443,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithNonExistentReassignUser
 	username := fmt.Sprintf("%s_NonDestructiveWithNonExistentReassignUser", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, &username)
-	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -457,7 +457,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithNonExistentReassignUser
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
-	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -498,7 +498,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	username := fmt.Sprintf("%s_Destructive", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
-	spec.Spec.User.Attributes = []genv1alpha1.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -512,7 +512,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, true, nil)
-	userSpec.Spec.Auth = genv1alpha1.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,

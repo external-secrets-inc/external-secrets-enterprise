@@ -17,13 +17,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 )
 
 type Generator struct{}
 
 const (
-	defaultKeyType = genv1alpha1.SSHKeyTypeRSA
+	defaultKeyType = enterprise.SSHKeyTypeRSA
 	defaultBits    = 4096
 
 	errNoSpec    = "no config spec provided"
@@ -67,7 +68,7 @@ func (g *Generator) generate(jsonSpec *apiextensions.JSON, rsaGen RSAGenerateFun
 		keyType = res.Spec.KeyType
 	}
 
-	if keyType == genv1alpha1.SSHKeyTypeRSA {
+	if keyType == enterprise.SSHKeyTypeRSA {
 		bits := defaultBits
 		if res.Spec.RSAConfig.Bits > 0 {
 			bits = res.Spec.RSAConfig.Bits
@@ -114,13 +115,13 @@ func generateRSA(
 	return privPEM.String(), pubKey, nil
 }
 
-func parseSpec(data []byte) (*genv1alpha1.SSH, error) {
-	var spec genv1alpha1.SSH
+func parseSpec(data []byte) (*enterprise.SSH, error) {
+	var spec enterprise.SSH
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.SSHKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.SSHKind, &genv1alpha1.SSH{})
+	genv1alpha1.Register(enterprise.SSHKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.SSHKind, &enterprise.SSH{})
 }

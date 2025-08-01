@@ -18,6 +18,23 @@ import (
 	"reflect"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
+)
+
+// Package type metadata.
+const (
+	Group   = "generators.external-secrets.io"
+	Version = "v1alpha1"
+)
+
+var (
+	// SchemeGroupVersion is group version used to register these objects.
+	SchemeGroupVersion = schema.GroupVersion{Group: Group, Version: Version}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+	AddToScheme   = SchemeBuilder.AddToScheme
 )
 
 var (
@@ -25,6 +42,7 @@ var (
 	SendgridKind          = reflect.TypeOf(SendgridAuthorizationToken{}).Name()
 	RabbitMQGeneratorKind = reflect.TypeOf(RabbitMQ{}).Name()
 	BasicAuthKind         = reflect.TypeOf(BasicAuth{}).Name()
+	FederationKind        = reflect.TypeOf(Federation{}).Name()
 	SSHKind               = reflect.TypeOf(SSH{}).Name()
 	Neo4jKind             = reflect.TypeOf(Neo4j{}).Name()
 	MongoDBKind           = reflect.TypeOf(MongoDB{}).Name()
@@ -57,4 +75,17 @@ func init() {
 	genv1alpha1.SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
 	genv1alpha1.SchemeBuilder.Register(&PostgreSql{}, &PostgreSqlList{})
 	genv1alpha1.SchemeBuilder.Register(&OpenAI{}, &OpenAIList{})
+	genv1alpha1.SchemeBuilder.Register(&Federation{}, &FederationList{})
+
+	// Only used so our generic_generator is able to create the appropriate methods
+	SchemeBuilder.Register(&AWSIAMKey{}, &AWSIAMKeyList{})
+	SchemeBuilder.Register(&SendgridAuthorizationToken{}, &SendgridAuthorizationTokenList{})
+	SchemeBuilder.Register(&RabbitMQ{}, &RabbitMQList{})
+	SchemeBuilder.Register(&MongoDB{}, &MongoDBList{})
+	SchemeBuilder.Register(&BasicAuth{}, &BasicAuthList{})
+	SchemeBuilder.Register(&SSH{}, &SSHList{})
+	SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
+	SchemeBuilder.Register(&PostgreSql{}, &PostgreSqlList{})
+	SchemeBuilder.Register(&OpenAI{}, &OpenAIList{})
+	SchemeBuilder.Register(&Federation{}, &FederationList{})
 }

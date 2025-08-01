@@ -17,7 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 )
 
@@ -88,7 +90,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	}, nil, nil
 }
 
-func getOrGeneratePassword(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient client.Client, namespace string) (*pw, error) {
+func getOrGeneratePassword(ctx context.Context, res *enterprise.RabbitMQ, kclient client.Client, namespace string) (*pw, error) {
 	if res.Spec.Config.PasswordPolicy.PasswordGeneratorRef != nil {
 		return genFromGenerator(ctx, res, kclient, namespace)
 	}
@@ -98,7 +100,7 @@ func getOrGeneratePassword(ctx context.Context, res *genv1alpha1.RabbitMQ, kclie
 	return nil, errors.New(errInvalidPasswordPolicy)
 }
 
-func genFromGenerator(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient client.Client, namespace string) (*pw, error) {
+func genFromGenerator(ctx context.Context, res *enterprise.RabbitMQ, kclient client.Client, namespace string) (*pw, error) {
 	var generator genv1alpha1.Password
 	err := kclient.Get(ctx, client.ObjectKey{Name: res.Spec.Config.PasswordPolicy.PasswordGeneratorRef.Name, Namespace: namespace}, &generator)
 	if err != nil {
@@ -128,7 +130,7 @@ func genFromGenerator(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient cl
 	}, nil
 }
 
-func genFromSecret(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient client.Client, namespace string) (*pw, error) {
+func genFromSecret(ctx context.Context, res *enterprise.RabbitMQ, kclient client.Client, namespace string) (*pw, error) {
 	secret := v1.Secret{}
 	err := kclient.Get(ctx, client.ObjectKey{Name: res.Spec.Config.PasswordPolicy.SecretRef.Name, Namespace: namespace}, &secret)
 	if err != nil {
@@ -145,7 +147,7 @@ func genFromSecret(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient clien
 		Algorithm:    rabbit.HashingAlgorithmSHA256,
 	}, nil
 }
-func getClient(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient client.Client, namespace string) (*rabbit.Client, error) {
+func getClient(ctx context.Context, res *enterprise.RabbitMQ, kclient client.Client, namespace string) (*rabbit.Client, error) {
 	if res.Spec.Auth.BasicAuth != nil {
 		uri := fmt.Sprintf("%s:%v", res.Spec.Server.Host, res.Spec.Server.Port)
 		var secretRef v1.Secret
@@ -170,8 +172,8 @@ func getClient(ctx context.Context, res *genv1alpha1.RabbitMQ, kclient client.Cl
 	return nil, errors.New(errInvalidAuthMethod)
 }
 
-func parseSpec(data []byte) (*genv1alpha1.RabbitMQ, error) {
-	var spec genv1alpha1.RabbitMQ
+func parseSpec(data []byte) (*enterprise.RabbitMQ, error) {
+	var spec enterprise.RabbitMQ
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
@@ -187,6 +189,6 @@ func (g *Generator) GetKeys() map[string]string {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.RabbitMQGeneratorKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.RabbitMQGeneratorKind, &genv1alpha1.RabbitMQ{})
+	genv1alpha1.Register(enterprise.RabbitMQGeneratorKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.RabbitMQGeneratorKind, &enterprise.RabbitMQ{})
 }

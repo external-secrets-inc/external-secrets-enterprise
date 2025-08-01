@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 )
@@ -212,13 +213,13 @@ func generateFakeWord(size int) string {
 	return string(word)
 }
 
-func parseSpec(data []byte) (*genv1alpha1.BasicAuth, error) {
-	var spec genv1alpha1.BasicAuth
+func parseSpec(data []byte) (*enterprise.BasicAuth, error) {
+	var spec enterprise.BasicAuth
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.BasicAuthKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.BasicAuthKind, &genv1alpha1.BasicAuth{})
+	genv1alpha1.Register(enterprise.BasicAuthKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.BasicAuthKind, &enterprise.BasicAuth{})
 }

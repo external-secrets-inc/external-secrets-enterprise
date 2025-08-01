@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,6 @@ import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -50,10 +50,10 @@ func TestOpenAiGenerator_GenerateAndCleanup(t *testing.T) {
 	mockProjectID := "test-project"
 
 	// Simulate OpenAI service account create response
-	serviceAccountResponse := genv1alpha1.OpenAiServiceAccount{
+	serviceAccountResponse := enterprise.OpenAiServiceAccount{
 		ID:   "svc_test_123",
 		Name: "mock-service-account",
-		APIKey: genv1alpha1.OpenAiApiKey{
+		APIKey: enterprise.OpenAiApiKey{
 			Value: "sk-test123",
 		},
 	}
@@ -81,8 +81,8 @@ func TestOpenAiGenerator_GenerateAndCleanup(t *testing.T) {
 	require.NoError(t, err)
 
 	// Prepare generator spec
-	spec := genv1alpha1.OpenAI{
-		Spec: genv1alpha1.OpenAISpec{
+	spec := enterprise.OpenAI{
+		Spec: enterprise.OpenAISpec{
 			Host:      mockServer.URL, // override to mock server
 			ProjectId: mockProjectID,
 			OpenAiAdminKey: esmeta.SecretKeySelector{

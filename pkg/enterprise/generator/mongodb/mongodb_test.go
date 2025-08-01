@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,18 +48,18 @@ func setupMongoDBContainer(t *testing.T, ctx context.Context) (testcontainers.Co
 	return mongoDBContainer, host, port.Int()
 }
 
-func newGeneratorSpec(t *testing.T, host string, port int) *genv1alpha1.MongoDB {
+func newGeneratorSpec(t *testing.T, host string, port int) *enterprise.MongoDB {
 	t.Helper()
-	spec := &genv1alpha1.MongoDB{
-		Spec: genv1alpha1.MongoDBSpec{
-			Auth: genv1alpha1.MongoDBAuth{SCRAM: &genv1alpha1.MongoDBSCRAMAuth{
+	spec := &enterprise.MongoDB{
+		Spec: enterprise.MongoDBSpec{
+			Auth: enterprise.MongoDBAuth{SCRAM: &enterprise.MongoDBSCRAMAuth{
 				Username: &adminUser,
-				SecretRef: &genv1alpha1.MongoDBAuthSecretRef{
+				SecretRef: &enterprise.MongoDBAuthSecretRef{
 					Password: esmeta.SecretKeySelector{Name: secretName, Key: pwdSecretKey},
 					Username: &esmeta.SecretKeySelector{Name: secretName, Key: userSecretKey},
 				}}},
-			Database: genv1alpha1.MongoDBDatabase{Host: host, Port: port, AdminDB: "admin"},
-			User:     genv1alpha1.MongoDBUser{Name: "user", Roles: []genv1alpha1.MongoDBRole{{Name: "readWrite", DB: "myDB"}}},
+			Database: enterprise.MongoDBDatabase{Host: host, Port: port, AdminDB: "admin"},
+			User:     enterprise.MongoDBUser{Name: "user", Roles: []enterprise.MongoDBRole{{Name: "readWrite", DB: "myDB"}}},
 		},
 	}
 
@@ -141,7 +141,7 @@ func (s *MongoDBTestSuite) Test_Generate_Success() {
 	require.NotEmpty(s.T(), out["username"])
 	require.NotEmpty(s.T(), out["password"])
 
-	var st genv1alpha1.MongoDBUserState
+	var st enterprise.MongoDBUserState
 	require.NoError(s.T(), json.Unmarshal(state.Raw, &st))
 	s.Assert().Equal(string(out["username"]), st.User)
 }
@@ -192,7 +192,7 @@ func (s *MongoDBTestSuite) Test_Generate_Success_UsernameFallback() {
 	require.NotEmpty(s.T(), out["username"])
 	require.NotEmpty(s.T(), out["password"])
 
-	var st genv1alpha1.MongoDBUserState
+	var st enterprise.MongoDBUserState
 	require.NoError(s.T(), json.Unmarshal(state.Raw, &st))
 	s.Assert().Equal(string(out["username"]), st.User)
 }
@@ -216,7 +216,7 @@ func (s *MongoDBTestSuite) Test_Cleanup_Failure_InexistentUser() {
 	require.NoError(s.T(), err)
 	jsonSpec := &apiextensionsv1.JSON{Raw: rawSpec}
 
-	state := genv1alpha1.MongoDBUserState{
+	state := enterprise.MongoDBUserState{
 		User: "does_not_exist",
 	}
 	rawState, err := json.Marshal(state)

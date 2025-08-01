@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	awsauth "github.com/external-secrets/external-secrets/pkg/provider/aws/auth"
@@ -111,8 +112,8 @@ func iamFactory(cfg *aws.Config) iamAPI {
 	return iam.NewFromConfig(*cfg)
 }
 
-func parseSpec(data []byte) (*genv1alpha1.AWSIAMKey, error) {
-	var spec genv1alpha1.AWSIAMKey
+func parseSpec(data []byte) (*enterprise.AWSIAMKey, error) {
+	var spec enterprise.AWSIAMKey
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
@@ -129,6 +130,6 @@ func (g *Generator) GetKeys() map[string]string {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.AWSIAMKeysKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.AWSIAMKeysKind, &genv1alpha1.AWSIAMKey{})
+	genv1alpha1.Register(enterprise.AWSIAMKeysKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.AWSIAMKeysKind, &enterprise.AWSIAMKey{})
 }

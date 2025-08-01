@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"testing"
 
-	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	neo4jSDK "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/stretchr/testify/assert"
@@ -79,13 +79,13 @@ func setupNeo4jContainer(t *testing.T, ctx context.Context) (testcontainers.Cont
 	return neo4jContainer, uri
 }
 
-func newGeneratorSpec(t *testing.T, uri, user string) *genv1alpha1.Neo4j {
+func newGeneratorSpec(t *testing.T, uri, user string) *enterprise.Neo4j {
 	t.Helper()
-	return &genv1alpha1.Neo4j{
-		Spec: genv1alpha1.Neo4jSpec{
-			Auth: genv1alpha1.Neo4jAuth{
+	return &enterprise.Neo4j{
+		Spec: enterprise.Neo4jSpec{
+			Auth: enterprise.Neo4jAuth{
 				URI: uri,
-				Basic: &genv1alpha1.Neo4jBasicAuth{
+				Basic: &enterprise.Neo4jBasicAuth{
 					Username: "neo4j",
 					Password: esmeta.SecretKeySelector{
 						Name: testSecretName,
@@ -93,10 +93,10 @@ func newGeneratorSpec(t *testing.T, uri, user string) *genv1alpha1.Neo4j {
 					},
 				},
 			},
-			User: &genv1alpha1.Neo4jUser{
+			User: &enterprise.Neo4jUser{
 				User:     user,
 				Roles:    []string{"reader"},
-				Provider: genv1alpha1.Neo4jAuthProviderNative,
+				Provider: enterprise.Neo4jAuthProviderNative,
 			},
 		},
 	}
@@ -154,9 +154,9 @@ func (s *Neo4jTestSuite) TestNeo4jGeneratorIntegration() {
 	// Verify that the user was created in the Neo4j database
 	customClient := generatorMockClient{t: s.T(), userPassword: result[testSecretKey]}
 
-	driver, err := newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
+	driver, err := newDriver(s.ctx, &enterprise.Neo4jAuth{
 		URI: s.uri,
-		Basic: &genv1alpha1.Neo4jBasicAuth{
+		Basic: &enterprise.Neo4jBasicAuth{
 			Username: string(result["user"]),
 			Password: esmeta.SecretKeySelector{
 				Name: testGeneratedSecretName,
@@ -210,7 +210,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 	// Verify that the user was created in the Neo4j database
 	customClient := generatorMockClient{t: s.T(), userPassword: result[testSecretKey]}
 
-	userAuth := &genv1alpha1.Neo4jBasicAuth{
+	userAuth := &enterprise.Neo4jBasicAuth{
 		Username: string(result["user"]),
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -218,7 +218,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 		},
 	}
 
-	driver, err := newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
+	driver, err := newDriver(s.ctx, &enterprise.Neo4jAuth{
 		URI:   s.uri,
 		Basic: userAuth,
 	}, customClient, testNamespace)
@@ -232,7 +232,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanup() {
 	err = gen.Cleanup(s.ctx, &apiextensions.JSON{Raw: specJSON}, rawStatus, customClient, testNamespace)
 	require.NoError(s.T(), err)
 
-	driver, err = newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
+	driver, err = newDriver(s.ctx, &enterprise.Neo4jAuth{
 		URI:   s.uri,
 		Basic: userAuth,
 	}, customClient, testNamespace)
@@ -261,7 +261,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 	// Create driver with user permissions
 	customClient := generatorMockClient{t: s.T(), userPassword: result[testSecretKey]}
 
-	userAuth := &genv1alpha1.Neo4jBasicAuth{
+	userAuth := &enterprise.Neo4jBasicAuth{
 		Username: string(result["user"]),
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -269,7 +269,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 		},
 	}
 
-	driver, err := newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
+	driver, err := newDriver(s.ctx, &enterprise.Neo4jAuth{
 		URI:   s.uri,
 		Basic: userAuth,
 	}, customClient, testNamespace)
@@ -295,7 +295,7 @@ func (s *Neo4jTestSuite) TestNeo4jCleanupAfterUserDBManipulation() {
 	require.NoError(s.T(), err)
 
 	// Check if the node was not deleted
-	driver, err = newDriver(s.ctx, &genv1alpha1.Neo4jAuth{
+	driver, err = newDriver(s.ctx, &enterprise.Neo4jAuth{
 		URI:   s.uri,
 		Basic: spec.Spec.Auth.Basic,
 	}, s.client, testNamespace)

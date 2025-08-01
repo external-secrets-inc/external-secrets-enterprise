@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -142,8 +143,8 @@ func (g *Generator) GetKeys() map[string]string {
 }
 
 // Helper functions.
-func parseSpec(data []byte) (*genv1alpha1.Federation, error) {
-	var spec genv1alpha1.Federation
+func parseSpec(data []byte) (*enterprise.Federation, error) {
+	var spec enterprise.Federation
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
@@ -162,7 +163,7 @@ func getFromSecretRef(ctx context.Context, keySelector *esmeta.SecretKeySelector
 }
 
 // buildFederationURL constructs the URL for the federation server endpoint.
-func buildFederationURL(spec *genv1alpha1.Federation) string {
+func buildFederationURL(spec *enterprise.Federation) string {
 	return fmt.Sprintf("%s/generators/%s/%s/%s",
 		spec.Spec.Server.URL,
 		spec.Spec.Generator.Namespace,
@@ -207,6 +208,6 @@ func handleErrorResponse(resp *http.Response) error {
 }
 
 func init() {
-	genv1alpha1.Register(string(genv1alpha1.GeneratorKindFederation), &Generator{})
-	genv1alpha1.RegisterGeneric(string(genv1alpha1.GeneratorKindFederation), &genv1alpha1.Federation{})
+	genv1alpha1.Register(string(enterprise.FederationKind), &Generator{})
+	genv1alpha1.RegisterGeneric(string(enterprise.FederationKind), &enterprise.Federation{})
 }

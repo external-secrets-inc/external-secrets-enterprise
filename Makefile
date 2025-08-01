@@ -146,6 +146,7 @@ fmt: golangci-lint ## Ensure consistent code style
 
 generate: ## Generate code and crds
 	@./hack/crd.generate.sh $(BUNDLE_DIR) $(CRD_DIR)
+	@go generate ./apis/enterprise/generators/v1alpha1/gen_generic_generator/generic_generator_impl.go
 	@go generate ./apis/generators/v1alpha1/gen_generic_generator/generic_generator_impl.go
 	@$(OK) Finished generating deepcopy and crds and generic generator interfaces
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,16 +33,16 @@ const (
 	defaultSuffixSize = 8
 )
 
-var mapAttributes = map[string]genv1alpha1.PostgreSqlUserAttributesEnum{
-	string(genv1alpha1.PostgreSqlUserSuperUser):   genv1alpha1.PostgreSqlUserSuperUser,
-	string(genv1alpha1.PostgreSqlUserCreateDb):    genv1alpha1.PostgreSqlUserCreateDb,
-	string(genv1alpha1.PostgreSqlUserCreateRole):  genv1alpha1.PostgreSqlUserCreateRole,
-	string(genv1alpha1.PostgreSqlUserReplication): genv1alpha1.PostgreSqlUserReplication,
-	string(genv1alpha1.PostgreSqlUserNoInherit):   genv1alpha1.PostgreSqlUserNoInherit,
-	string(genv1alpha1.PostgreSqlUserByPassRls):   genv1alpha1.PostgreSqlUserByPassRls,
-	"CONNECTION_LIMIT":                            genv1alpha1.PostgreSqlUserConnectionLimit,
-	string(genv1alpha1.PostgreSqlUserLogin):       genv1alpha1.PostgreSqlUserLogin,
-	string(genv1alpha1.PostgreSqlUserPassword):    genv1alpha1.PostgreSqlUserPassword,
+var mapAttributes = map[string]enterprise.PostgreSqlUserAttributesEnum{
+	string(enterprise.PostgreSqlUserSuperUser):   enterprise.PostgreSqlUserSuperUser,
+	string(enterprise.PostgreSqlUserCreateDb):    enterprise.PostgreSqlUserCreateDb,
+	string(enterprise.PostgreSqlUserCreateRole):  enterprise.PostgreSqlUserCreateRole,
+	string(enterprise.PostgreSqlUserReplication): enterprise.PostgreSqlUserReplication,
+	string(enterprise.PostgreSqlUserNoInherit):   enterprise.PostgreSqlUserNoInherit,
+	string(enterprise.PostgreSqlUserByPassRls):   enterprise.PostgreSqlUserByPassRls,
+	"CONNECTION_LIMIT":                           enterprise.PostgreSqlUserConnectionLimit,
+	string(enterprise.PostgreSqlUserLogin):       enterprise.PostgreSqlUserLogin,
+	string(enterprise.PostgreSqlUserPassword):    enterprise.PostgreSqlUserPassword,
 }
 
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
@@ -76,7 +77,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("user not found in response")
 	}
 
-	rawState, err := json.Marshal(&genv1alpha1.PostgreSqlUserState{
+	rawState, err := json.Marshal(&enterprise.PostgreSqlUserState{
 		Username: string(username),
 	})
 	if err != nil {
@@ -129,7 +130,7 @@ func (g *Generator) GetKeys() map[string]string {
 	}
 }
 
-func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclient client.Client, ns string) (*pgx.Conn, error) {
+func newConnection(ctx context.Context, spec *enterprise.PostgreSqlSpec, kclient client.Client, ns string) (*pgx.Conn, error) {
 	dbName := defaultDbName
 	if spec.Database != "" {
 		dbName = spec.Database
@@ -184,7 +185,7 @@ func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
 	return current_rows, nil
 }
 
-func addRolesAttributesToQueryString(query *strings.Builder, attributes []genv1alpha1.PostgreSqlUserAttribute) {
+func addRolesAttributesToQueryString(query *strings.Builder, attributes []enterprise.PostgreSqlUserAttribute) {
 	if len(attributes) > 0 {
 		query.WriteString(" WITH ")
 		for i, attr := range attributes {
@@ -192,7 +193,7 @@ func addRolesAttributesToQueryString(query *strings.Builder, attributes []genv1a
 				query.WriteString(" ")
 			}
 			if attr.Value != nil {
-				if string(mapAttributes[attr.Name]) == string(genv1alpha1.PostgreSqlUserPassword) {
+				if string(mapAttributes[attr.Name]) == string(enterprise.PostgreSqlUserPassword) {
 					fmt.Fprintf(query, `%s '%s'`, string(mapAttributes[attr.Name]), *attr.Value)
 				} else {
 					fmt.Fprintf(query, `%s %s`, string(mapAttributes[attr.Name]), *attr.Value)
@@ -204,7 +205,7 @@ func addRolesAttributesToQueryString(query *strings.Builder, attributes []genv1a
 	}
 }
 
-func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttribute) error {
+func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []enterprise.PostgreSqlUserAttribute) error {
 	var query strings.Builder
 	query.WriteString(fmt.Sprintf("CREATE ROLE %s", pgx.Identifier{roleName}.Sanitize()))
 	addRolesAttributesToQueryString(&query, attributes)
@@ -212,7 +213,7 @@ func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes [
 	return err
 }
 
-func updateRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []genv1alpha1.PostgreSqlUserAttribute) error {
+func updateRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []enterprise.PostgreSqlUserAttribute) error {
 	var query strings.Builder
 	query.WriteString(fmt.Sprintf("ALTER ROLE %s", pgx.Identifier{roleName}.Sanitize()))
 	addRolesAttributesToQueryString(&query, attributes)
@@ -264,7 +265,7 @@ func resetRole(ctx context.Context, db *pgx.Conn, roleName string) error {
 	return nil
 }
 
-func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlSpec) (map[string][]byte, error) {
+func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSqlSpec) (map[string][]byte, error) {
 	username := spec.User.Username
 	suffixSize := defaultSuffixSize
 	if spec.User.SuffixSize != nil {
@@ -294,10 +295,10 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *genv1alpha1.PostgreSqlS
 	}
 
 	spec.User.Attributes = append(spec.User.Attributes,
-		genv1alpha1.PostgreSqlUserAttribute{
-			Name: string(genv1alpha1.PostgreSqlUserLogin),
-		}, genv1alpha1.PostgreSqlUserAttribute{
-			Name:  string(genv1alpha1.PostgreSqlUserPassword),
+		enterprise.PostgreSqlUserAttribute{
+			Name: string(enterprise.PostgreSqlUserLogin),
+		}, enterprise.PostgreSqlUserAttribute{
+			Name:  string(enterprise.PostgreSqlUserPassword),
 			Value: ptr.To(string(pass)),
 		},
 	)
@@ -356,7 +357,7 @@ func grantRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles,
 	return nil
 }
 
-func dropUser(ctx context.Context, db *pgx.Conn, username string, spec genv1alpha1.PostgreSqlSpec) error {
+func dropUser(ctx context.Context, db *pgx.Conn, username string, spec enterprise.PostgreSqlSpec) error {
 	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 	if !spec.User.DestructiveCleanup {
 		reassignToUser := spec.Auth.Username
@@ -414,14 +415,14 @@ func generatePassword(
 	return pass, nil
 }
 
-func parseSpec(data []byte) (*genv1alpha1.PostgreSql, error) {
-	var spec genv1alpha1.PostgreSql
+func parseSpec(data []byte) (*enterprise.PostgreSql, error) {
+	var spec enterprise.PostgreSql
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
 
-func parseStatus(data []byte) (*genv1alpha1.PostgreSqlUserState, error) {
-	var state genv1alpha1.PostgreSqlUserState
+func parseStatus(data []byte) (*enterprise.PostgreSqlUserState, error) {
+	var state enterprise.PostgreSqlUserState
 	err := json.Unmarshal(data, &state)
 	if err != nil {
 		return nil, err
@@ -430,6 +431,6 @@ func parseStatus(data []byte) (*genv1alpha1.PostgreSqlUserState, error) {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.PostgreSqlKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.PostgreSqlKind, &genv1alpha1.PostgreSql{})
+	genv1alpha1.Register(enterprise.PostgreSqlKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.PostgreSqlKind, &enterprise.PostgreSql{})
 }

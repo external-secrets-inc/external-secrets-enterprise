@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 
-	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
@@ -111,12 +111,12 @@ func TestGenerator_Generate(t *testing.T) {
 		{
 			name: "successful generation",
 			jsonSpec: &apiextensions.JSON{
-				Raw: mustMarshal(t, &genv1alpha1.Federation{
-					Spec: genv1alpha1.FederationSpec{
-						Server: genv1alpha1.FederationServer{
+				Raw: mustMarshal(t, &enterprise.Federation{
+					Spec: enterprise.FederationSpec{
+						Server: enterprise.FederationServer{
 							URL: ts.URL,
 						},
-						Auth: genv1alpha1.FederationAuthKubernetes{
+						Auth: enterprise.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
@@ -126,7 +126,7 @@ func TestGenerator_Generate(t *testing.T) {
 								Key:  "ca.crt",
 							},
 						},
-						Generator: genv1alpha1.FederationGeneratorRef{
+						Generator: enterprise.FederationGeneratorRef{
 							Namespace: "test-namespace",
 							Kind:      "test-kind",
 							Name:      "test-name",
@@ -143,18 +143,18 @@ func TestGenerator_Generate(t *testing.T) {
 		{
 			name: "server error",
 			jsonSpec: &apiextensions.JSON{
-				Raw: mustMarshal(t, &genv1alpha1.Federation{
-					Spec: genv1alpha1.FederationSpec{
-						Server: genv1alpha1.FederationServer{
+				Raw: mustMarshal(t, &enterprise.Federation{
+					Spec: enterprise.FederationSpec{
+						Server: enterprise.FederationServer{
 							URL: ts.URL,
 						},
-						Auth: genv1alpha1.FederationAuthKubernetes{
+						Auth: enterprise.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
 							},
 						},
-						Generator: genv1alpha1.FederationGeneratorRef{
+						Generator: enterprise.FederationGeneratorRef{
 							Namespace: "test-namespace",
 							Kind:      "error-kind",
 							Name:      "error-name",
@@ -168,18 +168,18 @@ func TestGenerator_Generate(t *testing.T) {
 		{
 			name: "invalid server URL",
 			jsonSpec: &apiextensions.JSON{
-				Raw: mustMarshal(t, &genv1alpha1.Federation{
-					Spec: genv1alpha1.FederationSpec{
-						Server: genv1alpha1.FederationServer{
+				Raw: mustMarshal(t, &enterprise.Federation{
+					Spec: enterprise.FederationSpec{
+						Server: enterprise.FederationServer{
 							URL: "http://invalid-url",
 						},
-						Auth: genv1alpha1.FederationAuthKubernetes{
+						Auth: enterprise.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
 							},
 						},
-						Generator: genv1alpha1.FederationGeneratorRef{
+						Generator: enterprise.FederationGeneratorRef{
 							Namespace: "test-namespace",
 							Kind:      "test-kind",
 							Name:      "test-name",
@@ -283,18 +283,18 @@ func TestGenerator_Cleanup(t *testing.T) {
 		{
 			name: "successful cleanup",
 			jsonSpec: &apiextensions.JSON{
-				Raw: mustMarshal(t, &genv1alpha1.Federation{
-					Spec: genv1alpha1.FederationSpec{
-						Server: genv1alpha1.FederationServer{
+				Raw: mustMarshal(t, &enterprise.Federation{
+					Spec: enterprise.FederationSpec{
+						Server: enterprise.FederationServer{
 							URL: ts.URL,
 						},
-						Auth: genv1alpha1.FederationAuthKubernetes{
+						Auth: enterprise.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
 							},
 						},
-						Generator: genv1alpha1.FederationGeneratorRef{
+						Generator: enterprise.FederationGeneratorRef{
 							Namespace: "test-namespace",
 							Kind:      "test-kind",
 							Name:      "test-name",
@@ -307,18 +307,18 @@ func TestGenerator_Cleanup(t *testing.T) {
 		{
 			name: "server error",
 			jsonSpec: &apiextensions.JSON{
-				Raw: mustMarshal(t, &genv1alpha1.Federation{
-					Spec: genv1alpha1.FederationSpec{
-						Server: genv1alpha1.FederationServer{
+				Raw: mustMarshal(t, &enterprise.Federation{
+					Spec: enterprise.FederationSpec{
+						Server: enterprise.FederationServer{
 							URL: ts.URL,
 						},
-						Auth: genv1alpha1.FederationAuthKubernetes{
+						Auth: enterprise.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
 							},
 						},
-						Generator: genv1alpha1.FederationGeneratorRef{
+						Generator: enterprise.FederationGeneratorRef{
 							Namespace: "test-namespace",
 							Kind:      "error-kind",
 							Name:      "error-name",
@@ -332,18 +332,18 @@ func TestGenerator_Cleanup(t *testing.T) {
 		{
 			name: "invalid server URL",
 			jsonSpec: &apiextensions.JSON{
-				Raw: mustMarshal(t, &genv1alpha1.Federation{
-					Spec: genv1alpha1.FederationSpec{
-						Server: genv1alpha1.FederationServer{
+				Raw: mustMarshal(t, &enterprise.Federation{
+					Spec: enterprise.FederationSpec{
+						Server: enterprise.FederationServer{
 							URL: "http://invalid-url",
 						},
-						Auth: genv1alpha1.FederationAuthKubernetes{
+						Auth: enterprise.FederationAuthKubernetes{
 							TokenSecretRef: &esmeta.SecretKeySelector{
 								Name: "token-secret",
 								Key:  "token",
 							},
 						},
-						Generator: genv1alpha1.FederationGeneratorRef{
+						Generator: enterprise.FederationGeneratorRef{
 							Namespace: "test-namespace",
 							Kind:      "test-kind",
 							Name:      "test-name",
@@ -383,7 +383,7 @@ func TestParseSpec(t *testing.T) {
 	}{
 		{
 			name:    "valid spec",
-			data:    mustMarshal(t, &genv1alpha1.Federation{}),
+			data:    mustMarshal(t, &enterprise.Federation{}),
 			wantErr: false,
 		},
 		{

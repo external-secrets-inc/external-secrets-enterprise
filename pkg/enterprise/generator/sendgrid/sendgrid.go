@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -167,8 +168,8 @@ func (g *Generator) createAPIKey(secretName string, scopes []string, apiKey, dat
 	return createdSecret, nil
 }
 
-func parseSpec(data []byte) (*genv1alpha1.SendgridAuthorizationToken, error) {
-	var spec genv1alpha1.SendgridAuthorizationToken
+func parseSpec(data []byte) (*enterprise.SendgridAuthorizationToken, error) {
+	var spec enterprise.SendgridAuthorizationToken
 
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
@@ -230,6 +231,6 @@ func (g *Generator) GetKeys() map[string]string {
 }
 
 func init() {
-	genv1alpha1.Register(genv1alpha1.SendgridKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.SendgridKind, &genv1alpha1.SendgridAuthorizationToken{})
+	genv1alpha1.Register(enterprise.SendgridKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.SendgridKind, &enterprise.SendgridAuthorizationToken{})
 }
