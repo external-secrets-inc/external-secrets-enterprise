@@ -208,6 +208,6 @@ func handleErrorResponse(resp *http.Response) error {
 }
 
 func init() {
-	genv1alpha1.Register(string(enterprise.FederationKind), &Generator{})
-	genv1alpha1.RegisterGeneric(string(enterprise.FederationKind), &enterprise.Federation{})
+	genv1alpha1.Register(enterprise.FederationKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.FederationKind, &enterprise.Federation{})
 }
