@@ -442,7 +442,7 @@ type GeneratorRef struct {
 
 	// Specify the Kind of the generator resource
 	//nolint:lll
-	// +kubebuilder:validation:Enum=ACRAccessToken;ClusterGenerator;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;AWSIAMKey;SendgridAuthorizationToken;RabbitMQ;MongoDB;Federation;BasicAuth;SSH;Neo4j;PostgreSql;OpenAI
+	// +kubebuilder:validation:Enum=ACRAccessToken;ClusterGenerator;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;SSHKey;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;AWSIAMKey;SendgridAuthorizationToken;RabbitMQ;MongoDB;Federation;BasicAuth;SSH;Neo4j;PostgreSql;OpenAI
 	Kind string `json:"kind"`
 
 	// Specify the name of the generator resource

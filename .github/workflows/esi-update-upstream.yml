@@ -47,8 +47,8 @@ jobs:
         git fetch upstream
         git fetch origin
         git checkout origin/main
-        BRANCH=update-upstream-$(date "+%s")
-        git checkout -b $BRANCH
+        BRANCH=update-upstream
+        git checkout -b $BRANCH || git checkout $BRANCH
         git merge upstream/main --no-ff --no-commit || true
         if [[ -z "$(git status --porcelain)" ]]; then
           echo "nothing changed. skipping."
@@ -58,7 +58,7 @@ jobs:
         git reset HEAD .github
         git checkout .github
         git commit -s -m "chore: update from upstream"
-        git push origin $BRANCH
+        git push --force origin $BRANCH
         gh pr create --repo external-secrets-inc/external-secrets-enterprise -B ${{ matrix.branch }} -H ${BRANCH} --title 'chore: update from upstream' --body 'Update from upstream'
 
       env:

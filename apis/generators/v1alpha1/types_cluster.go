@@ -27,7 +27,7 @@ type ClusterGeneratorSpec struct {
 }
 
 // GeneratorKind represents a kind of generator.
-// +kubebuilder:validation:Enum=ACRAccessToken;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;Federation;MFA;BasicAuth;SSH;Neo4j;PostgreSql;OpenAI
+// +kubebuilder:validation:Enum=ACRAccessToken;ECRAuthorizationToken;Fake;GCRAccessToken;GithubAccessToken;QuayAccessToken;Password;SSHKey;STSSessionToken;UUID;VaultDynamicSecret;Webhook;Grafana;Federation;MFA;BasicAuth;SSH;Neo4j;PostgreSql;OpenAI
 type GeneratorKind string
 
 const (
@@ -38,6 +38,7 @@ const (
 	GeneratorKindGithubAccessToken     GeneratorKind = "GithubAccessToken"
 	GeneratorKindQuayAccessToken       GeneratorKind = "QuayAccessToken"
 	GeneratorKindPassword              GeneratorKind = "Password"
+	GeneratorKindSSHKey                GeneratorKind = "SSHKey"
 	GeneratorKindSTSSessionToken       GeneratorKind = "STSSessionToken"
 	GeneratorKindUUID                  GeneratorKind = "UUID"
 	GeneratorKindVaultDynamicSecret    GeneratorKind = "VaultDynamicSecret"
@@ -62,6 +63,7 @@ type GeneratorSpec struct {
 	GithubAccessTokenSpec     *GithubAccessTokenSpec     `json:"githubAccessTokenSpec,omitempty"`
 	QuayAccessTokenSpec       *QuayAccessTokenSpec       `json:"quayAccessTokenSpec,omitempty"`
 	PasswordSpec              *PasswordSpec              `json:"passwordSpec,omitempty"`
+	SSHKeySpec                *SSHKeySpec                `json:"sshKeySpec,omitempty"`
 	STSSessionTokenSpec       *STSSessionTokenSpec       `json:"stsSessionTokenSpec,omitempty"`
 	UUIDSpec                  *UUIDSpec                  `json:"uuidSpec,omitempty"`
 	VaultDynamicSecretSpec    *VaultDynamicSecretSpec    `json:"vaultDynamicSecretSpec,omitempty"`

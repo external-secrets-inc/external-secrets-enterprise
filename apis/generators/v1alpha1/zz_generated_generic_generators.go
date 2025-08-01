@@ -582,6 +582,36 @@ func (g *SSH) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
+var _ GenericGenerator = &SSHKey{}
+
+func (g *SSHKey) GetObjectMeta() *metav1.ObjectMeta {
+	return &g.ObjectMeta
+}
+
+func (g *SSHKey) GetTypeMeta() *metav1.TypeMeta {
+	return &g.TypeMeta
+}
+
+func (g *SSHKey) GetKind() string {
+	return reflect.TypeOf(SSHKey{}).Name()
+}
+
+func (g *SSHKey) SetOutputs(expectedOutput map[string]string) error {
+	bytes, err := json.Marshal(expectedOutput)
+	if err != nil {
+		return err
+	}
+
+	g.Status.Output = &apiextensions.JSON{
+		Raw: bytes,
+	}
+	return nil
+}
+
+func (g *SSHKey) Copy() GenericGenerator {
+	return g.DeepCopy()
+}
+
 var _ GenericGenerator = &STSSessionToken{}
 
 func (g *STSSessionToken) GetObjectMeta() *metav1.ObjectMeta {

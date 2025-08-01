@@ -81,9 +81,18 @@ func New(ctx context.Context, client client.Client, scheme *runtime.Scheme, name
 	}
 }
 
+func GetDefaultCleanupPolicy() *genapi.CleanupPolicy {
+	return &genapi.CleanupPolicy{
+		Type: genapi.RetainLatestPolicy,
+		GracePeriod: metav1.Duration{
+			Duration: defaultGCGracePeriod,
+		},
+	}
+}
+
 func (m *Manager) SetCleanupPolicy(cleanupPolicy *genapi.CleanupPolicy) {
 	if cleanupPolicy == nil {
-		cleanupPolicy = &genapi.CleanupPolicy{Type: genapi.RetainLatestPolicy, GracePeriod: metav1.Duration{Duration: defaultGCGracePeriod}}
+		cleanupPolicy = GetDefaultCleanupPolicy()
 	}
 
 	m.cleanupPolicy = cleanupPolicy

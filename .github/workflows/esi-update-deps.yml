@@ -42,7 +42,7 @@ jobs:
         git config --global user.name "External Secrets Inc Bot"
         git config --global user.email "bot@externalsecrets.com"
         git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}
-        BRANCH=update-deps-$(date "+%s")
+        BRANCH=update-deps
         make update-deps || true
         make check-diff || true
         if git diff-index --quiet HEAD --; then
@@ -50,10 +50,10 @@ jobs:
           exit 0;
         fi
 
-        git checkout -b $BRANCH
+        git checkout -b $BRANCH || git checkout $BRANCH
         git add -A
         git commit -m "update dependencies" -s
-        git push origin $BRANCH
+        git push --force origin $BRANCH        
         gh pr create -B ${{ matrix.branch }} -H ${BRANCH} --title 'chore: update dependencies' --body 'Update dependencies'
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}

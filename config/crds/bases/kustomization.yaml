@@ -31,6 +31,7 @@ resources:
   - generators.external-secrets.io_quayaccesstokens.yaml
   - generators.external-secrets.io_rabbitmqs.yaml
   - generators.external-secrets.io_sendgridauthorizationtokens.yaml
+  - generators.external-secrets.io_sshkeys.yaml
   - generators.external-secrets.io_sshs.yaml
   - generators.external-secrets.io_stssessiontokens.yaml
   - generators.external-secrets.io_uuids.yaml
