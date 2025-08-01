@@ -1,5 +1,51 @@
 # Changelog
 
+## [1.16.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.4...v1.16.0) (2025-08-01)
+
+
+### Features
+
+* add generator state status and generator output ([#323](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/323)) ([b18cbf8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b18cbf8fde747b257647d033a70b278944a5f434))
+* add object[type] for workflow template ([#326](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/326)) ([6ad78d5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/6ad78d53e1af630f387e75056ebe40c0c79e30ec))
+* add optional cleanup on generator step ([#310](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/310)) ([2d7acdd](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2d7acdda8ce5a659defc76a366061ef334889d7e))
+* add workflow template finding type ([#307](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/307)) ([3ef7640](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3ef7640096d4607759bb031df530ecb0550f2c47))
+* auto bump esi bundle ([0031865](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/0031865c7c95b5a8a619985ca808a5c92d0752eb))
+* auto bump esi bundle ([#352](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/352)) ([d19d035](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d19d035214ce1973a5ab9428d6f19c4a552bb5b0))
+* **aws:** secretsmanager to update/patch/delete tags ([#4984](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4984)) ([014fb64](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/014fb645cc12f8f266a24539391e3e5a91f67e19))
+* generator state cleanup policy ([#340](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/340)) ([5859ef3](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5859ef35aa8973d481878befb5a4befc50bdcd58))
+* **infisical:** auth methods ([#5040](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5040)) ([c2bac01](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c2bac0199ad21001b5ee7a5cd34818b69e230114))
+* openai idle cleanup policy implementation ([#341](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/341)) ([ac15bbc](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ac15bbc51d8b6bd94e5bc0951293a299e3dadebb))
+* parse findings type to array[secretlocation] ([#320](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/320)) ([c434f74](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c434f74b982fb79835a563e45aca8afdfb041666))
+* push to public registry ([#308](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/308)) ([253ee51](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/253ee51dd1ca643ec5e2c28818a289756c17289b))
+
+
+### Bug Fixes
+
+* add kubebuilder validation to VirtualMachineSpec auth ([#351](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/351)) ([406f248](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/406f248a339e0e726ef0937ebebc36b29441366f))
+* add validation constraints to ExternalSecretRewrite to enforce single property selection ([#5006](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5006)) ([6f12eb9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/6f12eb909d6188d1d5515bd8c666dbebb370ab72))
+* bug in script ([#5043](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5043)) ([9e6b82b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9e6b82b16e814ddc14ae53cec8671d6b5577e2d6))
+* bumps release-support ([1e2f295](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1e2f295ee4572d7ee80580c65381dc2895e49b7e))
+* bumps release-support ([9e6b82b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9e6b82b16e814ddc14ae53cec8671d6b5577e2d6))
+* conflicts ([fe76493](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/fe76493b728ae15524337e8ea2848f3397f5b674))
+* conflicts ([5e969cf](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5e969cf2e1fe11c867053220bcda2636eb1b5901))
+* conflicts ([741068f](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/741068f220afa529eca4de68820454d9283df0b3))
+* files ([7591a94](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/7591a94a942bef78dc4258403f44888237839a11))
+* go.mod version ([e5357ef](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e5357ef0c9c4d1af50d92087d8fb02687279356d))
+* **helm:** grafana dashboard: add widget for sum of not ready secrets ([#5086](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5086)) ([d172fcf](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d172fcf6db61863bc5fc8b295d251b3e0045151a))
+* **helm:** grafana dashboard: fix heatmaps to actually be heatmaps, not time series ([#5069](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5069)) ([a96c38a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a96c38a57b6bf4a4ea9159d772e329d658e3006f))
+* iam tests ([f9269f2](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f9269f292dfe64cf2837b6b169964f300340a0bf))
+* only one pr for update deps or update upstream ([#345](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/345)) ([9c57e57](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/9c57e57028a12a04870a796c8393469c5851284d))
+* remove authentication option with JWT token from STSSessionToken generator ([#5026](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5026)) ([308712f](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/308712f10f0c7fd7d8ba732f79f85c8473493d7d))
+* restore AWS credential chain resolution for ECRAuthorizationToken generator ([#5082](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5082)) ([7acab69](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/7acab694b69841b8aee4bbaaca1043aa22f6c0f3))
+* update custom object format to 'object[argName]resourceType' ([#329](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/329)) ([8978cc8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8978cc8651dbc4a55e6c7959bd0c8ce8678b6ede))
+* update dependencies ([#343](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/343)) ([42c03c9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/42c03c9492cf84a566c93b4f381ac65051aff96c))
+* update dependencies ([#350](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/350)) ([df7546a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/df7546ac1a29c32da5c2c9a443d4f2b7d0bf9a1c))
+* update from upstream ([#324](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/324)) ([034babc](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/034babcc029401fb775f70e7562b844ff9353a9c))
+* update from upstream ([#342](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/342)) ([1e2f295](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1e2f295ee4572d7ee80580c65381dc2895e49b7e))
+* update from upstream ([#349](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/349)) ([4b75901](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4b759016006412af7cbda5ed3a2c87b8c9e4b652))
+* update tests ([75c03b2](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/75c03b25d4496a2de70b2eda33093509208f1093))
+* update tests ([#353](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/353)) ([0b6635e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/0b6635e0c8563cfeb9b59a84c11ece317bff6e2c))
+
 ## [1.15.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.3...v1.15.4) (2025-07-16)
 
 
