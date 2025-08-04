@@ -19,7 +19,6 @@ jobs:
       matrix:
         include:
         - tag_suffix: "" # distroless image
-        - tag_suffix: "-ubi" # ubi image
         - tag_suffix: "-ubi-boringssl" # ubi image
 
     permissions:
