@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.16.0...v1.16.1) (2025-08-04)
+
+
+### Bug Fixes
+
+* promote images on public repository ([#356](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/356)) ([8ffaebf](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8ffaebf8fa907976eaef7f045063d6bb665e01e6))
+
 ## [1.16.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.15.4...v1.16.0) (2025-08-01)
 
 
