@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.16.2...v1.16.3) (2025-08-04)
+
+
+### Bug Fixes
+
+* remove ubi ([#361](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/361)) ([82796b5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/82796b5935b87f1c656a3d4099cd0c73f3bbdce0))
+
 ## [1.16.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.16.1...v1.16.2) (2025-08-04)
 
 
