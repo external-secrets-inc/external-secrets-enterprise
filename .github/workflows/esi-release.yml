@@ -65,7 +65,9 @@ jobs:
           password: ${{ steps.auth.outputs.access_token }}
 
       - name: Promote Container Image
-        run: make docker.promote
+        run: |
+          IMAGE_NAME=us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets make docker.promote
+          IMAGE_NAME=us-central1-docker.pkg.dev/external-secrets-inc-registry/public/external-secrets make docker.promote
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
 
