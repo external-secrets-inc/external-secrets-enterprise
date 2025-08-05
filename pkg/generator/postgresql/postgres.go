@@ -3,16 +3,25 @@
 package postgresql
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"slices"
 	"strings"
+
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	cronV3 "github.com/robfig/cron/v3"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	runtimeyaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -65,6 +74,30 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	err = db.Ping(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to ping the database: %w", err)
+	}
+
+	cleanupPolicy, err := g.GetCleanupPolicy(jsonSpec)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get cleanup policy: %w", err)
+	}
+	if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
+		err = setupObservation(ctx, db)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to setup observation: %w", err)
+		}
+		manifest, err := getCronjobManifest(*res)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to get cronjob manifest: %w", err)
+		}
+		err = applyCronJob(ctx, kube, manifest, metav1.OwnerReference{
+			UID:        res.UID,
+			APIVersion: res.APIVersion,
+			Kind:       res.Kind,
+			Name:       res.Name,
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to apply cronjob: %w", err)
+		}
 	}
 
 	user, err := createUser(ctx, db, &res.Spec)
@@ -137,7 +170,35 @@ func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.Clea
 }
 
 func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
-	return time.Time{}, false, nil
+	status, err := parseStatus(state.Raw)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	db, err := newConnection(ctx, &res.Spec, kube, namespace)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	defer func() {
+		err := db.Close(ctx)
+		if err != nil {
+			fmt.Printf("failed to close db: %v", err)
+		}
+	}()
+
+	err = db.Ping(ctx)
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("unable to ping the database: %w", err)
+	}
+
+	lastActivity, err := getUserActivity(ctx, db, status.Username)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	return lastActivity, true, nil
 }
 
 func (g *Generator) GetKeys() map[string]string {
@@ -177,6 +238,205 @@ func newConnection(ctx context.Context, spec *genv1alpha1.PostgreSqlSpec, kclien
 	)
 
 	return pgx.Connect(ctx, psqlInfo)
+}
+
+func createSessionObservationTable(ctx context.Context, db *pgx.Conn) error {
+	query := `
+CREATE TABLE IF NOT EXISTS session_observation (
+    pid              INTEGER     PRIMARY KEY,
+    usename          TEXT        NOT NULL,
+    client_addr      INET,
+    application_name TEXT,
+    state            TEXT,
+    state_change     TIMESTAMPTZ,
+    first_seen       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`
+
+	if _, err := db.Exec(ctx, query); err != nil {
+		return fmt.Errorf("failed to create session_observation table: %w", err)
+	}
+
+	return nil
+}
+
+func createSessionSnapshotFunction(ctx context.Context, db *pgx.Conn) error {
+	query := `
+CREATE OR REPLACE FUNCTION snapshot_pg_stat_activity() RETURNS void AS $$
+BEGIN
+  INSERT INTO session_observation (pid, usename, client_addr, application_name, state, state_change)
+  SELECT
+    pid,
+    usename,
+    client_addr,
+    application_name,
+    state,
+    state_change
+  FROM pg_stat_activity
+  WHERE pid <> pg_backend_pid()  -- ignore yourself
+  AND usename IS NOT NULL
+  ON CONFLICT (pid)
+  DO UPDATE SET
+    state = EXCLUDED.state,
+    state_change = EXCLUDED.state_change,
+    last_seen = now();
+END;
+$$ LANGUAGE plpgsql;
+`
+
+	if _, err := db.Exec(ctx, query); err != nil {
+		return fmt.Errorf("failed to create session_observation table: %w", err)
+	}
+
+	return nil
+}
+
+//go:embed cronjob-template.yaml
+var cronjobTemplate []byte
+
+func getCronjobManifest(genSpec genv1alpha1.PostgreSql) (string, error) {
+	tplContent := string(cronjobTemplate)
+	cronExpression := "* * * * *"
+	if genSpec.Spec.CleanupPolicy.ActivityTrackingCron != nil {
+		cronExpression = *genSpec.Spec.CleanupPolicy.ActivityTrackingCron
+	}
+	_, err := cronV3.ParseStandard(cronExpression)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse cron expression: %w", err)
+	}
+
+	params := map[string]string{
+		"Name":       sanitizeName(fmt.Sprintf("psql-%s-%s-session-observation-cronjob", genSpec.Spec.Host, genSpec.Spec.Port)),
+		"Namespace":  genSpec.GetNamespace(),
+		"Schedule":   cronExpression,
+		"SecretName": genSpec.Spec.Auth.Password.Name,
+		"SecretKey":  genSpec.Spec.Auth.Password.Key,
+		"PgUser":     genSpec.Spec.Auth.Username,
+		"Host":       genSpec.Spec.Host,
+		"Port":       genSpec.Spec.Port,
+		"Database":   genSpec.Spec.Database,
+	}
+
+	tpl, err := template.New("cronjob").Parse(tplContent)
+	if err != nil {
+		return "", fmt.Errorf("template parse error: %w", err)
+	}
+	var rendered bytes.Buffer
+	if err := tpl.Execute(&rendered, params); err != nil {
+		return "", fmt.Errorf("template execution error: %w", err)
+	}
+
+	return rendered.String(), nil
+}
+
+func sanitizeName(name string) string {
+	name = strings.ToLower(name)
+
+	// replace invalid chars
+	var b strings.Builder
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			b.WriteRune(r)
+		} else {
+			b.WriteRune('-')
+		}
+	}
+	sanitized := b.String()
+
+	sanitized = strings.Trim(sanitized, "-")
+
+	if len(sanitized) > 63 {
+		sanitized = sanitized[:63]
+	}
+
+	// trim again in case cut created trailing dash
+	sanitized = strings.Trim(sanitized, "-")
+
+	return sanitized
+}
+
+func applyCronJob(ctx context.Context, c client.Client, manifest string, ownerRef metav1.OwnerReference) error {
+	dec := runtimeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	obj := &unstructured.Unstructured{}
+
+	_, gvk, err := dec.Decode([]byte(manifest), nil, obj)
+	if err != nil {
+		return fmt.Errorf("failed to decode manifest: %w", err)
+	}
+	ns := obj.GetNamespace()
+	obj.SetGroupVersionKind(*gvk)
+
+	existing := &unstructured.Unstructured{}
+	existing.SetGroupVersionKind(obj.GroupVersionKind())
+	err = c.Get(ctx, client.ObjectKey{Namespace: ns, Name: obj.GetName()}, existing)
+	isNew := false
+
+	var owners []metav1.OwnerReference
+	if err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to get existing resource: %w", err)
+		}
+		owners = []metav1.OwnerReference{ownerRef}
+		isNew = true
+	} else {
+		owners = existing.GetOwnerReferences()
+		found := false
+		for _, or := range owners {
+			if or.UID == ownerRef.UID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			owners = append(owners, ownerRef)
+		}
+		obj.SetResourceVersion(existing.GetResourceVersion())
+	}
+	obj.SetOwnerReferences(owners)
+
+	if isNew {
+		if err := c.Create(ctx, obj); err != nil {
+			return fmt.Errorf("failed to create CronJob: %w", err)
+		}
+	} else {
+		if err := c.Update(ctx, obj); err != nil {
+			return fmt.Errorf("failed to update CronJob: %w", err)
+		}
+	}
+	return nil
+}
+
+func getUserActivity(ctx context.Context, db *pgx.Conn, username string) (time.Time, error) {
+	var lastSeen time.Time
+
+	const sqlQuery = `
+        SELECT last_seen
+        FROM session_observation
+        WHERE usename = $1
+        ORDER BY last_seen DESC
+        LIMIT 1;
+    `
+
+	err := db.QueryRow(ctx, sqlQuery, username).Scan(&lastSeen)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return time.Unix(0, 0), nil
+		}
+		return time.Time{}, fmt.Errorf("failed to get user activity: %w", err)
+	}
+
+	return lastSeen, nil
+}
+
+func setupObservation(ctx context.Context, db *pgx.Conn) error {
+	if err := createSessionObservationTable(ctx, db); err != nil {
+		return fmt.Errorf("failed to create session_observation table: %w", err)
+	}
+	if err := createSessionSnapshotFunction(ctx, db); err != nil {
+		return fmt.Errorf("failed to create session_observation function: %w", err)
+	}
+	return nil
 }
 
 func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
