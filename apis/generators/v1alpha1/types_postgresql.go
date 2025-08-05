@@ -19,6 +19,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type PostgreSqlCleanupPolicy struct {
+	CleanupPolicy `json:",inline"`
+
+	// ActivityTrackingCron is the cron expression to run the user activity tracking
+	// +optional
+	// +kubebuilder:default="* * * * *"
+	ActivityTrackingCron *string `json:"activityTrackingCron,omitempty"`
+}
+
 // PostgreSqlSpec controls the behavior of the postgreSQL generator.
 type PostgreSqlSpec struct {
 	// Database is the name of the database to connect to.
@@ -36,6 +45,8 @@ type PostgreSqlSpec struct {
 	Auth PostgreSqlAuth `json:"auth"`
 	// User is the data of the user to be created.
 	User *PostgreSqlUser `json:"user,omitempty"`
+
+	CleanupPolicy *PostgreSqlCleanupPolicy `json:"cleanupPolicy,omitempty"`
 }
 
 type PostgreSqlAuth struct {
