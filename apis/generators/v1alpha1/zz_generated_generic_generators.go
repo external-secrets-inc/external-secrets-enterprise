@@ -42,66 +42,6 @@ func (g *ACRAccessToken) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
-var _ GenericGenerator = &AWSIAMKey{}
-
-func (g *AWSIAMKey) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *AWSIAMKey) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *AWSIAMKey) GetKind() string {
-	return reflect.TypeOf(AWSIAMKey{}).Name()
-}
-
-func (g *AWSIAMKey) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *AWSIAMKey) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &BasicAuth{}
-
-func (g *BasicAuth) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *BasicAuth) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *BasicAuth) GetKind() string {
-	return reflect.TypeOf(BasicAuth{}).Name()
-}
-
-func (g *BasicAuth) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *BasicAuth) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
 var _ GenericGenerator = &ClusterGenerator{}
 
 func (g *ClusterGenerator) GetObjectMeta() *metav1.ObjectMeta {
@@ -189,36 +129,6 @@ func (g *Fake) SetOutputs(expectedOutput map[string]string) error {
 }
 
 func (g *Fake) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &Federation{}
-
-func (g *Federation) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *Federation) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *Federation) GetKind() string {
-	return reflect.TypeOf(Federation{}).Name()
-}
-
-func (g *Federation) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *Federation) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
@@ -342,96 +252,6 @@ func (g *MFA) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
-var _ GenericGenerator = &MongoDB{}
-
-func (g *MongoDB) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *MongoDB) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *MongoDB) GetKind() string {
-	return reflect.TypeOf(MongoDB{}).Name()
-}
-
-func (g *MongoDB) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *MongoDB) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &Neo4j{}
-
-func (g *Neo4j) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *Neo4j) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *Neo4j) GetKind() string {
-	return reflect.TypeOf(Neo4j{}).Name()
-}
-
-func (g *Neo4j) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *Neo4j) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &OpenAI{}
-
-func (g *OpenAI) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *OpenAI) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *OpenAI) GetKind() string {
-	return reflect.TypeOf(OpenAI{}).Name()
-}
-
-func (g *OpenAI) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *OpenAI) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
 var _ GenericGenerator = &Password{}
 
 func (g *Password) GetObjectMeta() *metav1.ObjectMeta {
@@ -462,36 +282,6 @@ func (g *Password) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
-var _ GenericGenerator = &PostgreSql{}
-
-func (g *PostgreSql) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *PostgreSql) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *PostgreSql) GetKind() string {
-	return reflect.TypeOf(PostgreSql{}).Name()
-}
-
-func (g *PostgreSql) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *PostgreSql) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
 var _ GenericGenerator = &QuayAccessToken{}
 
 func (g *QuayAccessToken) GetObjectMeta() *metav1.ObjectMeta {
@@ -519,66 +309,6 @@ func (g *QuayAccessToken) SetOutputs(expectedOutput map[string]string) error {
 }
 
 func (g *QuayAccessToken) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &RabbitMQ{}
-
-func (g *RabbitMQ) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *RabbitMQ) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *RabbitMQ) GetKind() string {
-	return reflect.TypeOf(RabbitMQ{}).Name()
-}
-
-func (g *RabbitMQ) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *RabbitMQ) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &SSH{}
-
-func (g *SSH) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *SSH) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *SSH) GetKind() string {
-	return reflect.TypeOf(SSH{}).Name()
-}
-
-func (g *SSH) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *SSH) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
@@ -639,36 +369,6 @@ func (g *STSSessionToken) SetOutputs(expectedOutput map[string]string) error {
 }
 
 func (g *STSSessionToken) Copy() GenericGenerator {
-	return g.DeepCopy()
-}
-
-var _ GenericGenerator = &SendgridAuthorizationToken{}
-
-func (g *SendgridAuthorizationToken) GetObjectMeta() *metav1.ObjectMeta {
-	return &g.ObjectMeta
-}
-
-func (g *SendgridAuthorizationToken) GetTypeMeta() *metav1.TypeMeta {
-	return &g.TypeMeta
-}
-
-func (g *SendgridAuthorizationToken) GetKind() string {
-	return reflect.TypeOf(SendgridAuthorizationToken{}).Name()
-}
-
-func (g *SendgridAuthorizationToken) SetOutputs(expectedOutput map[string]string) error {
-	bytes, err := json.Marshal(expectedOutput)
-	if err != nil {
-		return err
-	}
-
-	g.Status.Output = &apiextensions.JSON{
-		Raw: bytes,
-	}
-	return nil
-}
-
-func (g *SendgridAuthorizationToken) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 

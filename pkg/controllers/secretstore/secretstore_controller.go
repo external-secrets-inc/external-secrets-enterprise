@@ -31,6 +31,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
 
 	// Loading registered providers.
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
 	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
 )
 
