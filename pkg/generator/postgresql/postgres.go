@@ -7,6 +7,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"slices"
@@ -424,7 +425,7 @@ func getUserActivity(ctx context.Context, db *pgx.Conn, username string) (time.T
 
 	err := db.QueryRow(ctx, sqlQuery, username).Scan(&lastSeen)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return time.Unix(0, 0), nil
 		}
 		return time.Time{}, fmt.Errorf("failed to get user activity: %w", err)
