@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/docker/go-connections/nat"
 
@@ -32,6 +33,7 @@ import (
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -243,6 +245,78 @@ func (s *PostgresTestSuite) TestGenerateAndCleanupUser() {
 	var dummy int
 	err = row.Scan(&dummy)
 	assert.ErrorIs(s.T(), err, sql.ErrNoRows)
+}
+
+func (s *PostgresTestSuite) TestGenerateWithIdleCleanup() {
+	username := fmt.Sprintf("%s_TestGenerate", testUser)
+
+	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
+	spec.Spec.CleanupPolicy = &genv1alpha1.PostgreSqlCleanupPolicy{
+		CleanupPolicy: genv1alpha1.CleanupPolicy{
+			Type:        genv1alpha1.IdleCleanupPolicy,
+			IdleTimeout: metav1.Duration{Duration: time.Second * 10},
+			GracePeriod: metav1.Duration{Duration: time.Second * 10},
+		},
+	}
+
+	specJSON, err := yaml.Marshal(spec)
+	require.NoError(s.T(), err)
+
+	gen := &Generator{}
+
+	// Mock applyCronJob
+	realApply := applyCronJob
+	defer func() { applyCronJob = realApply }()
+	called := false
+	applyCronJob = func(ctx context.Context, c client.Client, manifest string, ownerRef metav1.OwnerReference) error {
+		called = true
+		return nil
+	}
+
+	// Ensure table and function are not created previously
+	_, err = s.db.Exec(s.ctx, `DROP TABLE IF EXISTS session_observation;`)
+	require.NoError(s.T(), err)
+	_, err = s.db.Exec(s.ctx, `DROP FUNCTION IF EXISTS snapshot_pg_stat_activity;`)
+	require.NoError(s.T(), err)
+
+	// Call Generate
+	result, _, err := gen.Generate(s.ctx, &apiextensions.JSON{Raw: specJSON}, s.client, testNamespace)
+	require.NoError(s.T(), err)
+	require.Contains(s.T(), result, "username")
+	require.Contains(s.T(), result, "password")
+	regex := regexp.MustCompile(fmt.Sprintf(`%s_[a-zA-Z0-9]{8}`, username))
+	assert.Regexp(s.T(), regex, string(result["username"]))
+
+	assert.True(s.T(), called, "applyCronJob should have been called")
+
+	row := s.db.QueryRow(s.ctx, `
+SELECT EXISTS (
+  SELECT 1
+  FROM information_schema.tables
+  WHERE table_schema = 'public'
+    AND table_name   = 'session_observation'
+) AS table_exists;
+`)
+
+	var tableExists bool
+	err = row.Scan(&tableExists)
+	require.NoError(s.T(), err)
+	assert.True(s.T(), tableExists, "session_observation table should exist")
+
+	row = s.db.QueryRow(s.ctx, `
+SELECT EXISTS (
+  SELECT 1
+  FROM information_schema.routines
+  WHERE specific_schema = 'public'
+    AND routine_name    = 'snapshot_pg_stat_activity'
+    AND routine_type    = 'FUNCTION'
+) AS function_exists;
+`)
+
+	var functionExists bool
+	err = row.Scan(&functionExists)
+	require.NoError(s.T(), err)
+	assert.True(s.T(), functionExists, "snapshot_pg_stat_activity function should exist")
 }
 
 func (s *PostgresTestSuite) TestGenerateUserWithSameUsername() {

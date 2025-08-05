@@ -161,6 +161,10 @@ func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.Clea
 	if err != nil {
 		return nil, err
 	}
+	if res.Spec.CleanupPolicy == nil {
+		return nil, nil
+	}
+
 	policy := genv1alpha1.CleanupPolicy{
 		Type:        res.Spec.CleanupPolicy.Type,
 		IdleTimeout: res.Spec.CleanupPolicy.IdleTimeout,
@@ -356,7 +360,7 @@ func sanitizeName(name string) string {
 	return sanitized
 }
 
-func applyCronJob(ctx context.Context, c client.Client, manifest string, ownerRef metav1.OwnerReference) error {
+var applyCronJob = func(ctx context.Context, c client.Client, manifest string, ownerRef metav1.OwnerReference) error {
 	dec := runtimeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	obj := &unstructured.Unstructured{}
 
