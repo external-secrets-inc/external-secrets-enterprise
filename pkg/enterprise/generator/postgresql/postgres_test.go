@@ -26,6 +26,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -251,7 +252,7 @@ func (s *PostgresTestSuite) TestGenerateWithIdleCleanup() {
 	username := fmt.Sprintf("%s_TestGenerate", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
-	spec.Spec.CleanupPolicy = &genv1alpha1.PostgreSqlCleanupPolicy{
+	spec.Spec.CleanupPolicy = &enterprise.PostgreSqlCleanupPolicy{
 		CleanupPolicy: genv1alpha1.CleanupPolicy{
 			Type:        genv1alpha1.IdleCleanupPolicy,
 			IdleTimeout: metav1.Duration{Duration: time.Second * 10},

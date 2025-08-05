@@ -301,7 +301,7 @@ $$ LANGUAGE plpgsql;
 //go:embed cronjob-template.yaml
 var cronjobTemplate []byte
 
-func getCronjobManifest(genSpec genv1alpha1.PostgreSql) (string, error) {
+func getCronjobManifest(genSpec enterprise.PostgreSql) (string, error) {
 	tplContent := string(cronjobTemplate)
 	cronExpression := "* * * * *"
 	if genSpec.Spec.CleanupPolicy.ActivityTrackingCron != nil {
