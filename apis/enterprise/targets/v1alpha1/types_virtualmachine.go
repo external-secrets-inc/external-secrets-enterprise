@@ -19,6 +19,8 @@ type VirtualMachineSpec struct {
 	Auth     *Authentication `json:"auth,omitempty"`
 }
 
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type Authentication struct {
 	Basic       *BasicAuth       `json:"basic,omitempty"`
 	Certificate *CertificateAuth `json:"certificate,omitempty"`

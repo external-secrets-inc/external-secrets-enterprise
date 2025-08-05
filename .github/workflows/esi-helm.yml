@@ -88,3 +88,27 @@ jobs:
       - name: Push chart
         run: |
           make helm.push
+
+      - name: Get Chart Version
+        id: get-chart-version
+        run: |
+            version=$(helm show chart deploy/charts/external-secrets | yq e '.version' -)
+            echo "chart_version=$version" >> $GITHUB_OUTPUT
+    
+      - name: login to github app
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.ESI_BOT_APP_ID }}
+          private-key: ${{ secrets.ESI_BOT_PRIVATE_KEY }}
+          repositories: "esi-bundle"
+          owner: external-secrets-inc
+  
+        # Trigger workflow in esi-bundle
+      - name: Trigger workflow in esi-bundle
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: external-secrets-inc/esi-bundle
+          event-type: update-chart-dependency
+          client-payload: '{"new_version": "${{ steps.get-chart-version.outputs.chart_version }}", "chart_name": "external-secrets"}'

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -70,6 +71,15 @@ func (m *mockGenerator) Generate(ctx context.Context, obj *apiextensions.JSON, c
 // Cleanup implements the Generator interface.
 func (m *mockGenerator) Cleanup(ctx context.Context, obj *apiextensions.JSON, status genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) error {
 	return nil
+}
+
+// GetCleanupPolicy implements the Generator interface.
+func (g *mockGenerator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return nil, nil
+}
+
+func (g *mockGenerator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+	return time.Time{}, false, nil
 }
 
 // GetKey implements the Generator interface.

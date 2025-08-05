@@ -54,8 +54,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		}
 		return ctrl.Result{}, err
 	}
+	gen, err := r.getGenerator(generatorState.Spec.Resource.Raw)
+	if err != nil {
+		r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, "Could not get generator", err, generatorState)
+		return ctrl.Result{}, fmt.Errorf("could not get generator: %w", err)
+	}
 
-	requeue, err := r.handleFinalizer(ctx, generatorState)
+	requeue, err := r.handleFinalizer(ctx, generatorState, gen)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -64,13 +69,45 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	}
 
 	if generatorState.Spec.GarbageCollectionDeadline != nil {
+		cleanupPolicy, err := gen.GetCleanupPolicy(generatorState.Spec.Resource)
+		if err != nil {
+			r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, "Could not get generator cleanup policy", err, generatorState)
+			return ctrl.Result{}, fmt.Errorf("could not get cleanup policy: %w", err)
+		}
+
+		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
+			if generatorState.DeletionTimestamp != nil {
+				return ctrl.Result{}, nil
+			}
+			shouldCleanup, err := r.isIdleTimeoutExpired(ctx, *cleanupPolicy, gen, generatorState)
+			if err != nil {
+				r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, "Could not check idle timeout", err, generatorState)
+				return ctrl.Result{}, fmt.Errorf("could not check idle timeout: %w", err)
+			}
+			if shouldCleanup {
+				if err := r.Client.Delete(ctx, generatorState, &client.DeleteOptions{}); err != nil {
+					r.markAsFailed(genv1alpha1.GeneratorStateReady, "Could not delete GeneratorState", err, generatorState)
+					return ctrl.Result{}, fmt.Errorf("could not delete GeneratorState: %w", err)
+				}
+				r.markSuccess(genv1alpha1.GeneratorStateTerminating, genv1alpha1.ConditionReasonDeadlineReached, "Reached idle timout", generatorState)
+				return ctrl.Result{}, nil
+			}
+			r.markSuccess(
+				genv1alpha1.GeneratorStateDeletionScheduled,
+				genv1alpha1.ConditionReasonStillActive,
+				fmt.Sprintf("State still active. Next check in %s", cleanupPolicy.IdleTimeout.Duration.String()),
+				generatorState,
+			)
+			return ctrl.Result{RequeueAfter: cleanupPolicy.IdleTimeout.Duration}, nil
+		}
+
 		if generatorState.Spec.GarbageCollectionDeadline.Time.Before(time.Now()) {
 			if generatorState.DeletionTimestamp != nil {
 				return ctrl.Result{}, nil
 			}
 
 			if err := r.Client.Delete(ctx, generatorState, &client.DeleteOptions{}); err != nil {
-				r.markAsFailed(genv1alpha1.GeneratorStateReady, genv1alpha1.ConditionReasonError, "Could not delete GeneratorState", err, generatorState)
+				r.markAsFailed(genv1alpha1.GeneratorStateReady, "Could not delete GeneratorState", err, generatorState)
 				return ctrl.Result{}, fmt.Errorf("could not delete GeneratorState: %w", err)
 			}
 			r.markSuccess(genv1alpha1.GeneratorStateTerminating, genv1alpha1.ConditionReasonDeadlineReached, "Reached garbage collection deadline", generatorState)
@@ -92,7 +129,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) handleFinalizer(ctx context.Context, generatorState *genv1alpha1.GeneratorState) (bool, error) {
+func (r *Reconciler) handleFinalizer(ctx context.Context, generatorState *genv1alpha1.GeneratorState, gen genv1alpha1.Generator) (bool, error) {
 	if generatorState.ObjectMeta.DeletionTimestamp.IsZero() {
 		if added := controllerutil.AddFinalizer(generatorState, generatorStateFinalizer); added {
 			if err := r.Client.Update(ctx, generatorState, &client.UpdateOptions{}); err != nil {
@@ -101,14 +138,8 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, generatorState *genv1a
 			return true, nil
 		}
 	} else if controllerutil.ContainsFinalizer(generatorState, generatorStateFinalizer) {
-		gen, err := r.getGenerator(generatorState.Spec.Resource.Raw)
-		if err != nil {
-			r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, genv1alpha1.ConditionReasonError, "Could not get generator", err, generatorState)
-			return false, fmt.Errorf("could not get generator: %w", err)
-		}
-
 		if err := gen.Cleanup(ctx, generatorState.Spec.Resource, generatorState.Spec.State, r.Client, generatorState.Namespace); err != nil {
-			r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, genv1alpha1.ConditionReasonError, "Could not cleanup generator state", err, generatorState)
+			r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, "Could not cleanup generator state", err, generatorState)
 			return false, fmt.Errorf("could not cleanup generator state: %w", err)
 		}
 
@@ -132,8 +163,28 @@ func (r *Reconciler) getGenerator(resource []byte) (genv1alpha1.Generator, error
 	return gen, nil
 }
 
-func (r *Reconciler) markAsFailed(conditionType genv1alpha1.GeneratorStateConditionType, conditionReason, msg string, err error, gs *genv1alpha1.GeneratorState) {
-	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionFalse, conditionReason, fmt.Sprintf("%s: %v", msg, err))
+func (r *Reconciler) isIdleTimeoutExpired(ctx context.Context, policy genv1alpha1.CleanupPolicy, gen genv1alpha1.Generator, gs *genv1alpha1.GeneratorState) (bool, error) {
+	// Determine last activity timestamp
+	lastActivity, found, err := gen.LastActivityTime(ctx, gs.Spec.Resource, gs.Spec.State, r.Client, gs.Namespace)
+	if err != nil {
+		return false, err
+	}
+
+	if !found {
+		return false, nil
+	}
+
+	// If still within idle timeout, schedule next check
+	if time.Since(lastActivity) < policy.IdleTimeout.Duration {
+		return false, nil
+	}
+
+	// Idle timeout expired; proceed with cleanup
+	return true, nil
+}
+
+func (r *Reconciler) markAsFailed(conditionType genv1alpha1.GeneratorStateConditionType, msg string, err error, gs *genv1alpha1.GeneratorState) {
+	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionFalse, genv1alpha1.ConditionReasonError, fmt.Sprintf("%s: %v", msg, err))
 	SetGeneratorStateCondition(gs, *conditionSynced)
 }
 

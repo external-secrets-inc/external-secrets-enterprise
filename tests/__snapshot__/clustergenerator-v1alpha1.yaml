@@ -157,6 +157,10 @@ spec:
         suffixSize: 8
         user: string
     openAISpec:
+      cleanupPolicy:
+        gracePeriod: "2m"
+        idleTimeout: "24h"
+        type: "retainLatest"
       host: "https://api.openai.com/v1"
       openAiAdminKey:
         key: string
@@ -198,6 +202,10 @@ spec:
         name: string
         namespace: string
       url: string
+    sshKeySpec:
+      comment: string
+      keySize: 256
+      keyType: "rsa"
     sshSpec:
       keyType: "RSA"
       rsaConfig:
@@ -381,4 +389,6 @@ spec:
           name: string
       timeout: string
       url: string
-  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j", "PostgreSql", "OpenAI"
+  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "SSHKey", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j", "PostgreSql", "OpenAI"
+status:
+  output: 

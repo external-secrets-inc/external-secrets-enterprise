@@ -124,11 +124,15 @@ func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf
 				log.Error(err, "error committing generator state")
 			}
 		}()
+		cleanupPolicy, err := gen.GetCleanupPolicy(obj)
+		if err != nil {
+			return nil, err
+		}
+		generatorState.SetCleanupPolicy(cleanupPolicy)
 
 		genStateKey := fmt.Sprintf("%s.%s.%s", wf.Namespace, runTemplate.Name, jobName)
 		if generatorState != nil {
-			generatorState.EnqueueSetLatest(ctx, genStateKey, namespace, obj, gen, newGenState)
-			generatorState.EnqueueMoveStateToGC(genStateKey)
+			generatorState.EnqueueCreateState(genStateKey, namespace, obj, gen, newGenState)
 		}
 	}
 

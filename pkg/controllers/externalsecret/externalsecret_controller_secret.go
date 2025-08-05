@@ -78,8 +78,12 @@ func (r *Reconciler) GetProviderSecretData(ctx context.Context, externalSecret *
 	}
 	providerData = make(map[string][]byte)
 	for i, remoteRef := range externalSecret.Spec.DataFrom {
+		var err error
 		var secretMap map[string][]byte
 
+		if genState != nil {
+			genState.SetCleanupPolicy(statemanager.GetDefaultCleanupPolicy())
+		}
 		if remoteRef.Find != nil {
 			secretMap, err = r.handleFindAllSecrets(ctx, externalSecret, remoteRef, mgr, genState, i)
 			if err != nil {
@@ -160,25 +164,20 @@ func (r *Reconciler) handleGenerateSecrets(ctx context.Context, namespace string
 	if err != nil {
 		return nil, err
 	}
-	var latestState *genv1alpha1.GeneratorState
-	if generatorState != nil {
-		latestState, err = generatorState.GetLatestState(generatorStateKey(i))
-		if err != nil {
-			return nil, fmt.Errorf("unable to get latest state: %w", err)
-		}
+	cleanupPolicy, err := impl.GetCleanupPolicy(generatorResource)
+	if err != nil {
+		return nil, fmt.Errorf("error resolving cleanup policy for spec.dataFrom[%d], err: %w", i, err)
 	}
 	secretMap, newState, err := impl.Generate(ctx, generatorResource, r.Client, namespace)
 	if err != nil {
 		return nil, fmt.Errorf(errGenerate, err)
 	}
-	if latestState != nil {
-		if generatorState != nil {
-			generatorState.EnqueueMoveStateToGC(generatorStateKey(i))
-		}
-	}
+
 	if generatorState != nil {
-		generatorState.EnqueueSetLatest(ctx, generatorStateKey(i), namespace, generatorResource, impl, newState)
+		generatorState.SetCleanupPolicy(cleanupPolicy)
+		generatorState.EnqueueCreateState(generatorStateKey(i), namespace, generatorResource, impl, newState)
 	}
+
 	// rewrite the keys if needed
 	secretMap, err = utils.RewriteMap(remoteRef.Rewrite, secretMap)
 	if err != nil {

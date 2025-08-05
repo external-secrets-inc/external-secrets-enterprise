@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	generatorsv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/external-secrets/external-secrets/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -783,6 +784,11 @@ func (in *OpenAISpec) DeepCopyInto(out *OpenAISpec) {
 	if in.ServiceAccountNameSize != nil {
 		in, out := &in.ServiceAccountNameSize, &out.ServiceAccountNameSize
 		*out = new(int)
+		**out = **in
+	}
+	if in.CleanupPolicy != nil {
+		in, out := &in.CleanupPolicy, &out.CleanupPolicy
+		*out = new(generatorsv1alpha1.CleanupPolicy)
 		**out = **in
 	}
 }

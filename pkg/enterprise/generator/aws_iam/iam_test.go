@@ -22,7 +22,6 @@ import (
 
 func TestGenerate(t *testing.T) {
 	type args struct {
-		ctx           context.Context
 		jsonSpec      *apiextensions.JSON
 		kube          client.Client
 		namespace     string
@@ -313,7 +312,7 @@ spec:
 		t.Run(tt.name, func(t *testing.T) {
 			g := &Generator{}
 			got, _, err := g.generate(
-				tt.args.ctx,
+				context.TODO(),
 				tt.args.jsonSpec,
 				tt.args.kube,
 				tt.args.namespace,
