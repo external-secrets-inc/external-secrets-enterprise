@@ -124,7 +124,16 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 }
 
 func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
-	return nil, nil
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return nil, err
+	}
+	policy := genv1alpha1.CleanupPolicy{
+		Type:        res.Spec.CleanupPolicy.Type,
+		IdleTimeout: res.Spec.CleanupPolicy.IdleTimeout,
+		GracePeriod: res.Spec.CleanupPolicy.GracePeriod,
+	}
+	return &policy, nil
 }
 
 func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
