@@ -17,21 +17,27 @@ import (
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	utils "github.com/external-secrets/external-secrets/pkg/enterprise/scan/jobs"
 
-	_ "github.com/external-secrets/external-secrets/pkg/targets/register"
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/targets/register"
 )
 
 type JobController struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log     logr.Logger
+	Scheme  *runtime.Scheme
+	feature feature.Feature
 }
 
 func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	jobSpec := &v1alpha1.Job{}
 	if err := c.Get(ctx, req.NamespacedName, jobSpec); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return feature.UnregisterIfNotFound(c.feature, jobSpec, err)
+	}
+	if err := feature.RegisterOrFail(c.feature, jobSpec); err != nil {
+		return ctrl.Result{}, err
 	}
 	if jobSpec.GetDeletionTimestamp() != nil {
 		return ctrl.Result{}, nil
@@ -103,10 +109,16 @@ func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *JobController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(&v1alpha1.Job{}).
-		Complete(c)
+	feat := feature.NewFeature("scan.jobs", "Scan jobs controller")
+	license.Register(feat)
+	c.feature = feat
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(&v1alpha1.Job{}).
+			Complete(c)
+	}
+	return nil
 }
 
 func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *utils.JobRunner) error {

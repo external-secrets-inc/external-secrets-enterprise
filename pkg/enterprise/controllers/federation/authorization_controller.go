@@ -27,6 +27,8 @@ import (
 	"github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/server"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 const authorizationFinalizer = "authorization.federation.external-secrets.io/finalizer"
@@ -113,8 +115,13 @@ func (c *AuthorizationController) setFinalizer(ctx context.Context, authorizatio
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *AuthorizationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(&v1alpha1.Authorization{}).
-		Complete(c)
+	feat := feature.NewFeature("authorization", "Authorization controller")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(&v1alpha1.Authorization{}).
+			Complete(c)
+	}
+	return nil
 }

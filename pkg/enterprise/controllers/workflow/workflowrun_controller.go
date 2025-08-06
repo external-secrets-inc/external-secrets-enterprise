@@ -24,6 +24,8 @@ import (
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 // WorkflowRunReconciler reconciles a WorkflowRun object.
@@ -32,6 +34,7 @@ type WorkflowRunReconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	feature  feature.Feature
 }
 
 //+kubebuilder:rbac:groups=workflows.external-secrets.io,resources=workflowruns,verbs=get;list;watch;create;update;patch;delete
@@ -48,7 +51,10 @@ func (r *WorkflowRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	run := &workflows.WorkflowRun{}
 	if err := r.Get(ctx, req.NamespacedName, run); err != nil {
 		// We'll ignore not-found errors, since they can't be fixed by an immediate requeue
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return feature.UnregisterIfNotFound(r.feature, run, err)
+	}
+	if err := feature.RegisterOrFail(r.feature, run); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	// If workflow already created, check its status
@@ -461,8 +467,14 @@ func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Co
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *WorkflowRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&workflows.WorkflowRun{}).
-		Owns(&workflows.Workflow{}).
-		Complete(r)
+	feat := feature.NewFeature("workflow.run", "Workflow run controller")
+	r.feature = feat
+	license.Register(feat)
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			For(&workflows.WorkflowRun{}).
+			Owns(&workflows.Workflow{}).
+			Complete(r)
+	}
+	return nil
 }

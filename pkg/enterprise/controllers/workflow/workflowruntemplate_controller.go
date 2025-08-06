@@ -23,6 +23,8 @@ import (
 
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/util"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 var mu = sync.Mutex{}
@@ -33,6 +35,7 @@ type WorkflowRunTemplateReconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	feature  feature.Feature
 }
 
 // Reconcile handles WorkflowRun resources.
@@ -44,7 +47,10 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 	run := &workflows.WorkflowRunTemplate{}
 	if err := r.Get(ctx, req.NamespacedName, run); err != nil {
 		// We'll ignore not-found errors, since they can't be fixed by an immediate requeue
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return feature.UnregisterIfNotFound(r.feature, run, err)
+	}
+	if err := feature.RegisterOrFail(r.feature, run); err != nil {
+		return ctrl.Result{}, err
 	}
 	// While we are getting Children to calculate revision, we should not allow for any other ops.
 	// if we should not reconcile, just skip and leave it as is
@@ -327,8 +333,14 @@ func (r *WorkflowRunTemplateReconciler) shouldReconcile(run *workflows.WorkflowR
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *WorkflowRunTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&workflows.WorkflowRunTemplate{}).
-		Owns(&workflows.WorkflowRun{}).
-		Complete(r)
+	feat := feature.NewFeature("workflow.run.template", "Workflow run template controller")
+	r.feature = feat
+	license.Register(feat)
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			For(&workflows.WorkflowRunTemplate{}).
+			Owns(&workflows.WorkflowRun{}).
+			Complete(r)
+	}
+	return nil
 }

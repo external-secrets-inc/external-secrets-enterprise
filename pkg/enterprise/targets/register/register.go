@@ -3,5 +3,5 @@
 package targets
 
 import (
-	_ "github.com/external-secrets/external-secrets/pkg/targets/virtualmachine"
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/targets/virtualmachine"
 )

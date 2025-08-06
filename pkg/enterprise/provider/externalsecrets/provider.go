@@ -30,6 +30,8 @@ import (
 
 	esv1enterprise "github.com/external-secrets/external-secrets/apis/enterprise/externalsecrets/v1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
@@ -157,7 +159,11 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 }
 
 func init() {
-	esv1.Register(&Provider{}, &esv1.SecretStoreProvider{
-		ExternalSecrets: &esv1enterprise.ExternalSecretsProvider{},
-	}, esv1.MaintenanceStatusMaintained)
+	feat := feature.NewFeature("secretstore.externalsecrets", "External Secrets Provider")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		esv1.Register(&Provider{}, &esv1.SecretStoreProvider{
+			ExternalSecrets: &esv1enterprise.ExternalSecretsProvider{},
+		}, esv1.MaintenanceStatusMaintained)
+	}
 }

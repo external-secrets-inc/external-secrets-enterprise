@@ -21,6 +21,8 @@ import (
 	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 )
 
@@ -198,6 +200,10 @@ func (g *Generator) GetKeys() map[string]string {
 }
 
 func init() {
-	genv1alpha1.Register(enterprise.RabbitMQGeneratorKind, &Generator{})
-	genv1alpha1.RegisterGeneric(enterprise.RabbitMQGeneratorKind, &enterprise.RabbitMQ{})
+	feat := feature.NewFeature("generator.rabbitmq", "RabbitMQ Generator")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		genv1alpha1.Register(enterprise.RabbitMQGeneratorKind, &Generator{})
+		genv1alpha1.RegisterGeneric(enterprise.RabbitMQGeneratorKind, &enterprise.RabbitMQ{})
+	}
 }

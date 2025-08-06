@@ -22,6 +22,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	"github.com/go-logr/logr"
 	"github.com/labstack/echo/v4"
@@ -47,9 +49,12 @@ type ServerHandler struct {
 	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
 	getSecretFn            func(ctx context.Context, storeName string, name string) ([]byte, error)
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
+	feature                feature.Feature
 }
 
 func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string, tlsEnabled bool) *ServerHandler {
+	feat := feature.NewFeature("federation.server", "Federation server")
+	license.Register(feat)
 	log := ctrl.Log.WithName("federationserver")
 	s := &ServerHandler{
 		log:        log,
@@ -58,6 +63,7 @@ func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, soc
 		port:       port,
 		tlsPort:    tlsPort,
 		tlsEnabled: tlsEnabled,
+		feature:    feat,
 	}
 	s.spireAgentSocketPath = socketPath
 	s.generateSecretFn = s.generateSecret
@@ -87,6 +93,9 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 }
 
 func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
+	if !s.feature.IsAvailable() {
+		return
+	}
 	srv := &http.Server{
 		Addr:              s.port,
 		Handler:           e,
@@ -105,6 +114,9 @@ func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
 }
 
 func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
+	if !s.feature.IsAvailable() {
+		return
+	}
 	source, err := workloadapi.NewX509Source(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(s.spireAgentSocketPath)))
 	if err != nil {
 		s.log.Error(err, "failed to create x509 source")

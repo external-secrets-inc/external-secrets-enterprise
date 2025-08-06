@@ -25,20 +25,26 @@ import (
 	"github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/provider"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 // TODO - make this operate over all *.federation.external-secrets.io resources.
 type KubernetesFederationController struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log     logr.Logger
+	Scheme  *runtime.Scheme
+	feature feature.Feature
 }
 
 func (c *KubernetesFederationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	// Get the Authorization.fedetarion.external-secrets.io object
 	authorization := &v1alpha1.KubernetesFederation{}
 	if err := c.Get(ctx, req.NamespacedName, authorization); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return feature.UnregisterIfNotFound(c.feature, authorization, err)
+	}
+	if err := feature.RegisterOrFail(c.feature, authorization); err != nil {
+		return ctrl.Result{}, err
 	}
 	ref := v1alpha1.FederationRef{
 		Name: authorization.Name,
@@ -52,7 +58,13 @@ func (c *KubernetesFederationController) Reconcile(ctx context.Context, req ctrl
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *KubernetesFederationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.KubernetesFederation{}).
-		Complete(c)
+	feat := feature.NewFeature("federation.kubernetes", "Kubernetes Federation controller")
+	license.Register(feat)
+	c.feature = feat
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			For(&v1alpha1.KubernetesFederation{}).
+			Complete(c)
+	}
+	return nil
 }

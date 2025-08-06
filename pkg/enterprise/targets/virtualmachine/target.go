@@ -16,6 +16,8 @@ import (
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -251,8 +253,12 @@ func (e JobNotReadyErr) Error() string {
 }
 
 func init() {
-	tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
-	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)
+	feat := feature.NewFeature("target.virtualmachine", "Virtual Machine Target")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
+		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)
+	}
 }
 
 func getBasicAuth(ctx context.Context, client client.Client, namespace string, auth *tgtv1alpha1.Authentication) (string, string, error) {

@@ -18,6 +18,8 @@ import (
 	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	awsauth "github.com/external-secrets/external-secrets/pkg/provider/aws/auth"
 )
 
@@ -139,6 +141,10 @@ func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSO
 }
 
 func init() {
-	genv1alpha1.Register(enterprise.AWSIAMKeysKind, &Generator{})
-	genv1alpha1.RegisterGeneric(enterprise.AWSIAMKeysKind, &enterprise.AWSIAMKey{})
+	feat := feature.NewFeature("generator.aws_iam", "AWS IAM Generator")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		genv1alpha1.Register(enterprise.AWSIAMKeysKind, &Generator{})
+		genv1alpha1.RegisterGeneric(enterprise.AWSIAMKeysKind, &enterprise.AWSIAMKey{})
+	}
 }

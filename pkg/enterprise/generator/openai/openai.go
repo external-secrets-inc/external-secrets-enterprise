@@ -17,6 +17,8 @@ import (
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
@@ -302,6 +304,10 @@ func parseStatus(data []byte) (*enterprise.OpenAiServiceAccountState, error) {
 }
 
 func init() {
-	genv1alpha1.Register(enterprise.OpenAIKind, &Generator{})
-	genv1alpha1.RegisterGeneric(enterprise.OpenAIKind, &enterprise.OpenAI{})
+	feat := feature.NewFeature("generator.openai", "OpenAI Generator")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		genv1alpha1.Register(enterprise.OpenAIKind, &Generator{})
+		genv1alpha1.RegisterGeneric(enterprise.OpenAIKind, &enterprise.OpenAI{})
+	}
 }

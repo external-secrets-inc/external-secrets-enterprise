@@ -17,6 +17,8 @@ import (
 
 	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 )
 
@@ -229,6 +231,10 @@ func parseSpec(data []byte) (*enterprise.BasicAuth, error) {
 }
 
 func init() {
-	genv1alpha1.Register(enterprise.BasicAuthKind, &Generator{})
-	genv1alpha1.RegisterGeneric(enterprise.BasicAuthKind, &enterprise.BasicAuth{})
+	feat := feature.NewFeature("generator.basic_auth", "Basic Auth Generator")
+	license.Register(feat)
+	if feat.IsAvailable() {
+		genv1alpha1.Register(enterprise.BasicAuthKind, &Generator{})
+		genv1alpha1.RegisterGeneric(enterprise.BasicAuthKind, &enterprise.BasicAuth{})
+	}
 }

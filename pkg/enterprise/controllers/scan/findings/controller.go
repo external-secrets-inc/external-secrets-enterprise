@@ -13,24 +13,41 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 type FindingController struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log     logr.Logger
+	Scheme  *runtime.Scheme
+	feature feature.Feature
 }
 
 func (c *FindingController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
-	// Placeholder if we need to implement a controller for findings.
-	// Still unclear if we do
+	findingSpec := &v1alpha1.Finding{}
+	if err := c.Get(ctx, req.NamespacedName, findingSpec); err != nil {
+		return feature.UnregisterIfNotFound(c.feature, findingSpec, err)
+	}
+	if findingSpec.GetDeletionTimestamp() != nil {
+		return ctrl.Result{}, nil
+	}
+	if err := feature.RegisterOrFail(c.feature, findingSpec); err != nil {
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *FindingController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(&v1alpha1.Finding{}).
-		Complete(c)
+	feat := feature.NewFeature("scan.findings", "Scan findings controller")
+	license.Register(feat)
+	c.feature = feat
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(&v1alpha1.Finding{}).
+			Complete(c)
+	}
+	return nil
 }

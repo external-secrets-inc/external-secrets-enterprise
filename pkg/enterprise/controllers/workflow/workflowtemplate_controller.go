@@ -8,6 +8,8 @@ import (
 	"fmt"
 
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -21,6 +23,7 @@ type WorkflowTemplateReconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	feature  feature.Feature
 }
 
 // Reconcile handles WorkflowTemplate resources.
@@ -31,9 +34,11 @@ func (r *WorkflowTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	// Fetch the WorkflowTemplate instance
 	template := &workflows.WorkflowTemplate{}
 	if err := r.Get(ctx, req.NamespacedName, template); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return feature.UnregisterIfNotFound(r.feature, template, err)
 	}
-
+	if err := feature.RegisterOrFail(r.feature, template); err != nil {
+		return ctrl.Result{}, err
+	}
 	// Validate the template
 	if err := r.validateTemplate(template); err != nil {
 		log.Error(err, "invalid template")
@@ -128,7 +133,13 @@ func (r *WorkflowTemplateReconciler) validateParameter(param workflows.Parameter
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *WorkflowTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&workflows.WorkflowTemplate{}).
-		Complete(r)
+	feat := feature.NewFeature("workflow.template", "Workflow template controller")
+	r.feature = feat
+	license.Register(feat)
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			For(&workflows.WorkflowTemplate{}).
+			Complete(r)
+	}
+	return nil
 }

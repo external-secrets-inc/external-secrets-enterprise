@@ -30,6 +30,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/common"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/jobs"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/templates"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 // Value represents a variable value that can be of different types.
@@ -44,6 +46,7 @@ type Reconciler struct {
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	feature  feature.Feature
 	Manager  secretstore.ManagerInterface
 }
 
@@ -61,9 +64,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Fetch the Workflow instance.
 	wf := &workflows.Workflow{}
 	if err := r.Get(ctx, req.NamespacedName, wf); err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
+		return feature.UnregisterIfNotFound(r.feature, wf, err)
+	}
+	if err := feature.RegisterOrFail(r.feature, wf); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -706,14 +709,20 @@ func computeHash(data interface{}) string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Recorder = mgr.GetEventRecorderFor("workflow")
+	feat := feature.NewFeature("workflow.core", "Workflow controller")
+	r.feature = feat
+	license.Register(feat)
+	if feat.IsAvailable() {
+		r.Recorder = mgr.GetEventRecorderFor("workflow")
 
-	// Initialize the SecretStore Manager
-	// We create the Manager with an empty control class and floodgate disabled
-	// These parameters can be exposed as controller options if needed
-	r.Manager = secretstore.NewManager(mgr.GetClient(), "", false)
+		// Initialize the SecretStore Manager
+		// We create the Manager with an empty control class and floodgate disabled
+		// These parameters can be exposed as controller options if needed
+		r.Manager = secretstore.NewManager(mgr.GetClient(), "", false)
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&workflows.Workflow{}).
-		Complete(r)
+		return ctrl.NewControllerManagedBy(mgr).
+			For(&workflows.Workflow{}).
+			Complete(r)
+	}
+	return nil
 }
