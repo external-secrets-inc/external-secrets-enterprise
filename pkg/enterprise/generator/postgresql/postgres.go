@@ -443,7 +443,9 @@ func parseStatus(data []byte) (*enterprise.PostgreSqlUserState, error) {
 
 func init() {
 	feat := feature.NewFeature("generator.postgresql", "PostgreSQL Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.PostgreSqlKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.PostgreSqlKind, &enterprise.PostgreSql{})

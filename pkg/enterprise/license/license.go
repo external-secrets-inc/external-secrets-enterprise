@@ -6,16 +6,18 @@ package license
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
+
 	"github.com/golang-jwt/jwt"
-	"github.com/labstack/gommon/log"
 	"gopkg.in/yaml.v3"
 )
 
-// LicenseService handles license validation and management
+// LicenseService handles license validation and management.
 var licenseFilePath string
 var license *License
 
@@ -25,11 +27,15 @@ func init() {
 	if licenseFilePath == "" {
 		licenseFilePath = "./license.yaml"
 	}
+	// G304: Potentially untrusted user input is used to construct a file path.
+	// We mitigate this by cleaning the path and ensuring it's relative to the current directory.
+	licenseFilePath = filepath.Join(".", filepath.Clean(licenseFilePath))
+
 	// Read the license file
 	licenseData, err := os.ReadFile(licenseFilePath)
 	if err != nil {
 		// Default to Baseline Trial License Key
-		log.Warn("Thanks for using External Secrets Inc. in its Trial License! contact https://externalsecrets.com for a full fledged license")
+		log.Println("Thanks for using External Secrets Inc. in its Trial License! contact https://externalsecrets.com for a full fledged license")
 		licenseData = []byte(trialLicenseData)
 	}
 
@@ -46,7 +52,7 @@ func init() {
 
 	// Check if the license is expired
 	if time.Now().After(lic.Data.ExpirationDate) {
-		log.Warn("You are running with an expired license. Please renew your license!")
+		log.Println("You are running with an expired license. Please renew your license!")
 	}
 
 	license = &lic
@@ -67,7 +73,7 @@ func Register(feature feature.Feature) error {
 	return nil
 }
 
-// defaultValidateSignature verifies the JWT signature of the license
+// defaultValidateSignature verifies the JWT signature of the license.
 func defaultValidateSignature(license *License) error {
 	// Parse the public key
 	if _, ok := keys[license.Data.Version]; !ok {

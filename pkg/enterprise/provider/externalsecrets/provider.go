@@ -160,7 +160,9 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 
 func init() {
 	feat := feature.NewFeature("secretstore.externalsecrets", "External Secrets Provider")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		esv1.Register(&Provider{}, &esv1.SecretStoreProvider{
 			ExternalSecrets: &esv1enterprise.ExternalSecretsProvider{},

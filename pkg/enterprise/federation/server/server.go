@@ -54,7 +54,9 @@ type ServerHandler struct {
 
 func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string, tlsEnabled bool) *ServerHandler {
 	feat := feature.NewFeature("federation.server", "Federation server")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		return nil
+	}
 	log := ctrl.Log.WithName("federationserver")
 	s := &ServerHandler{
 		log:        log,

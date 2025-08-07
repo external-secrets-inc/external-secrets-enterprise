@@ -335,7 +335,9 @@ func (r *WorkflowRunTemplateReconciler) shouldReconcile(run *workflows.WorkflowR
 func (r *WorkflowRunTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	feat := feature.NewFeature("workflow.run.template", "Workflow run template controller")
 	r.feature = feat
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		return err
+	}
 	if feat.IsAvailable() {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&workflows.WorkflowRunTemplate{}).

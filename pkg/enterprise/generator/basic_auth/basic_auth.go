@@ -232,7 +232,9 @@ func parseSpec(data []byte) (*enterprise.BasicAuth, error) {
 
 func init() {
 	feat := feature.NewFeature("generator.basic_auth", "Basic Auth Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.BasicAuthKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.BasicAuthKind, &enterprise.BasicAuth{})

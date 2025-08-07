@@ -12,8 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// GenerateLicense creates a license file for testing purposes
-// Note: This function should only be used for development/testing
+// GenerateLicense creates a license file for testing purposes.
+// Note: This function should only be used for development/testing.
 func GenerateLicense(privateKey *rsa.PrivateKey, licenseData LicenseData, subscriptions []LicenseSubscription) ([]byte, error) {
 	// Create JWT claims
 	claims := LicenseClaims{
@@ -50,7 +50,7 @@ func GenerateLicense(privateKey *rsa.PrivateKey, licenseData LicenseData, subscr
 	return licenseYAML, nil
 }
 
-// CreateSampleLicense creates a sample license for testing
+// CreateSampleLicense creates a sample license for testing.
 func CreateSampleLicense() License {
 	return License{
 		Signature: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...", // This would be a real JWT in practice

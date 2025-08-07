@@ -41,7 +41,9 @@ func (c *FindingController) Reconcile(ctx context.Context, req ctrl.Request) (re
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *FindingController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	feat := feature.NewFeature("scan.findings", "Scan findings controller")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		return err
+	}
 	c.feature = feat
 	if feat.IsAvailable() {
 		return ctrl.NewControllerManagedBy(mgr).

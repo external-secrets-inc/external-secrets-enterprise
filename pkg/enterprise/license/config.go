@@ -3,7 +3,7 @@
 //	All Rights Reserved
 package license
 
-// Config holds the configuration for the license service
+// Config holds the configuration for the license service.
 type Config struct {
 	// LicenseFilePath is the path to the license file
 	LicenseFilePath string
@@ -12,7 +12,7 @@ type Config struct {
 	StrictMode bool
 }
 
-// NewConfig creates a new license service configuration
+// NewConfig creates a new license service configuration.
 func NewConfig(licenseFilePath string, strictMode bool) *Config {
 	return &Config{
 		LicenseFilePath: licenseFilePath,

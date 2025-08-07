@@ -469,7 +469,9 @@ func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Co
 func (r *WorkflowRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	feat := feature.NewFeature("workflow.run", "Workflow run controller")
 	r.feature = feat
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		return err
+	}
 	if feat.IsAvailable() {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&workflows.WorkflowRun{}).

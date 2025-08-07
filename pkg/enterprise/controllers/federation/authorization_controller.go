@@ -35,15 +35,19 @@ const authorizationFinalizer = "authorization.federation.external-secrets.io/fin
 
 type AuthorizationController struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log     logr.Logger
+	feature feature.Feature
+	Scheme  *runtime.Scheme
 }
 
 func (c *AuthorizationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	// Get the Authorization.fedetarion.external-secrets.io object
 	authorization := &v1alpha1.Authorization{}
 	if err := c.Get(ctx, req.NamespacedName, authorization); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return feature.UnregisterIfNotFound(c.feature, authorization, err)
+	}
+	if err := feature.RegisterOrFail(c.feature, authorization); err != nil {
+		return ctrl.Result{}, err
 	}
 	principal, err := authorization.Spec.Principal()
 	if err != nil {
@@ -116,7 +120,10 @@ func (c *AuthorizationController) setFinalizer(ctx context.Context, authorizatio
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *AuthorizationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	feat := feature.NewFeature("authorization", "Authorization controller")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		return err
+	}
+	c.feature = feat
 	if feat.IsAvailable() {
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(opts).

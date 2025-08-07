@@ -243,7 +243,9 @@ func (g *Generator) GetKeys() map[string]string {
 
 func init() {
 	feat := feature.NewFeature("generator.sendgrid", "SendGrid Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.SendgridKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.SendgridKind, &enterprise.SendgridAuthorizationToken{})

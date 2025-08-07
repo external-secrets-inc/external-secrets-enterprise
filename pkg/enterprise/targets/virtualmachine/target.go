@@ -254,7 +254,9 @@ func (e JobNotReadyErr) Error() string {
 
 func init() {
 	feat := feature.NewFeature("target.virtualmachine", "Virtual Machine Target")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
 		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)

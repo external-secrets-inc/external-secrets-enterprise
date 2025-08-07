@@ -56,6 +56,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
+	k8sfed "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation/kubernetes"
+	spiffefed "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation/spiffe"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow"
 	workflowapi "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/api"
@@ -372,7 +374,7 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "Authorization")
 			os.Exit(1)
 		}
-		if err = (&federation.KubernetesFederationController{
+		if err = (&k8sfed.KubernetesFederationController{
 			Client: mgr.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("KubernetesFederation"),
 			Scheme: mgr.GetScheme(),
@@ -381,7 +383,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err = (&federation.SpiffeFederationController{
+		if err = (&spiffefed.SpiffeFederationController{
 			Client: mgr.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("SpiffeFederation"),
 			Scheme: mgr.GetScheme(),

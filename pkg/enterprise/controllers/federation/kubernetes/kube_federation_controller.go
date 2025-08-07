@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
-package federation
+package kubernetes
 
 import (
 	"context"
@@ -30,16 +30,16 @@ import (
 )
 
 // TODO - make this operate over all *.federation.external-secrets.io resources.
-type SpiffeFederationController struct {
+type KubernetesFederationController struct {
 	client.Client
 	Log     logr.Logger
 	Scheme  *runtime.Scheme
 	feature feature.Feature
 }
 
-func (c *SpiffeFederationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
+func (c *KubernetesFederationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	// Get the Authorization.fedetarion.external-secrets.io object
-	authorization := &v1alpha1.SpiffeFederation{}
+	authorization := &v1alpha1.KubernetesFederation{}
 	if err := c.Get(ctx, req.NamespacedName, authorization); err != nil {
 		return feature.UnregisterIfNotFound(c.feature, authorization, err)
 	}
@@ -48,22 +48,24 @@ func (c *SpiffeFederationController) Reconcile(ctx context.Context, req ctrl.Req
 	}
 	ref := v1alpha1.FederationRef{
 		Name: authorization.Name,
-		Kind: "SpiffeFederation",
+		Kind: "KubernetesFederation",
 	}
-	prov := provider.NewSpiffeProvider(authorization.Spec.TrustDomain)
+	prov := provider.NewProvider(authorization.Spec.URL)
 	// Get the Spec and add it to the federation store
 	store.AddStore(ref, prov)
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
-func (c *SpiffeFederationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	feat := feature.NewFeature("federation.spiffe", "Spiffe Federation controller")
-	license.Register(feat)
+func (c *KubernetesFederationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
+	feat := feature.NewFeature("federation.kubernetes", "Kubernetes Federation controller")
+	if err := license.Register(feat); err != nil {
+		return err
+	}
 	c.feature = feat
 	if feat.IsAvailable() {
 		return ctrl.NewControllerManagedBy(mgr).
-			For(&v1alpha1.SpiffeFederation{}).
+			For(&v1alpha1.KubernetesFederation{}).
 			Complete(c)
 	}
 	return nil

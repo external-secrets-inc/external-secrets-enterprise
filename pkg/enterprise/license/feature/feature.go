@@ -1,3 +1,6 @@
+// Copyright External Secrets Inc. 2025
+//
+//	All Rights Reserved
 package feature
 
 import (
@@ -24,7 +27,7 @@ type FeatureImpl struct {
 	description string
 }
 
-func NewFeature(name string, description string) Feature {
+func NewFeature(name, description string) Feature {
 	return &FeatureImpl{
 		name:        name,
 		description: description,

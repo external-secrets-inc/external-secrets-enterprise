@@ -220,7 +220,9 @@ func handleErrorResponse(resp *http.Response) error {
 
 func init() {
 	feat := feature.NewFeature("generator.federation", "Federation Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.FederationKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.FederationKind, &enterprise.Federation{})

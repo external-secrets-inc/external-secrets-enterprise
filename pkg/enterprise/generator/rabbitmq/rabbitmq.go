@@ -201,7 +201,9 @@ func (g *Generator) GetKeys() map[string]string {
 
 func init() {
 	feat := feature.NewFeature("generator.rabbitmq", "RabbitMQ Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.RabbitMQGeneratorKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.RabbitMQGeneratorKind, &enterprise.RabbitMQ{})

@@ -1,3 +1,6 @@
+// Copyright External Secrets Inc. 2025
+//
+//	All Rights Reserved
 package feature
 
 import (
@@ -20,7 +23,7 @@ type Feature interface {
 	SetExpiryDate(expiryDate string)
 }
 
-// AvailableFeatures defines the available features in the system
+// AvailableFeatures defines the available features in the system.
 var AvailableFeatures = sync.Map{}
 
 func Register(feature Feature) error {

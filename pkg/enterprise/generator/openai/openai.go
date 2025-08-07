@@ -305,7 +305,9 @@ func parseStatus(data []byte) (*enterprise.OpenAiServiceAccountState, error) {
 
 func init() {
 	feat := feature.NewFeature("generator.openai", "OpenAI Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.OpenAIKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.OpenAIKind, &enterprise.OpenAI{})

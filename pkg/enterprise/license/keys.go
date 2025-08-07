@@ -5,8 +5,8 @@
 
 package license
 
-// Public Keys for valid licenses emited by licensing server;
-// Used for validation on airgapped environments
+// Public Keys for valid licenses emitted by licensing server;
+// Used for validation on airgapped environments.
 var keys = map[string]string{
 	"1.0.0": `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo

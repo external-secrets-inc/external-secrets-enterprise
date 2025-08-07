@@ -134,7 +134,9 @@ func parseSpec(data []byte) (*enterprise.SSH, error) {
 
 func init() {
 	feat := feature.NewFeature("generator.ssh", "SSH Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.SSHKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.SSHKind, &enterprise.SSH{})

@@ -1,3 +1,6 @@
+// Copyright External Secrets Inc. 2025
+//
+//	All Rights Reserved
 package main
 
 import (
@@ -43,9 +46,10 @@ func main() {
 		Type:  "PUBLIC KEY",
 		Bytes: publicKeyBytes,
 	})
-
+	subs := []license.LicenseSubscription{}
 	// create license data
-	subs := append(workflowTrial, federationTrial...)
+	subs = append(subs, workflowTrial...)
+	subs = append(subs, federationTrial...)
 	subs = append(subs, scanTrial...)
 	subs = append(subs, targetsTrial...)
 	subs = append(subs, generatorTrial...)
@@ -78,7 +82,7 @@ func main() {
 	}
 
 	// write to file
-	if err := os.WriteFile("zz_keys_generated.go", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("zz_keys_generated.go", buf.Bytes(), 0600); err != nil {
 		log.Fatalf("failed to write generated file: %v", err)
 	}
 

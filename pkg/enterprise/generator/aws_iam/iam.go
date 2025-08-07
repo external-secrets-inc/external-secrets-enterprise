@@ -142,7 +142,9 @@ func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSO
 
 func init() {
 	feat := feature.NewFeature("generator.aws_iam", "AWS IAM Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.AWSIAMKeysKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.AWSIAMKeysKind, &enterprise.AWSIAMKey{})

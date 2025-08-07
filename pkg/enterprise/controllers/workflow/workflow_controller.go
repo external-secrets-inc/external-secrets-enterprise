@@ -711,7 +711,9 @@ func computeHash(data interface{}) string {
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	feat := feature.NewFeature("workflow.core", "Workflow controller")
 	r.feature = feat
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		return err
+	}
 	if feat.IsAvailable() {
 		r.Recorder = mgr.GetEventRecorderFor("workflow")
 

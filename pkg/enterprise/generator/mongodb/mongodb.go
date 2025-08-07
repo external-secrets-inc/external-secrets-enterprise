@@ -315,7 +315,9 @@ func (defaultClientFactory) New(ctx context.Context, uri string) (MongoClient, e
 
 func init() {
 	feat := feature.NewFeature("generator.mongodb", "MongoDB Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.MongoDBKind, &MongoDB{clientFactory: defaultClientFactory{}})
 		genv1alpha1.RegisterGeneric(enterprise.MongoDBKind, &enterprise.MongoDB{})

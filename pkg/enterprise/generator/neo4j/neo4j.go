@@ -425,7 +425,9 @@ func parseStatus(data []byte) (*enterprise.Neo4jUserState, error) {
 
 func init() {
 	feat := feature.NewFeature("generator.neo4j", "Neo4j Generator")
-	license.Register(feat)
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
 	if feat.IsAvailable() {
 		genv1alpha1.Register(enterprise.Neo4jKind, &Generator{})
 		genv1alpha1.RegisterGeneric(enterprise.Neo4jKind, &enterprise.Neo4j{})
