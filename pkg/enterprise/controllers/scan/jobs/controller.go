@@ -24,11 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
-	utils "github.com/external-secrets/external-secrets/pkg/enterprise/scan/jobs"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -140,14 +137,14 @@ func (c *JobController) SetupWithManager(mgr ctrl.Manager, opts controller.Optio
 	}
 	c.feature = feat
 	if feat.IsAvailable() {
-  	return ctrl.NewControllerManagedBy(mgr).
-		  WithOptions(opts).
-		  For(&v1alpha1.Job{}).
-		  Watches(
-			  &esv1.SecretStore{},
-			  handler.EnqueueRequestsFromMapFunc(c.mapSecretStoreToJobs),
-		  ).
-		  Complete(c)
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(&v1alpha1.Job{}).
+			Watches(
+				&esv1.SecretStore{},
+				handler.EnqueueRequestsFromMapFunc(c.mapSecretStoreToJobs),
+			).
+			Complete(c)
 	}
 	return nil
 }
