@@ -47,6 +47,10 @@ type TargetConstraint struct {
 }
 
 type JobStatus struct {
+	// ObservedSecretStoresDigest is a digest of the SecretStores that were used in the last run.
+	// +optional
+	ObservedSecretStoresDigest string `json:"observedSecretStoresDigest,omitempty"`
+
 	LastRunTime metav1.Time        `json:"lastRunTime,omitempty"`
 	RunStatus   JobRunStatus       `json:"runStatus,omitempty"`
 	Conditions  []metav1.Condition `json:"conditions,omitempty"`

@@ -26,21 +26,6 @@ spec:
       registry: string
       scope: string
       tenantId: string
-    basicAuthSpec:
-      password:
-        allowRepeat: false
-        digits: 1
-        length: 24
-        noUpper: false
-        symbolCharacters: string
-        symbols: 1
-      username:
-        includeNumbers: false
-        length: 8
-        prefix: string
-        separator: string
-        sufix: string
-        wordCount: 1
     ecrAuthorizationTokenSpec:
       auth:
         jwt:
@@ -67,22 +52,6 @@ spec:
     fakeSpec:
       controller: string
       data: {}
-    federationSpec:
-      auth:
-        caCertSecretRef:
-          key: string
-          name: string
-          namespace: string
-        tokenSecretRef:
-          key: string
-          name: string
-          namespace: string
-      generator:
-        kind: string
-        name: string
-        namespace: string
-      server:
-        url: string
     gcrAccessTokenSpec:
       auth:
         secretRef:
@@ -134,41 +103,6 @@ spec:
         namespace: string
       timePeriod: 1
       when: 2024-10-11T12:48:44Z
-    neo4jSpec:
-      auth:
-        basic:
-          password:
-            key: string
-            name: string
-            namespace: string
-          username: string
-        bearer:
-          token:
-            key: string
-            name: string
-            namespace: string
-        uri: string
-      database: "neo4j"
-      enterprise: false
-      user:
-        home: string
-        provider: "native"
-        roles: [] # minItems 0 of type string
-        suffixSize: 8
-        user: string
-    openAISpec:
-      cleanupPolicy:
-        gracePeriod: "2m"
-        idleTimeout: "24h"
-        type: "retainLatest"
-      host: "https://api.openai.com/v1"
-      openAiAdminKey:
-        key: string
-        name: string
-        namespace: string
-      projectId: string
-      serviceAccountNamePrefix: string
-      serviceAccountNameSize: 12
     passwordSpec:
       allowRepeat: false
       digits: 1
@@ -176,25 +110,6 @@ spec:
       noUpper: false
       symbolCharacters: string
       symbols: 1
-    postgreSqlSpec:
-      auth:
-        password:
-          key: string
-          name: string
-          namespace: string
-        username: string
-      database: "postgres"
-      host: string
-      port: "5432"
-      user:
-        attributes:
-        - name: "SUPERUSER" # "SUPERUSER", "CREATEDB", "CREATEROLE", "REPLICATION", "NOINHERIT", "BYPASSRLS", "CONNECTION_LIMIT"
-          value: string
-        destructiveCleanup: false
-        reassignTo: string
-        roles: [] # minItems 0 of type string
-        suffixSize: 8
-        username: string
     quayAccessTokenSpec:
       robotAccount: string
       serviceAccountRef:
@@ -206,10 +121,6 @@ spec:
       comment: string
       keySize: 256
       keyType: "rsa"
-    sshSpec:
-      keyType: "RSA"
-      rsaConfig:
-        bits: 4096
     stsSessionTokenSpec:
       auth:
         jwt:

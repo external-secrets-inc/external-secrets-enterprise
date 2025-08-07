@@ -179,6 +179,9 @@ extraContainers: []
 # -- Annotations to add to Deployment
 deploymentAnnotations: {}
 
+ # -- Set deployment strategy
+strategy: {}
+
 # -- Annotations to add to Pod
 podAnnotations: {}
 
@@ -388,6 +391,9 @@ webhook:
 
   affinity: {}
 
+  # -- Set deployment strategy
+  strategy: {}
+
     # -- Pod priority class name.
   priorityClassName: ""
 
@@ -523,6 +529,9 @@ certController:
   topologySpreadConstraints: []
 
   affinity: {}
+
+  # -- Set deployment strategy
+  strategy: {}
 
   # -- Run the certController on the host network
   hostNetwork: false

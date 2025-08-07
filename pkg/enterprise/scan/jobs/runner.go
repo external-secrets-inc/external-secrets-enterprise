@@ -40,18 +40,21 @@ func (j *JobRunner) Close(ctx context.Context) error {
 	return j.mgr.Close(ctx)
 }
 
-func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
+func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretStore, error) {
 	// List Secret Stores
 	// TODO - apply constraints
 	j.Logger.V(1).Info("Listing Secret Stores")
+	usedStores := make([]esv1.SecretStore, 0)
 	stores := &esv1.SecretStoreList{}
 	if err := j.Client.List(ctx, stores, client.InNamespace(j.Namespace)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	for _, store := range stores.Items {
+	for i := range stores.Items {
+		store := stores.Items[i]
+		usedStores = append(usedStores, store)
 		client, err := j.mgr.GetFromStore(ctx, &store, j.Namespace)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		ref := esv1.ExternalSecretFind{
 			Name: &esv1.FindName{
@@ -78,7 +81,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 					case string:
 						j.memset.Add(newStoreInRef(store.GetName(), key, k), []byte(v))
 					default:
-						return nil, fmt.Errorf("no conversion for value of type %T", v)
+						return nil, nil, fmt.Errorf("no conversion for value of type %T", v)
 					}
 				}
 			} else {
@@ -91,24 +94,24 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 	j.Logger.V(1).Info("Getting Virtual Machine Targets")
 	targets := &tgtv1alpha1.VirtualMachineList{}
 	if err := j.Client.List(ctx, targets, client.InNamespace(j.Namespace)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for _, target := range targets.Items {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
 		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
 		if !ok {
-			return nil, fmt.Errorf("target %q not found", target.GroupVersionKind().Kind)
+			return nil, nil, fmt.Errorf("target %q not found", target.GroupVersionKind().Kind)
 		}
 		client, err := prov.NewClient(ctx, j.Client, &target)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		regexMap := j.memset.Regexes()
 		for key, regexes := range regexMap {
 			// TODO Fix Threshold
 			locations, err := client.Scan(ctx, regexes, j.memset.GetThreshold())
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			for _, location := range locations {
 				j.memset.AddByRegex(key, location)
@@ -116,7 +119,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, error) {
 		}
 	}
 	j.Logger.V(1).Info("Run Complete")
-	return j.memset.GetDuplicates(), nil
+	return j.memset.GetDuplicates(), usedStores, nil
 }
 
 func newStoreInRef(store, key, property string) tgtv1alpha1.SecretInStoreRef {

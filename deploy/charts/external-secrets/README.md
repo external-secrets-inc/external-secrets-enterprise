@@ -83,6 +83,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | certController.serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
 | certController.serviceAccount.extraLabels | object | `{}` | Extra Labels to add to the service account. |
 | certController.serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template. |
+| certController.strategy | object | `{}` | Set deployment strategy |
 | certController.tolerations | list | `[]` |  |
 | certController.topologySpreadConstraints | list | `[]` |  |
 | commonLabels | object | `{}` | Additional labels added to all helm chart resources. |
@@ -182,6 +183,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | spire-crds.enabled | bool | `false` |  |
 | spire.enabled | bool | `false` |  |
 | spire.spire-server.controllerManager.enabled | bool | `false` |  |
+| strategy | object | `{}` | Set deployment strategy |
 | tolerations | list | `[]` |  |
 | topologySpreadConstraints | list | `[]` |  |
 | webhook.affinity | object | `{}` |  |
@@ -250,5 +252,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | webhook.serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
 | webhook.serviceAccount.extraLabels | object | `{}` | Extra Labels to add to the service account. |
 | webhook.serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template. |
+| webhook.strategy | object | `{}` | Set deployment strategy |
 | webhook.tolerations | list | `[]` |  |
 | webhook.topologySpreadConstraints | list | `[]` |  |
