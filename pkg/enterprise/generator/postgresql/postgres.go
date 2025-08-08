@@ -3,20 +3,18 @@
 package postgresql
 
 import (
-	"bytes"
 	"context"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"slices"
 	"strings"
 
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/jackc/pgx/v5"
-	cronV3 "github.com/robfig/cron/v3"
+	"github.com/labstack/gommon/log"
 
 	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -30,6 +28,7 @@ import (
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -42,6 +41,7 @@ const (
 	defaultUser       = "postgres"
 	defaultDbName     = "postgres"
 	defaultSuffixSize = 8
+	schedIdFmt        = "psql-session-observation-%s"
 )
 
 var mapAttributes = map[string]enterprise.PostgreSqlUserAttributesEnum{
@@ -87,19 +87,14 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to setup observation: %w", err)
 		}
-		manifest, err := getCronjobManifest(*res)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to get cronjob manifest: %w", err)
-		}
-		err = applyCronJob(ctx, kube, manifest, metav1.OwnerReference{
-			UID:        res.UID,
-			APIVersion: res.APIVersion,
-			Kind:       res.Kind,
-			Name:       res.Name,
+		schedId := fmt.Sprintf(schedIdFmt, res.UID)
+		scheduler.Global().ScheduleInterval(schedId, res.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
+			err := triggerSessionSnapshot(ctx, &res.Spec, kube, namespace)
+			if err != nil {
+				log.Error(err, "failed to trigger session observation")
+				return
+			}
 		})
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to apply cronjob: %w", err)
-		}
 	}
 
 	user, err := createUser(ctx, db, &res.Spec)
@@ -298,68 +293,23 @@ $$ LANGUAGE plpgsql;
 	return nil
 }
 
-//go:embed cronjob-template.yaml
-var cronjobTemplate []byte
-
-func getCronjobManifest(genSpec enterprise.PostgreSql) (string, error) {
-	tplContent := string(cronjobTemplate)
-	cronExpression := "* * * * *"
-	if genSpec.Spec.CleanupPolicy.ActivityTrackingCron != nil {
-		cronExpression = *genSpec.Spec.CleanupPolicy.ActivityTrackingCron
-	}
-	_, err := cronV3.ParseStandard(cronExpression)
+func triggerSessionSnapshot(ctx context.Context, spec *enterprise.PostgreSqlSpec, client client.Client, namespace string) error {
+	db, err := newConnection(ctx, spec, client, namespace)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse cron expression: %w", err)
+		log.Error(err, "failed to create db connection")
+		return err
 	}
-
-	params := map[string]string{
-		"Name":       sanitizeName(fmt.Sprintf("psql-%s-%s-session-observation-cronjob", genSpec.Spec.Host, genSpec.Spec.Port)),
-		"Namespace":  genSpec.GetNamespace(),
-		"Schedule":   cronExpression,
-		"SecretName": genSpec.Spec.Auth.Password.Name,
-		"SecretKey":  genSpec.Spec.Auth.Password.Key,
-		"PgUser":     genSpec.Spec.Auth.Username,
-		"Host":       genSpec.Spec.Host,
-		"Port":       genSpec.Spec.Port,
-		"Database":   genSpec.Spec.Database,
-	}
-
-	tpl, err := template.New("cronjob").Parse(tplContent)
-	if err != nil {
-		return "", fmt.Errorf("template parse error: %w", err)
-	}
-	var rendered bytes.Buffer
-	if err := tpl.Execute(&rendered, params); err != nil {
-		return "", fmt.Errorf("template execution error: %w", err)
-	}
-
-	return rendered.String(), nil
-}
-
-func sanitizeName(name string) string {
-	name = strings.ToLower(name)
-
-	// replace invalid chars
-	var b strings.Builder
-	for _, r := range name {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
-			b.WriteRune(r)
-		} else {
-			b.WriteRune('-')
+	defer func() {
+		err := db.Close(ctx)
+		if err != nil {
+			log.Error(err, "failed to close db")
 		}
+	}()
+
+	if _, err := db.Exec(ctx, "SELECT snapshot_pg_stat_activity()"); err != nil {
+		return fmt.Errorf("failed to trigger session observation: %w", err)
 	}
-	sanitized := b.String()
-
-	sanitized = strings.Trim(sanitized, "-")
-
-	if len(sanitized) > 63 {
-		sanitized = sanitized[:63]
-	}
-
-	// trim again in case cut created trailing dash
-	sanitized = strings.Trim(sanitized, "-")
-
-	return sanitized
+	return nil
 }
 
 var applyCronJob = func(ctx context.Context, c client.Client, manifest string, ownerRef metav1.OwnerReference) error {
