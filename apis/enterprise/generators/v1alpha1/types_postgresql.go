@@ -23,10 +23,10 @@ import (
 type PostgreSqlCleanupPolicy struct {
 	genv1alpha1.CleanupPolicy `json:",inline"`
 
-	// ActivityTrackingCron is the cron expression to run the user activity tracking
+	// ActivityTrackingInterval is the cron expression to run the user activity tracking
 	// +optional
-	// +kubebuilder:default="* * * * *"
-	ActivityTrackingCron *string `json:"activityTrackingCron,omitempty"`
+	// +kubebuilder:default="2s"
+	ActivityTrackingInterval metav1.Duration `json:"activityTrackingInterval,omitempty"`
 }
 
 // PostgreSqlSpec controls the behavior of the postgreSQL generator.
