@@ -399,7 +399,7 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, "unable to add scheduler")
 			os.Exit(1)
 		}
-		scheduler.SetGlobal(&sched)
+		scheduler.SetGlobal(sched)
 
 		pgBootstrap := postgresql.NewPostgreSQLBootstrap(mgr.GetClient(), mgr)
 		if err := mgr.Add(pgBootstrap); err != nil {
