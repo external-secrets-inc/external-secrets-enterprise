@@ -36,7 +36,7 @@ type Scheduler interface {
 
 type job struct {
 	stop     context.CancelFunc
-	duration time.Duration
+	interval time.Duration
 }
 
 type SchedulerImpl struct {
@@ -60,8 +60,11 @@ func (s *SchedulerImpl) ScheduleInterval(key string, interval, timeout time.Dura
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if e, ok := s.jobs[key]; ok {
-		e.stop()
+	if currentJob, ok := s.jobs[key]; ok {
+		if currentJob.interval <= interval {
+			return
+		}
+		currentJob.stop()
 	}
 
 	ctx, cancel := context.WithCancel(s.ctx)
@@ -79,7 +82,7 @@ func (s *SchedulerImpl) ScheduleInterval(key string, interval, timeout time.Dura
 	}()
 
 	s.log.Info("Scheduled job", "key", key, "interval", interval)
-	s.jobs[key] = job{stop: cancel, duration: interval}
+	s.jobs[key] = job{stop: cancel, interval: interval}
 }
 
 func (s *SchedulerImpl) Cancel(key string) {

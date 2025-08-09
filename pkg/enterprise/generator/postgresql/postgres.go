@@ -41,7 +41,7 @@ const (
 	defaultUser       = "postgres"
 	defaultDbName     = "postgres"
 	defaultSuffixSize = 8
-	schedIdFmt        = "psql-session-observation-%s"
+	schedIdFmt        = "psql-session-observation-%s-%s:%s"
 )
 
 var mapAttributes = map[string]enterprise.PostgreSqlUserAttributesEnum{
@@ -87,7 +87,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to setup observation: %w", err)
 		}
-		schedId := fmt.Sprintf(schedIdFmt, res.UID)
+		schedId := fmt.Sprintf(schedIdFmt, res.UID, res.Spec.Host, res.Spec.Port)
 		scheduler.Global().ScheduleInterval(schedId, res.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
 			err := triggerSessionSnapshot(ctx, &res.Spec, kube, namespace)
 			if err != nil {

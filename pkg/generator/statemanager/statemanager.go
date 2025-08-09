@@ -235,11 +235,7 @@ func (m *Manager) getGCGracePeriod() time.Duration {
 		return defaultGCGracePeriod
 	}
 
-	gcDeadline := defaultGCGracePeriod
-	if m.cleanupPolicy.GracePeriod.Duration > 0 {
-		gcDeadline = m.cleanupPolicy.GracePeriod.Duration
-	}
-	return gcDeadline
+	return m.cleanupPolicy.GracePeriod.Duration
 }
 
 // GetLatest returns the latest state for the given key.

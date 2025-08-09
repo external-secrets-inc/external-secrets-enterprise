@@ -66,7 +66,7 @@ func (b *PostgreSQLBootstrap) Start(ctx context.Context) error {
 
 		cleanupPolicy := spec.Spec.CleanupPolicy
 		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
-			connectionId := fmt.Sprintf(schedIdFmt, spec.UID)
+			connectionId := fmt.Sprintf(schedIdFmt, spec.UID, spec.Spec.Host, spec.Spec.Port)
 
 			scheduler.Global().ScheduleInterval(connectionId, spec.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
 				err := triggerSessionSnapshot(ctx, &spec.Spec, b.client, gs.GetNamespace())

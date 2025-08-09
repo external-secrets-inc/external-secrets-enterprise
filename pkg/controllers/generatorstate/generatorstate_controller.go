@@ -75,7 +75,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			return ctrl.Result{}, fmt.Errorf("could not get cleanup policy: %w", err)
 		}
 
-		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
+		gcDeadlineReached := generatorState.Spec.GarbageCollectionDeadline.Time.Before(time.Now())
+		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy && gcDeadlineReached {
 			if generatorState.DeletionTimestamp != nil {
 				return ctrl.Result{}, nil
 			}
@@ -101,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			return ctrl.Result{RequeueAfter: cleanupPolicy.IdleTimeout.Duration}, nil
 		}
 
-		if generatorState.Spec.GarbageCollectionDeadline.Time.Before(time.Now()) {
+		if gcDeadlineReached {
 			if generatorState.DeletionTimestamp != nil {
 				return ctrl.Result{}, nil
 			}
