@@ -19,9 +19,6 @@ import (
 	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtimeyaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -308,57 +305,6 @@ func triggerSessionSnapshot(ctx context.Context, spec *enterprise.PostgreSqlSpec
 
 	if _, err := db.Exec(ctx, "SELECT snapshot_pg_stat_activity()"); err != nil {
 		return fmt.Errorf("failed to trigger session observation: %w", err)
-	}
-	return nil
-}
-
-var applyCronJob = func(ctx context.Context, c client.Client, manifest string, ownerRef metav1.OwnerReference) error {
-	dec := runtimeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	obj := &unstructured.Unstructured{}
-
-	_, gvk, err := dec.Decode([]byte(manifest), nil, obj)
-	if err != nil {
-		return fmt.Errorf("failed to decode manifest: %w", err)
-	}
-	ns := obj.GetNamespace()
-	obj.SetGroupVersionKind(*gvk)
-
-	existing := &unstructured.Unstructured{}
-	existing.SetGroupVersionKind(obj.GroupVersionKind())
-	err = c.Get(ctx, client.ObjectKey{Namespace: ns, Name: obj.GetName()}, existing)
-	isNew := false
-
-	var owners []metav1.OwnerReference
-	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
-			return fmt.Errorf("failed to get existing resource: %w", err)
-		}
-		owners = []metav1.OwnerReference{ownerRef}
-		isNew = true
-	} else {
-		owners = existing.GetOwnerReferences()
-		found := false
-		for _, or := range owners {
-			if or.UID == ownerRef.UID {
-				found = true
-				break
-			}
-		}
-		if !found {
-			owners = append(owners, ownerRef)
-		}
-		obj.SetResourceVersion(existing.GetResourceVersion())
-	}
-	obj.SetOwnerReferences(owners)
-
-	if isNew {
-		if err := c.Create(ctx, obj); err != nil {
-			return fmt.Errorf("failed to create CronJob: %w", err)
-		}
-	} else {
-		if err := c.Update(ctx, obj); err != nil {
-			return fmt.Errorf("failed to update CronJob: %w", err)
-		}
 	}
 	return nil
 }

@@ -100,6 +100,8 @@ func (s *SchedulerImpl) NeedLeaderElection() bool { return true }
 func (s *SchedulerImpl) Start(ctx context.Context) error {
 	s.log.Info("Starting scheduler")
 	s.leader.Store(true)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.ctx = ctx
 	defer func() {
 		s.leader.Store(false)
