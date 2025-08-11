@@ -192,11 +192,13 @@ func (r *Reconciler) isIdleTimeoutExpired(ctx context.Context, policy genv1alpha
 func (r *Reconciler) markAsFailed(conditionType genv1alpha1.GeneratorStateConditionType, msg string, err error, gs *genv1alpha1.GeneratorState) {
 	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionFalse, genv1alpha1.ConditionReasonError, fmt.Sprintf("%s: %v", msg, err))
 	SetGeneratorStateCondition(gs, *conditionSynced)
+	SetLastGeneratorStateCondition(gs, *conditionSynced)
 }
 
 func (r *Reconciler) markSuccess(conditionType genv1alpha1.GeneratorStateConditionType, conditionReason, msg string, gs *genv1alpha1.GeneratorState) {
 	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionTrue, conditionReason, msg)
 	SetGeneratorStateCondition(gs, *conditionSynced)
+	SetLastGeneratorStateCondition(gs, *conditionSynced)
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.

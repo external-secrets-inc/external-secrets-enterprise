@@ -87,7 +87,10 @@ const (
 )
 
 type GeneratorStateStatus struct {
-	Conditions []GeneratorStateStatusCondition `json:"conditions,omitempty"`
+	LastType    GeneratorStateConditionType     `json:"lastType,omitempty"`
+	LastReason  string                          `json:"lastReason,omitempty"`
+	LastMessage string                          `json:"lastMessage,omitempty"`
+	Conditions  []GeneratorStateStatusCondition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
