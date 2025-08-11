@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.3...v1.17.4) (2025-08-11)
+
+
+### Bug Fixes
+
+* mark status as genstate subresource ([#418](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/418)) ([4e47cae](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4e47caeb913d8556e71d4c412c0c5d9121b6f993))
+
 ## [1.17.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.2...v1.17.3) (2025-08-11)
 
 
