@@ -290,6 +290,7 @@ priorityClassName: ""
 podDisruptionBudget:
   enabled: false
   minAvailable: 1    # @schema type:[integer, string]
+  nameOverride: ""
   # maxUnavailable: "50%"
 
 # -- Run the controller on the host network
@@ -401,6 +402,7 @@ webhook:
   podDisruptionBudget:
     enabled: false
     minAvailable: 1    # @schema type:[integer, string]
+    nameOverride: ""
     # maxUnavailable: "50%"
 
   metrics:
@@ -543,6 +545,7 @@ certController:
   podDisruptionBudget:
     enabled: false
     minAvailable: 1    # @schema type:[integer, string]
+    nameOverride: ""
     # maxUnavailable: "50%"
 
   metrics:
