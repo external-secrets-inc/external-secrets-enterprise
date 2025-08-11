@@ -2105,6 +2105,8 @@ spec:
                           type: string
                         authSecretRef:
                           description: Auth configures how the operator authenticates with Akeyless.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             kubernetesAuth:
                               description: |-
@@ -2308,9 +2310,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                       required:
                         - akeylessGWApiURL
@@ -2321,6 +2320,8 @@ spec:
                       properties:
                         auth:
                           description: AlibabaAuth contains a secretRef for credentials.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             rrsa:
                               description: Authenticate against Alibaba using RRSA.
@@ -2419,6 +2420,8 @@ spec:
                             Auth defines the information necessary to authenticate against AWS
                             if not set aws sdk will infer credentials from your environment
                             see: https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             jwt:
                               description: Authenticate against AWS using service account tokens.
@@ -3058,9 +3061,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         identityURL:
                           type: string
@@ -3204,6 +3204,8 @@ spec:
                       properties:
                         auth:
                           description: Defines authentication settings for connecting to Conjur.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             apikey:
                               description: Authenticates with Conjur using an API key.
@@ -3384,9 +3386,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         url:
                           description: URL is the endpoint of the Conjur instance.
@@ -3846,6 +3845,8 @@ spec:
                       properties:
                         auth:
                           description: Auth defines the information necessary to authenticate against GCP
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             secretRef:
                               properties:
@@ -4072,9 +4073,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         environment:
                           description: Environment environment_scope of gitlab CI/CD variables (Please see https://docs.gitlab.com/ee/ci/environments/#create-a-static-environment on how to create environments)
@@ -4159,6 +4157,8 @@ spec:
                       properties:
                         auth:
                           description: Auth configures how the Operator authenticates with the Infisical API
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             azureAuthCredentials:
                               properties:
@@ -5006,9 +5006,6 @@ spec:
                                     - Secret
                                     - ConfigMap
                                   type: string
-                              required:
-                                - name
-                                - type
                               type: object
                             url:
                               default: kubernetes.default
@@ -5351,6 +5348,8 @@ spec:
                       properties:
                         auth:
                           description: Auth defines the information necessary to authenticate against Passbolt Server
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             passwordSecretRef:
                               description: |-
@@ -5795,6 +5794,8 @@ spec:
                       properties:
                         auth:
                           description: Auth configures how secret-manager authenticates with the Vault server.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             appRole:
                               description: |-
@@ -6320,6 +6321,8 @@ spec:
                                 Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                 More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                 This will default to Vault.Namespace field if set, or empty otherwise
+                                Deprecated.
+                                Set this on each auth block instead
                               type: string
                             tokenSecretRef:
                               description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -6432,9 +6435,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         forwardInconsistent:
                           description: |-
@@ -13103,6 +13103,8 @@ spec:
                           type: string
                         authSecretRef:
                           description: Auth configures how the operator authenticates with Akeyless.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             kubernetesAuth:
                               description: |-
@@ -13306,9 +13308,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                       required:
                         - akeylessGWApiURL
@@ -13319,6 +13318,8 @@ spec:
                       properties:
                         auth:
                           description: AlibabaAuth contains a secretRef for credentials.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             rrsa:
                               description: Authenticate against Alibaba using RRSA.
@@ -13417,6 +13418,8 @@ spec:
                             Auth defines the information necessary to authenticate against AWS
                             if not set aws sdk will infer credentials from your environment
                             see: https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             jwt:
                               description: Authenticate against AWS using service account tokens.
@@ -14056,9 +14059,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         identityURL:
                           type: string
@@ -14202,6 +14202,8 @@ spec:
                       properties:
                         auth:
                           description: Defines authentication settings for connecting to Conjur.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             apikey:
                               description: Authenticates with Conjur using an API key.
@@ -14382,9 +14384,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         url:
                           description: URL is the endpoint of the Conjur instance.
@@ -14844,6 +14843,8 @@ spec:
                       properties:
                         auth:
                           description: Auth defines the information necessary to authenticate against GCP
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             secretRef:
                               properties:
@@ -15070,9 +15071,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         environment:
                           description: Environment environment_scope of gitlab CI/CD variables (Please see https://docs.gitlab.com/ee/ci/environments/#create-a-static-environment on how to create environments)
@@ -15157,6 +15155,8 @@ spec:
                       properties:
                         auth:
                           description: Auth configures how the Operator authenticates with the Infisical API
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             azureAuthCredentials:
                               properties:
@@ -16004,9 +16004,6 @@ spec:
                                     - Secret
                                     - ConfigMap
                                   type: string
-                              required:
-                                - name
-                                - type
                               type: object
                             url:
                               default: kubernetes.default
@@ -16349,6 +16346,8 @@ spec:
                       properties:
                         auth:
                           description: Auth defines the information necessary to authenticate against Passbolt Server
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             passwordSecretRef:
                               description: |-
@@ -16793,6 +16792,8 @@ spec:
                       properties:
                         auth:
                           description: Auth configures how secret-manager authenticates with the Vault server.
+                          maxProperties: 1
+                          minProperties: 1
                           properties:
                             appRole:
                               description: |-
@@ -17318,6 +17319,8 @@ spec:
                                 Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                 More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                 This will default to Vault.Namespace field if set, or empty otherwise
+                                Deprecated.
+                                Set this on each auth block instead
                               type: string
                             tokenSecretRef:
                               description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -17430,9 +17433,6 @@ spec:
                                 - Secret
                                 - ConfigMap
                               type: string
-                          required:
-                            - name
-                            - type
                           type: object
                         forwardInconsistent:
                           description: |-
@@ -23978,6 +23978,8 @@ spec:
                           properties:
                             auth:
                               description: Auth configures how secret-manager authenticates with the Vault server.
+                              maxProperties: 1
+                              minProperties: 1
                               properties:
                                 appRole:
                                   description: |-
@@ -24503,6 +24505,8 @@ spec:
                                     Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                     More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                     This will default to Vault.Namespace field if set, or empty otherwise
+                                    Deprecated.
+                                    Set this on each auth block instead
                                   type: string
                                 tokenSecretRef:
                                   description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -24615,9 +24619,6 @@ spec:
                                     - Secret
                                     - ConfigMap
                                   type: string
-                              required:
-                                - name
-                                - type
                               type: object
                             forwardInconsistent:
                               description: |-
@@ -27611,6 +27612,8 @@ spec:
                   properties:
                     auth:
                       description: Auth configures how secret-manager authenticates with the Vault server.
+                      maxProperties: 1
+                      minProperties: 1
                       properties:
                         appRole:
                           description: |-
@@ -28136,6 +28139,8 @@ spec:
                             Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                             More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                             This will default to Vault.Namespace field if set, or empty otherwise
+                            Deprecated.
+                            Set this on each auth block instead
                           type: string
                         tokenSecretRef:
                           description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -28248,9 +28253,6 @@ spec:
                             - Secret
                             - ConfigMap
                           type: string
-                      required:
-                        - name
-                        - type
                       type: object
                     forwardInconsistent:
                       description: |-
@@ -30697,6 +30699,8 @@ spec:
                                               properties:
                                                 auth:
                                                   description: Auth configures how secret-manager authenticates with the Vault server.
+                                                  maxProperties: 1
+                                                  minProperties: 1
                                                   properties:
                                                     appRole:
                                                       description: |-
@@ -31222,6 +31226,8 @@ spec:
                                                         Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                                         More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                                         This will default to Vault.Namespace field if set, or empty otherwise
+                                                        Deprecated.
+                                                        Set this on each auth block instead
                                                       type: string
                                                     tokenSecretRef:
                                                       description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -31334,9 +31340,6 @@ spec:
                                                         - Secret
                                                         - ConfigMap
                                                       type: string
-                                                  required:
-                                                    - name
-                                                    - type
                                                   type: object
                                                 forwardInconsistent:
                                                   description: |-
@@ -33139,6 +33142,8 @@ spec:
                                               properties:
                                                 auth:
                                                   description: Auth configures how secret-manager authenticates with the Vault server.
+                                                  maxProperties: 1
+                                                  minProperties: 1
                                                   properties:
                                                     appRole:
                                                       description: |-
@@ -33664,6 +33669,8 @@ spec:
                                                         Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                                         More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                                         This will default to Vault.Namespace field if set, or empty otherwise
+                                                        Deprecated.
+                                                        Set this on each auth block instead
                                                       type: string
                                                     tokenSecretRef:
                                                       description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -33776,9 +33783,6 @@ spec:
                                                         - Secret
                                                         - ConfigMap
                                                       type: string
-                                                  required:
-                                                    - name
-                                                    - type
                                                   type: object
                                                 forwardInconsistent:
                                                   description: |-
@@ -35590,6 +35594,8 @@ spec:
                                                     properties:
                                                       auth:
                                                         description: Auth configures how secret-manager authenticates with the Vault server.
+                                                        maxProperties: 1
+                                                        minProperties: 1
                                                         properties:
                                                           appRole:
                                                             description: |-
@@ -36115,6 +36121,8 @@ spec:
                                                               Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                                               More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                                               This will default to Vault.Namespace field if set, or empty otherwise
+                                                              Deprecated.
+                                                              Set this on each auth block instead
                                                             type: string
                                                           tokenSecretRef:
                                                             description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -36227,9 +36235,6 @@ spec:
                                                               - Secret
                                                               - ConfigMap
                                                             type: string
-                                                        required:
-                                                          - name
-                                                          - type
                                                         type: object
                                                       forwardInconsistent:
                                                         description: |-
@@ -38256,6 +38261,8 @@ spec:
                                               properties:
                                                 auth:
                                                   description: Auth configures how secret-manager authenticates with the Vault server.
+                                                  maxProperties: 1
+                                                  minProperties: 1
                                                   properties:
                                                     appRole:
                                                       description: |-
@@ -38781,6 +38788,8 @@ spec:
                                                         Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                                         More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                                         This will default to Vault.Namespace field if set, or empty otherwise
+                                                        Deprecated.
+                                                        Set this on each auth block instead
                                                       type: string
                                                     tokenSecretRef:
                                                       description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -38893,9 +38902,6 @@ spec:
                                                         - Secret
                                                         - ConfigMap
                                                       type: string
-                                                  required:
-                                                    - name
-                                                    - type
                                                   type: object
                                                 forwardInconsistent:
                                                   description: |-
@@ -40698,6 +40704,8 @@ spec:
                                               properties:
                                                 auth:
                                                   description: Auth configures how secret-manager authenticates with the Vault server.
+                                                  maxProperties: 1
+                                                  minProperties: 1
                                                   properties:
                                                     appRole:
                                                       description: |-
@@ -41223,6 +41231,8 @@ spec:
                                                         Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                                         More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                                         This will default to Vault.Namespace field if set, or empty otherwise
+                                                        Deprecated.
+                                                        Set this on each auth block instead
                                                       type: string
                                                     tokenSecretRef:
                                                       description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -41335,9 +41345,6 @@ spec:
                                                         - Secret
                                                         - ConfigMap
                                                       type: string
-                                                  required:
-                                                    - name
-                                                    - type
                                                   type: object
                                                 forwardInconsistent:
                                                   description: |-
@@ -43149,6 +43156,8 @@ spec:
                                                     properties:
                                                       auth:
                                                         description: Auth configures how secret-manager authenticates with the Vault server.
+                                                        maxProperties: 1
+                                                        minProperties: 1
                                                         properties:
                                                           appRole:
                                                             description: |-
@@ -43674,6 +43683,8 @@ spec:
                                                               Vault environments to support Secure Multi-tenancy. e.g: "ns1".
                                                               More about namespaces can be found here https://www.vaultproject.io/docs/enterprise/namespaces
                                                               This will default to Vault.Namespace field if set, or empty otherwise
+                                                              Deprecated.
+                                                              Set this on each auth block instead
                                                             type: string
                                                           tokenSecretRef:
                                                             description: TokenSecretRef authenticates with Vault by presenting a token.
@@ -43786,9 +43797,6 @@ spec:
                                                               - Secret
                                                               - ConfigMap
                                                             type: string
-                                                        required:
-                                                          - name
-                                                          - type
                                                         type: object
                                                       forwardInconsistent:
                                                         description: |-

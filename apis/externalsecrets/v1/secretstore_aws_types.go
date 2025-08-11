@@ -21,6 +21,8 @@ import (
 // AWSAuth tells the controller how to do authentication with aws.
 // Only one of secretRef or jwt can be specified.
 // if none is specified the controller will load credentials using the aws sdk defaults.
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type AWSAuth struct {
 	// +optional
 	SecretRef *AWSAuthSecretRef `json:"secretRef,omitempty"`

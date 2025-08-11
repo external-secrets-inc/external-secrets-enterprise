@@ -38,6 +38,8 @@ type AkeylessProvider struct {
 	CAProvider *CAProvider `json:"caProvider,omitempty"`
 }
 
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type AkeylessAuth struct {
 
 	// Reference to a Secret that contains the details
