@@ -1,0 +1,103 @@
+// types_github.go
+package v1alpha1
+
+import (
+	"fmt"
+
+	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var GithubTargetKind = "GithubRepository"
+
+type GithubRepositorySpec struct {
+	// URL to the GitHub instance, e.g., https://api.github.com or a GitHub Enterprise endpoint.
+	URL string `json:"url"`
+
+	// Owner of the repository (user or organization).
+	Owner string `json:"owner"`
+
+	// Repository name.
+	Repository string `json:"repository"`
+
+	// Branch to target (optional, defaults to default branch).
+	Branch string `json:"branch,omitempty"`
+
+	// Paths to scan or push secrets to (relative to repo root).
+	Paths []string `json:"paths,omitempty"`
+
+	// CABundle is an optional PEM encoded CA bundle for HTTPS verification (for GitHub Enterprise).
+	CABundle string `json:"caBundle,omitempty"`
+
+	// Auth method to access the repository.
+	Auth *GithubTargetAuth `json:"auth"`
+}
+
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
+type GithubTargetAuth struct {
+	// Use a personal access token.
+	Token *esmeta.SecretKeySelector `json:"token,omitempty"`
+
+	// GitHub App authentication (JWT).
+	AppAuth *GithubAppAuth `json:"appAuth,omitempty"`
+}
+
+type GithubAppAuth struct {
+	AppID      string                   `json:"appID"`
+	InstallID  string                   `json:"installID"`
+	PrivateKey esmeta.SecretKeySelector `json:"privateKey"`
+}
+
+// GithubRepository is the schema for a GitHub target.
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:metadata:labels="external-secrets.io/component=controller"
+// +kubebuilder:resource:scope=Namespaced,categories={external-secrets,external-secrets-target}
+type GithubRepository struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              GithubRepositorySpec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type GithubRepositoryList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []GithubRepository `json:"items"`
+}
+
+func (c *GithubRepository) GetObjectMeta() *metav1.ObjectMeta {
+	return &c.ObjectMeta
+}
+
+func (c *GithubRepository) GetTypeMeta() *metav1.TypeMeta {
+	return &c.TypeMeta
+}
+
+func (c *GithubRepository) GetSpec() *esv1.SecretStoreSpec {
+	return &esv1.SecretStoreSpec{}
+}
+
+func (c *GithubRepository) GetStatus() esv1.SecretStoreStatus {
+	return esv1.SecretStoreStatus{}
+}
+
+func (c *GithubRepository) SetStatus(_ esv1.SecretStoreStatus) {}
+
+func (c *GithubRepository) GetNamespacedName() string {
+	return fmt.Sprintf("%s/%s", c.Namespace, c.Name)
+}
+
+func (c *GithubRepository) GetKind() string {
+	return GithubTargetKind
+}
+
+func (c *GithubRepository) Copy() esv1.GenericStore {
+	return c.DeepCopy()
+}
+
+func init() {
+	RegisterObjKind(GithubTargetKind, &GithubRepository{})
+}
