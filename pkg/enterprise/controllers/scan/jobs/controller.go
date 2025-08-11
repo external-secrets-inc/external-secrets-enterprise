@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
@@ -31,8 +32,9 @@ import (
 
 type JobController struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log     logr.Logger
+	Scheme  *runtime.Scheme
+	running sync.Map
 }
 
 func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
@@ -44,7 +46,7 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 		return ctrl.Result{}, nil
 	}
 	// Check if we should already run this job
-	if jobSpec.Status.RunStatus == v1alpha1.JobRunStatusSucceeded {
+	if jobSpec.Status.RunStatus != v1alpha1.JobRunStatusRunning {
 		// Ignore new Runs
 		if jobSpec.Spec.RunPolicy == v1alpha1.JobRunPolicyOnce {
 			return ctrl.Result{}, nil
@@ -74,27 +76,43 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 			}
 		}
 	}
-	if jobSpec.Status.RunStatus == v1alpha1.JobRunStatusRunning {
-		runningTime := time.Since(jobSpec.Status.LastRunTime.Time)
-		if runningTime > jobSpec.Spec.JobTimeout.Duration {
+
+	runningTime := time.Since(jobSpec.Status.LastRunTime.Time)
+	timeout := jobSpec.Spec.JobTimeout.Duration
+
+	if timeout > 0 && jobSpec.Status.RunStatus == v1alpha1.JobRunStatusRunning {
+		if runningTime > timeout {
+			c.stopJob(req)
+
+			jobSpec.Status.RunStatus = v1alpha1.JobRunStatusFailed
+			condition := metav1.Condition{
+				Type:               string(v1alpha1.JobRunStatusFailed),
+				Status:             metav1.ConditionFalse,
+				Reason:             "TimedOut",
+				Message:            fmt.Sprintf("timed out after %s", timeout),
+				LastTransitionTime: metav1.Now(),
+			}
+			jobSpec.Status.Conditions = append(jobSpec.Status.Conditions, condition)
+			jobSpec.Status.LastRunTime = metav1.Now()
+
+			if err := c.Status().Update(ctx, jobSpec); err != nil {
+				return ctrl.Result{}, err
+			}
+
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 
-		// Ignore because the job is still running - wait it to finish with the appropriate Update Call
-		return ctrl.Result{}, nil
+		// still running, requeue exactly when timeout would occur
+		remaining := timeout - runningTime
+		if remaining < time.Second {
+			remaining = time.Second
+		}
+		return ctrl.Result{RequeueAfter: remaining}, nil
 	}
+
 	// Synchronize
 	j := utils.NewJobRunner(c.Client, c.Log, jobSpec.Namespace, jobSpec.Spec.Constraints)
-	// Run the Job applying constraints after leaving the reconcile loop
-	defer func() {
-		go func() {
-			c.Log.V(1).Info("Starting async job", "job", jobSpec.GetName())
-			err := c.runJob(context.Background(), jobSpec, j)
-			if err != nil {
-				c.Log.Error(err, "failed to run job")
-			}
-		}()
-	}()
+
 	jobSpec.Status = v1alpha1.JobStatus{
 		LastRunTime: metav1.Now(),
 		RunStatus:   v1alpha1.JobRunStatusRunning,
@@ -102,6 +120,27 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 	if err := c.Status().Update(ctx, jobSpec); err != nil {
 		return ctrl.Result{}, err
 	}
+
+	// Start async job with cancel support
+	runCtx, cancel := context.WithCancel(context.Background())
+	c.running.Store(keyFor(req), cancel)
+
+	// Run the Job applying constraints after leaving the reconcile loop
+	defer func() {
+		go func() {
+			c.Log.V(1).Info("Starting async job", "job", jobSpec.GetName())
+			defer c.running.Delete(keyFor(req))
+			defer func() {
+				_ = j.Close(context.Background())
+			}()
+
+			err := c.runJob(runCtx, jobSpec, j)
+			if err != nil {
+				c.Log.Error(err, "failed to run job")
+			}
+		}()
+	}()
+
 	if jobSpec.Spec.RunPolicy != v1alpha1.JobRunPolicyPull {
 		return ctrl.Result{}, nil
 	}
@@ -275,3 +314,12 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 	observedSecretStoresDigest = calculateDigest(usedStores)
 	return nil
 }
+
+func (c *JobController) stopJob(req ctrl.Request) {
+	key := keyFor(req)
+	if v, ok := c.running.LoadAndDelete(key); ok {
+		v.(context.CancelFunc)()
+	}
+}
+
+func keyFor(req ctrl.Request) string { return req.NamespacedName.String() }
