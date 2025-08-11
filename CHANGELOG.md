@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.2...v1.17.3) (2025-08-11)
+
+
+### Bug Fixes
+
+* generator state status ([#416](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/416)) ([3b8a5bb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3b8a5bbef073b0728744b91880510051b84afa43))
+
 ## [1.17.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.1...v1.17.2) (2025-08-11)
 
 
