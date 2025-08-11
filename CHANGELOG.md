@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.1...v1.17.2) (2025-08-11)
+
+
+### Bug Fixes
+
+* webhook permissions ([#414](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/414)) ([083992a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/083992aaf4efacd71877950ba91db459420a57c0))
+
 ## [1.17.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.0...v1.17.1) (2025-08-11)
 
 
