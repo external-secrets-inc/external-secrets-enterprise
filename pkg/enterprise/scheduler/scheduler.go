@@ -58,16 +58,22 @@ func New(client client.Client, log logr.Logger) Scheduler {
 
 func (s *SchedulerImpl) ScheduleInterval(key string, interval, timeout time.Duration, fn func(context.Context, logr.Logger)) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	if currentJob, ok := s.jobs[key]; ok {
 		if currentJob.interval <= interval {
+			s.mu.Unlock()
 			return
 		}
 		currentJob.stop()
 	}
+	parent := s.ctx
+	s.mu.Unlock()
 
-	ctx, cancel := context.WithCancel(s.ctx)
+	if parent == nil {
+		parent = context.Background()
+	}
+
+	ctx, cancel := context.WithCancel(parent)
 	go func() {
 		t := time.NewTicker(interval)
 		defer t.Stop()
@@ -100,14 +106,18 @@ func (s *SchedulerImpl) NeedLeaderElection() bool { return true }
 func (s *SchedulerImpl) Start(ctx context.Context) error {
 	s.log.Info("Starting scheduler")
 	s.leader.Store(true)
+
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.ctx = ctx
+	s.mu.Unlock()
+
 	defer func() {
 		s.leader.Store(false)
+		s.mu.Lock()
 		for _, e := range s.jobs {
 			e.stop()
 		}
+		s.mu.Unlock()
 	}()
 
 	<-ctx.Done()
@@ -117,7 +127,11 @@ func (s *SchedulerImpl) Start(ctx context.Context) error {
 func (s *SchedulerImpl) IsLeader() bool { return s.leader.Load() }
 
 func (s *SchedulerImpl) runWithTimeout(fn func(ctx context.Context, log logr.Logger), maxDuration time.Duration) {
-	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
+	parent := s.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, maxDuration)
 	defer cancel()
 	fn(ctx, s.log)
 }
