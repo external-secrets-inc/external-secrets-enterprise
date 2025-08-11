@@ -9334,7 +9334,9 @@ string
 Namespaces is a set of features within Vault Enterprise that allows
 Vault environments to support Secure Multi-tenancy. e.g: &ldquo;ns1&rdquo;.
 More about namespaces can be found here <a href="https://www.vaultproject.io/docs/enterprise/namespaces">https://www.vaultproject.io/docs/enterprise/namespaces</a>
-This will default to Vault.Namespace field if set, or empty otherwise</p>
+This will default to Vault.Namespace field if set, or empty otherwise
+Deprecated.
+Set this on each auth block instead</p>
 </td>
 </tr>
 <tr>
