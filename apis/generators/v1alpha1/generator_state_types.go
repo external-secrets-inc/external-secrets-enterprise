@@ -92,6 +92,7 @@ type GeneratorStateStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:subresource:status
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:printcolumn:name="GC Deadline",type="string",JSONPath=".spec.garbageCollectionDeadline"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
