@@ -54,6 +54,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		}
 		return ctrl.Result{}, err
 	}
+	defer func() {
+		err := r.Status().Update(ctx, generatorState)
+		if err != nil {
+			r.Log.Error(err, "could not update generator state status")
+		}
+	}()
 	gen, err := r.getGenerator(generatorState.Spec.Resource.Raw)
 	if err != nil {
 		r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, "Could not get generator", err, generatorState)
