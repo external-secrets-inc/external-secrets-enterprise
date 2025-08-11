@@ -11,6 +11,7 @@ rules:
     - "external-secrets.io"
     - "generators.external-secrets.io"
     - "target.external-secrets.io"
+    - "scan.external-secrets.io"
     resources:
     - "*"
     verbs:
