@@ -12,9 +12,6 @@ import (
 var GithubTargetKind = "GithubRepository"
 
 type GithubRepositorySpec struct {
-	// URL to the GitHub instance, e.g., https://api.github.com or a GitHub Enterprise endpoint.
-	URL string `json:"url"`
-
 	// Owner of the repository (user or organization).
 	Owner string `json:"owner"`
 
@@ -22,7 +19,20 @@ type GithubRepositorySpec struct {
 	Repository string `json:"repository"`
 
 	// Branch to target (optional, defaults to default branch).
+	// +optional
 	Branch string `json:"branch,omitempty"`
+
+	// GitHub Enterprise endpoint. Format should be http(s)://[hostname]/api/v3/
+	// or it will always return the 406 status code
+	// If empty, default GitHub client will be configured
+	// +optional
+	EnterpriseURL string `json:"enterpriseUrl,omitempty"`
+
+	// GitHub Enterprise upload endpoint. The upload URL format should be http(s)://[hostname]/api/uploads/
+	// or it will always return the 406 status code
+	// If empty, default GitHub client will be configured
+	// +optional
+	UploadURL string `json:"uploadUrl,omitempty"`
 
 	// Paths to scan or push secrets to (relative to repo root).
 	Paths []string `json:"paths,omitempty"`

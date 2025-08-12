@@ -1,16 +1,54 @@
 package github
 
-type GithubFile struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	Type        string `json:"type"` // "file", "dir"
-	DownloadURL string `json:"download_url"`
+import "strings"
+
+type pathFilter struct {
+	exact    map[string]struct{} // exact file matches: "a/b/c.txt"
+	prefixes []string            // directory prefixes: "a/b/" (must end with '/')
 }
 
-type GithubContentFile struct {
-	Content  string `json:"content"` // base64 encoded
-	SHA      string `json:"sha"`
-	Path     string `json:"path"`
-	Type     string `json:"type"`
-	Encoding string `json:"encoding"`
+func newPathFilter(paths []string) *pathFilter {
+	f := &pathFilter{
+		exact:    make(map[string]struct{}),
+		prefixes: make([]string, 0, len(paths)),
+	}
+
+	seenPrefix := make(map[string]struct{})
+
+	for _, p := range paths {
+		p = strings.TrimSpace(p)
+		p = strings.TrimPrefix(p, "/")
+		if p == "" {
+			continue
+		}
+
+		f.exact[p] = struct{}{}
+
+		pref := p
+		if !strings.HasSuffix(pref, "/") {
+			pref += "/"
+		}
+		if _, dup := seenPrefix[pref]; !dup {
+			f.prefixes = append(f.prefixes, pref)
+			seenPrefix[pref] = struct{}{}
+		}
+	}
+
+	return f
+}
+
+func (f *pathFilter) allow(path string) bool {
+	// No filters -> allow all
+	if len(f.exact) == 0 && len(f.prefixes) == 0 {
+		return true
+	}
+	if _, ok := f.exact[path]; ok {
+		return true
+	}
+	for _, pre := range f.prefixes {
+		if strings.HasPrefix(path, pre) {
+			return true
+		}
+	}
+	return false
 }
