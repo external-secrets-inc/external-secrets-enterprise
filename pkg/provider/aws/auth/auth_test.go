@@ -143,7 +143,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name: "othersecret",
@@ -168,7 +168,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name: "onesecret",
@@ -209,7 +209,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name: "brokensecret",
@@ -243,7 +243,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name:      "onesecret",
@@ -286,7 +286,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name:      "onesecret",
@@ -331,7 +331,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name: "onesecret",
@@ -398,7 +398,7 @@ func TestNewSession(t *testing.T) {
 				Spec: esv1.SecretStoreSpec{
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								JWTAuth: &esv1.AWSJWTAuth{
 									ServiceAccountRef: &esmeta.ServiceAccountSelector{
 										Name:      myServiceAccountKey,

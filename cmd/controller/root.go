@@ -61,6 +61,8 @@ import (
 	workflowapi "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/api"
 	workflowcommon "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/common"
 	federationserver "github.com/external-secrets/external-secrets/pkg/enterprise/federation/server"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/generator/postgresql"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/pkg/feature"
 
 	// To allow using gcp auth.
@@ -392,6 +394,18 @@ var rootCmd = &cobra.Command{
 		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
 		go handler.SetupEcho(cmd.Context())
 
+		sched := scheduler.New(mgr.GetClient(), ctrl.Log.WithName("scheduler"))
+		if err := mgr.Add(sched); err != nil {
+			setupLog.Error(err, "unable to add scheduler")
+			os.Exit(1)
+		}
+		scheduler.SetGlobal(sched)
+
+		pgBootstrap := postgresql.NewPostgreSQLBootstrap(mgr.GetClient(), mgr)
+		if err := mgr.Add(pgBootstrap); err != nil {
+			setupLog.Error(err, "unable to add postgresql bootstrap")
+			os.Exit(1)
+		}
 		// Start the workflow API server if enabled
 		if enableWorkflowAPI {
 			apiServer := workflowapi.NewServer(mgr.GetClient(), ctrl.Log.WithName("api").WithName("Workflow"))

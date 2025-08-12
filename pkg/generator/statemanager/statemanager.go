@@ -235,17 +235,7 @@ func (m *Manager) getGCGracePeriod() time.Duration {
 		return defaultGCGracePeriod
 	}
 
-	var gcDeadline time.Duration
-	switch m.cleanupPolicy.Type {
-	case genapi.RetainLatestPolicy:
-		gcDeadline = m.cleanupPolicy.GracePeriod.Duration
-	case genapi.IdleCleanupPolicy:
-		// Mark state for GC immediately, controller will check activity before deleting
-		gcDeadline = time.Duration(0)
-	default:
-		gcDeadline = defaultGCGracePeriod
-	}
-	return gcDeadline
+	return m.cleanupPolicy.GracePeriod.Duration
 }
 
 // GetLatest returns the latest state for the given key.

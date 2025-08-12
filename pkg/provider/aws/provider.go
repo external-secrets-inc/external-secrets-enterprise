@@ -72,9 +72,10 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 	if err != nil {
 		return nil, err
 	}
-
+	if prov.Auth == nil {
+	}
 	// case: static credentials
-	if prov.Auth.SecretRef != nil {
+	if prov.Auth != nil && prov.Auth.SecretRef != nil {
 		if err := utils.ValidateReferentSecretSelector(store, prov.Auth.SecretRef.AccessKeyID); err != nil {
 			return nil, fmt.Errorf("invalid Auth.SecretRef.AccessKeyID: %w", err)
 		}
@@ -89,7 +90,7 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 	}
 
 	// case: jwt credentials
-	if prov.Auth.JWTAuth != nil && prov.Auth.JWTAuth.ServiceAccountRef != nil {
+	if prov.Auth != nil && prov.Auth.JWTAuth != nil && prov.Auth.JWTAuth.ServiceAccountRef != nil {
 		if err := utils.ValidateReferentServiceAccountSelector(store, *prov.Auth.JWTAuth.ServiceAccountRef); err != nil {
 			return nil, fmt.Errorf("invalid Auth.JWT.ServiceAccountRef: %w", err)
 		}
@@ -143,8 +144,6 @@ func newClient(ctx context.Context, store esv1.GenericStore, kube client.Client,
 	storeSpec := store.GetSpec()
 	var cfg *aws.Config
 
-	// allow SecretStore controller validation to pass
-	// when using referent namespace.
 	if util.IsReferentSpec(prov.Auth) && namespace == "" &&
 		store.GetObjectKind().GroupVersionKind().Kind == esv1.ClusterSecretStoreKind {
 		cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("eu-west-1"))

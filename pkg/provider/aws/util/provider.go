@@ -50,7 +50,10 @@ func GetAWSProvider(store esv1.GenericStore) (*esv1.AWSProvider, error) {
 	return prov, nil
 }
 
-func IsReferentSpec(prov esv1.AWSAuth) bool {
+func IsReferentSpec(prov *esv1.AWSAuth) bool {
+	if prov == nil {
+		return false
+	}
 	if prov.JWTAuth != nil && prov.JWTAuth.ServiceAccountRef != nil && prov.JWTAuth.ServiceAccountRef.Namespace == nil {
 		return true
 	}

@@ -54,7 +54,8 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 		usedStores = append(usedStores, store)
 		client, err := j.mgr.GetFromStore(ctx, &store, j.Namespace)
 		if err != nil {
-			return nil, nil, err
+			j.Logger.Error(err, "failed to get store from manager")
+			continue
 		}
 		ref := esv1.ExternalSecretFind{
 			Name: &esv1.FindName{
@@ -104,14 +105,16 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 		}
 		client, err := prov.NewClient(ctx, j.Client, &target)
 		if err != nil {
-			return nil, nil, err
+			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
+			continue
 		}
 		regexMap := j.memset.Regexes()
 		for key, regexes := range regexMap {
 			// TODO Fix Threshold
 			locations, err := client.Scan(ctx, regexes, j.memset.GetThreshold())
 			if err != nil {
-				return nil, nil, err
+				j.Logger.Error(err, "failed scan target regexes", "regexes", regexes)
+				continue
 			}
 			for _, location := range locations {
 				j.memset.AddByRegex(key, location)

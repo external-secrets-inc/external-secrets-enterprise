@@ -5,21 +5,27 @@ package postgresql
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
+
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/jackc/pgx/v5"
+	"github.com/labstack/gommon/log"
 
 	enterprise "github.com/external-secrets/external-secrets/apis/enterprise/generators/v1alpha1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/pkg/generator/password"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -32,6 +38,7 @@ const (
 	defaultUser       = "postgres"
 	defaultDbName     = "postgres"
 	defaultSuffixSize = 8
+	schedIdFmt        = "psql-session-observation-%s-%s:%s"
 )
 
 var mapAttributes = map[string]enterprise.PostgreSqlUserAttributesEnum{
@@ -66,6 +73,25 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	err = db.Ping(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to ping the database: %w", err)
+	}
+
+	cleanupPolicy, err := g.GetCleanupPolicy(jsonSpec)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get cleanup policy: %w", err)
+	}
+	if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
+		err = setupObservation(ctx, db)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to setup observation: %w", err)
+		}
+		schedId := fmt.Sprintf(schedIdFmt, res.UID, res.Spec.Host, res.Spec.Port)
+		scheduler.Global().ScheduleInterval(schedId, res.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
+			err := triggerSessionSnapshot(ctx, &res.Spec, kube, namespace)
+			if err != nil {
+				log.Error(err, "failed to trigger session observation")
+				return
+			}
+		})
 	}
 
 	user, err := createUser(ctx, db, &res.Spec)
@@ -125,11 +151,52 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 }
 
 func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
-	return nil, nil
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return nil, err
+	}
+	if res.Spec.CleanupPolicy == nil {
+		return nil, nil
+	}
+
+	policy := genv1alpha1.CleanupPolicy{
+		Type:        res.Spec.CleanupPolicy.Type,
+		IdleTimeout: res.Spec.CleanupPolicy.IdleTimeout,
+		GracePeriod: res.Spec.CleanupPolicy.GracePeriod,
+	}
+	return &policy, nil
 }
 
 func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
-	return time.Time{}, false, nil
+	status, err := parseStatus(state.Raw)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	res, err := parseSpec(obj.Raw)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	db, err := newConnection(ctx, &res.Spec, kube, namespace)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	defer func() {
+		err := db.Close(ctx)
+		if err != nil {
+			fmt.Printf("failed to close db: %v", err)
+		}
+	}()
+
+	err = db.Ping(ctx)
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("unable to ping the database: %w", err)
+	}
+
+	lastActivity, err := getUserActivity(ctx, db, status.Username)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	return lastActivity, true, nil
 }
 
 func (g *Generator) GetKeys() map[string]string {
@@ -169,6 +236,109 @@ func newConnection(ctx context.Context, spec *enterprise.PostgreSqlSpec, kclient
 	)
 
 	return pgx.Connect(ctx, psqlInfo)
+}
+
+func createSessionObservationTable(ctx context.Context, db *pgx.Conn) error {
+	query := `
+CREATE TABLE IF NOT EXISTS session_observation (
+    pid              INTEGER     PRIMARY KEY,
+    usename          TEXT        NOT NULL,
+    client_addr      INET,
+    application_name TEXT,
+    state            TEXT,
+    state_change     TIMESTAMPTZ,
+    first_seen       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`
+
+	if _, err := db.Exec(ctx, query); err != nil {
+		return fmt.Errorf("failed to create session_observation table: %w", err)
+	}
+
+	return nil
+}
+
+func createSessionSnapshotFunction(ctx context.Context, db *pgx.Conn) error {
+	query := `
+CREATE OR REPLACE FUNCTION snapshot_pg_stat_activity() RETURNS void AS $$
+BEGIN
+  INSERT INTO session_observation (pid, usename, client_addr, application_name, state, state_change)
+  SELECT
+    pid,
+    usename,
+    client_addr,
+    application_name,
+    state,
+    state_change
+  FROM pg_stat_activity
+  WHERE pid <> pg_backend_pid()  -- ignore yourself
+  AND usename IS NOT NULL
+  ON CONFLICT (pid)
+  DO UPDATE SET
+    state = EXCLUDED.state,
+    state_change = EXCLUDED.state_change,
+    last_seen = now();
+END;
+$$ LANGUAGE plpgsql;
+`
+
+	if _, err := db.Exec(ctx, query); err != nil {
+		return fmt.Errorf("failed to create session_observation table: %w", err)
+	}
+
+	return nil
+}
+
+func triggerSessionSnapshot(ctx context.Context, spec *enterprise.PostgreSqlSpec, client client.Client, namespace string) error {
+	db, err := newConnection(ctx, spec, client, namespace)
+	if err != nil {
+		log.Error(err, "failed to create db connection")
+		return err
+	}
+	defer func() {
+		err := db.Close(ctx)
+		if err != nil {
+			log.Error(err, "failed to close db")
+		}
+	}()
+
+	if _, err := db.Exec(ctx, "SELECT snapshot_pg_stat_activity()"); err != nil {
+		return fmt.Errorf("failed to trigger session observation: %w", err)
+	}
+	return nil
+}
+
+func getUserActivity(ctx context.Context, db *pgx.Conn, username string) (time.Time, error) {
+	var lastSeen time.Time
+
+	const sqlQuery = `
+        SELECT last_seen
+        FROM session_observation
+        WHERE usename = $1
+        ORDER BY last_seen DESC
+        LIMIT 1;
+    `
+
+	err := db.QueryRow(ctx, sqlQuery, username).Scan(&lastSeen)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return time.Unix(0, 0), nil
+		}
+		return time.Time{}, fmt.Errorf("failed to get user activity: %w", err)
+	}
+
+	return lastSeen, nil
+}
+
+func setupObservation(ctx context.Context, db *pgx.Conn) error {
+	if err := createSessionObservationTable(ctx, db); err != nil {
+		return fmt.Errorf("failed to create session_observation table: %w", err)
+	}
+	if err := createSessionSnapshotFunction(ctx, db); err != nil {
+		return fmt.Errorf("failed to create session_observation function: %w", err)
+	}
+	return nil
 }
 
 func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {

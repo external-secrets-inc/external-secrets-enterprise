@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.17.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.4...v1.17.5) (2025-08-11)
+
+
+### Bug Fixes
+
+* add last status on generatorstates ([#420](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/420)) ([f9465bd](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f9465bddbb00261086a5f3d44795e9a98ba3898b))
+
+## [1.17.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.3...v1.17.4) (2025-08-11)
+
+
+### Bug Fixes
+
+* mark status as genstate subresource ([#418](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/418)) ([4e47cae](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4e47caeb913d8556e71d4c412c0c5d9121b6f993))
+
+## [1.17.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.2...v1.17.3) (2025-08-11)
+
+
+### Bug Fixes
+
+* generator state status ([#416](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/416)) ([3b8a5bb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3b8a5bbef073b0728744b91880510051b84afa43))
+
+## [1.17.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.1...v1.17.2) (2025-08-11)
+
+
+### Bug Fixes
+
+* webhook permissions ([#414](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/414)) ([083992a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/083992aaf4efacd71877950ba91db459420a57c0))
+
+## [1.17.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.0...v1.17.1) (2025-08-11)
+
+
+### Bug Fixes
+
+* bump golang ([256dec7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/256dec7cd04f3c531e20e1d4896d1926a7ad9ccf))
+* conflicts ([378393b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/378393b46c0d0b3e1af457bbdd33fd529cae13cf))
+* do not run ApplyTemplate for immutable secrets in `mutationFunc` ([#5110](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5110)) ([df939d8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/df939d824ddbd0fd6b3ae310a928cc1ec3aa7de4))
+* generator status permission: ([#413](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/413)) ([e919274](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e9192743aa840b17c3af2cf07b085e73bb07ad56))
+* makefile and helm schema ([354cfb0](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/354cfb07c63393e22f084e1b5323f0b8380a267e))
+* several fixes to secretstore crds ([#412](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/412)) ([63985b7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/63985b7e45c685a281d6e525dae499d2b55fe836))
+* update from upstream ([#410](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/410)) ([41c3104](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/41c310416447708a30d830674d5dfaad5c3b744e))
+
 ## [1.17.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.16.3...v1.17.0) (2025-08-07)
 
 

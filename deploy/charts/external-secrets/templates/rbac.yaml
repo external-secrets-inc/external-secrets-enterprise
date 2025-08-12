@@ -207,10 +207,13 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "*"
+    - "*/status"
     verbs:
       - "get"
       - "watch"
       - "list"
+      - "update"
+      - "patch"
   - apiGroups:
     - ""
     resources:

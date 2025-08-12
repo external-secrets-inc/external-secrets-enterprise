@@ -77,6 +77,8 @@ type OciAuthCredentials struct {
 	Region esmeta.SecretKeySelector `json:"region"`
 }
 
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type InfisicalAuth struct {
 	// +optional
 	UniversalAuthCredentials *UniversalAuthCredentials `json:"universalAuthCredentials,omitempty"`

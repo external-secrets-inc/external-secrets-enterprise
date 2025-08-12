@@ -18,6 +18,8 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type GCPSMAuth struct {
 	// +optional
 	SecretRef *GCPSMAuthSecretRef `json:"secretRef,omitempty"`
