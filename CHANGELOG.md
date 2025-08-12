@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.18.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.5...v1.18.0) (2025-08-12)
+
+
+### Features
+
+* postgres idle cleanup implementation ([#402](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/402)) ([4969f00](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4969f00106047703499173a77f211d9ad6d676f4))
+
+
+### Bug Fixes
+
+* bump image digest to fix e2e tests ([#5127](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5127)) ([88cca3d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/88cca3d5bb106a4b385ca457cf35a230bb858777))
+* conflicts ([724cf05](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/724cf0568f9d2aee56b76152a57c7f6232bab51e))
+* jobs behaviour on timeout/failed ([#422](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/422)) ([c584c72](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c584c72b85bee57f8d6f70a604d28948f1ce4ab0))
+* kube-openapi ([2723409](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/27234096ff188bdd78f715f54f26f1d9d055b26d))
+* update dependencies ([#425](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/425)) ([4306fa2](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4306fa2025e7ae5b84cc51840e0542d7ebc464a0))
+* update from upstream ([#424](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/424)) ([89db95a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/89db95a0f1f30c14469e68b9ff888eea3d8a535f))
+
 ## [1.17.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.4...v1.17.5) (2025-08-11)
 
 
