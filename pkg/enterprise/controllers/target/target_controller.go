@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package secretstore
+package target
 
 import (
 	"context"
@@ -30,7 +30,8 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
-	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/tmetrics"
+	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
 
 	// Loading registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
@@ -77,7 +78,7 @@ func (r *TargetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	return reconcile(ctx, req, genericStore, r.Client, log, Opts{
+	return secretstore.Reconcile(ctx, req, genericStore, r.Client, log, secretstore.Opts{
 		ControllerClass: r.ControllerClass,
 		GaugeVecGetter:  tmetrics.GetGaugeVec,
 		Recorder:        r.recorder,

@@ -45,7 +45,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 
 	client := &http.Client{}
 
-	if u.Scheme == "https" {
+	if u.Scheme == https {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()
@@ -133,7 +133,7 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	}
 
 	client := &http.Client{}
-	if u.Scheme == "https" {
+	if u.Scheme == https {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()

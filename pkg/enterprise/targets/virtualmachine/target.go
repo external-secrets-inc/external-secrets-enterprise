@@ -39,6 +39,7 @@ type ScanTarget struct {
 const (
 	errNotImplemented    = "not implemented"
 	errPropertyMandatory = "property is mandatory"
+	https                = "https"
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
@@ -110,7 +111,7 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) 
 
 	client := &http.Client{}
 
-	if u.Scheme == "https" {
+	if u.Scheme == https {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()

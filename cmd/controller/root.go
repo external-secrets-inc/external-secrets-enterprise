@@ -55,9 +55,10 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
-	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/tmetrics"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow"
 	workflowapi "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/api"
 	workflowcommon "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/common"
@@ -241,7 +242,7 @@ var rootCmd = &cobra.Command{
 		tmetrics.SetUpMetrics()
 		allTargets := tgtv1alpha1.GetAllTargets()
 		for kind, genericStore := range allTargets {
-			if err = (&secretstore.TargetReconciler{
+			if err = (&target.TargetReconciler{
 				Client:          mgr.GetClient(),
 				Log:             ctrl.Log.WithName("controllers").WithName("Target"),
 				Scheme:          mgr.GetScheme(),
