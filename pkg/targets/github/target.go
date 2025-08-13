@@ -34,6 +34,7 @@ type ScanTarget struct {
 	UploadURL     string // GitHub API Upload URL (e.g. http(s)://[hostname]/api/uploads/)
 	CABundle      string // CA bundle for enterprise https
 	AuthToken     string // GitHub token (App or PAT)
+	GitHubClient  *github.Client
 }
 
 const (
@@ -53,15 +54,27 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		return nil, fmt.Errorf("resolve github token: %w", err)
 	}
 
+	ghClient, err := newGitHubClient(ctx, token, converted.Spec.EnterpriseURL, converted.Spec.UploadURL, converted.Spec.CABundle)
+	if err != nil {
+		return nil, fmt.Errorf("error creating new GitHub client: %w", err)
+	}
+
+	branch, err := resolveBranch(ctx, ghClient, converted.Spec.Owner, converted.Spec.Repository, converted.Spec.Branch)
+	if err != nil {
+		return nil, fmt.Errorf("error setting repo branch: %w", err)
+	}
+
 	return &ScanTarget{
 		Name:          converted.GetName(),
 		Owner:         converted.Spec.Owner,
 		Repo:          converted.Spec.Repository,
-		Branch:        converted.Spec.Branch,
+		Branch:        branch,
 		Paths:         converted.Spec.Paths,
 		EnterpriseURL: converted.Spec.EnterpriseURL,
 		UploadURL:     converted.Spec.UploadURL,
+		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
+		GitHubClient:  ghClient,
 	}, nil
 }
 
@@ -85,40 +98,48 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	// Resolve auth token: PAT or GitHub App Installation token
 	token, err := resolveGithubToken(ctx, client, converted)
 	if err != nil {
-		return nil, fmt.Errorf("resolve github token: %w", err)
+		return nil, fmt.Errorf("error resolving github token: %w", err)
+	}
+
+	ghClient, err := newGitHubClient(ctx, token, converted.Spec.EnterpriseURL, converted.Spec.UploadURL, converted.Spec.CABundle)
+	if err != nil {
+		return nil, fmt.Errorf("error creating new GitHub client: %w", err)
+	}
+
+	branch, err := resolveBranch(ctx, ghClient, converted.Spec.Owner, converted.Spec.Repository, converted.Spec.Branch)
+	if err != nil {
+		return nil, fmt.Errorf("error setting repo branch: %w", err)
 	}
 
 	return &ScanTarget{
 		Name:          converted.GetName(),
 		Owner:         converted.Spec.Owner,
 		Repo:          converted.Spec.Repository,
-		Branch:        converted.Spec.Branch,
+		Branch:        branch,
 		Paths:         converted.Spec.Paths,
 		EnterpriseURL: converted.Spec.EnterpriseURL,
 		UploadURL:     converted.Spec.UploadURL,
+		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
+		GitHubClient:  ghClient,
 	}, nil
 }
 
 func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
-	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL, s.CABundle)
-	if err != nil {
-		return nil, fmt.Errorf("error creating new GitHub client: %w", err)
-	}
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
-	ref, _, err := gh.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
+	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
 	if err != nil {
-		return nil, fmt.Errorf("get ref: %w", err)
+		return nil, fmt.Errorf("error getting ref: %w", err)
 	}
-	commit, _, err := gh.Git.GetCommit(ctx, owner, repo, ref.GetObject().GetSHA())
+	commit, _, err := s.GitHubClient.Git.GetCommit(ctx, owner, repo, ref.GetObject().GetSHA())
 	if err != nil {
-		return nil, fmt.Errorf("get base commit: %w", err)
+		return nil, fmt.Errorf("error getting base commit: %w", err)
 	}
 
-	tree, _, err := gh.Git.GetTree(ctx, owner, repo, commit.GetTree().GetSHA(), true)
+	tree, _, err := s.GitHubClient.Git.GetTree(ctx, owner, repo, commit.GetTree().GetSHA(), true)
 	if err != nil {
-		return nil, fmt.Errorf("get tree: %w", err)
+		return nil, fmt.Errorf("error getting tree: %w", err)
 	}
 
 	var results []tgtv1alpha1.SecretInStoreRef
@@ -137,7 +158,7 @@ func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1
 
 		// 3) Get file content (decoded)
 		// Use Repos.GetContents to retrieve decoded content + file SHA if needed later
-		rc, _, _, err := gh.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{Ref: baseBranch})
+		rc, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{Ref: baseBranch})
 		if err != nil || rc == nil || rc.GetType() != "file" {
 			continue
 		}
@@ -215,7 +236,6 @@ func resolveGithubToken(ctx context.Context, kube client.Client, githubRepositor
 		return "", fmt.Errorf("spec.auth is required")
 	}
 
-	// 1) Personal Access Token
 	if githubRepository.Spec.Auth.Token != nil {
 		pat, err := resolvers.SecretKeyRef(ctx, kube, "", githubRepository.Namespace, &esmeta.SecretKeySelector{
 			Namespace: &githubRepository.Namespace,
@@ -231,7 +251,6 @@ func resolveGithubToken(ctx context.Context, kube client.Client, githubRepositor
 		return pat, nil
 	}
 
-	// 2) GitHub App: use private key to mint JWT, then exchange for an installation token
 	if githubRepository.Spec.Auth.AppAuth != nil {
 		pem, err := readSecretKey(ctx, kube, githubRepository.Namespace, esmeta.SecretKeySelector{
 			Namespace: &githubRepository.Namespace,
@@ -245,15 +264,25 @@ func resolveGithubToken(ctx context.Context, kube client.Client, githubRepositor
 		if err != nil {
 			return "", fmt.Errorf("sign app jwt: %w", err)
 		}
-		instID := githubRepository.Spec.Auth.AppAuth.InstallID
-		token, err := createInstallationToken(ctx, jwtToken, instID, githubRepository.Spec.EnterpriseURL, githubRepository.Spec.UploadURL, githubRepository.Spec.CABundle)
-		if err != nil {
-			return "", fmt.Errorf("create installation token: %w", err)
-		}
-		return token, nil
+		return jwtToken, nil
 	}
 
 	return "", fmt.Errorf("spec.auth must define either token or appAuth")
+}
+
+func resolveBranch(ctx context.Context, gh *github.Client, owner, repo, baseBranch string) (string, error) {
+	branch := strings.TrimSpace(baseBranch)
+	if branch == "" {
+		r, _, err := gh.Repositories.Get(ctx, owner, repo)
+		if err != nil {
+			return "", fmt.Errorf("get repository %s/%s: %w", owner, repo, err)
+		}
+		branch = r.GetDefaultBranch()
+		if branch == "" {
+			return "", fmt.Errorf("repository %s/%s has no default branch", owner, repo)
+		}
+	}
+	return branch, nil
 }
 
 func readSecretKey(ctx context.Context, kube client.Client, ns string, sel esmeta.SecretKeySelector) ([]byte, error) {
@@ -282,38 +311,6 @@ func signAppJWT(privateKeyPEM []byte, appID string) (string, error) {
 		return "", fmt.Errorf("sign jwt: %w", err)
 	}
 	return signed, nil
-}
-
-// createInstallationToken exchanges the App JWT for an installation access token using go-github.
-// If URL is a GHE API base, the client will target that host.
-func createInstallationToken(ctx context.Context, appJWT, installID, enterpriseURL, uploadURL, caBundle string) (string, error) {
-	ghClient, err := newGitHubClient(ctx, appJWT, enterpriseURL, uploadURL, caBundle)
-	if err != nil {
-		return "", fmt.Errorf("error creating new GitHub client: %w", err)
-	}
-
-	inst, err := parseInstallationID(installID)
-	if err != nil {
-		return "", err
-	}
-	token, _, err := ghClient.Apps.CreateInstallationToken(ctx, inst, &github.InstallationTokenOptions{})
-	if err != nil {
-		return "", fmt.Errorf("error creating apps installationToken: %w", err)
-	}
-	if token == nil || token.GetToken() == "" {
-		return "", fmt.Errorf("empty installation token")
-	}
-	return token.GetToken(), nil
-}
-
-// Convert installation ID to int64 for the SDK
-func parseInstallationID(s string) (int64, error) {
-	var id int64
-	_, err := fmt.Sscanf(s, "%d", &id)
-	if err != nil {
-		return 0, fmt.Errorf("invalid installID %q: %w", s, err)
-	}
-	return id, nil
 }
 
 func httpClientWithCABundle(base *http.Client, pemBundle string) (*http.Client, error) {

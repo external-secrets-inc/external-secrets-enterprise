@@ -28,18 +28,14 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	indexes := remoteRef.GetProperty()
 	filename := remoteRef.GetRemoteKey()
 
-	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL, s.CABundle)
-	if err != nil {
-		return fmt.Errorf("error creating new GitHub client: %w", err)
-	}
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
-	ref, _, err := gh.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
+	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
 	if err != nil {
 		return fmt.Errorf("error getting repository ref: %w", err)
 	}
 	newBranch := fmt.Sprintf("external-secrets-update-%d", time.Now().Unix())
-	_, _, err = gh.Git.CreateRef(ctx, owner, repo, &github.Reference{
+	_, _, err = s.GitHubClient.Git.CreateRef(ctx, owner, repo, &github.Reference{
 		Ref: github.Ptr("refs/heads/" + newBranch),
 		Object: &github.GitObject{
 			SHA: ref.Object.SHA,
@@ -49,7 +45,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		return fmt.Errorf("error creating new branch: %w", err)
 	}
 
-	rc, _, _, err := gh.Repositories.GetContents(ctx, owner, repo, filename, &github.RepositoryContentGetOptions{Ref: baseBranch})
+	rc, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, filename, &github.RepositoryContentGetOptions{Ref: baseBranch})
 	if err != nil {
 		return fmt.Errorf("error getting file contents: %w", err)
 	}
@@ -88,7 +84,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	newContent := buf.Bytes()
 
 	commitMsg := fmt.Sprintf("chore: update secret in %s", filename)
-	_, _, err = gh.Repositories.UpdateFile(ctx, owner, repo, filename, &github.RepositoryContentFileOptions{
+	_, _, err = s.GitHubClient.Repositories.UpdateFile(ctx, owner, repo, filename, &github.RepositoryContentFileOptions{
 		Message: github.Ptr(commitMsg),
 		Content: newContent,
 		SHA:     github.Ptr(fileSHA),
@@ -99,7 +95,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	}
 
 	title := fmt.Sprintf("Update secret in %s", filename)
-	pr, _, err := gh.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
+	pr, _, err := s.GitHubClient.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
 		Title: github.Ptr(title),
 		Head:  github.Ptr(newBranch),
 		Base:  github.Ptr(baseBranch),
@@ -149,12 +145,7 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL, s.CABundle)
-	if err != nil {
-		return esv1.ValidationResultError, fmt.Errorf("error configuring github client: %w", err)
-	}
-
-	repo, resp, err := gh.Repositories.Get(ctx, s.Owner, s.Repo)
+	repo, resp, err := s.GitHubClient.Repositories.Get(ctx, s.Owner, s.Repo)
 	if err != nil {
 		return esv1.ValidationResultError, fmt.Errorf("error getting repository %s/%s: %w", s.Owner, s.Repo, err)
 	}
@@ -169,7 +160,7 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	}
 
 	if strings.TrimSpace(s.Branch) != "" {
-		_, resp, err := gh.Git.GetRef(ctx, s.Owner, s.Repo, "refs/heads/"+s.Branch)
+		_, resp, err := s.GitHubClient.Git.GetRef(ctx, s.Owner, s.Repo, "refs/heads/"+s.Branch)
 		if err != nil {
 			return esv1.ValidationResultError, fmt.Errorf("error getting branch %q: %w", s.Branch, err)
 		}
@@ -183,7 +174,7 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 		if p == "" {
 			continue
 		}
-		_, dc, _, err := gh.Repositories.GetContents(ctx, s.Owner, s.Repo, p, &github.RepositoryContentGetOptions{
+		_, dc, _, err := s.GitHubClient.Repositories.GetContents(ctx, s.Owner, s.Repo, p, &github.RepositoryContentGetOptions{
 			Ref: s.Branch,
 		})
 		if err != nil {
