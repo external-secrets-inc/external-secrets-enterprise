@@ -252,7 +252,7 @@ func (e JobNotReadyErr) Error() string {
 
 func init() {
 	tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
-	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)
+	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind, esv1.MaintenanceStatusMaintained)
 }
 
 func getBasicAuth(ctx context.Context, client client.Client, namespace string, auth *tgtv1alpha1.Authentication) (string, string, error) {

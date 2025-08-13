@@ -65,10 +65,15 @@ type GithubAppAuth struct {
 // +kubebuilder:storageversion
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:resource:scope=Namespaced,categories={external-secrets,external-secrets-target}
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].reason`
+// +kubebuilder:printcolumn:name="Capabilities",type=string,JSONPath=`.status.capabilities`
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
+// +kubebuilder:subresource:status
 type GithubRepository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              GithubRepositorySpec `json:"spec,omitempty"`
+	Spec              GithubRepositorySpec   `json:"spec,omitempty"`
+	Status            esv1.SecretStoreStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -91,10 +96,12 @@ func (c *GithubRepository) GetSpec() *esv1.SecretStoreSpec {
 }
 
 func (c *GithubRepository) GetStatus() esv1.SecretStoreStatus {
-	return esv1.SecretStoreStatus{}
+	return c.Status
 }
 
-func (c *GithubRepository) SetStatus(_ esv1.SecretStoreStatus) {}
+func (c *GithubRepository) SetStatus(status esv1.SecretStoreStatus) {
+	c.Status = status
+}
 
 func (c *GithubRepository) GetNamespacedName() string {
 	return fmt.Sprintf("%s/%s", c.Namespace, c.Name)

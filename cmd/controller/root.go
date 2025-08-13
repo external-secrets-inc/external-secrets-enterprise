@@ -55,6 +55,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
+	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/tmetrics"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow"
@@ -234,6 +235,24 @@ var rootCmd = &cobra.Command{
 				RateLimiter:             ctrlcommon.BuildRateLimiter(),
 			}); err != nil {
 				setupLog.Error(err, errCreateController, "controller", "ClusterSecretStore")
+				os.Exit(1)
+			}
+		}
+		tmetrics.SetUpMetrics()
+		allTargets := tgtv1alpha1.GetAllTargets()
+		for kind, genericStore := range allTargets {
+			if err = (&secretstore.TargetReconciler{
+				Client:          mgr.GetClient(),
+				Log:             ctrl.Log.WithName("controllers").WithName("Target"),
+				Scheme:          mgr.GetScheme(),
+				ControllerClass: controllerClass,
+				RequeueInterval: storeRequeueInterval,
+				Kind:            kind,
+			}).SetupWithManager(mgr, genericStore, controller.Options{
+				MaxConcurrentReconciles: concurrent,
+				RateLimiter:             ctrlcommon.BuildRateLimiter(),
+			}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "Target")
 				os.Exit(1)
 			}
 		}

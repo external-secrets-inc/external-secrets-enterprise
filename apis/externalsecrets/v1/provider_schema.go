@@ -28,7 +28,8 @@ func init() {
 	builder = make(map[string]Provider)
 }
 
-func RegisterByKind(s Provider, kind string) {
+func RegisterByKind(s Provider, kind string, maintenanceStatus MaintenanceStatus) {
+	RegisterMaintenanceStatusByKind(maintenanceStatus, kind)
 	buildlock.Lock()
 	defer buildlock.Unlock()
 	_, exists := builder[kind]

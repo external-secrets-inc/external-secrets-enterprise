@@ -2,7 +2,11 @@ package github
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -97,7 +101,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 }
 
 func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
-	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL)
+	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL, s.CABundle)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new GitHub client: %w", err)
 	}
@@ -176,21 +180,34 @@ func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1
 	return results, nil
 }
 
-func newGitHubClient(ctx context.Context, token, enterpriseURL, uploadURL string) (*github.Client, error) {
+func newGitHubClient(ctx context.Context, token, enterpriseURL, uploadURL, caBundle string) (*github.Client, error) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
 
-	var client *github.Client
-	var err error
-	if enterpriseURL != "" && uploadURL != "" {
-		client, err = github.NewClient(tc).WithEnterpriseURLs(enterpriseURL, uploadURL)
+	if strings.TrimSpace(caBundle) != "" {
+		c, err := httpClientWithCABundle(tc, caBundle)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		client = github.NewClient(tc)
+		tc = c
 	}
-	return client, nil
+
+	apiBase := strings.TrimSpace(enterpriseURL)
+	uploadBase := strings.TrimSpace(uploadURL)
+
+	if apiBase == "" && uploadBase == "" {
+		return github.NewClient(tc), nil
+	}
+
+	// Ensure trailing slashes per go-github expectations
+	if apiBase != "" && !strings.HasSuffix(apiBase, "/") {
+		apiBase += "/"
+	}
+	if uploadBase != "" && !strings.HasSuffix(uploadBase, "/") {
+		uploadBase += "/"
+	}
+
+	return github.NewClient(tc).WithEnterpriseURLs(apiBase, uploadBase)
 }
 
 func resolveGithubToken(ctx context.Context, kube client.Client, githubRepository *tgtv1alpha1.GithubRepository) (string, error) {
@@ -229,7 +246,7 @@ func resolveGithubToken(ctx context.Context, kube client.Client, githubRepositor
 			return "", fmt.Errorf("sign app jwt: %w", err)
 		}
 		instID := githubRepository.Spec.Auth.AppAuth.InstallID
-		token, err := createInstallationToken(ctx, jwtToken, instID, githubRepository.Spec.EnterpriseURL, githubRepository.Spec.UploadURL)
+		token, err := createInstallationToken(ctx, jwtToken, instID, githubRepository.Spec.EnterpriseURL, githubRepository.Spec.UploadURL, githubRepository.Spec.CABundle)
 		if err != nil {
 			return "", fmt.Errorf("create installation token: %w", err)
 		}
@@ -269,8 +286,8 @@ func signAppJWT(privateKeyPEM []byte, appID string) (string, error) {
 
 // createInstallationToken exchanges the App JWT for an installation access token using go-github.
 // If URL is a GHE API base, the client will target that host.
-func createInstallationToken(ctx context.Context, appJWT, installID, enterpriseURL, uploadURL string) (string, error) {
-	ghClient, err := newGitHubClient(ctx, appJWT, enterpriseURL, uploadURL)
+func createInstallationToken(ctx context.Context, appJWT, installID, enterpriseURL, uploadURL, caBundle string) (string, error) {
+	ghClient, err := newGitHubClient(ctx, appJWT, enterpriseURL, uploadURL, caBundle)
 	if err != nil {
 		return "", fmt.Errorf("error creating new GitHub client: %w", err)
 	}
@@ -297,4 +314,68 @@ func parseInstallationID(s string) (int64, error) {
 		return 0, fmt.Errorf("invalid installID %q: %w", s, err)
 	}
 	return id, nil
+}
+
+func httpClientWithCABundle(base *http.Client, pemBundle string) (*http.Client, error) {
+	pool, err := x509.SystemCertPool()
+	if err != nil || pool == nil {
+		pool = x509.NewCertPool()
+	}
+	// Accept multiple concatenated PEM blocks
+	ok := false
+	rest := []byte(pemBundle)
+	for {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+		if block.Type == "CERTIFICATE" {
+			ok = pool.AppendCertsFromPEM(pem.EncodeToMemory(block))
+		}
+	}
+	if !ok {
+		// Try appending raw once if decode failed (single PEM)
+		if !pool.AppendCertsFromPEM([]byte(pemBundle)) {
+			return nil, fmt.Errorf("unable to append CA bundle")
+		}
+	}
+	transport := cloneTransport(base.Transport)
+	transport.TLSClientConfig = cloneTLSConfig(transport.TLSClientConfig)
+	transport.TLSClientConfig.RootCAs = pool
+
+	c := *base
+	c.Transport = transport
+	return &c, nil
+}
+
+func cloneTransport(rt http.RoundTripper) *http.Transport {
+	if rt == nil {
+		return &http.Transport{}
+	}
+	if t, ok := rt.(*http.Transport); ok {
+		cp := t.Clone()
+		return cp
+	}
+	// Wrap unknown round trippers
+	return &http.Transport{}
+}
+
+func cloneTLSConfig(cfg *tls.Config) *tls.Config {
+	if cfg == nil {
+		return &tls.Config{}
+	}
+	cp := cfg.Clone()
+	return cp
+}
+
+type JobNotReadyErr struct{}
+
+func (e JobNotReadyErr) Error() string {
+	return "job not ready"
+}
+
+func init() {
+	tgtv1alpha1.Register(tgtv1alpha1.GithubTargetKind, &Provider{})
+	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.GithubTargetKind, esv1.MaintenanceStatusMaintained)
 }

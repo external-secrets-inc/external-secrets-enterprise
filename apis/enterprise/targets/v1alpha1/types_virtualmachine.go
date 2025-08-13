@@ -40,10 +40,15 @@ type BasicAuth struct {
 // +kubebuilder:storageversion
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:resource:scope=Namespaced,categories={external-secrets, external-secrets-target}
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].reason`
+// +kubebuilder:printcolumn:name="Capabilities",type=string,JSONPath=`.status.capabilities`
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
+// +kubebuilder:subresource:status
 type VirtualMachine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              VirtualMachineSpec `json:"spec,omitempty"`
+	Spec              VirtualMachineSpec     `json:"spec,omitempty"`
+	Status            esv1.SecretStoreStatus `json:"status,omitempty"`
 }
 
 // VirtualMachineList contains a list of VirtualMachine resources.
@@ -67,10 +72,11 @@ func (c *VirtualMachine) GetSpec() *esv1.SecretStoreSpec {
 }
 
 func (c *VirtualMachine) GetStatus() esv1.SecretStoreStatus {
-	return esv1.SecretStoreStatus{}
+	return c.Status
 }
 
-func (c *VirtualMachine) SetStatus(_ esv1.SecretStoreStatus) {
+func (c *VirtualMachine) SetStatus(status esv1.SecretStoreStatus) {
+	c.Status = status
 }
 
 func (c *VirtualMachine) GetNamespacedName() string {

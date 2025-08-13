@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"strings"
 	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
@@ -26,7 +28,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	indexes := remoteRef.GetProperty()
 	filename := remoteRef.GetRemoteKey()
 
-	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL)
+	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL, s.CABundle)
 	if err != nil {
 		return fmt.Errorf("error creating new GitHub client: %w", err)
 	}
@@ -137,5 +139,61 @@ func (s *ScanTarget) Close(ctx context.Context) error {
 }
 
 func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
-	return esv1.ValidationResultUnknown, nil
+	if strings.TrimSpace(s.AuthToken) == "" {
+		return esv1.ValidationResultError, fmt.Errorf("missing auth token")
+	}
+	if strings.TrimSpace(s.Owner) == "" || strings.TrimSpace(s.Repo) == "" {
+		return esv1.ValidationResultError, fmt.Errorf("missing owner and repository")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	gh, err := newGitHubClient(ctx, s.AuthToken, s.EnterpriseURL, s.UploadURL, s.CABundle)
+	if err != nil {
+		return esv1.ValidationResultError, fmt.Errorf("error configuring github client: %w", err)
+	}
+
+	repo, resp, err := gh.Repositories.Get(ctx, s.Owner, s.Repo)
+	if err != nil {
+		return esv1.ValidationResultError, fmt.Errorf("error getting repository %s/%s: %w", s.Owner, s.Repo, err)
+	}
+	if resp == nil || resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return esv1.ValidationResultError, fmt.Errorf("error accessing repository %s/%s: http %d", s.Owner, s.Repo, resp.StatusCode)
+	}
+
+	if repo.Permissions == nil || !repo.GetPermissions()["push"] {
+		// If only read access, we can’t open PRs from within the repo.
+		// Returning Error makes misconfiguration clear.
+		return esv1.ValidationResultError, fmt.Errorf("token lacks push permission on %s/%s", s.Owner, s.Repo)
+	}
+
+	if strings.TrimSpace(s.Branch) != "" {
+		_, resp, err := gh.Git.GetRef(ctx, s.Owner, s.Repo, "refs/heads/"+s.Branch)
+		if err != nil {
+			return esv1.ValidationResultError, fmt.Errorf("error getting branch %q: %w", s.Branch, err)
+		}
+		if resp == nil || resp.StatusCode != http.StatusOK {
+			return esv1.ValidationResultError, fmt.Errorf("branch %q check failed: http %d", s.Branch, resp.StatusCode)
+		}
+	}
+
+	for _, p := range s.Paths {
+		p = strings.TrimPrefix(strings.TrimSpace(p), "/")
+		if p == "" {
+			continue
+		}
+		_, dc, _, err := gh.Repositories.GetContents(ctx, s.Owner, s.Repo, p, &github.RepositoryContentGetOptions{
+			Ref: s.Branch,
+		})
+		if err != nil {
+			return esv1.ValidationResultError, fmt.Errorf("path %q not found in repository %s/%s: %w", p, s.Owner, s.Repo, err)
+		}
+		// If both file and directory are nil, something is wrong.
+		if dc == nil {
+			return esv1.ValidationResultError, fmt.Errorf("path %q not found in repository %s/%s", p, s.Owner, s.Repo)
+		}
+	}
+
+	return esv1.ValidationResultReady, nil
 }
