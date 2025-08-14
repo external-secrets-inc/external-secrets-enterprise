@@ -165,13 +165,10 @@ func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1
 			continue
 		}
 		path := te.GetPath()
-		// filter by configured path (allow exact file or directory prefix)
 		if !pathFilters.allow(path) {
 			continue
 		}
 
-		// 3) Get file content (decoded)
-		// Use Repos.GetContents to retrieve decoded content + file SHA if needed later
 		rc, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{Ref: baseBranch})
 		if err != nil || rc == nil || rc.GetType() != "file" {
 			continue

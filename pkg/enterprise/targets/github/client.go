@@ -44,21 +44,6 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
-	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
-	if err != nil {
-		return fmt.Errorf("error getting repository ref: %w", err)
-	}
-	newBranch := fmt.Sprintf("external-secrets-update-%d", time.Now().Unix())
-	_, _, err = s.GitHubClient.Git.CreateRef(ctx, owner, repo, &github.Reference{
-		Ref: github.Ptr("refs/heads/" + newBranch),
-		Object: &github.GitObject{
-			SHA: ref.Object.SHA,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("error creating new branch: %w", err)
-	}
-
 	rc, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, filename, &github.RepositoryContentGetOptions{Ref: baseBranch})
 	if err != nil {
 		return fmt.Errorf("error getting file contents: %w", err)
@@ -97,6 +82,25 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	buf.WriteString(content[end:])
 	newContent := buf.Bytes()
 
+	if content == string(newContent) {
+		return nil
+	}
+
+	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
+	if err != nil {
+		return fmt.Errorf("error getting repository ref: %w", err)
+	}
+	newBranch := fmt.Sprintf("external-secrets-update-%d", time.Now().Unix())
+	_, _, err = s.GitHubClient.Git.CreateRef(ctx, owner, repo, &github.Reference{
+		Ref: github.Ptr("refs/heads/" + newBranch),
+		Object: &github.GitObject{
+			SHA: ref.Object.SHA,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error creating new branch: %w", err)
+	}
+
 	commitMsg := fmt.Sprintf("chore: update secret in %s", filename)
 	_, _, err = s.GitHubClient.Repositories.UpdateFile(ctx, owner, repo, filename, &github.RepositoryContentFileOptions{
 		Message: github.Ptr(commitMsg),
@@ -108,12 +112,12 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		return fmt.Errorf("update file: %w", err)
 	}
 
-	title := fmt.Sprintf("Update secret in %s", filename)
+	title := fmt.Sprintf("[External Secrets] Update secret in %s", filename)
 	pr, _, err := s.GitHubClient.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
 		Title: github.Ptr(title),
 		Head:  github.Ptr(newBranch),
 		Base:  github.Ptr(baseBranch),
-		Body:  github.Ptr("This PR was created automatically by External Secrets to update a hardcoded secret."),
+		Body:  github.Ptr("This PR was created automatically by [External Secrets](https://www.externalsecrets.com/) to update a hardcoded secret."),
 	})
 	if err != nil {
 		return fmt.Errorf("error creating PR: %w", err)
@@ -188,14 +192,14 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 		if p == "" {
 			continue
 		}
-		_, dc, _, err := s.GitHubClient.Repositories.GetContents(ctx, s.Owner, s.Repo, p, &github.RepositoryContentGetOptions{
+		rc, dc, _, err := s.GitHubClient.Repositories.GetContents(ctx, s.Owner, s.Repo, p, &github.RepositoryContentGetOptions{
 			Ref: s.Branch,
 		})
 		if err != nil {
 			return esv1.ValidationResultError, fmt.Errorf("path %q not found in repository %s/%s: %w", p, s.Owner, s.Repo, err)
 		}
 		// If both file and directory are nil, something is wrong.
-		if dc == nil {
+		if rc == nil && dc == nil {
 			return esv1.ValidationResultError, fmt.Errorf("path %q not found in repository %s/%s", p, s.Owner, s.Repo)
 		}
 	}

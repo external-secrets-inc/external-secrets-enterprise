@@ -50,7 +50,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 		return nil, nil, err
 	}
 
-	secretValues := make([][]byte, 0)
+	secretValues := make(map[string]struct{}, 0)
 	for i := range stores.Items {
 		store := stores.Items[i]
 		usedStores = append(usedStores, store)
@@ -81,10 +81,10 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 					switch v := v.(type) {
 					case []byte:
 						j.memset.Add(newStoreInRef(store.GetName(), key, k), v)
-						secretValues = append(secretValues, v)
+						secretValues[string(v)] = struct{}{}
 					case string:
 						j.memset.Add(newStoreInRef(store.GetName(), key, k), []byte(v))
-						secretValues = append(secretValues, []byte(v))
+						secretValues[v] = struct{}{}
 					default:
 						return nil, nil, fmt.Errorf("no conversion for value of type %T", v)
 					}
@@ -92,7 +92,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 			} else {
 				// For Each duplicate found, create a Finding bound to that hash;
 				j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
-				secretValues = append(secretValues, value)
+				secretValues[string(value)] = struct{}{}
 			}
 		}
 	}
@@ -148,14 +148,14 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 			continue
 		}
 
-		for _, value := range secretValues {
-			locations, err := client.Scan(ctx, []string{string(value)}, 0)
+		for value := range secretValues {
+			locations, err := client.Scan(ctx, []string{value}, 0)
 			if err != nil {
 				j.Logger.Error(err, "failed scan target value")
 				continue
 			}
 			for _, location := range locations {
-				j.memset.Add(location, value)
+				j.memset.Add(location, []byte(value))
 			}
 		}
 	}
