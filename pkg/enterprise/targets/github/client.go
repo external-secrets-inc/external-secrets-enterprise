@@ -44,26 +44,26 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
-	rc, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, filename, &github.RepositoryContentGetOptions{Ref: baseBranch})
+	repositoryContent, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, filename, &github.RepositoryContentGetOptions{Ref: baseBranch})
 	if err != nil {
 		return fmt.Errorf("error getting file contents: %w", err)
 	}
-	if rc == nil || rc.GetType() != "file" {
+	if repositoryContent == nil || repositoryContent.GetType() != "file" {
 		return fmt.Errorf("path %q is not a file", filename)
 	}
-	content, err := rc.GetContent()
+	content, err := repositoryContent.GetContent()
 	if err != nil {
-		if rc.Content != nil {
-			if b, decErr := base64.StdEncoding.DecodeString(*rc.Content); decErr == nil {
-				content = string(b)
+		if repositoryContent.Content != nil {
+			if byteContent, decodeErr := base64.StdEncoding.DecodeString(*repositoryContent.Content); decodeErr == nil {
+				content = string(byteContent)
 			} else {
-				return fmt.Errorf("error decoding file content: %w", decErr)
+				return fmt.Errorf("error decoding file content: %w", decodeErr)
 			}
 		} else {
 			return fmt.Errorf("empty file content")
 		}
 	}
-	fileSHA := rc.GetSHA()
+	fileSHA := repositoryContent.GetSHA()
 
 	var start, end int
 	if _, err := fmt.Sscanf(indexes, "%d:%d", &start, &end); err != nil {

@@ -68,12 +68,12 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		return nil, fmt.Errorf("resolve github token: %w", err)
 	}
 
-	ghClient, err := newGitHubClient(ctx, token, converted.Spec.EnterpriseURL, converted.Spec.UploadURL, converted.Spec.CABundle)
+	githubClient, err := newGitHubClient(ctx, token, converted.Spec.EnterpriseURL, converted.Spec.UploadURL, converted.Spec.CABundle)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new GitHub client: %w", err)
 	}
 
-	branch, err := resolveBranch(ctx, ghClient, converted.Spec.Owner, converted.Spec.Repository, converted.Spec.Branch)
+	branch, err := resolveBranch(ctx, githubClient, converted.Spec.Owner, converted.Spec.Repository, converted.Spec.Branch)
 	if err != nil {
 		return nil, fmt.Errorf("error setting repo branch: %w", err)
 	}
@@ -88,7 +88,7 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		UploadURL:     converted.Spec.UploadURL,
 		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
-		GitHubClient:  ghClient,
+		GitHubClient:  githubClient,
 	}, nil
 }
 
@@ -115,12 +115,12 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		return nil, fmt.Errorf("error resolving github token: %w", err)
 	}
 
-	ghClient, err := newGitHubClient(ctx, token, converted.Spec.EnterpriseURL, converted.Spec.UploadURL, converted.Spec.CABundle)
+	githubClient, err := newGitHubClient(ctx, token, converted.Spec.EnterpriseURL, converted.Spec.UploadURL, converted.Spec.CABundle)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new GitHub client: %w", err)
 	}
 
-	branch, err := resolveBranch(ctx, ghClient, converted.Spec.Owner, converted.Spec.Repository, converted.Spec.Branch)
+	branch, err := resolveBranch(ctx, githubClient, converted.Spec.Owner, converted.Spec.Repository, converted.Spec.Branch)
 	if err != nil {
 		return nil, fmt.Errorf("error setting repo branch: %w", err)
 	}
@@ -135,7 +135,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		UploadURL:     converted.Spec.UploadURL,
 		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
-		GitHubClient:  ghClient,
+		GitHubClient:  githubClient,
 	}, nil
 }
 
@@ -160,23 +160,23 @@ func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1
 
 	pathFilters := newPathFilter(s.Paths)
 
-	for _, te := range tree.Entries {
-		if te.GetType() != "blob" {
+	for _, treeEntry := range tree.Entries {
+		if treeEntry.GetType() != "blob" {
 			continue
 		}
-		path := te.GetPath()
+		path := treeEntry.GetPath()
 		if !pathFilters.allow(path) {
 			continue
 		}
 
-		rc, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{Ref: baseBranch})
-		if err != nil || rc == nil || rc.GetType() != "file" {
+		repositoryContent, _, _, err := s.GitHubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{Ref: baseBranch})
+		if err != nil || repositoryContent == nil || repositoryContent.GetType() != "file" {
 			continue
 		}
 
 		var content string
-		if rc.Content != nil {
-			content, err = rc.GetContent()
+		if repositoryContent.Content != nil {
+			content, err = repositoryContent.GetContent()
 			if err != nil {
 				log.Errorf("error decoding github repository content from path %s: %w", path, err)
 				continue
@@ -213,22 +213,22 @@ func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1
 }
 
 func newGitHubClient(ctx context.Context, token, enterpriseURL, uploadURL, caBundle string) (*github.Client, error) {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	httpClient := oauth2.NewClient(ctx, tokenSource)
 
 	if strings.TrimSpace(caBundle) != "" {
-		c, err := httpClientWithCABundle(tc, caBundle)
+		client, err := httpClientWithCABundle(httpClient, caBundle)
 		if err != nil {
 			return nil, err
 		}
-		tc = c
+		httpClient = client
 	}
 
 	apiBase := strings.TrimSpace(enterpriseURL)
 	uploadBase := strings.TrimSpace(uploadURL)
 
 	if apiBase == "" && uploadBase == "" {
-		return github.NewClient(tc), nil
+		return github.NewClient(httpClient), nil
 	}
 
 	// Ensure trailing slashes per go-github expectations
@@ -239,7 +239,7 @@ func newGitHubClient(ctx context.Context, token, enterpriseURL, uploadURL, caBun
 		uploadBase += "/"
 	}
 
-	return github.NewClient(tc).WithEnterpriseURLs(apiBase, uploadBase)
+	return github.NewClient(httpClient).WithEnterpriseURLs(apiBase, uploadBase)
 }
 
 func resolveGithubToken(ctx context.Context, kube client.Client, githubRepository *tgtv1alpha1.GithubRepository) (string, error) {
@@ -281,10 +281,10 @@ func resolveGithubToken(ctx context.Context, kube client.Client, githubRepositor
 	return "", fmt.Errorf("spec.auth must define either token or appAuth")
 }
 
-func resolveBranch(ctx context.Context, gh *github.Client, owner, repo, baseBranch string) (string, error) {
+func resolveBranch(ctx context.Context, githubClient *github.Client, owner, repo, baseBranch string) (string, error) {
 	branch := strings.TrimSpace(baseBranch)
 	if branch == "" {
-		r, _, err := gh.Repositories.Get(ctx, owner, repo)
+		r, _, err := githubClient.Repositories.Get(ctx, owner, repo)
 		if err != nil {
 			return "", fmt.Errorf("get repository %s/%s: %w", owner, repo, err)
 		}
@@ -296,13 +296,13 @@ func resolveBranch(ctx context.Context, gh *github.Client, owner, repo, baseBran
 	return branch, nil
 }
 
-func readSecretKey(ctx context.Context, kube client.Client, ns string, sel esmeta.SecretKeySelector) ([]byte, error) {
+func readSecretKey(ctx context.Context, kube client.Client, namespace string, selector esmeta.SecretKeySelector) ([]byte, error) {
 	// reuse resolver for consistency with project code style
-	val, err := resolvers.SecretKeyRef(ctx, kube, resolvers.EmptyStoreKind, ns, &sel)
+	value, err := resolvers.SecretKeyRef(ctx, kube, resolvers.EmptyStoreKind, namespace, &selector)
 	if err != nil {
 		return nil, err
 	}
-	return []byte(val), nil
+	return []byte(value), nil
 }
 
 // signAppJWT creates a short-lived JWT used for GitHub App authentication.
@@ -316,8 +316,8 @@ func signAppJWT(privateKeyPEM []byte, appID string) (string, error) {
 		IssuedAt:  jwt.NewNumericDate(time.Now().Add(-10 * time.Second)),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
 	}
-	tok := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	signed, err := tok.SignedString(key)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	signed, err := token.SignedString(key)
 	if err != nil {
 		return "", fmt.Errorf("sign jwt: %w", err)
 	}
@@ -352,30 +352,29 @@ func httpClientWithCABundle(base *http.Client, pemBundle string) (*http.Client, 
 	transport.TLSClientConfig = cloneTLSConfig(transport.TLSClientConfig)
 	transport.TLSClientConfig.RootCAs = pool
 
-	c := *base
-	c.Transport = transport
-	return &c, nil
+	client := *base
+	client.Transport = transport
+	return &client, nil
 }
 
-func cloneTransport(rt http.RoundTripper) *http.Transport {
-	if rt == nil {
+func cloneTransport(roundTripper http.RoundTripper) *http.Transport {
+	if roundTripper == nil {
 		return &http.Transport{}
 	}
-	if t, ok := rt.(*http.Transport); ok {
-		cp := t.Clone()
+	if transport, ok := roundTripper.(*http.Transport); ok {
+		cp := transport.Clone()
 		return cp
 	}
-	// Wrap unknown round trippers
 	return &http.Transport{}
 }
 
-func cloneTLSConfig(cfg *tls.Config) *tls.Config {
-	if cfg == nil {
+func cloneTLSConfig(config *tls.Config) *tls.Config {
+	if config == nil {
 		return &tls.Config{
 			MinVersion: tls.VersionTLS12,
 		}
 	}
-	cp := cfg.Clone()
+	cp := config.Clone()
 	return cp
 }
 

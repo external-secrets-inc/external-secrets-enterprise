@@ -22,33 +22,33 @@ type pathFilter struct {
 }
 
 func newPathFilter(paths []string) *pathFilter {
-	f := &pathFilter{
+	filter := &pathFilter{
 		exact:    make(map[string]struct{}),
 		prefixes: make([]string, 0, len(paths)),
 	}
 
 	seenPrefix := make(map[string]struct{})
 
-	for _, p := range paths {
-		p = strings.TrimSpace(p)
-		p = strings.TrimPrefix(p, "/")
-		if p == "" {
+	for _, path := range paths {
+		path = strings.TrimSpace(path)
+		path = strings.TrimPrefix(path, "/")
+		if path == "" {
 			continue
 		}
 
-		f.exact[p] = struct{}{}
+		filter.exact[path] = struct{}{}
 
-		pref := p
+		pref := path
 		if !strings.HasSuffix(pref, "/") {
 			pref += "/"
 		}
-		if _, dup := seenPrefix[pref]; !dup {
-			f.prefixes = append(f.prefixes, pref)
+		if _, duplicate := seenPrefix[pref]; !duplicate {
+			filter.prefixes = append(filter.prefixes, pref)
 			seenPrefix[pref] = struct{}{}
 		}
 	}
 
-	return f
+	return filter
 }
 
 func (f *pathFilter) allow(path string) bool {
@@ -59,8 +59,8 @@ func (f *pathFilter) allow(path string) bool {
 	if _, ok := f.exact[path]; ok {
 		return true
 	}
-	for _, pre := range f.prefixes {
-		if strings.HasPrefix(path, pre) {
+	for _, prefix := range f.prefixes {
+		if strings.HasPrefix(path, prefix) {
 			return true
 		}
 	}
