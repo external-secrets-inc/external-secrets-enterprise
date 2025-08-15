@@ -56,6 +56,8 @@ type Reconciler struct {
 
 // Reconcile is the main entrypoint for reconciliation.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	fmt.Printf("\n\n\n*************************************************************************************************************\n")
+	fmt.Println("Reconciling workflow:", req.NamespacedName)
 	log := r.Log.WithValues("workflow", req.NamespacedName)
 
 	// Fetch the Workflow instance.
@@ -76,6 +78,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Run the validation function.
 	if err := validateWorkflowSpec(wf); err != nil {
 		log.Error(err, "workflow spec validation failed")
+		fmt.Println("workflow spec validation failed")
 		return r.markWorkflowFailed(ctx, wf, "ValidationError", err.Error())
 	}
 
@@ -97,12 +100,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return r.markWorkflowFailed(ctx, wf, "DependencyCycle", err.Error())
 		}
 		wf.Status.ExecutionOrder = order
+		fmt.Println("before updateStatusWithEvent - wf.Status.ExecutionOrder == nil")
 		return r.updateStatusWithEvent(ctx, wf,
 			ctrl.Result{}, ctrl.Result{RequeueAfter: 5 * time.Second},
 			"Normal", "WorkflowInitialized", fmt.Sprintf("Workflow %s execution order calculated", wf.Name))
 	}
 
 	// Process the jobs as per the workflow logic.
+	fmt.Println("calling processJobs")
 	allJobsCompleted, procResult, err := r.processJobs(ctx, wf)
 	if err != nil {
 		return procResult, err
@@ -114,6 +119,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// If not all jobs have completed, continue processing.
+	fmt.Println("before updateStatusWithEvent - end of reconcile")
 	return r.updateStatusWithEvent(ctx, wf,
 		ctrl.Result{Requeue: true}, ctrl.Result{RequeueAfter: 5 * time.Second},
 		"Normal", "WorkflowRunning", fmt.Sprintf("Workflow %s is running", wf.Name))
@@ -123,6 +129,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // when their dependencies are met and executing running jobs.
 func (r *Reconciler) processJobs(ctx context.Context, wf *workflows.Workflow) (bool, ctrl.Result, error) {
 	allJobsCompleted := true // Assume all jobs are completed initially.
+	fmt.Println("processJobs wf.Status.ExecutionOrder:", wf.Status.ExecutionOrder)
 
 	for _, jobName := range wf.Status.ExecutionOrder {
 		jobStatus := wf.Status.JobStatuses[jobName]
@@ -152,11 +159,14 @@ func (r *Reconciler) processJobs(ctx context.Context, wf *workflows.Workflow) (b
 			// Dependents not met; leave job pending and continue.
 		case workflows.JobPhaseRunning:
 			// Execute the job and handle errors.
+			fmt.Println("case jobphaseRunning jobName:", jobName)
 			if err := r.executeJob(ctx, wf, jobName, &jobStatus); err != nil {
 				res, markErr := r.markJobFailed(ctx, wf, jobName, err)
 				return false, res, markErr
 			}
 			wf.Status.JobStatuses[jobName] = jobStatus
+			fmt.Println("new jobStatus:", jobStatus)
+			fmt.Println("wf jobStatuses:", wf.Status.JobStatuses[jobName])
 		case workflows.JobPhaseSucceeded, workflows.JobPhaseFailed:
 			// No action needed for already completed jobs.
 			continue
@@ -186,6 +196,7 @@ func (r *Reconciler) initializeWorkflow(ctx context.Context, wf *workflows.Workf
 		}
 	}
 
+	fmt.Println("before updateStatusWithEvent - initialize workflow")
 	return r.updateStatusWithEvent(ctx, wf,
 		ctrl.Result{}, ctrl.Result{Requeue: true},
 		"Normal", "WorkflowInitialized", fmt.Sprintf("Workflow %s initialized", wf.Name))
@@ -194,6 +205,7 @@ func (r *Reconciler) initializeWorkflow(ctx context.Context, wf *workflows.Workf
 // executeJob processes a job using the appropriate job executor based on its type.
 func (r *Reconciler) executeJob(ctx context.Context, wf *workflows.Workflow, jobName string, jobStatus *workflows.JobStatus) error {
 	r.Log.Info("Executing job", "job", jobName)
+	fmt.Println("executeJob jobName:", jobName)
 	jobSpec := wf.Spec.Jobs[jobName]
 
 	// Create the appropriate job executor based on job type
@@ -655,9 +667,13 @@ func (r *Reconciler) updateStatusWithEvent(ctx context.Context, wf *workflows.Wo
 	if err := r.Status().Update(ctx, wf); err != nil {
 		if errors.IsConflict(err) {
 			// A conflict may mean that the resource was updated elsewhere.
+			fmt.Println("REQUEUED due to conflict error")
 			return ctrl.Result{Requeue: true}, nil
 		}
 		return errorResult, err
+	}
+	if successResult.RequeueAfter > 0 {
+		fmt.Println("REQUEUED. successResult.RequeueAfter", successResult.RequeueAfter)
 	}
 	r.Recorder.Eventf(wf, eventType, reason, message)
 	return successResult, nil

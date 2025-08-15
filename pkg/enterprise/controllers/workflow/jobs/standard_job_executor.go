@@ -42,6 +42,7 @@ func NewStandardJobExecutor(job *workflows.StandardJob, scheme *runtime.Scheme, 
 // Execute processes all steps within a standard job.
 func (e *StandardJobExecutor) Execute(ctx context.Context, client client.Client, wf *workflows.Workflow, jobName string, jobStatus *workflows.JobStatus) error {
 	e.log.Info("Executing standard job", "job", jobName)
+	fmt.Println("StandardJobExecutor.Execute jobName:", jobName)
 
 	if e.job == nil || len(e.job.Steps) == 0 {
 		return fmt.Errorf("job has no steps defined")

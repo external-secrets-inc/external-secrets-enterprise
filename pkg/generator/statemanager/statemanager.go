@@ -140,16 +140,20 @@ func (m *Manager) EnqueueCreateState(stateKey, namespace string, resource *apiex
 	if state == nil {
 		return
 	}
+	fmt.Printf("\n\n\n=============================================================================\n")
+	fmt.Println("Enqueueing generator state:", stateKey)
 	// Must be defined outside the closure
 	gcDeadline := m.getGCGracePeriod()
 	m.queue = append(m.queue,
 		QueueItem{
 			Commit: func() error {
+				fmt.Println("commit dispose state. should be called before create")
 				return m.disposeState(stateKey, gcDeadline)
 			},
 		},
 		QueueItem{
 			Commit: func() error {
+				fmt.Println("commit create state. should be called after dispose")
 				genState, err := m.createGeneratorState(resource, state, namespace, stateKey)
 				if err != nil {
 					return err
@@ -160,6 +164,7 @@ func (m *Manager) EnqueueCreateState(stateKey, namespace string, resource *apiex
 			// In case of failure, create a new GeneratorState, so it will eventually be cleaned up.
 			// If that also fails we're out of luck :(
 			Rollback: func() error {
+				fmt.Println("rollback dispose state. should be called after create and if  something fails")
 				err := gen.Cleanup(m.ctx, resource, state, m.client, namespace)
 				if err == nil {
 					return nil

@@ -95,6 +95,7 @@ func ExecuteStep(
 	}
 
 	// Execute the step
+	fmt.Println("Executing step:", stepKey)
 	outputs, err := stepExecutor.Execute(ctx, stepCtx.Client, stepCtx.Workflow, stepCtx.Data, jobName)
 	if err != nil {
 		return markStepFailed(stepCtx.JobStatus, stepKey, stepStatus, err)
@@ -241,6 +242,7 @@ func ExecuteStepWithContext(
 	}
 
 	// Execute the step using the existing ExecuteStep function
+	fmt.Println("Executing step with context:", stepKey)
 	err := ExecuteStep(ctx, stepCtx, step, stepKey, jobCtx.JobName)
 	if err != nil {
 		return err
