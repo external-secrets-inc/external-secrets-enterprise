@@ -7,15 +7,12 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
 	"math/big"
-	"slices"
 	"strings"
 	"sync"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -159,9 +156,6 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 	for hash, keys := range ms.valueToKeys {
 		if len(keys) > 1 {
 			finding := v1alpha1.Finding{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: getNameFor(keys),
-				},
 				Spec: v1alpha1.FindingSpec{
 					Hash: hash,
 				},
@@ -175,24 +169,9 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 	return findings
 }
 
-func getNameFor(keys []tgtv1alpha1.SecretInStoreRef) string {
-	slices.SortFunc(keys, func(a, b tgtv1alpha1.SecretInStoreRef) int {
-		aIdx := fmt.Sprintf("%s.%s", a.RemoteRef.Key, a.RemoteRef.Property)
-		if a.RemoteRef.Property == "" {
-			aIdx = a.RemoteRef.Key
-		}
-		bIdx := fmt.Sprintf("%s.%s", b.RemoteRef.Key, b.RemoteRef.Property)
-		if b.RemoteRef.Property == "" {
-			bIdx = b.RemoteRef.Key
-		}
-		return strings.Compare(aIdx, bIdx)
-	})
-	return sanitize(keys[0])
-}
-
-func sanitize(ref tgtv1alpha1.SecretInStoreRef) string {
-	cleanedName := strings.ToLower(ref.Name)
-	cleanedKind := strings.ToLower(ref.Kind)
+func Sanitize(ref tgtv1alpha1.SecretInStoreRef) string {
+	cleanedName := strings.ToLower(strings.TrimSpace(ref.Name))
+	cleanedKind := strings.ToLower(strings.TrimSpace(ref.Kind))
 	cleanedKey := strings.TrimSuffix(strings.TrimPrefix(ref.RemoteRef.Key, "/"), "/")
 	ans := cleanedKind + "." + cleanedName + "." + cleanedKey
 	if ref.RemoteRef.Property != "" {
