@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -147,6 +148,20 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 	return ctrl.Result{RequeueAfter: jobSpec.Spec.Interval.Duration}, nil
 }
 
+func sortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
+	slices.SortFunc(loc, func(a, b tgtv1alpha1.SecretInStoreRef) int {
+		aIdx := fmt.Sprintf("%s.%s", a.RemoteRef.Key, a.RemoteRef.Property)
+		if a.RemoteRef.Property == "" {
+			aIdx = a.RemoteRef.Key
+		}
+		bIdx := fmt.Sprintf("%s.%s", b.RemoteRef.Key, b.RemoteRef.Property)
+		if b.RemoteRef.Property == "" {
+			bIdx = b.RemoteRef.Key
+		}
+		return strings.Compare(aIdx, bIdx)
+	})
+}
+
 func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 	if existing == nil {
 		return true
@@ -155,10 +170,13 @@ func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 		return true
 	}
 	loc1 := existing.Status.Locations
+	sortLocations(loc1)
 	loc2 := finding.Status.Locations
-	return !slices.EqualFunc(loc1, loc2, func(a, b tgtv1alpha1.SecretInStoreRef) bool {
+	sortLocations(loc2)
+
+	return !(slices.EqualFunc(loc1, loc2, func(a, b tgtv1alpha1.SecretInStoreRef) bool {
 		return a.Name == b.Name && a.Kind == b.Kind && a.APIVersion == b.APIVersion && a.RemoteRef.Key == b.RemoteRef.Key && a.RemoteRef.Property == b.RemoteRef.Property
-	})
+	}) && finding.Spec.Hash == existing.Spec.Hash)
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
@@ -241,19 +259,11 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 	c.Log.V(1).Info("Found findings for job", "total findings", len(findings))
 	// for each finding, see if it already exists and update it if it does;
 	currentFindings := &v1alpha1.FindingList{}
-	currentFindingsMap := make(map[string]*v1alpha1.Finding)
-	findingsMap := make(map[string]*v1alpha1.Finding)
 	c.Log.V(1).Info("Listing Current findings")
 	if err := c.List(ctx, currentFindings, client.InNamespace(jobSpec.Namespace)); err != nil {
 		return err
 	}
 	c.Log.V(1).Info("Found Current findings", "total findings", len(currentFindings.Items))
-	for _, finding := range currentFindings.Items {
-		currentFindingsMap[finding.Spec.Hash] = &finding
-	}
-	for _, finding := range findings {
-		findingsMap[finding.Spec.Hash] = &finding
-	}
 
 	currentFindingsByID := map[string]*v1alpha1.Finding{}
 	for i := range currentFindings.Items {
@@ -271,10 +281,9 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		newFindingsByHash[f.Spec.Hash] = f
 	}
 
-	assigned := utils.AssignIDs(currentFindings.Items, findings, utils.Params{MinJaccard: 0.6, MinIntersection: 2})
+	assigned := utils.AssignIDs(currentFindings.Items, findings, utils.JaccardParams{MinJaccard: 0.7, MinIntersection: 2})
 	seenIDs := make(map[string]struct{}, len(assigned))
 
-	// 4) persist
 	for i, assignedFinding := range assigned {
 		newFinding := newFindingsByHash[findings[i].Spec.Hash]
 		newFinding.Spec.ID = assignedFinding.Spec.ID
@@ -286,10 +295,15 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 			}
 			// Update Finding
 			currentFinding.Status.Locations = newFinding.Status.Locations
-			currentFinding.Spec.Hash = newFinding.Spec.Hash
-
 			c.Log.V(1).Info("Updating finding", "finding", currentFinding.Spec.ID)
 			if err := c.Status().Update(ctx, currentFinding); err != nil {
+				jobStatus = v1alpha1.JobRunStatusFailed
+				jobTime = metav1.Now()
+				return err
+			}
+
+			currentFinding.Spec.Hash = newFinding.Spec.Hash
+			if err := c.Update(ctx, currentFinding); err != nil {
 				jobStatus = v1alpha1.JobRunStatusFailed
 				jobTime = metav1.Now()
 				return err

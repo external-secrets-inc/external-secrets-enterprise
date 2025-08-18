@@ -1,3 +1,6 @@
+// Copyright External Secrets Inc. 2025
+// All Rights Reserved
+
 package job
 
 import (
@@ -18,55 +21,65 @@ type Candidate struct {
 	CurrCount int
 }
 
-type Params struct {
-	MinJaccard      float64 // e.g. 0.6
-	MinIntersection int     // e.g. 2
+// JaccardParams defines the thresholds used to decide if two sets of locations
+// are considered similar enough to represent the same logical finding.
+// A match is accepted if either:
+//   - The Jaccard index is greater than or equal to MinJaccard, OR
+//   - The raw intersection has at least MinIntersection elements and
+//     covers at least half of the smaller set.
+type JaccardParams struct {
+	MinJaccard      float64 // minimum Jaccard index (0.0–1.0) to accept similarity
+	MinIntersection int     // minimum number of common elements required for fallback rule
 }
 
-func Jaccard(a, b map[string]struct{}) (inter, uni int, j float64) {
-	// compute intersection and union
-	if len(a) < len(b) {
-		a, b = b, a
+func Jaccard(newSet, currentSet map[string]struct{}) (intersection, union int, j float64) {
+	// Ensure we iterate over the larger set for efficiency
+	if len(newSet) < len(currentSet) {
+		newSet, currentSet = currentSet, newSet
 	}
-	inter = 0
-	for k := range a {
-		if _, ok := b[k]; ok {
-			inter++
+	intersection = 0
+	for k := range newSet {
+		if _, ok := currentSet[k]; ok {
+			intersection++
 		}
 	}
-	uni = len(a) + len(b) - inter
-	if uni == 0 {
+	union = len(newSet) + len(currentSet) - intersection
+	if union == 0 {
 		return 0, 0, 1.0
 	}
-	return inter, uni, float64(inter) / float64(uni)
+	return intersection, union, float64(intersection) / float64(union)
 }
 
-func LocationsToSet(locations []tgtv1alpha1.SecretInStoreRef) map[string]struct{} {
-	m := make(map[string]struct{}, len(locations))
-	for _, k := range locations {
-		m[Sanitize(k)] = struct{}{}
+func LocationsToStringSet(locations []tgtv1alpha1.SecretInStoreRef) map[string]struct{} {
+	locationsSet := make(map[string]struct{}, len(locations))
+	for _, location := range locations {
+		locationsSet[Sanitize(location)] = struct{}{}
 	}
-	return m
+	return locationsSet
 }
 
-func AssignIDs(currentFindings []v1alpha1.Finding, newFindings []v1alpha1.Finding, p Params) []v1alpha1.Finding {
-	// Pre-sort not necessary; we’ll compute best per new
+func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardParams) []v1alpha1.Finding {
 	for i := range newFindings {
-		newLocationsSet := LocationsToSet(newFindings[i].Status.Locations)
+		newLocationsSet := LocationsToStringSet(newFindings[i].Status.Locations)
 		best := Candidate{}
 		for _, currentFinding := range currentFindings {
-			currentLocationsSet := LocationsToSet(currentFinding.Status.Locations)
-			inter, uni, j := Jaccard(currentLocationsSet, newLocationsSet)
-			ok := j >= p.MinJaccard || (inter >= p.MinIntersection && inter*2 >= min(len(newLocationsSet), len(currentLocationsSet)))
-			if !ok {
+			currentLocationsSet := LocationsToStringSet(currentFinding.Status.Locations)
+			intersection, union, jaccardIndex := Jaccard(currentLocationsSet, newLocationsSet)
+			isSimilarEnough := jaccardIndex >= params.MinJaccard
+			// Fallback for small sets: accept if there's a strong raw overlap,
+			// meaning at least MinIntersection elements match AND the overlap
+			// covers at least half of the smaller set.
+			isSimilarEnough = isSimilarEnough || (intersection >= params.MinIntersection &&
+				intersection*2 >= min(len(newLocationsSet), len(currentLocationsSet)))
+			if !isSimilarEnough {
 				continue
 			}
 			cand := Candidate{
 				ID:        currentFinding.Spec.ID,
 				Name:      currentFinding.Name,
-				Inter:     inter,
-				Union:     uni,
-				Jaccard:   j,
+				Inter:     intersection,
+				Union:     union,
+				Jaccard:   jaccardIndex,
 				CurrCount: len(currentLocationsSet),
 			}
 			if better(cand, best) {
@@ -89,23 +102,17 @@ func AssignIDs(currentFindings []v1alpha1.Finding, newFindings []v1alpha1.Findin
 	return newFindings
 }
 
-func better(a, b Candidate) bool {
-	if b.ID == "" {
+// Checks if new candidate is better than current candidate.
+func better(newCandidate, currCandidate Candidate) bool {
+	if currCandidate.ID == "" {
 		return true
 	}
-	if a.Jaccard != b.Jaccard {
-		return a.Jaccard > b.Jaccard
+	if newCandidate.Jaccard != currCandidate.Jaccard {
+		return newCandidate.Jaccard > currCandidate.Jaccard
 	}
-	if a.Inter != b.Inter {
-		return a.Inter > b.Inter
+	if newCandidate.Inter != currCandidate.Inter {
+		return newCandidate.Inter > currCandidate.Inter
 	}
 	// deterministic tie-breaker
-	return a.ID < b.ID
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+	return newCandidate.ID < currCandidate.ID
 }

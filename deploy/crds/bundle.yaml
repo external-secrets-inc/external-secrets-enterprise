@@ -28715,7 +28715,10 @@ spec:
             spec:
               properties:
                 hash:
-                  description: Hash of the finding (salted)
+                  type: string
+                id:
+                  type: string
+                label:
                   type: string
                 runTemplateRef:
                   properties:
@@ -28724,6 +28727,8 @@ spec:
                   required:
                     - name
                   type: object
+              required:
+                - id
               type: object
             status:
               properties:
