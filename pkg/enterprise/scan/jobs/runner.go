@@ -98,9 +98,25 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 	}
 	// Check All duplicates on all created targets
 	j.Logger.V(1).Info("Getting Virtual Machine Targets")
+	err := j.scanVirtualMachineTargets(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	j.Logger.V(1).Info("Getting Virtual Machine Targets")
+	err = j.scanGithubRepositoryTargets(ctx, secretValues)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	j.Logger.V(1).Info("Run Complete")
+	return j.memset.GetDuplicates(), usedStores, nil
+}
+
+func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
 	vmTargets := &tgtv1alpha1.VirtualMachineList{}
 	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
-		return nil, nil, err
+		return err
 	}
 	for _, target := range vmTargets.Items {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
@@ -128,11 +144,13 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 			}
 		}
 	}
+	return nil
+}
 
-	j.Logger.V(1).Info("Getting Virtual Machine Targets")
+func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}) error {
 	ghTargets := &tgtv1alpha1.GithubRepositoryList{}
 	if err := j.Client.List(ctx, ghTargets, client.InNamespace(j.Namespace)); err != nil {
-		return nil, nil, err
+		return err
 	}
 	for _, target := range ghTargets.Items {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
@@ -159,8 +177,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 			}
 		}
 	}
-	j.Logger.V(1).Info("Run Complete")
-	return j.memset.GetDuplicates(), usedStores, nil
+	return nil
 }
 
 func newStoreInRef(store, key, property string) tgtv1alpha1.SecretInStoreRef {
