@@ -15,6 +15,7 @@ import (
 type Candidate struct {
 	ID        string
 	Name      string
+	Label     string
 	Inter     int
 	Union     int
 	Jaccard   float64
@@ -77,6 +78,7 @@ func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardPa
 			cand := Candidate{
 				ID:        currentFinding.Spec.ID,
 				Name:      currentFinding.Name,
+				Label:     currentFinding.Spec.Label,
 				Inter:     intersection,
 				Union:     union,
 				Jaccard:   jaccardIndex,
@@ -88,6 +90,7 @@ func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardPa
 		}
 		if best.ID != "" {
 			newFindings[i].Spec.ID = best.ID
+			newFindings[i].Spec.Label = best.Label
 			newFindings[i].ObjectMeta = metav1.ObjectMeta{
 				Name: best.Name,
 			}

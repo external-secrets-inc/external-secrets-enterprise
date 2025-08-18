@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"slices"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -148,20 +147,6 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 	return ctrl.Result{RequeueAfter: jobSpec.Spec.Interval.Duration}, nil
 }
 
-func sortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
-	slices.SortFunc(loc, func(a, b tgtv1alpha1.SecretInStoreRef) int {
-		aIdx := fmt.Sprintf("%s.%s", a.RemoteRef.Key, a.RemoteRef.Property)
-		if a.RemoteRef.Property == "" {
-			aIdx = a.RemoteRef.Key
-		}
-		bIdx := fmt.Sprintf("%s.%s", b.RemoteRef.Key, b.RemoteRef.Property)
-		if b.RemoteRef.Property == "" {
-			bIdx = b.RemoteRef.Key
-		}
-		return strings.Compare(aIdx, bIdx)
-	})
-}
-
 func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 	if existing == nil {
 		return true
@@ -170,9 +155,7 @@ func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 		return true
 	}
 	loc1 := existing.Status.Locations
-	sortLocations(loc1)
 	loc2 := finding.Status.Locations
-	sortLocations(loc2)
 
 	return !(slices.EqualFunc(loc1, loc2, func(a, b tgtv1alpha1.SecretInStoreRef) bool {
 		return a.Name == b.Name && a.Kind == b.Kind && a.APIVersion == b.APIVersion && a.RemoteRef.Key == b.RemoteRef.Key && a.RemoteRef.Property == b.RemoteRef.Property
