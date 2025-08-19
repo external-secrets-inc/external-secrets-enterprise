@@ -4,8 +4,6 @@
 package job
 
 import (
-	"fmt"
-
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	"github.com/google/uuid"
@@ -98,7 +96,7 @@ func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardPa
 			newUUID := uuid.NewString()
 			newFindings[i].Spec.ID = newUUID
 			newFindings[i].ObjectMeta = metav1.ObjectMeta{
-				Name: fmt.Sprintf("finding-%s", newUUID),
+				Name: newUUID,
 			}
 		}
 	}

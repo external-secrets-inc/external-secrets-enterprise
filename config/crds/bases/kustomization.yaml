@@ -39,6 +39,7 @@ resources:
   - generators.external-secrets.io_webhooks.yaml
   - scan.external-secrets.io_findings.yaml
   - scan.external-secrets.io_jobs.yaml
+  - target.external-secrets.io_githubrepositories.yaml
   - target.external-secrets.io_virtualmachines.yaml
   - workflows.external-secrets.io_workflowruns.yaml
   - workflows.external-secrets.io_workflowruntemplates.yaml

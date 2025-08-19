@@ -49,6 +49,8 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 	if err := j.Client.List(ctx, stores, client.InNamespace(j.Namespace)); err != nil {
 		return nil, nil, err
 	}
+
+	secretValues := make(map[string]struct{}, 0)
 	for i := range stores.Items {
 		store := stores.Items[i]
 		usedStores = append(usedStores, store)
@@ -79,8 +81,10 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 					switch v := v.(type) {
 					case []byte:
 						j.memset.Add(newStoreInRef(store.GetName(), key, k), v)
+						secretValues[string(v)] = struct{}{}
 					case string:
 						j.memset.Add(newStoreInRef(store.GetName(), key, k), []byte(v))
+						secretValues[v] = struct{}{}
 					default:
 						return nil, nil, fmt.Errorf("no conversion for value of type %T", v)
 					}
@@ -88,20 +92,39 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 			} else {
 				// For Each duplicate found, create a Finding bound to that hash;
 				j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
+				secretValues[string(value)] = struct{}{}
 			}
 		}
 	}
 	// Check All duplicates on all created targets
 	j.Logger.V(1).Info("Getting Virtual Machine Targets")
-	targets := &tgtv1alpha1.VirtualMachineList{}
-	if err := j.Client.List(ctx, targets, client.InNamespace(j.Namespace)); err != nil {
+	err := j.scanVirtualMachineTargets(ctx)
+	if err != nil {
 		return nil, nil, err
 	}
-	for _, target := range targets.Items {
+
+	j.Logger.V(1).Info("Getting Virtual Machine Targets")
+	err = j.scanGithubRepositoryTargets(ctx, secretValues)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	j.Logger.V(1).Info("Run Complete")
+	return j.memset.GetDuplicates(), usedStores, nil
+}
+
+func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
+	vmTargets := &tgtv1alpha1.VirtualMachineList{}
+	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
+		return err
+	}
+	for _, target := range vmTargets.Items {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
 		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
 		if !ok {
-			return nil, nil, fmt.Errorf("target %q not found", target.GroupVersionKind().Kind)
+			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
+			j.Logger.Error(err, "failed to create new client for target", "target", target.GetName())
+			continue
 		}
 		client, err := prov.NewClient(ctx, j.Client, &target)
 		if err != nil {
@@ -121,8 +144,40 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 			}
 		}
 	}
-	j.Logger.V(1).Info("Run Complete")
-	return j.memset.GetDuplicates(), usedStores, nil
+	return nil
+}
+
+func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}) error {
+	ghTargets := &tgtv1alpha1.GithubRepositoryList{}
+	if err := j.Client.List(ctx, ghTargets, client.InNamespace(j.Namespace)); err != nil {
+		return err
+	}
+	for _, target := range ghTargets.Items {
+		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
+		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
+		if !ok {
+			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
+			j.Logger.Error(err, "failed to create new client for target", "target", target.GetName())
+			continue
+		}
+		client, err := prov.NewClient(ctx, j.Client, &target)
+		if err != nil {
+			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
+			continue
+		}
+
+		for value := range secretValues {
+			locations, err := client.Scan(ctx, []string{value}, 0)
+			if err != nil {
+				j.Logger.Error(err, "failed scan target value")
+				continue
+			}
+			for _, location := range locations {
+				j.memset.Add(location, []byte(value))
+			}
+		}
+	}
+	return nil
 }
 
 func newStoreInRef(store, key, property string) tgtv1alpha1.SecretInStoreRef {

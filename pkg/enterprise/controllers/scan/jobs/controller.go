@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	_ "github.com/external-secrets/external-secrets/pkg/targets/register"
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/targets/register"
 )
 
 type JobController struct {

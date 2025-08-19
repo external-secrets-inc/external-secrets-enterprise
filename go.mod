@@ -100,6 +100,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/go-github/v56 v56.0.0
+	github.com/google/go-github/v74 v74.0.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20250617151817-c0f8cbb88d5c
 	github.com/hashicorp/golang-lru v1.0.2
 	github.com/hashicorp/vault/api/auth/aws v0.10.0

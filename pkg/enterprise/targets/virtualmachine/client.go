@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 
 	client := &http.Client{}
 
-	if u.Scheme == "https" {
+	if u.Scheme == HTTPS {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()
@@ -123,5 +124,71 @@ func (s *ScanTarget) Close(ctx context.Context) error {
 }
 
 func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
-	return esv1.ValidationResultUnknown, nil
+	if s.URL == "" {
+		return esv1.ValidationResultError, fmt.Errorf("error: missing URL")
+	}
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return esv1.ValidationResultError, fmt.Errorf("error parsing URL %q: %w", s.URL, err)
+	}
+
+	client := &http.Client{}
+	if u.Scheme == HTTPS {
+		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+		if len(s.CABundle) > 0 {
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(s.CABundle)
+			tlsConfig.RootCAs = caCertPool
+		}
+		if len(s.AuthClientCert) > 0 && len(s.AuthClientKey) > 0 {
+			cert, err := tls.X509KeyPair(s.AuthClientCert, s.AuthClientKey)
+			if err != nil {
+				return esv1.ValidationResultError, fmt.Errorf("error loading client certificate: %w", err)
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
+		client.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	}
+
+	// Minimal, harmless scan payload just to validate auth/connectivity.
+	// We do NOT wait for the job to complete.
+	payload := Request{
+		Regexes:   []string{"__eso_validate__"},
+		Threshold: 0,
+		Paths:     s.Paths,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return esv1.ValidationResultError, fmt.Errorf("error marshaling validation payload: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	api := fmt.Sprintf("%s/api/v1/scan", s.URL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, api, bytes.NewReader(body))
+	if err != nil {
+		return esv1.ValidationResultError, fmt.Errorf("error creating validation request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
+		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
+	} else if s.AuthBearerToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return esv1.ValidationResultError, fmt.Errorf("validation request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return esv1.ValidationResultError, fmt.Errorf("unauthorized to access %s: http %d", api, resp.StatusCode)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return esv1.ValidationResultError, fmt.Errorf("error at validation request: http %d", resp.StatusCode)
+	}
+
+	return esv1.ValidationResultReady, nil
 }

@@ -64,7 +64,7 @@ func (r *ClusterStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	return reconcile(ctx, req, &css, r.Client, log, Opts{
+	return Reconcile(ctx, req, &css, r.Client, log, Opts{
 		ControllerClass: r.ControllerClass,
 		GaugeVecGetter:  cssmetrics.GetGaugeVec,
 		Recorder:        r.recorder,

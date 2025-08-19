@@ -39,6 +39,7 @@ type ScanTarget struct {
 const (
 	errNotImplemented    = "not implemented"
 	errPropertyMandatory = "property is mandatory"
+	HTTPS                = "https"
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
@@ -110,7 +111,7 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) 
 
 	client := &http.Client{}
 
-	if u.Scheme == "https" {
+	if u.Scheme == HTTPS {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()
@@ -252,7 +253,7 @@ func (e JobNotReadyErr) Error() string {
 
 func init() {
 	tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
-	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)
+	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind, esv1.MaintenanceStatusMaintained)
 }
 
 func getBasicAuth(ctx context.Context, client client.Client, namespace string, auth *tgtv1alpha1.Authentication) (string, string, error) {

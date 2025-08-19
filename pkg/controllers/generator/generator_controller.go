@@ -30,7 +30,7 @@ import (
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 )
 
-var (
+const (
 	GeneratorGroup   = "generators.external-secrets.io"
 	GeneratorVersion = "v1alpha1"
 )
@@ -47,27 +47,27 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
-	generic_generator, err := BuildGeneratorObject(r.Scheme, r.Kind)
+	genericGenerator, err := BuildGeneratorObject(r.Scheme, r.Kind)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error building generator object: %w", err)
 	}
 
-	if err := r.Get(ctx, req.NamespacedName, generic_generator); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, genericGenerator); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	gvk := generic_generator.GetObjectKind().GroupVersionKind()
+	gvk := genericGenerator.GetObjectKind().GroupVersionKind()
 
 	generator, found := genv1alpha1.GetGeneratorByKind(gvk.Kind)
 	if !found {
 		return ctrl.Result{}, fmt.Errorf("generator of kind %s not found", gvk.Kind)
 	}
 
-	err = generic_generator.SetOutputs(generator.GetKeys())
+	err = genericGenerator.SetOutputs(generator.GetKeys())
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error setting outputs: %w", err)
 	}
 
-	err = r.Status().Update(ctx, generic_generator)
+	err = r.Status().Update(ctx, genericGenerator)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error updating generic generator: %w", err)
 	}
@@ -77,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts controller.Options) error {
-	r.recorder = mgr.GetEventRecorderFor("external-secrets")
+	r.recorder = mgr.GetEventRecorderFor("generators")
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(opts).
 		For(obj).
