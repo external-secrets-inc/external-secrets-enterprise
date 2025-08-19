@@ -7,9 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
 	"math/big"
-	"slices"
 	"strings"
 	"sync"
 
@@ -24,7 +22,7 @@ const (
 	charsPerRune = 7
 )
 
-type MemorySet struct {
+type LocationMemorySet struct {
 	mu          sync.RWMutex
 	entries     map[tgtv1alpha1.SecretInStoreRef]string
 	regexMap    map[string][]string
@@ -32,8 +30,8 @@ type MemorySet struct {
 	threshold   int
 }
 
-func NewMemorySet() *MemorySet {
-	return &MemorySet{
+func NewLocationMemorySet() *LocationMemorySet {
+	return &LocationMemorySet{
 		entries:     make(map[tgtv1alpha1.SecretInStoreRef]string),
 		valueToKeys: make(map[string][]tgtv1alpha1.SecretInStoreRef),
 		mu:          sync.RWMutex{},
@@ -116,21 +114,21 @@ func generateRegexes(val []byte) []string {
 	return regexes
 }
 
-func (ms *MemorySet) Regexes() map[string][]string {
+func (ms *LocationMemorySet) Regexes() map[string][]string {
 	return ms.regexMap
 }
 
-func (ms *MemorySet) GetThreshold() int {
+func (ms *LocationMemorySet) GetThreshold() int {
 	return ms.threshold
 }
 
-func (ms *MemorySet) AddByRegex(hash string, location tgtv1alpha1.SecretInStoreRef) {
+func (ms *LocationMemorySet) AddByRegex(hash string, location tgtv1alpha1.SecretInStoreRef) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.valueToKeys[hash] = append(ms.valueToKeys[hash], location)
 }
 
-func (ms *MemorySet) Add(secret tgtv1alpha1.SecretInStoreRef, value []byte) {
+func (ms *LocationMemorySet) Add(secret tgtv1alpha1.SecretInStoreRef, value []byte) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
@@ -150,7 +148,7 @@ func hash(value []byte) string {
 
 // GetDuplicates now just scans the valueToKeys map to find values with more than one Entry.
 
-func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
+func (ms *LocationMemorySet) GetDuplicates() []v1alpha1.Finding {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
@@ -173,30 +171,4 @@ func (ms *MemorySet) GetDuplicates() []v1alpha1.Finding {
 		findings = append(findings, finding)
 	}
 	return findings
-}
-
-func Sanitize(ref tgtv1alpha1.SecretInStoreRef) string {
-	cleanedName := strings.ToLower(strings.TrimSpace(ref.Name))
-	cleanedKind := strings.ToLower(strings.TrimSpace(ref.Kind))
-	cleanedKey := strings.TrimSuffix(strings.TrimPrefix(ref.RemoteRef.Key, "/"), "/")
-	ans := cleanedKind + "." + cleanedName + "." + cleanedKey
-	if ref.RemoteRef.Property != "" {
-		cleanedProperty := strings.TrimSuffix(strings.TrimPrefix(ref.RemoteRef.Property, "/"), "/")
-		ans += "." + cleanedProperty
-	}
-	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ans, "_", "-"), "/", "-"), ":", "-"))
-}
-
-func SortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
-	slices.SortFunc(loc, func(a, b tgtv1alpha1.SecretInStoreRef) int {
-		aIdx := fmt.Sprintf("%s.%s", a.RemoteRef.Key, a.RemoteRef.Property)
-		if a.RemoteRef.Property == "" {
-			aIdx = a.RemoteRef.Key
-		}
-		bIdx := fmt.Sprintf("%s.%s", b.RemoteRef.Key, b.RemoteRef.Property)
-		if b.RemoteRef.Property == "" {
-			bIdx = b.RemoteRef.Key
-		}
-		return strings.Compare(aIdx, bIdx)
-	})
 }

@@ -22,7 +22,8 @@ type TargetProvider interface {
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
 type ScanTarget interface {
-	Scan(ctx context.Context, regexes []string, threshold int) ([]SecretInStoreRef, error)
+	ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]SecretInStoreRef, error)
+	ScanForConsumers(ctx context.Context, location SecretInStoreRef) ([]ConsumerFinding, error)
 }
 
 type SecretInStoreRef struct {
@@ -37,4 +38,13 @@ type RemoteRef struct {
 	Property   string `json:"property,omitempty"`
 	StartIndex *int   `json:"startIndex,omitempty"`
 	EndIndex   *int   `json:"endIndex,omitempty"`
+}
+
+type ConsumerFinding struct {
+	Hash        string            `json:"hash"`
+	Location    SecretInStoreRef  `json:"location"`
+	Kind        string            `json:"kind"`
+	ID          string            `json:"externalID"`
+	DisplayName string            `json:"displayName,omitempty"`
+	Attributes  map[string]string `json:"attributes,omitempty"`
 }

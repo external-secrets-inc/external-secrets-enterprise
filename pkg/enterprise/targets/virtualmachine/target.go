@@ -103,7 +103,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	}, nil
 }
 
-func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -167,6 +167,10 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 	return s.checkForJob(ctx, client, scanResponse.JobId)
+}
+
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+	return nil, nil
 }
 
 func (s *ScanTarget) checkForJob(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {

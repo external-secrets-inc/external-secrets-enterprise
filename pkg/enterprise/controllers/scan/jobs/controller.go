@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	utils "github.com/external-secrets/external-secrets/pkg/enterprise/scan/jobs"
 	"github.com/go-logr/logr"
@@ -147,7 +146,7 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 	return ctrl.Result{RequeueAfter: jobSpec.Spec.Interval.Duration}, nil
 }
 
-func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
+func findingNeedsToUpdate(existing, finding *v1alpha1.Finding) bool {
 	if existing == nil {
 		return true
 	}
@@ -157,9 +156,20 @@ func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 	loc1 := existing.Status.Locations
 	loc2 := finding.Status.Locations
 
-	return !(slices.EqualFunc(loc1, loc2, func(a, b tgtv1alpha1.SecretInStoreRef) bool {
-		return a.Name == b.Name && a.Kind == b.Kind && a.APIVersion == b.APIVersion && a.RemoteRef.Key == b.RemoteRef.Key && a.RemoteRef.Property == b.RemoteRef.Property
-	}) && finding.Spec.Hash == existing.Spec.Hash)
+	return !(slices.EqualFunc(loc1, loc2, utils.EqualLocations) && finding.Spec.Hash == existing.Spec.Hash)
+}
+
+func consumerNeedsToUpdate(existing, consumer *v1alpha1.Consumer) bool {
+	if existing == nil {
+		return true
+	}
+	if consumer == nil {
+		return true
+	}
+	loc1 := existing.Status.Locations
+	loc2 := consumer.Status.Locations
+
+	return !(slices.EqualFunc(loc1, loc2, utils.EqualLocations) && slices.Equal(existing.Status.Conditions, consumer.Status.Conditions))
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
@@ -233,18 +243,36 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		}
 	}()
 	c.Log.V(1).Info("Running Job", "job", jobSpec.GetName())
-	findings, usedStores, err := j.Run(ctx)
+	findings, consumers, usedStores, err := j.Run(ctx)
 	if err != nil {
 		jobStatus = v1alpha1.JobRunStatusFailed
 		jobTime = metav1.Now()
 		return err
 	}
+
+	jobStatus, jobTime, err = c.UpdateFindings(ctx, findings, jobSpec.Namespace)
+	if err != nil {
+		return err
+	}
+
+	jobStatus, jobTime, err = c.UpdateConsumers(ctx, consumers, jobSpec.Namespace)
+	if err != nil {
+		return err
+	}
+
+	jobStatus = v1alpha1.JobRunStatusSucceeded
+	jobTime = metav1.Now()
+	observedSecretStoresDigest = calculateDigest(usedStores)
+	return nil
+}
+
+func (c *JobController) UpdateFindings(ctx context.Context, findings []v1alpha1.Finding, namespace string) (v1alpha1.JobRunStatus, metav1.Time, error) {
 	c.Log.V(1).Info("Found findings for job", "total findings", len(findings))
 	// for each finding, see if it already exists and update it if it does;
 	currentFindings := &v1alpha1.FindingList{}
 	c.Log.V(1).Info("Listing Current findings")
-	if err := c.List(ctx, currentFindings, client.InNamespace(jobSpec.Namespace)); err != nil {
-		return err
+	if err := c.List(ctx, currentFindings, client.InNamespace(namespace)); err != nil {
+		return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 	}
 	c.Log.V(1).Info("Found Current findings", "total findings", len(currentFindings.Items))
 
@@ -273,40 +301,32 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		seenIDs[assignedFinding.Spec.ID] = struct{}{}
 
 		if currentFinding, ok := currentFindingsByID[assignedFinding.Spec.ID]; ok {
-			if !needsToUpdate(currentFinding, newFinding) {
+			if !findingNeedsToUpdate(currentFinding, newFinding) {
 				continue
 			}
 			// Update Finding
 			currentFinding.Status.Locations = newFinding.Status.Locations
 			c.Log.V(1).Info("Updating finding", "finding", currentFinding.Spec.ID)
 			if err := c.Status().Update(ctx, currentFinding); err != nil {
-				jobStatus = v1alpha1.JobRunStatusFailed
-				jobTime = metav1.Now()
-				return err
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 			}
 
 			currentFinding.Spec.Hash = newFinding.Spec.Hash
 			if err := c.Update(ctx, currentFinding); err != nil {
-				jobStatus = v1alpha1.JobRunStatusFailed
-				jobTime = metav1.Now()
-				return err
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 			}
 		} else {
 			// create new CR with stable name
 			create := newFinding.DeepCopy()
-			create.SetNamespace(jobSpec.Namespace)
+			create.SetNamespace(namespace)
 			c.Log.V(1).Info("Creating finding", "finding", create.GetName())
 			if err := c.Create(ctx, create); err != nil {
-				jobStatus = v1alpha1.JobRunStatusFailed
-				jobTime = metav1.Now()
-				return err
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 			}
 			create.Status.Locations = newFinding.Status.Locations
 			c.Log.V(1).Info("Updating finding status", "finding", create.GetName())
 			if err := c.Status().Update(ctx, create); err != nil {
-				jobStatus = v1alpha1.JobRunStatusFailed
-				jobTime = metav1.Now()
-				return err
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 			}
 		}
 	}
@@ -316,17 +336,60 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		if _, ok := seenIDs[id]; !ok {
 			c.Log.V(1).Info("Deleting stale finding (not observed this run)", "id", id, "name", currentFinding.GetName())
 			if err := c.Delete(ctx, currentFinding); err != nil {
-				jobStatus = v1alpha1.JobRunStatusFailed
-				jobTime = metav1.Now()
-				return err
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 			}
 		}
 	}
 
-	jobStatus = v1alpha1.JobRunStatusSucceeded
-	jobTime = metav1.Now()
-	observedSecretStoresDigest = calculateDigest(usedStores)
-	return nil
+	return v1alpha1.JobRunStatusRunning, metav1.Now(), nil
+}
+
+func (c *JobController) UpdateConsumers(ctx context.Context, consumers []v1alpha1.Consumer, namespace string) (v1alpha1.JobRunStatus, metav1.Time, error) {
+	c.Log.V(1).Info("Found consumers for job", "total consumers", len(consumers))
+	// for each consumer, see if it already exists and update it if it does;
+	currentConsumers := &v1alpha1.ConsumerList{}
+	c.Log.V(1).Info("Listing Current consumers")
+	if err := c.List(ctx, currentConsumers, client.InNamespace(namespace)); err != nil {
+		return v1alpha1.JobRunStatusFailed, metav1.Now(), err
+	}
+	c.Log.V(1).Info("Found Current consumers", "total consumers", len(currentConsumers.Items))
+
+	currentConsumersByID := map[string]*v1alpha1.Consumer{}
+	for i := range currentConsumers.Items {
+		consumer := &currentConsumers.Items[i]
+		currentConsumersByID[consumer.Spec.ID] = consumer
+	}
+
+	for i := range consumers {
+		newConsumer := &consumers[i]
+
+		// Current update assumes that the ID will be the same for every consumer
+		if currentConsumer, ok := currentConsumersByID[newConsumer.Spec.ID]; ok {
+			if !consumerNeedsToUpdate(currentConsumer, newConsumer) {
+				continue
+			}
+
+			currentConsumer.Status = newConsumer.Status
+			c.Log.V(1).Info("Updating consumer", "consumer", currentConsumer.Spec.ID)
+			if err := c.Status().Update(ctx, currentConsumer); err != nil {
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
+			}
+		} else {
+			// create new CR with stable name
+			create := newConsumer.DeepCopy()
+			create.SetNamespace(namespace)
+			c.Log.V(1).Info("Creating consumer", "consumer", create.GetName())
+			if err := c.Create(ctx, create); err != nil {
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
+			}
+			create.Status.Locations = newConsumer.Status.Locations
+			c.Log.V(1).Info("Updating consumer status", "consumer", create.GetName())
+			if err := c.Status().Update(ctx, create); err != nil {
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
+			}
+		}
+	}
+	return v1alpha1.JobRunStatusRunning, metav1.Now(), nil
 }
 
 func (c *JobController) stopJob(req ctrl.Request) {

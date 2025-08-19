@@ -18,21 +18,23 @@ import (
 type JobRunner struct {
 	client.Client
 	logr.Logger
-	Constraints *v1alpha1.JobConstraints
-	mgr         *store.Manager
-	Namespace   string
-	memset      *MemorySet
+	Constraints    *v1alpha1.JobConstraints
+	mgr            *store.Manager
+	Namespace      string
+	locationMemset *LocationMemorySet
+	consumerMemset *ConsumerMemorySet
 }
 
 func NewJobRunner(client client.Client, logger logr.Logger, namespace string, constraints *v1alpha1.JobConstraints) *JobRunner {
 	mgr := store.NewManager(client, "", false)
 	return &JobRunner{
-		Client:      client,
-		Logger:      logger,
-		Constraints: constraints,
-		Namespace:   namespace,
-		mgr:         mgr,
-		memset:      NewMemorySet(),
+		Client:         client,
+		Logger:         logger,
+		Constraints:    constraints,
+		Namespace:      namespace,
+		mgr:            mgr,
+		locationMemset: NewLocationMemorySet(),
+		consumerMemset: NewConsumerMemorySet(),
 	}
 }
 
@@ -40,14 +42,14 @@ func (j *JobRunner) Close(ctx context.Context) error {
 	return j.mgr.Close(ctx)
 }
 
-func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretStore, error) {
+func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []v1alpha1.Consumer, []esv1.SecretStore, error) {
 	// List Secret Stores
 	// TODO - apply constraints
 	j.Logger.V(1).Info("Listing Secret Stores")
 	usedStores := make([]esv1.SecretStore, 0)
 	stores := &esv1.SecretStoreList{}
 	if err := j.Client.List(ctx, stores, client.InNamespace(j.Namespace)); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	secretValues := make(map[string]struct{}, 0)
@@ -80,18 +82,18 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 				for k, v := range valueAsMap {
 					switch v := v.(type) {
 					case []byte:
-						j.memset.Add(newStoreInRef(store.GetName(), key, k), v)
+						j.locationMemset.Add(newStoreInRef(store.GetName(), key, k), v)
 						secretValues[string(v)] = struct{}{}
 					case string:
-						j.memset.Add(newStoreInRef(store.GetName(), key, k), []byte(v))
+						j.locationMemset.Add(newStoreInRef(store.GetName(), key, k), []byte(v))
 						secretValues[v] = struct{}{}
 					default:
-						return nil, nil, fmt.Errorf("no conversion for value of type %T", v)
+						return nil, nil, nil, fmt.Errorf("no conversion for value of type %T", v)
 					}
 				}
 			} else {
 				// For Each duplicate found, create a Finding bound to that hash;
-				j.memset.Add(newStoreInRef(store.GetName(), key, ""), value)
+				j.locationMemset.Add(newStoreInRef(store.GetName(), key, ""), value)
 				secretValues[string(value)] = struct{}{}
 			}
 		}
@@ -100,17 +102,26 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []esv1.SecretS
 	j.Logger.V(1).Info("Getting Virtual Machine Targets")
 	err := j.scanVirtualMachineTargets(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	j.Logger.V(1).Info("Getting Virtual Machine Targets")
 	err = j.scanGithubRepositoryTargets(ctx, secretValues)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
+	findings := j.locationMemset.GetDuplicates()
+
+	j.Logger.V(1).Info("Attributing Consumers across targets")
+	if err := j.attributeConsumers(ctx, findings); err != nil {
+		return nil, nil, nil, err
+	}
+
+	consumers := j.consumerMemset.List()
+
 	j.Logger.V(1).Info("Run Complete")
-	return j.memset.GetDuplicates(), usedStores, nil
+	return findings, consumers, usedStores, nil
 }
 
 func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
@@ -131,16 +142,16 @@ func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
 			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
 			continue
 		}
-		regexMap := j.memset.Regexes()
+		regexMap := j.locationMemset.Regexes()
 		for key, regexes := range regexMap {
 			// TODO Fix Threshold
-			locations, err := client.Scan(ctx, regexes, j.memset.GetThreshold())
+			locations, err := client.ScanForSecrets(ctx, regexes, j.locationMemset.GetThreshold())
 			if err != nil {
 				j.Logger.Error(err, "failed scan target regexes", "regexes", regexes)
 				continue
 			}
 			for _, location := range locations {
-				j.memset.AddByRegex(key, location)
+				j.locationMemset.AddByRegex(key, location)
 			}
 		}
 	}
@@ -167,14 +178,75 @@ func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues
 		}
 
 		for value := range secretValues {
-			locations, err := client.Scan(ctx, []string{value}, 0)
+			locations, err := client.ScanForSecrets(ctx, []string{value}, 0)
 			if err != nil {
 				j.Logger.Error(err, "failed scan target value")
 				continue
 			}
 			for _, location := range locations {
-				j.memset.Add(location, []byte(value))
+				j.locationMemset.Add(location, []byte(value))
 			}
+		}
+	}
+	return nil
+}
+
+func (j *JobRunner) attributeConsumers(ctx context.Context, findings []v1alpha1.Finding) error {
+	locationsPerKindMap := make(map[string][]tgtv1alpha1.SecretInStoreRef, 0)
+	for _, finding := range findings {
+		for _, location := range finding.Status.Locations {
+			locationsPerKindMap[location.Kind] = append(locationsPerKindMap[location.Kind], location)
+		}
+	}
+
+	// VM targets
+	vmTargets := &tgtv1alpha1.VirtualMachineList{}
+	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
+		return err
+	}
+	for _, target := range vmTargets.Items {
+		kind := target.GroupVersionKind().Kind
+		if err := j.attributeTargetConsumers(ctx, kind, target.GetName(), &target, locationsPerKindMap[kind]); err != nil {
+			j.Logger.Error(err, "failed to attribute consumers on VM target", "target", target.GetName())
+		}
+	}
+
+	// GitHub repo targets
+	ghTargets := &tgtv1alpha1.GithubRepositoryList{}
+	if err := j.Client.List(ctx, ghTargets, client.InNamespace(j.Namespace)); err != nil {
+		return err
+	}
+	for _, target := range ghTargets.Items {
+		kind := target.GroupVersionKind().Kind
+		if err := j.attributeTargetConsumers(ctx, kind, target.GetName(), &target, locationsPerKindMap[kind]); err != nil {
+			j.Logger.Error(err, "failed to attribute consumers on GitHub target", "target", target.GetName())
+		}
+	}
+	return nil
+}
+
+func (j *JobRunner) attributeTargetConsumers(ctx context.Context, kind, name string, obj client.Object, locations []tgtv1alpha1.SecretInStoreRef) error {
+	prov, ok := tgtv1alpha1.GetTargetByName(kind)
+	if !ok {
+		return fmt.Errorf("target kind %q not supported", kind)
+	}
+	cl, err := prov.NewClient(ctx, j.Client, obj)
+	if err != nil {
+		return err
+	}
+
+	for _, location := range locations {
+		consumers, err := cl.ScanForConsumers(ctx, location)
+		if err != nil {
+			return err
+		}
+
+		targetRef := v1alpha1.TargetReference{
+			Name:      name,
+			Namespace: j.Namespace,
+		}
+		for _, f := range consumers {
+			j.consumerMemset.Add(targetRef, f)
 		}
 	}
 	return nil

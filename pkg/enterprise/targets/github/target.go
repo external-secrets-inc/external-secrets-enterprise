@@ -128,7 +128,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	}, nil
 }
 
-func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
 	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
@@ -199,6 +199,10 @@ func (s *ScanTarget) Scan(ctx context.Context, secrets []string, _ int) ([]tgtv1
 	}
 
 	return results, nil
+}
+
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+	return nil, nil
 }
 
 func newGitHubClient(ctx context.Context, token, enterpriseURL, uploadURL, caBundle string) (*github.Client, error) {

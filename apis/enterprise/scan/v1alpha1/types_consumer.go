@@ -1,0 +1,95 @@
+// Copyright External Secrets Inc. 2025
+// All rights reserved
+package v1alpha1
+
+import (
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type ConsumerSpec struct {
+	Target TargetReference `json:"target"`
+
+	// Type discriminates which payload below is populated.
+	// +kubebuilder:validation:Required
+	Type string `json:"type"`
+
+	// A stable ID for correlation across scans.
+	// +kubebuilder:validation:MinLength=1
+	ID string `json:"externalID"`
+
+	// Human readable name for UIs.
+	DisplayName string `json:"displayName"`
+
+	// Exactly one of the following should be set according to Type.
+	VMProcess   *VMProcessSpec   `json:"vmProcess,omitempty"`
+	K8sPod      *K8sPodSpec      `json:"k8sPod,omitempty"`
+	GitHubActor *GitHubActorSpec `json:"githubActor,omitempty"`
+}
+
+type ConsumerStatus struct {
+	Locations  []tgtv1alpha1.SecretInStoreRef `json:"locations,omitempty"`
+	Conditions []metav1.Condition             `json:"conditions,omitempty"`
+}
+
+type TargetReference struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
+// VMProcessSpec describes a process on a VM/host.
+type VMProcessSpec struct {
+	Hostname   string   `json:"hostname"`             // e.g., "ip-10-0-1-23"
+	PID        int64    `json:"pid"`                  // process id
+	Executable string   `json:"executable,omitempty"` // "/usr/sbin/nginx"
+	Cmdline    []string `json:"cmdline,omitempty"`    // ["nginx","-g","daemon off;"]
+	User       string   `json:"user,omitempty"`       // "www-data"
+}
+
+// K8sPodSpec describes a pod (optionally down to container).
+type K8sPodSpec struct {
+	ClusterID      string `json:"clusterID,omitempty"` // optional logical ID for multi-cluster targets
+	Namespace      string `json:"namespace"`
+	PodName        string `json:"podName"`
+	PodUID         string `json:"podUID,omitempty"`
+	Container      string `json:"container,omitempty"`
+	Controller     string `json:"controller,omitempty"` // e.g., "deployment/apps/api"
+	NodeName       string `json:"nodeName,omitempty"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+}
+
+// GitHubActorSpec describes who/what is interacting with a repo.
+type GitHubActorSpec struct {
+	// Repo slug "owner/name" for context (e.g., "acme/api").
+	Repository string `json:"repository"`
+	// ActorType: "User" | "App" | "Bot" (GitHub notions)
+	// +kubebuilder:validation:Enum=User;App;Bot
+	ActorType  string `json:"actorType"`
+	ActorLogin string `json:"actorLogin,omitempty"` // "octocat"
+	ActorID    string `json:"actorID,omitempty"`    // stable numeric id if known
+	// Optional context that led to detection (push/clone/workflow).
+	Event string `json:"event,omitempty"` // "clone","workflow","push"
+	// Optional: workflow/job id when usage came from Actions
+	WorkflowRunID string `json:"workflowRunID,omitempty"`
+}
+
+// Consumer is the schema to store duplicate findings from a job
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels="external-secrets.io/component=controller"
+// +kubebuilder:resource:scope=Namespaced,categories={external-secrets, external-secrets-scan}
+type Consumer struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              ConsumerSpec   `json:"spec,omitempty"`
+	Status            ConsumerStatus `json:"status,omitempty"`
+}
+
+// JobList contains a list of Job resources.
+// +kubebuilder:object:root=true
+type ConsumerList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Consumer `json:"items"`
+}
