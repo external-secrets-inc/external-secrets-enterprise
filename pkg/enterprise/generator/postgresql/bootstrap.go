@@ -44,8 +44,9 @@ func (b *PostgreSQLBootstrap) Start(ctx context.Context) error {
 		return ctx.Err()
 	}
 
+	client := b.mgr.GetClient()
 	var list genv1alpha1.GeneratorStateList
-	if err := b.mgr.GetClient().List(ctx, &list); err != nil {
+	if err := client.List(ctx, &list); err != nil {
 		return err
 	}
 
@@ -63,10 +64,24 @@ func (b *PostgreSQLBootstrap) Start(ctx context.Context) error {
 			// not a PostgreSql spec. skipping
 			continue
 		}
+		db, err := newConnection(ctx, &spec.Spec, client, spec.Namespace)
+		if err != nil {
+			return fmt.Errorf("unable to create db connection: %w", err)
+		}
+		defer func() {
+			err := db.Close(ctx)
+			if err != nil {
+				fmt.Printf("failed to close db: %v", err)
+			}
+		}()
 
 		cleanupPolicy := spec.Spec.CleanupPolicy
 		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
 			connectionId := fmt.Sprintf(schedIdFmt, spec.UID, spec.Spec.Host, spec.Spec.Port)
+			err = setupObservation(ctx, db)
+			if err != nil {
+				return fmt.Errorf("unable to setup observation: %w", err)
+			}
 
 			scheduler.Global().ScheduleInterval(connectionId, spec.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
 				err := triggerSessionSnapshot(ctx, &spec.Spec, b.client, gs.GetNamespace())
