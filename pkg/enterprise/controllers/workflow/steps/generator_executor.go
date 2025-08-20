@@ -53,7 +53,6 @@ func NewGeneratorStepExecutor(step *workflows.GeneratorStep, c client.Client, sc
 // Execute generates secret values using the configured generator,
 // applies post-processing, and returns a map of key/value pairs.
 func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
-	fmt.Println("GeneratorStepExecutor.Execute")
 	output := make(map[string]interface{})
 	log := ctrl.Log.WithName("controllers").WithName("Workflow")
 
