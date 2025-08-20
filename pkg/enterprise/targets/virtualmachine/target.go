@@ -5,13 +5,17 @@ package virtualmachine
 import (
 	"bytes"
 	"context"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
+	"strings"
 	"time"
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
@@ -169,10 +173,6 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, thres
 	return s.checkForJob(ctx, client, scanResponse.JobId)
 }
 
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
-	return nil, nil
-}
-
 func (s *ScanTarget) checkForJob(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	matches, err := s.runMatches(ctx, client, jobID)
 	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
@@ -249,6 +249,142 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	return secrets, nil
 }
 
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
+	}
+
+	client := &http.Client{}
+	if u.Scheme == HTTPS {
+		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+		if len(s.CABundle) > 0 {
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(s.CABundle)
+			tlsConfig.RootCAs = caCertPool
+		}
+		if len(s.AuthClientCert) > 0 && len(s.AuthClientKey) > 0 {
+			cert, err := tls.X509KeyPair(s.AuthClientCert, s.AuthClientKey)
+			if err != nil {
+				return nil, fmt.Errorf("loading client certificate: %w", err)
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
+		client.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	}
+
+	reqBody := ConsumerRequest{
+		Location: location,
+		Paths:    s.Paths,
+	}
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling consumer request: %w", err)
+	}
+
+	api := fmt.Sprintf("%s/api/v1/scanconsumer", s.URL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, api, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("creating consumer request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
+		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
+	} else if s.AuthBearerToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing consumer request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var scanResp ScanJobResponse
+	if err := json.NewDecoder(resp.Body).Decode(&scanResp); err != nil {
+		return nil, fmt.Errorf("decoding consumer response: %w", err)
+	}
+
+	// Poll for completion (10m timeout, same as ScanForSecrets)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	return s.checkForConsumerJob(ctx, client, scanResp.JobID, location)
+}
+
+func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+	findings, err := s.getConsumerJobMatches(ctx, client, jobID, location)
+	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
+		return nil, err
+	}
+	if err == nil {
+		return findings, nil
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			findings, err := s.getConsumerJobMatches(ctx, client, jobID, location)
+			if err != nil {
+				if errors.Is(err, JobNotReadyErr{}) {
+					continue
+				}
+				return nil, err
+			}
+			return findings, nil
+		}
+	}
+}
+
+func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+	api := fmt.Sprintf("%s/api/v1/scanconsumer/%s", s.URL, jobID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("creating consumer job request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
+		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
+	} else if s.AuthBearerToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing consumer job request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var jobResp ConsumerScanJobResponse
+	if err := json.NewDecoder(resp.Body).Decode(&jobResp); err != nil {
+		return nil, fmt.Errorf("decoding consumer job response: %w", err)
+	}
+	if jobResp.Status != "completed" {
+		return nil, JobNotReadyErr{}
+	}
+
+	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(jobResp.Consumers))
+	for _, attrs := range jobResp.Consumers {
+		hostname := attrs["hostname"]
+		display := hostname
+		if display == "" {
+			display = attrs["executable"]
+		}
+
+		out = append(out, tgtv1alpha1.ConsumerFinding{
+			Location:    location,
+			Kind:        tgtv1alpha1.VirtualMachineKind,
+			ID:          stableConsumerID(attrs),
+			DisplayName: display,
+			Attributes:  attrs,
+		})
+	}
+	return out, nil
+}
+
 type JobNotReadyErr struct{}
 
 func (e JobNotReadyErr) Error() string {
@@ -294,4 +430,43 @@ func getCertAuth(ctx context.Context, client client.Client, namespace string, au
 		}
 	}
 	return cert, key, nil
+}
+
+// stableConsumerID returns a stable external ID based on attributes that
+// do not change across restarts. For VMs we avoid PID on purpose.
+func stableConsumerID(attrs map[string]string) string {
+	host := strings.ToLower(strings.TrimSpace(attrs["hostname"]))
+	exe := strings.TrimSpace(attrs["executable"])
+	cmd := normalizeCmdline(attrs["cmdline"])
+
+	var base string
+	if host != "" || exe != "" || cmd != "" {
+		base = host + "|" + exe + "|" + cmd
+	} else {
+		// Fallback: hash over all attributes (sorted) if the preferred keys are missing
+		keys := make([]string, 0, len(attrs))
+		for k := range attrs {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		var b strings.Builder
+		for _, k := range keys {
+			b.WriteString(k)
+			b.WriteString("=")
+			b.WriteString(attrs[k])
+			b.WriteString(";")
+		}
+		base = b.String()
+	}
+	sum := sha512.Sum512([]byte(base))
+	return hex.EncodeToString(sum[:])
+}
+
+func normalizeCmdline(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	// collapse all whitespace to single spaces for stability
+	return strings.Join(strings.Fields(s), " ")
 }

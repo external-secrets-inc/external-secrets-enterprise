@@ -25,4 +25,5 @@ var (
 func init() {
 	SchemeBuilder.Register(&Job{}, &JobList{})
 	SchemeBuilder.Register(&Finding{}, &FindingList{})
+	SchemeBuilder.Register(&Consumer{}, &ConsumerList{})
 }

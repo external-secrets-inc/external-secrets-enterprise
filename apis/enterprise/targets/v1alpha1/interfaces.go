@@ -41,7 +41,6 @@ type RemoteRef struct {
 }
 
 type ConsumerFinding struct {
-	Hash        string            `json:"hash"`
 	Location    SecretInStoreRef  `json:"location"`
 	Kind        string            `json:"kind"`
 	ID          string            `json:"externalID"`
