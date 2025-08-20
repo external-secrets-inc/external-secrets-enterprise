@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -134,6 +135,7 @@ func (r *Reconciler) processJobs(ctx context.Context, wf *workflows.Workflow) (b
 	for _, jobName := range wf.Status.ExecutionOrder {
 		jobStatus := wf.Status.JobStatuses[jobName]
 		jobSpec := wf.Spec.Jobs[jobName]
+		fmt.Println("processJobs jobStatus:", jobStatus)
 
 		// If the job is not succeeded or failed yet, it means jobs are not complete.
 		if jobStatus.Phase != workflows.JobPhaseSucceeded && jobStatus.Phase != workflows.JobPhaseFailed {
@@ -664,12 +666,15 @@ func (r *Reconciler) updateStatusWithEvent(ctx context.Context, wf *workflows.Wo
 		}
 	}
 
-	if err := r.Status().Update(ctx, wf); err != nil {
-		if errors.IsConflict(err) {
-			// A conflict may mean that the resource was updated elsewhere.
-			fmt.Println("REQUEUED due to conflict error")
-			return ctrl.Result{Requeue: true}, nil
+	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		latest := &workflows.Workflow{}
+		if e := r.Get(ctx, types.NamespacedName{Name: wf.Name, Namespace: wf.Namespace}, latest); e != nil {
+			return e
 		}
+		latest.Status = wf.Status
+		return r.Status().Update(ctx, latest)
+	}); err != nil {
+		fmt.Println("REQUEUED due to conflict error")
 		return errorResult, err
 	}
 	if successResult.RequeueAfter > 0 {
