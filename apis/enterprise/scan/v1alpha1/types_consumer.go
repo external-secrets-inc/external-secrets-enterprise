@@ -16,15 +16,15 @@ type ConsumerSpec struct {
 
 	// A stable ID for correlation across scans.
 	// +kubebuilder:validation:MinLength=1
-	ID string `json:"externalID"`
+	ID string `json:"id"`
 
 	// Human readable name for UIs.
 	DisplayName string `json:"displayName"`
 
 	// Exactly one of the following should be set according to Type.
 	VMProcess   *VMProcessSpec   `json:"vmProcess,omitempty"`
-	K8sPod      *K8sPodSpec      `json:"k8sPod,omitempty"`
 	GitHubActor *GitHubActorSpec `json:"githubActor,omitempty"`
+	K8sWorkload *K8sWorkloadSpec `json:"k8sWorkload,omitempty"`
 }
 
 type ConsumerStatus struct {
@@ -46,18 +46,6 @@ type VMProcessSpec struct {
 	User       string   `json:"user,omitempty"`       // "www-data"
 }
 
-// K8sPodSpec describes a pod (optionally down to container).
-type K8sPodSpec struct {
-	ClusterID      string `json:"clusterID,omitempty"` // optional logical ID for multi-cluster targets
-	Namespace      string `json:"namespace"`
-	PodName        string `json:"podName"`
-	PodUID         string `json:"podUID,omitempty"`
-	Container      string `json:"container,omitempty"`
-	Controller     string `json:"controller,omitempty"` // e.g., "deployment/apps/api"
-	NodeName       string `json:"nodeName,omitempty"`
-	ServiceAccount string `json:"serviceAccount,omitempty"`
-}
-
 // GitHubActorSpec describes who/what is interacting with a repo.
 type GitHubActorSpec struct {
 	// Repo slug "owner/name" for context (e.g., "acme/api").
@@ -71,6 +59,35 @@ type GitHubActorSpec struct {
 	Event string `json:"event,omitempty"` // "clone","workflow","push"
 	// Optional: workflow/job id when usage came from Actions
 	WorkflowRunID string `json:"workflowRunID,omitempty"`
+}
+
+type K8sPodItem struct {
+	Name     string `json:"name"`
+	UID      string `json:"uid,omitempty"`
+	NodeName string `json:"nodeName,omitempty"`
+	Phase    string `json:"phase,omitempty"`
+	Ready    bool   `json:"ready"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+type K8sWorkloadSpec struct {
+	ClusterName string `json:"clusterName,omitempty"`
+
+	Namespace string `json:"namespace"`
+
+	// Workload identity (top controller or naked Pod as fallback)
+	// e.g., Kind="Deployment", Group="apps", Version="v1", Name="api"
+	WorkloadKind    string `json:"workloadKind"`
+	WorkloadGroup   string `json:"workloadGroup,omitempty"`
+	WorkloadVersion string `json:"workloadVersion,omitempty"`
+	WorkloadName    string `json:"workloadName"`
+	WorkloadUID     string `json:"workloadUID,omitempty"`
+
+	// Convenience string for UIs: "deployment.apps/api"
+	Controller string `json:"controller,omitempty"`
+
+	// Live snapshot of pods owned by this workload
+	Pods []K8sPodItem `json:"pods,omitempty"`
 }
 
 // Consumer is the schema to store duplicate findings from a job

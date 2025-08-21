@@ -204,6 +204,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 	return results, nil
 }
 
+// Refactor to get actor based on github audit log so we can get everyone who cloned the repo as well
 func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
 	owner, repo, branch := s.Owner, s.Repo, s.Branch
 	repoFull := owner + "/" + repo
@@ -310,7 +311,7 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 				if _, ok := unique[id]; !ok {
 					unique[id] = tgtv1alpha1.ConsumerFinding{
 						Location:    location,
-						Kind:        "GitHubActor",
+						Kind:        tgtv1alpha1.GithubTargetKind,
 						ID:          id,
 						DisplayName: actorLogin,
 						Attributes:  attrs,

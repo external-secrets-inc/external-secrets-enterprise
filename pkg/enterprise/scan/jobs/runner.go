@@ -105,8 +105,14 @@ func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []v1alpha1.Con
 		return nil, nil, nil, err
 	}
 
-	j.Logger.V(1).Info("Getting Virtual Machine Targets")
+	j.Logger.V(1).Info("Getting Github Repository Targets")
 	err = j.scanGithubRepositoryTargets(ctx, secretValues)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	j.Logger.V(1).Info("Getting Kubernetes Cluster Targets")
+	err = j.scanKubernetesClusterTargets(ctx, secretValues)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -164,6 +170,39 @@ func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues
 		return err
 	}
 	for _, target := range ghTargets.Items {
+		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
+		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
+		if !ok {
+			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
+			j.Logger.Error(err, "failed to create new client for target", "target", target.GetName())
+			continue
+		}
+		client, err := prov.NewClient(ctx, j.Client, &target)
+		if err != nil {
+			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
+			continue
+		}
+
+		for value := range secretValues {
+			locations, err := client.ScanForSecrets(ctx, []string{value}, 0)
+			if err != nil {
+				j.Logger.Error(err, "failed scan target value")
+				continue
+			}
+			for _, location := range locations {
+				j.locationMemset.Add(location, []byte(value))
+			}
+		}
+	}
+	return nil
+}
+
+func (j JobRunner) scanKubernetesClusterTargets(ctx context.Context, secretValues map[string]struct{}) error {
+	kubernetesTargets := &tgtv1alpha1.KubernetesClusterList{}
+	if err := j.Client.List(ctx, kubernetesTargets, client.InNamespace(j.Namespace)); err != nil {
+		return err
+	}
+	for _, target := range kubernetesTargets.Items {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
 		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
 		if !ok {

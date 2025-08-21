@@ -27,6 +27,7 @@ var (
 func init() {
 	SchemeBuilder.Register(&VirtualMachine{}, &VirtualMachineList{})
 	SchemeBuilder.Register(&GithubRepository{}, &GithubRepositoryList{})
+	SchemeBuilder.Register(&KubernetesCluster{}, &KubernetesClusterList{})
 }
 
 func GetObjFromKind(kind string) esv1.GenericStore {

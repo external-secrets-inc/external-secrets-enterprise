@@ -1,4 +1,5 @@
-// types_github.go
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
 import (

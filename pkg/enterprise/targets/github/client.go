@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -24,10 +25,23 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	if remoteRef.GetProperty() == "" || remoteRef.GetRemoteKey() == "" {
 		return errors.New("remoteRef.Property and remoteRef.Key are mandatory")
 	}
-	newVal, ok := secret.Data[remoteRef.GetSecretKey()]
-	if !ok {
-		return fmt.Errorf("secret key %q not found in secret data", remoteRef.GetSecretKey())
+
+	var newVal []byte
+	var ok bool
+	if remoteRef.GetSecretKey() == "" {
+		// Get The full Secret
+		d, err := json.Marshal(secret.Data)
+		if err != nil {
+			return fmt.Errorf("error marshaling secret: %w", err)
+		}
+		newVal = d
+	} else {
+		newVal, ok = secret.Data[remoteRef.GetSecretKey()]
+		if !ok {
+			return fmt.Errorf("secret key %q not found", remoteRef.GetSecretKey())
+		}
 	}
+
 	indexes := remoteRef.GetProperty()
 	filename := remoteRef.GetRemoteKey()
 
