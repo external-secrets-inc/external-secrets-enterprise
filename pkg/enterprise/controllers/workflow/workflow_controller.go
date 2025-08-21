@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -652,11 +653,14 @@ func (r *Reconciler) updateStatusWithEvent(ctx context.Context, wf *workflows.Wo
 		}
 	}
 
-	if err := r.Status().Update(ctx, wf); err != nil {
-		if errors.IsConflict(err) {
-			// A conflict may mean that the resource was updated elsewhere.
-			return ctrl.Result{Requeue: true}, nil
+	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		latest := &workflows.Workflow{}
+		if e := r.Get(ctx, types.NamespacedName{Name: wf.Name, Namespace: wf.Namespace}, latest); e != nil {
+			return e
 		}
+		latest.Status = wf.Status
+		return r.Status().Update(ctx, latest)
+	}); err != nil {
 		return errorResult, err
 	}
 	r.Recorder.Eventf(wf, eventType, reason, message)

@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.19.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.18.0...v1.19.0) (2025-08-21)
+
+
+### Features
+
+* add consumer finding ([#443](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/443)) ([c1baa13](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c1baa13cae705e5f96b8aa7f2a64eb9ce5d8ff52))
+* Add GitHub target ([#431](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/431)) ([d1bc9fe](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d1bc9fe5aecd6fdc64b11f2bf41cc7be4f1b766e))
+* add liveness probe to eso controller ([#4930](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4930)) ([5000a9d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5000a9dd54b78a070f151382909fa5f5041ff830))
+* **helm:** Add control of response to missing prometheus ([#5087](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5087)) ([2f72f03](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2f72f034e01da81d507c6cd1d916fcc6d1faeb1a))
+
+
+### Bug Fixes
+
+* bump support table & update roadmap ([#5135](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5135)) ([f6b47d5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f6b47d56d1a5e86eaa3176b40bd00a86598b417e))
+* chart-lock ([#446](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/446)) ([68acf14](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/68acf140adee5791f6adc78ab4092ca950f9fdc3))
+* finding fuzzle match ([#439](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/439)) ([447c253](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/447c25309e8c2d9c9b4511d74c99c5640f77647b))
+* fix conflicts ([1bc8a94](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1bc8a941f7e4ed4410ca6a293a4b8c845b621a51))
+* generator state duplication ([#445](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/445)) ([d983f16](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d983f16afde6b5c883939834160b6385d06121b3))
+* **helm:** add boolean for  processClusterGenerator ([#5144](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5144)) ([5b46d48](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5b46d48a1f3baf0ea98f2bac5c296b8e48957aa0))
+* **provider/kubernetes:** make auth field optional ([#5064](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5064)) ([8e953c7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8e953c750fdbb85d8452fbd9391e3e26337e0bc6))
+* scope secret list call to the namespace the push secret was created ([#5133](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5133)) ([39cdba5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/39cdba5863533007b582dc63dd300839326b2f1d))
+* update from upstream ([#429](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/429)) ([5c68e2c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5c68e2c05b10151813e4aaf6063636f8e22c2f28))
+
 ## [1.18.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.5...v1.18.0) (2025-08-12)
 
 

@@ -22,6 +22,7 @@ import (
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/go-logr/logr"
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/gommon/log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -44,11 +45,20 @@ func (b *PostgreSQLBootstrap) Start(ctx context.Context) error {
 		return ctx.Err()
 	}
 
+	client := b.mgr.GetClient()
 	var list genv1alpha1.GeneratorStateList
-	if err := b.mgr.GetClient().List(ctx, &list); err != nil {
+	if err := client.List(ctx, &list); err != nil {
 		return err
 	}
-
+	var db *pgx.Conn
+	defer func() {
+		if db != nil {
+			err := db.Close(ctx)
+			if err != nil {
+				fmt.Printf("failed to close db: %v", err)
+			}
+		}
+	}()
 	for _, gs := range list.Items {
 		if gs.Spec.GarbageCollectionDeadline == nil {
 			log.Info("skipping generator state without garbage collection deadline")
@@ -63,10 +73,24 @@ func (b *PostgreSQLBootstrap) Start(ctx context.Context) error {
 			// not a PostgreSql spec. skipping
 			continue
 		}
+		if db != nil {
+			err := db.Close(ctx)
+			if err != nil {
+				fmt.Printf("failed to close db: %v", err)
+			}
+		}
+		db, err = newConnection(ctx, &spec.Spec, client, spec.Namespace)
+		if err != nil {
+			return fmt.Errorf("unable to create db connection: %w", err)
+		}
 
 		cleanupPolicy := spec.Spec.CleanupPolicy
 		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
 			connectionId := fmt.Sprintf(schedIdFmt, spec.UID, spec.Spec.Host, spec.Spec.Port)
+			err = setupObservation(ctx, db)
+			if err != nil {
+				return fmt.Errorf("unable to setup observation: %w", err)
+			}
 
 			scheduler.Global().ScheduleInterval(connectionId, spec.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
 				err := triggerSessionSnapshot(ctx, &spec.Spec, b.client, gs.GetNamespace())

@@ -183,7 +183,9 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "acraccesstokens"
+    {{- if .Values.processClusterGenerator }}
     - "clustergenerators"
+    {{- end }}
     - "ecrauthorizationtokens"
     - "awsiamkeys"
     - "fakes"
@@ -319,7 +321,9 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "acraccesstokens"
+    {{- if .Values.processClusterGenerator }}
     - "clustergenerators"
+    {{- end }}
     - "ecrauthorizationtokens"
     - "fakes"
     - "gcraccesstokens"
@@ -389,7 +393,9 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "acraccesstokens"
+    {{- if .Values.processClusterGenerator }}
     - "clustergenerators"
+    {{- end }}
     - "ecrauthorizationtokens"
     - "fakes"
     - "gcraccesstokens"
