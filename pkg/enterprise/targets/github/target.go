@@ -5,11 +5,14 @@ package github
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -202,7 +205,129 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 }
 
 func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
-	return nil, nil
+	owner, repo, branch := s.Owner, s.Repo, s.Branch
+	repoFull := owner + "/" + repo
+	path := strings.TrimSpace(location.RemoteRef.Key)
+	if path == "" {
+		// If we can't tie to a file, it's hard to attribute precisely.
+		return nil, nil
+	}
+
+	unique := make(map[string]tgtv1alpha1.ConsumerFinding)
+	commitSHAs := make(map[string]struct{})
+
+	commitOpts := &github.CommitsListOptions{
+		Path: path,
+		SHA:  branch,
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	for page := 1; page <= 10; page++ {
+		commitOpts.Page = page
+		commits, resp, err := s.GitHubClient.Repositories.ListCommits(ctx, owner, repo, commitOpts)
+		if err != nil {
+			return nil, fmt.Errorf("list commits for %s path %s: %w", repoFull, path, err)
+		}
+		for _, commit := range commits {
+			if commit == nil {
+				continue
+			}
+			sha := commit.GetSHA()
+			if sha != "" {
+				commitSHAs[sha] = struct{}{}
+			}
+			user := commit.GetAuthor()
+			if user == nil || user.GetLogin() == "" {
+				continue
+			}
+			actorLogin := user.GetLogin()
+			actorID := strconv.FormatInt(user.GetID(), 10)
+			actorType := normalizeActorType(user.GetType(), actorLogin)
+
+			attrs := map[string]string{
+				"repository": repoFull,
+				"actorType":  actorType,
+				"actorLogin": actorLogin,
+				"actorID":    actorID,
+				"event":      "commit",
+			}
+			id := stableGitHubActorID(repoFull, actorType, actorLogin, actorID)
+			if _, ok := unique[id]; !ok {
+				unique[id] = tgtv1alpha1.ConsumerFinding{
+					Location:    location,
+					Kind:        tgtv1alpha1.GithubTargetKind,
+					ID:          id,
+					DisplayName: actorLogin,
+					Attributes:  attrs,
+				}
+			}
+		}
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+	}
+
+	// Correlate workflow runs whose head SHA matches those commits.
+	if len(commitSHAs) > 0 {
+		runOpts := &github.ListWorkflowRunsOptions{
+			Branch: branch,
+			ListOptions: github.ListOptions{
+				PerPage: 100,
+			},
+		}
+		for page := 1; page <= 5; page++ {
+			runOpts.Page = page
+			runs, resp, err := s.GitHubClient.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, runOpts)
+			if err != nil {
+				break
+			}
+			for _, run := range runs.WorkflowRuns {
+				if run == nil {
+					continue
+				}
+				if _, ok := commitSHAs[run.GetHeadSHA()]; !ok {
+					continue
+				}
+				user := run.GetActor()
+				if user == nil || user.GetLogin() == "" {
+					continue
+				}
+				actorLogin := user.GetLogin()
+				actorID := strconv.FormatInt(user.GetID(), 10)
+				actorType := normalizeActorType(user.GetType(), actorLogin)
+
+				attrs := map[string]string{
+					"repository":    repoFull,
+					"actorType":     actorType,
+					"actorLogin":    actorLogin,
+					"actorID":       actorID,
+					"event":         "workflow",
+					"workflowRunID": strconv.FormatInt(run.GetID(), 10),
+				}
+				id := stableGitHubActorID(repoFull, actorType, actorLogin, actorID)
+				if _, ok := unique[id]; !ok {
+					unique[id] = tgtv1alpha1.ConsumerFinding{
+						Location:    location,
+						Kind:        "GitHubActor",
+						ID:          id,
+						DisplayName: actorLogin,
+						Attributes:  attrs,
+					}
+				}
+			}
+			if resp == nil || resp.NextPage == 0 {
+				break
+			}
+		}
+	}
+
+	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(unique))
+	for _, v := range unique {
+		out = append(out, v)
+	}
+	return out, nil
 }
 
 func newGitHubClient(ctx context.Context, token, enterpriseURL, uploadURL, caBundle string) (*github.Client, error) {
@@ -369,6 +494,38 @@ func cloneTLSConfig(config *tls.Config) *tls.Config {
 	}
 	cp := config.Clone()
 	return cp
+}
+
+// normalizeActorType maps GitHub user type/login to our enum-ish strings.
+func normalizeActorType(userType, login string) string {
+	lowerType := strings.ToLower(strings.TrimSpace(userType))
+	lowerLogin := strings.ToLower(strings.TrimSpace(login))
+
+	// Common bot markers
+	if lowerLogin == "github-actions" || strings.HasSuffix(lowerLogin, "[bot]") || lowerType == "bot" {
+		return "Bot"
+	}
+	// GH Apps sometimes surface as "Integration" or via bot-looking logins.
+	if lowerType == "integration" {
+		return "App"
+	}
+	// Default to User
+	return "User"
+}
+
+// stableGitHubActorID returns a stable ID for a repo+actor.
+// Prefer actorID (numeric) when present; fall back to login.
+func stableGitHubActorID(repoFull, actorType, actorLogin, actorID string) string {
+	key := fmt.Sprintf("%s|%s|%s", strings.ToLower(repoFull), actorType, firstNonEmpty(actorID, strings.ToLower(actorLogin)))
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:])
+}
+
+func firstNonEmpty(a, b string) string {
+	if strings.TrimSpace(a) != "" {
+		return a
+	}
+	return b
 }
 
 type JobNotReadyErr struct{}

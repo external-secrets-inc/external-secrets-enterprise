@@ -91,9 +91,11 @@ func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {
 	for _, acc := range cs.accums {
 		SortLocations(acc.status.Locations)
 		out = append(out, v1alpha1.Consumer{
-			ObjectMeta: metav1.ObjectMeta{}, // name/labels set by caller
-			Spec:       acc.spec,
-			Status:     acc.status,
+			ObjectMeta: metav1.ObjectMeta{
+				Name: acc.spec.ID,
+			},
+			Spec:   acc.spec,
+			Status: acc.status,
 		})
 	}
 	return out
