@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
 	"strings"
 	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	authv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,88 +110,109 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 		return esv1.ValidationResultError, fmt.Errorf("kube client is nil")
 	}
 
-	for _, p := range s.NamespaceInclude {
-		if _, err := path.Match(p, "dummy"); err != nil {
-			return esv1.ValidationResultError, fmt.Errorf("invalid include pattern %q: %w", p, err)
-		}
-	}
-	for _, p := range s.NamespaceExclude {
-		if _, err := path.Match(p, "dummy"); err != nil {
-			return esv1.ValidationResultError, fmt.Errorf("invalid exclude pattern %q: %w", p, err)
-		}
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// List namespaces, then filter by include/exclude to verify scope isn’t empty
-	var namespaceList corev1.NamespaceList
-	if err := s.KubeClient.List(ctx, &namespaceList); err != nil {
-		return esv1.ValidationResultError, fmt.Errorf("list namespaces: %w", err)
+	type check struct {
+		group     string
+		resource  string
+		verbs     []string
+		namespace string
 	}
-	allowed := make([]string, 0, len(namespaceList.Items))
-	for i := range namespaceList.Items {
-		namespace := namespaceList.Items[i].Name
-		if s.namespaceAllowed(namespace) {
-			allowed = append(allowed, namespace)
+
+	namespace := "default"
+	readVerbs := []string{"get", "list", "watch"}
+	readChecks := []check{
+		{"", "pods", readVerbs, namespace},
+		{"", "secrets", readVerbs, namespace},
+		{"", "serviceaccounts", readVerbs, namespace},
+		{"apps", "deployments", readVerbs, namespace},
+		{"apps", "statefulsets", readVerbs, namespace},
+		{"apps", "daemonsets", readVerbs, namespace},
+		{"apps", "replicasets", readVerbs, namespace},
+		{"batch", "jobs", readVerbs, namespace},
+		{"batch", "cronjobs", readVerbs, namespace},
+	}
+
+	writeChecks := []check{
+		{"", "secrets", []string{"create", "update", "patch"}, namespace},
+	}
+
+	missing := make(map[string]map[string]struct{}, 0)
+
+	ensure := func(c check) error {
+		for _, v := range c.verbs {
+			allowed, err := s.canI(ctx, c.namespace, c.group, c.resource, v, "")
+			if err != nil {
+				return fmt.Errorf("authz check failed for %s %s/%s in %q: %w",
+					v, apiGroupOrCore(c.group), c.resource, c.namespace, err)
+			}
+			if !allowed {
+				key := fmt.Sprintf("%s %s/%s", c.namespace, apiGroupOrCore(c.group), c.resource)
+				if _, ok := missing[key]; !ok {
+					missing[key] = map[string]struct{}{}
+				}
+				missing[key][v] = struct{}{}
+			}
+		}
+		return nil
+	}
+
+	for _, c := range readChecks {
+		if err := ensure(c); err != nil {
+			return esv1.ValidationResultError, err
 		}
 	}
-	if len(s.NamespaceInclude) > 0 && len(allowed) == 0 {
-		return esv1.ValidationResultError, fmt.Errorf("no namespaces matched include/exclude filters")
-	}
-
-	// Pick one namespace to probe permissions; prefer "default" if allowed.
-	probeNamespace := pickProbeNamespace(allowed)
-	if probeNamespace == "" {
-		probeNamespace = "default"
-	}
-
-	var podList corev1.PodList
-	if err := s.KubeClient.List(ctx, &podList, &crclient.ListOptions{
-		Namespace:     probeNamespace,
-		LabelSelector: s.SelectorOrEverything(),
-	}); err != nil {
-		return esv1.ValidationResultError, fmt.Errorf("list pods in %q: %w", probeNamespace, err)
-	}
-
-	var secList corev1.SecretList
-	if err := s.KubeClient.List(ctx, &secList, &crclient.ListOptions{Namespace: probeNamespace}); err != nil {
-		return esv1.ValidationResultError, fmt.Errorf("list secrets in %q: %w", probeNamespace, err)
-	}
-
-	var dummy corev1.Secret
-	if err := s.KubeClient.Get(ctx, types.NamespacedName{Namespace: probeNamespace, Name: "ese-validate-nonexistent"}, &dummy); err != nil && apierrors.IsForbidden(err) {
-		return esv1.ValidationResultError, fmt.Errorf("forbidden to get secrets in %q (need get/list for scan): %w", probeNamespace, err)
-	}
-
-	dryRunSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:    probeNamespace,
-			GenerateName: "ese-validate-",
-			Labels:       map[string]string{"managed-by": "external-secrets-enterprise"},
-		},
-		Data: map[string][]byte{"_probe": []byte("ok")},
-	}
-	if err := s.KubeClient.Create(ctx, dryRunSecret, &crclient.CreateOptions{
-		DryRun: []string{metav1.DryRunAll},
-	}); err != nil {
-		if apierrors.IsForbidden(err) {
-			return esv1.ValidationResultError, fmt.Errorf("forbidden to create secrets in %q (need create permission for PushSecret): %w", probeNamespace, err)
+	for _, c := range writeChecks {
+		if err := ensure(c); err != nil {
+			return esv1.ValidationResultError, err
 		}
-		return esv1.ValidationResultError, fmt.Errorf("dry-run create secret in %q failed: %w", probeNamespace, err)
+	}
+
+	if len(missing) > 0 {
+		scopes := make([]string, 0, len(missing))
+		for s := range missing {
+			scopes = append(scopes, s)
+		}
+
+		parts := make([]string, 0, len(scopes))
+		for _, scope := range scopes {
+			vs := make([]string, 0, len(missing[scope]))
+			for v := range missing[scope] {
+				vs = append(vs, v)
+			}
+			parts = append(parts, fmt.Sprintf("%s: [%s]", scope, strings.Join(vs, ",")))
+		}
+
+		return esv1.ValidationResultError,
+			fmt.Errorf("missing/insufficient RBAC for Kubernetes target: %s", strings.Join(parts, "; "))
 	}
 
 	return esv1.ValidationResultReady, nil
 }
 
-func pickProbeNamespace(allowed []string) string {
-	if len(allowed) == 0 {
-		return ""
+func (s *ScanTarget) canI(ctx context.Context, namespace, group, resource, verb, name string) (bool, error) {
+	ssar := &authv1.SelfSubjectAccessReview{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: authv1.SelfSubjectAccessReviewSpec{
+			ResourceAttributes: &authv1.ResourceAttributes{
+				Namespace: namespace,
+				Group:     group,
+				Resource:  resource,
+				Verb:      verb,
+				Name:      name,
+			},
+		},
 	}
-	for _, ns := range allowed {
-		if ns == "default" {
-			return ns
-		}
+	if err := s.KubeClient.Create(ctx, ssar, &crclient.CreateOptions{}); err != nil {
+		return false, err
 	}
-	return allowed[0]
+	return ssar.Status.Allowed, nil
+}
+
+func apiGroupOrCore(s string) string {
+	if s == "" {
+		return "core"
+	}
+	return s
 }

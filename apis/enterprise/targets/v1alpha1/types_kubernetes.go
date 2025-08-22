@@ -12,6 +12,7 @@ import (
 
 var KubernetesTargetKind = "KubernetesCluster"
 
+// TODO: Update config to use the same options as the Kubernetes SecretStore (Service Account, Bearer Token, Client Certificate, KubeConfig, and Incluster).
 type KubernetesClusterSpec struct {
 	// kubeConfigSecretRef is an optional reference to a Secret containing a kubeconfig.
 	// If empty, in-cluster config is used.
