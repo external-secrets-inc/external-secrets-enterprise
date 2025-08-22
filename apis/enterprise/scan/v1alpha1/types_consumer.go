@@ -30,6 +30,7 @@ type ConsumerSpec struct {
 type ConsumerStatus struct {
 	Locations  []tgtv1alpha1.SecretInStoreRef `json:"locations,omitempty"`
 	Conditions []metav1.Condition             `json:"conditions,omitempty"`
+	Pods       []K8sPodItem                   `json:"pods,omitempty"`
 }
 
 type TargetReference struct {
@@ -85,9 +86,6 @@ type K8sWorkloadSpec struct {
 
 	// Convenience string for UIs: "deployment.apps/api"
 	Controller string `json:"controller,omitempty"`
-
-	// Live snapshot of pods owned by this workload
-	Pods []K8sPodItem `json:"pods,omitempty"`
 }
 
 // Consumer is the schema to store duplicate findings from a job

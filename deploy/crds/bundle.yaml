@@ -29011,27 +29011,6 @@ spec:
                       type: string
                     namespace:
                       type: string
-                    pods:
-                      description: Live snapshot of pods owned by this workload
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          nodeName:
-                            type: string
-                          phase:
-                            type: string
-                          ready:
-                            type: boolean
-                          reason:
-                            type: string
-                          uid:
-                            type: string
-                        required:
-                          - name
-                          - ready
-                        type: object
-                      type: array
                     workloadGroup:
                       type: string
                     workloadKind:
@@ -29173,6 +29152,26 @@ spec:
                       - kind
                       - name
                       - remoteRef
+                    type: object
+                  type: array
+                pods:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      nodeName:
+                        type: string
+                      phase:
+                        type: string
+                      ready:
+                        type: boolean
+                      reason:
+                        type: string
+                      uid:
+                        type: string
+                    required:
+                      - name
+                      - ready
                     type: object
                   type: array
               type: object

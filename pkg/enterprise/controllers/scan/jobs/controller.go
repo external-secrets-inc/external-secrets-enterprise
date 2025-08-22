@@ -169,7 +169,7 @@ func consumerNeedsToUpdate(existing, consumer *v1alpha1.Consumer) bool {
 	loc1 := existing.Status.Locations
 	loc2 := consumer.Status.Locations
 
-	return !(slices.EqualFunc(loc1, loc2, utils.EqualLocations) && slices.Equal(existing.Status.Conditions, consumer.Status.Conditions))
+	return !(slices.EqualFunc(loc1, loc2, utils.EqualLocations) && slices.Equal(existing.Status.Conditions, consumer.Status.Conditions) && slices.Equal(existing.Status.Pods, consumer.Status.Pods))
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
@@ -360,8 +360,11 @@ func (c *JobController) UpdateConsumers(ctx context.Context, consumers []v1alpha
 		currentConsumersByID[consumer.Spec.ID] = consumer
 	}
 
+	seenIDs := make(map[string]struct{}, len(currentConsumersByID))
+
 	for i := range consumers {
 		newConsumer := &consumers[i]
+		seenIDs[newConsumer.Spec.ID] = struct{}{}
 
 		// Current update assumes that the ID will be the same for every consumer
 		if currentConsumer, ok := currentConsumersByID[newConsumer.Spec.ID]; ok {
@@ -385,6 +388,16 @@ func (c *JobController) UpdateConsumers(ctx context.Context, consumers []v1alpha
 			create.Status.Locations = newConsumer.Status.Locations
 			c.Log.V(1).Info("Updating consumer status", "consumer", create.GetName())
 			if err := c.Status().Update(ctx, create); err != nil {
+				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
+			}
+		}
+	}
+
+	// Delete Consumers that are no longer found
+	for id, currentConsumer := range currentConsumersByID {
+		if _, ok := seenIDs[id]; !ok {
+			c.Log.V(1).Info("Deleting stale consumer (not observed this run)", "id", id, "name", currentConsumer.GetName())
+			if err := c.Delete(ctx, currentConsumer); err != nil {
 				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 			}
 		}

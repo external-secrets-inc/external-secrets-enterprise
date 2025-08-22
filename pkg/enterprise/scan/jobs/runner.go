@@ -261,6 +261,17 @@ func (j *JobRunner) attributeConsumers(ctx context.Context, findings []v1alpha1.
 			j.Logger.Error(err, "failed to attribute consumers on GitHub target", "target", target.GetName())
 		}
 	}
+
+	kubernetesTargets := &tgtv1alpha1.KubernetesClusterList{}
+	if err := j.Client.List(ctx, kubernetesTargets, client.InNamespace(j.Namespace)); err != nil {
+		return err
+	}
+	for _, target := range kubernetesTargets.Items {
+		kind := target.GroupVersionKind().Kind
+		if err := j.attributeTargetConsumers(ctx, kind, target.GetName(), &target, locationsPerKindMap[kind]); err != nil {
+			j.Logger.Error(err, "failed to attribute consumers on GitHub target", "target", target.GetName())
+		}
+	}
 	return nil
 }
 

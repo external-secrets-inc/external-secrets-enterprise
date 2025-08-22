@@ -12,12 +12,6 @@ import (
 
 var KubernetesTargetKind = "KubernetesCluster"
 
-// KubernetesClusterSpec defines how we connect to and scan a Kubernetes cluster.
-// This target's behavior is:
-//   - Scan: enumerate Pods that *manifest-bind* a given Secret (env/envFrom/volumes,
-//     imagePullSecrets, and optionally SA-linked secrets). These Pods are the
-//     ConsumerFindings.
-//   - PushSecret: only create/update the Secret object in the target namespace.
 type KubernetesClusterSpec struct {
 	// kubeConfigSecretRef is an optional reference to a Secret containing a kubeconfig.
 	// If empty, in-cluster config is used.

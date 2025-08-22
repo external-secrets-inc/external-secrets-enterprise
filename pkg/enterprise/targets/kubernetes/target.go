@@ -5,7 +5,8 @@ package kubernetes
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path"
@@ -66,7 +67,7 @@ func (p *Provider) NewClient(
 		return nil, fmt.Errorf("target %q not found", target.GetObjectKind().GroupVersionKind().Kind)
 	}
 
-	cfg, err := buildRestConfig(ctx, mgrClient, converted.Spec.KubeConfigSecretRef)
+	cfg, err := buildRestConfig(ctx, mgrClient, converted.GetNamespace(), converted.Spec.KubeConfigSecretRef)
 	if err != nil {
 		return nil, fmt.Errorf("build rest config: %w", err)
 	}
@@ -132,7 +133,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		return nil, fmt.Errorf("store %q not found", store.GetObjectKind().GroupVersionKind().Kind)
 	}
 
-	cfg, err := buildRestConfig(ctx, mgrClient, converted.Spec.KubeConfigSecretRef)
+	cfg, err := buildRestConfig(ctx, mgrClient, converted.GetNamespace(), converted.Spec.KubeConfigSecretRef)
 	if err != nil {
 		return nil, fmt.Errorf("build rest config: %w", err)
 	}
@@ -209,14 +210,8 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 				continue
 			}
 
-			var decodedVal []byte
-			_, err := base64.StdEncoding.Decode(decodedVal, val)
-			if err != nil {
-				return nil, fmt.Errorf("error decoding secret value: %w", err)
-			}
-
 			for _, sec := range secrets {
-				isEqual := bytes.Equal(decodedVal, []byte(sec))
+				isEqual := bytes.Equal(val, []byte(sec))
 				if !isEqual {
 					continue
 				}
@@ -315,7 +310,7 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 			"pods":            string(podsJSON),
 		}
 
-		id := sanitizeID(fmt.Sprintf("k8s-%s-%s-%s-%s", s.Name, g.ref.Namespace, strings.ToLower(g.ref.Kind), g.ref.Name))
+		id := stableID(s.Name, g.ref)
 		display := fmt.Sprintf("%s/%s (%s)", g.ref.Namespace, g.ref.Name, g.ref.Kind)
 
 		out = append(out, tgtv1alpha1.ConsumerFinding{
@@ -587,25 +582,29 @@ func controllerString(w workloadRef) string {
 	return fmt.Sprintf("%s.%s/%s", strings.ToLower(w.Kind), g, w.Name)
 }
 
-func sanitizeID(s string) string {
+func stableID(name string, ref workloadRef) string {
+	s := fmt.Sprintf("%s-%s-%s-%s", name, ref.Namespace, strings.ToLower(ref.Kind), ref.Name)
 	s = strings.ToLower(s)
 	s = strings.ReplaceAll(s, "_", "-")
 	s = strings.ReplaceAll(s, ":", "-")
 	s = strings.ReplaceAll(s, "/", "-")
 	s = strings.ReplaceAll(s, ".", "-")
-	return strings.Trim(s, "-")
+	s = strings.Trim(s, "-")
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
 }
 
 func buildRestConfig(
 	ctx context.Context,
 	mgrClient crclient.Client,
+	namespace string,
 	ref *esmeta.SecretKeySelector,
 ) (*rest.Config, error) {
 	if ref == nil || (ref.Name == "" && ref.Namespace == nil && ref.Key == "") {
 		return rest.InClusterConfig()
 	}
 
-	data, err := resolvers.SecretKeyRef(ctx, mgrClient, "", *ref.Namespace, &esmeta.SecretKeySelector{
+	data, err := resolvers.SecretKeyRef(ctx, mgrClient, resolvers.EmptyStoreKind, namespace, &esmeta.SecretKeySelector{
 		Namespace: ref.Namespace,
 		Name:      ref.Name,
 		Key:       ref.Key,
@@ -646,6 +645,6 @@ func (e JobNotReadyErr) Error() string {
 }
 
 func init() {
-	tgtv1alpha1.Register(tgtv1alpha1.GithubTargetKind, &Provider{})
-	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.GithubTargetKind, esv1.MaintenanceStatusMaintained)
+	tgtv1alpha1.Register(tgtv1alpha1.KubernetesTargetKind, &Provider{})
+	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.KubernetesTargetKind, esv1.MaintenanceStatusMaintained)
 }

@@ -4,6 +4,8 @@
 package job
 
 import (
+	"slices"
+	"strings"
 	"sync"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
@@ -57,7 +59,7 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 			},
 			status: v1alpha1.ConsumerStatus{},
 		}
-		FillUnionFromAttributes(&acc.spec, f.Kind, f.Attributes)
+		FillAttributes(acc, f.Kind, f.Attributes)
 		cs.accums[key] = acc
 	}
 
@@ -79,6 +81,12 @@ func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {
 	out := make([]v1alpha1.Consumer, 0, len(cs.accums))
 	for _, acc := range cs.accums {
 		SortLocations(acc.status.Locations)
+		slices.SortFunc(acc.status.Pods, func(a, b v1alpha1.K8sPodItem) int {
+			if a.UID == b.UID {
+				return strings.Compare(a.Name, b.Name)
+			}
+			return strings.Compare(a.UID, b.UID)
+		})
 		out = append(out, v1alpha1.Consumer{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: acc.spec.ID,

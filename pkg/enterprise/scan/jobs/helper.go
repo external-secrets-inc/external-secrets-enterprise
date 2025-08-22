@@ -46,21 +46,21 @@ func SortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
 	slices.SortFunc(loc, CompareLocations)
 }
 
-func FillUnionFromAttributes(spec *v1alpha1.ConsumerSpec, kind string, attrs map[string]string) {
+func FillAttributes(consumer *consumerAccum, kind string, attrs map[string]string) {
 	switch kind {
 	case tgtv1alpha1.VirtualMachineKind:
-		spec.VMProcess = &v1alpha1.VMProcessSpec{
+		consumer.spec.VMProcess = &v1alpha1.VMProcessSpec{
 			Hostname:   attrs["hostname"],
 			Executable: attrs["executable"],
 			User:       attrs["user"],
 		}
 		if pid, ok := attrs["pid"]; ok {
 			if p, err := strconv.ParseInt(pid, 10, 64); err == nil {
-				spec.VMProcess.PID = p
+				consumer.spec.VMProcess.PID = p
 			}
 		}
 	case tgtv1alpha1.GithubTargetKind:
-		spec.GitHubActor = &v1alpha1.GitHubActorSpec{
+		consumer.spec.GitHubActor = &v1alpha1.GitHubActorSpec{
 			Repository:    attrs["repository"],
 			ActorType:     attrs["actorType"],
 			ActorLogin:    attrs["actorLogin"],
@@ -80,9 +80,11 @@ func FillUnionFromAttributes(spec *v1alpha1.ConsumerSpec, kind string, attrs map
 			Controller:      attrs["controller"],
 		}
 
+		pods := make([]v1alpha1.K8sPodItem, 0)
 		if podJson := attrs["pods"]; podJson != "" {
-			_ = json.Unmarshal([]byte(podJson), &ws.Pods)
+			_ = json.Unmarshal([]byte(podJson), &pods)
 		}
-		spec.K8sWorkload = ws
+		consumer.spec.K8sWorkload = ws
+		consumer.status.Pods = pods
 	}
 }
