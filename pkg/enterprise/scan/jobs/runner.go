@@ -165,52 +165,40 @@ func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
 }
 
 func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}) error {
-	ghTargets := &tgtv1alpha1.GithubRepositoryList{}
-	if err := j.Client.List(ctx, ghTargets, client.InNamespace(j.Namespace)); err != nil {
-		return err
-	}
-	for _, target := range ghTargets.Items {
-		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
-		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
-		if !ok {
-			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
-			j.Logger.Error(err, "failed to create new client for target", "target", target.GetName())
-			continue
+	list := &tgtv1alpha1.GithubRepositoryList{}
+	return j.scanTargets(ctx, list, func() []client.Object {
+		objs := make([]client.Object, len(list.Items))
+		for i := range list.Items {
+			objs[i] = &list.Items[i] // pointer to each item
 		}
-		client, err := prov.NewClient(ctx, j.Client, &target)
-		if err != nil {
-			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
-			continue
-		}
-
-		for value := range secretValues {
-			locations, err := client.ScanForSecrets(ctx, []string{value}, 0)
-			if err != nil {
-				j.Logger.Error(err, "failed scan target value")
-				continue
-			}
-			for _, location := range locations {
-				j.locationMemset.Add(location, []byte(value))
-			}
-		}
-	}
-	return nil
+		return objs
+	}, secretValues)
 }
 
 func (j JobRunner) scanKubernetesClusterTargets(ctx context.Context, secretValues map[string]struct{}) error {
-	kubernetesTargets := &tgtv1alpha1.KubernetesClusterList{}
-	if err := j.Client.List(ctx, kubernetesTargets, client.InNamespace(j.Namespace)); err != nil {
+	list := &tgtv1alpha1.KubernetesClusterList{}
+	return j.scanTargets(ctx, list, func() []client.Object {
+		objs := make([]client.Object, len(list.Items))
+		for i := range list.Items {
+			objs[i] = &list.Items[i]
+		}
+		return objs
+	}, secretValues)
+}
+
+func (j JobRunner) scanTargets(ctx context.Context, list client.ObjectList, getObjs func() []client.Object, secretValues map[string]struct{}) error {
+	if err := j.Client.List(ctx, list, client.InNamespace(j.Namespace)); err != nil {
 		return err
 	}
-	for _, target := range kubernetesTargets.Items {
+	for _, target := range getObjs() {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
-		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
+		prov, ok := tgtv1alpha1.GetTargetByName(target.GetObjectKind().GroupVersionKind().Kind)
 		if !ok {
 			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
 			j.Logger.Error(err, "failed to create new client for target", "target", target.GetName())
 			continue
 		}
-		client, err := prov.NewClient(ctx, j.Client, &target)
+		client, err := prov.NewClient(ctx, j.Client, target)
 		if err != nil {
 			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
 			continue

@@ -14,6 +14,26 @@ metadata:
     {{- include "external-secrets.labels" . | nindent 4 }}
 rules:
   - apiGroups:
+    - apps
+    resources:
+    - "deployments"
+    - "statefulsets"
+    - "daemonsets"
+    - "replicasets"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+  - apiGroups:
+    - batch
+    resources:
+    - "jobs"
+    - "cronjobs"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+  - apiGroups:
     - "target.external-secrets.io"
     resources:
     - "*"
@@ -33,6 +53,7 @@ rules:
     - "scan.external-secrets.io"
     resources:
     - "findings"
+    - "consumers"
     verbs:
     - "get"
     - "list"
@@ -46,6 +67,7 @@ rules:
     resources:
     - "jobs/status"
     - "findings/status"
+    - "consumers/status"
     verbs:
     - "get"
     - "patch"

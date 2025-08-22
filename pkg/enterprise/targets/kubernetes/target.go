@@ -67,53 +67,7 @@ func (p *Provider) NewClient(
 		return nil, fmt.Errorf("target %q not found", target.GetObjectKind().GroupVersionKind().Kind)
 	}
 
-	cfg, err := buildRestConfig(ctx, mgrClient, converted.GetNamespace(), converted.Spec.KubeConfigSecretRef)
-	if err != nil {
-		return nil, fmt.Errorf("build rest config: %w", err)
-	}
-
-	kube, err := crclient.New(cfg, crclient.Options{})
-	if err != nil {
-		return nil, fmt.Errorf("create k8s client: %w", err)
-	}
-
-	selector := labels.Everything()
-	if converted.Spec.Selector != nil {
-		selector, err = metav1.LabelSelectorAsSelector(converted.Spec.Selector)
-		if err != nil {
-			return nil, fmt.Errorf("invalid selector: %w", err)
-		}
-	}
-
-	var include, exclude []string
-	if converted.Spec.Namespaces != nil {
-		include = append(include, converted.Spec.Namespaces.Include...)
-		exclude = append(exclude, converted.Spec.Namespaces.Exclude...)
-	}
-
-	includeEnvFrom := true
-	includeEnvKeys := true
-	includeVolumes := true
-	includePull := false
-	if converted.Spec.Scan != nil {
-		includeEnvFrom = converted.Spec.Scan.IncludeEnvFrom
-		includeEnvKeys = converted.Spec.Scan.IncludeEnvSecretKeyRefs
-		includeVolumes = converted.Spec.Scan.IncludeVolumeSecrets
-		includePull = converted.Spec.Scan.IncludeImagePullSecrets
-	}
-
-	return &ScanTarget{
-		Name:                    converted.GetName(),
-		RestConfig:              cfg,
-		KubeClient:              kube,
-		NamespaceInclude:        include,
-		NamespaceExclude:        exclude,
-		Selector:                selector,
-		IncludeImagePullSecrets: includePull,
-		IncludeEnvFrom:          includeEnvFrom,
-		IncludeEnvSecretKeyRefs: includeEnvKeys,
-		IncludeVolumeSecrets:    includeVolumes,
-	}, nil
+	return newClient(ctx, converted, mgrClient)
 }
 
 type SecretStoreProvider struct {
@@ -133,53 +87,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		return nil, fmt.Errorf("store %q not found", store.GetObjectKind().GroupVersionKind().Kind)
 	}
 
-	cfg, err := buildRestConfig(ctx, mgrClient, converted.GetNamespace(), converted.Spec.KubeConfigSecretRef)
-	if err != nil {
-		return nil, fmt.Errorf("build rest config: %w", err)
-	}
-
-	kube, err := crclient.New(cfg, crclient.Options{})
-	if err != nil {
-		return nil, fmt.Errorf("create k8s client: %w", err)
-	}
-
-	selector := labels.Everything()
-	if converted.Spec.Selector != nil {
-		selector, err = metav1.LabelSelectorAsSelector(converted.Spec.Selector)
-		if err != nil {
-			return nil, fmt.Errorf("invalid selector: %w", err)
-		}
-	}
-
-	var include, exclude []string
-	if converted.Spec.Namespaces != nil {
-		include = append(include, converted.Spec.Namespaces.Include...)
-		exclude = append(exclude, converted.Spec.Namespaces.Exclude...)
-	}
-
-	includeEnvFrom := true
-	includeEnvKeys := true
-	includeVolumes := true
-	includePull := false
-	if converted.Spec.Scan != nil {
-		includeEnvFrom = converted.Spec.Scan.IncludeEnvFrom
-		includeEnvKeys = converted.Spec.Scan.IncludeEnvSecretKeyRefs
-		includeVolumes = converted.Spec.Scan.IncludeVolumeSecrets
-		includePull = converted.Spec.Scan.IncludeImagePullSecrets
-	}
-
-	return &ScanTarget{
-		Name:                    converted.GetName(),
-		RestConfig:              cfg,
-		KubeClient:              kube,
-		NamespaceInclude:        include,
-		NamespaceExclude:        exclude,
-		Selector:                selector,
-		IncludeImagePullSecrets: includePull,
-		IncludeEnvFrom:          includeEnvFrom,
-		IncludeEnvSecretKeyRefs: includeEnvKeys,
-		IncludeVolumeSecrets:    includeVolumes,
-	}, nil
+	return newClient(ctx, converted, mgrClient)
 }
 
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
@@ -255,7 +163,7 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 		ref  workloadRef
 		pods []podItem
 	}
-	groups := map[string]*agg{} // key = group.kind.namespace.name
+	groups := map[string]*agg{}
 
 	for i := range pods.Items {
 		pod := &pods.Items[i]
@@ -545,6 +453,56 @@ func (s *ScanTarget) topControllerRef(ctx context.Context, pod *corev1.Pod) work
 		// Unknown owner; fall back to the owner kind/name
 		return workloadRef{Group: "", Version: "", Kind: owner.Kind, Namespace: pod.Namespace, Name: owner.Name}
 	}
+}
+
+func newClient(ctx context.Context, converted *tgtv1alpha1.KubernetesCluster, mgrClient crclient.Client) (*ScanTarget, error) {
+	cfg, err := buildRestConfig(ctx, mgrClient, converted.GetNamespace(), converted.Spec.KubeConfigSecretRef)
+	if err != nil {
+		return nil, fmt.Errorf("build rest config: %w", err)
+	}
+
+	kube, err := crclient.New(cfg, crclient.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("create k8s client: %w", err)
+	}
+
+	selector := labels.Everything()
+	if converted.Spec.Selector != nil {
+		selector, err = metav1.LabelSelectorAsSelector(converted.Spec.Selector)
+		if err != nil {
+			return nil, fmt.Errorf("invalid selector: %w", err)
+		}
+	}
+
+	var include, exclude []string
+	if converted.Spec.Namespaces != nil {
+		include = append(include, converted.Spec.Namespaces.Include...)
+		exclude = append(exclude, converted.Spec.Namespaces.Exclude...)
+	}
+
+	includeEnvFrom := true
+	includeEnvKeys := true
+	includeVolumes := true
+	includePull := false
+	if converted.Spec.Scan != nil {
+		includeEnvFrom = converted.Spec.Scan.IncludeEnvFrom
+		includeEnvKeys = converted.Spec.Scan.IncludeEnvSecretKeyRefs
+		includeVolumes = converted.Spec.Scan.IncludeVolumeSecrets
+		includePull = converted.Spec.Scan.IncludeImagePullSecrets
+	}
+
+	return &ScanTarget{
+		Name:                    converted.GetName(),
+		RestConfig:              cfg,
+		KubeClient:              kube,
+		NamespaceInclude:        include,
+		NamespaceExclude:        exclude,
+		Selector:                selector,
+		IncludeImagePullSecrets: includePull,
+		IncludeEnvFrom:          includeEnvFrom,
+		IncludeEnvSecretKeyRefs: includeEnvKeys,
+		IncludeVolumeSecrets:    includeVolumes,
+	}, nil
 }
 
 func controllerOwner(refs []metav1.OwnerReference) *metav1.OwnerReference {
