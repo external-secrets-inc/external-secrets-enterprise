@@ -29225,11 +29225,11 @@ spec:
               type: object
             spec:
               properties:
+                displayName:
+                  type: string
                 hash:
                   type: string
                 id:
-                  type: string
-                label:
                   type: string
                 runTemplateRef:
                   properties:

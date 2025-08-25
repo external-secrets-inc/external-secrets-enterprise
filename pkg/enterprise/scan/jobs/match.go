@@ -11,13 +11,13 @@ import (
 )
 
 type Candidate struct {
-	ID        string
-	Name      string
-	Label     string
-	Inter     int
-	Union     int
-	Jaccard   float64
-	CurrCount int
+	ID          string
+	Name        string
+	DisplayName string
+	Inter       int
+	Union       int
+	Jaccard     float64
+	CurrCount   int
 }
 
 // JaccardParams defines the thresholds used to decide if two sets of locations
@@ -74,13 +74,13 @@ func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardPa
 				continue
 			}
 			cand := Candidate{
-				ID:        currentFinding.Spec.ID,
-				Name:      currentFinding.Name,
-				Label:     currentFinding.Spec.Label,
-				Inter:     intersection,
-				Union:     union,
-				Jaccard:   jaccardIndex,
-				CurrCount: len(currentLocationsSet),
+				ID:          currentFinding.Spec.ID,
+				Name:        currentFinding.Name,
+				DisplayName: currentFinding.Spec.DisplayName,
+				Inter:       intersection,
+				Union:       union,
+				Jaccard:     jaccardIndex,
+				CurrCount:   len(currentLocationsSet),
 			}
 			if better(cand, best) {
 				best = cand
@@ -88,7 +88,7 @@ func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardPa
 		}
 		if best.ID != "" {
 			newFindings[i].Spec.ID = best.ID
-			newFindings[i].Spec.Label = best.Label
+			newFindings[i].Spec.DisplayName = best.DisplayName
 			newFindings[i].ObjectMeta = metav1.ObjectMeta{
 				Name: best.Name,
 			}
