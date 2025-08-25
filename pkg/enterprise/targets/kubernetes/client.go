@@ -114,41 +114,40 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	defer cancel()
 
 	type check struct {
-		group     string
-		resource  string
-		verbs     []string
-		namespace string
+		group    string
+		resource string
+		verbs    []string
 	}
 
-	namespace := "default"
 	readVerbs := []string{"get", "list", "watch"}
 	readChecks := []check{
-		{"", "pods", readVerbs, namespace},
-		{"", "secrets", readVerbs, namespace},
-		{"", "serviceaccounts", readVerbs, namespace},
-		{"apps", "deployments", readVerbs, namespace},
-		{"apps", "statefulsets", readVerbs, namespace},
-		{"apps", "daemonsets", readVerbs, namespace},
-		{"apps", "replicasets", readVerbs, namespace},
-		{"batch", "jobs", readVerbs, namespace},
-		{"batch", "cronjobs", readVerbs, namespace},
+		{"", "namespaces", readVerbs},
+		{"", "pods", readVerbs},
+		{"", "secrets", readVerbs},
+		{"", "serviceaccounts", readVerbs},
+		{"apps", "deployments", readVerbs},
+		{"apps", "statefulsets", readVerbs},
+		{"apps", "daemonsets", readVerbs},
+		{"apps", "replicasets", readVerbs},
+		{"batch", "jobs", readVerbs},
+		{"batch", "cronjobs", readVerbs},
 	}
 
 	writeChecks := []check{
-		{"", "secrets", []string{"create", "update", "patch"}, namespace},
+		{"", "secrets", []string{"create", "update", "patch"}},
 	}
 
 	missing := make(map[string]map[string]struct{}, 0)
 
 	ensure := func(c check) error {
 		for _, v := range c.verbs {
-			allowed, err := s.canI(ctx, c.namespace, c.group, c.resource, v, "")
+			allowed, err := s.canI(ctx, c.group, c.resource, v, "")
 			if err != nil {
-				return fmt.Errorf("authz check failed for %s %s/%s in %q: %w",
-					v, apiGroupOrCore(c.group), c.resource, c.namespace, err)
+				return fmt.Errorf("authz check failed for %s %s in %q: %w",
+					v, apiGroupOrCore(c.group), c.resource, err)
 			}
 			if !allowed {
-				key := fmt.Sprintf("%s %s/%s", c.namespace, apiGroupOrCore(c.group), c.resource)
+				key := fmt.Sprintf("%s %s", apiGroupOrCore(c.group), c.resource)
 				if _, ok := missing[key]; !ok {
 					missing[key] = map[string]struct{}{}
 				}
@@ -191,16 +190,15 @@ func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	return esv1.ValidationResultReady, nil
 }
 
-func (s *ScanTarget) canI(ctx context.Context, namespace, group, resource, verb, name string) (bool, error) {
+func (s *ScanTarget) canI(ctx context.Context, group, resource, verb, name string) (bool, error) {
 	ssar := &authv1.SelfSubjectAccessReview{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: authv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authv1.ResourceAttributes{
-				Namespace: namespace,
-				Group:     group,
-				Resource:  resource,
-				Verb:      verb,
-				Name:      name,
+				Group:    group,
+				Resource: resource,
+				Verb:     verb,
+				Name:     name,
 			},
 		},
 	}

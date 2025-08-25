@@ -8,24 +8,30 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcfg "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
 
@@ -67,7 +73,16 @@ func (p *Provider) NewClient(
 		return nil, fmt.Errorf("target %q not found", target.GetObjectKind().GroupVersionKind().Kind)
 	}
 
-	return newClient(ctx, converted, mgrClient)
+	restCfg, err := ctrlcfg.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(restCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return newClient(ctx, converted, mgrClient, clientset.CoreV1())
 }
 
 type SecretStoreProvider struct {
@@ -87,7 +102,16 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		return nil, fmt.Errorf("store %q not found", store.GetObjectKind().GroupVersionKind().Kind)
 	}
 
-	return newClient(ctx, converted, mgrClient)
+	restCfg, err := ctrlcfg.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(restCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return newClient(ctx, converted, mgrClient, clientset.CoreV1())
 }
 
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
@@ -455,8 +479,16 @@ func (s *ScanTarget) topControllerRef(ctx context.Context, pod *corev1.Pod) work
 	}
 }
 
-func newClient(ctx context.Context, converted *tgtv1alpha1.KubernetesCluster, mgrClient crclient.Client) (*ScanTarget, error) {
-	cfg, err := buildRestConfig(ctx, mgrClient, converted.GetNamespace(), converted.Spec.KubeConfigSecretRef)
+func newClient(ctx context.Context, converted *tgtv1alpha1.KubernetesCluster, mgrClient crclient.Client, ctrlClientset typedcorev1.CoreV1Interface) (*ScanTarget, error) {
+	cfg, err := buildRestConfig(
+		ctx,
+		mgrClient,
+		ctrlClientset,
+		converted.GetNamespace(),
+		converted.Spec.Server,
+		converted.Spec.Auth,
+		converted.Spec.AuthRef,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("build rest config: %w", err)
 	}
@@ -555,24 +587,122 @@ func stableID(name string, ref workloadRef) string {
 func buildRestConfig(
 	ctx context.Context,
 	mgrClient crclient.Client,
+	ctrlClientset typedcorev1.CoreV1Interface,
 	namespace string,
-	ref *esmeta.SecretKeySelector,
+	server tgtv1alpha1.KubernetesServer,
+	auth *tgtv1alpha1.KubernetesAuth,
+	authRef *esmeta.SecretKeySelector,
 ) (*rest.Config, error) {
-	if ref == nil || (ref.Name == "" && ref.Namespace == nil && ref.Key == "") {
+	if authRef == nil && auth == nil && server.URL == "" {
 		return rest.InClusterConfig()
 	}
 
-	data, err := resolvers.SecretKeyRef(ctx, mgrClient, resolvers.EmptyStoreKind, namespace, &esmeta.SecretKeySelector{
-		Namespace: ref.Namespace,
-		Name:      ref.Name,
-		Key:       ref.Key,
-	})
+	if authRef != nil {
+		cfg, err := fetchSecretKey(ctx, mgrClient, namespace, *authRef)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("load kubeconfig from secret %s/%s[%s]: %w", *ref.Namespace, ref.Name, ref.Key, err)
+		return clientcmd.RESTConfigFromKubeConfig(cfg)
 	}
 
-	return clientcmd.RESTConfigFromKubeConfig([]byte(data))
+	if auth == nil {
+		return nil, errors.New("no auth provider given")
+	}
+
+	if server.URL == "" {
+		return nil, errors.New("no server URL provided")
+	}
+
+	cfg := &rest.Config{
+		Host: server.URL,
+	}
+
+	ca, err := utils.FetchCACertFromSource(ctx, utils.CreateCertOpts{
+		CABundle:   server.CABundle,
+		CAProvider: server.CAProvider,
+		StoreKind:  resolvers.EmptyStoreKind,
+		Namespace:  namespace,
+		Client:     mgrClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.TLSClientConfig = rest.TLSClientConfig{
+		Insecure: false,
+		CAData:   ca,
+	}
+
+	switch {
+	case auth.Token != nil:
+		token, err := fetchSecretKey(ctx, mgrClient, namespace, auth.Token.BearerToken)
+		if err != nil {
+			return nil, fmt.Errorf("could not fetch Auth.Token.BearerToken: %w", err)
+		}
+
+		cfg.BearerToken = string(token)
+	case auth.ServiceAccount != nil:
+		token, err := serviceAccountToken(ctx, ctrlClientset, namespace, auth.ServiceAccount)
+		if err != nil {
+			return nil, fmt.Errorf("could not fetch Auth.ServiceAccount: %w", err)
+		}
+
+		cfg.BearerToken = string(token)
+	case auth.Cert != nil:
+		key, cert, err := getClientKeyAndCert(ctx, mgrClient, namespace, auth.Cert)
+		if err != nil {
+			return nil, fmt.Errorf("could not fetch client key and cert: %w", err)
+		}
+
+		cfg.TLSClientConfig.KeyData = key
+		cfg.TLSClientConfig.CertData = cert
+	default:
+		return nil, errors.New("no auth provider given")
+	}
+
+	return cfg, nil
+}
+
+func getClientKeyAndCert(ctx context.Context, mgrClient crclient.Client, namespace string, authCert *tgtv1alpha1.CertAuth) ([]byte, []byte, error) {
+	var err error
+	cert, err := fetchSecretKey(ctx, mgrClient, namespace, authCert.ClientCert)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to fetch client certificate: %w", err)
+	}
+	key, err := fetchSecretKey(ctx, mgrClient, namespace, authCert.ClientKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to fetch client key: %w", err)
+	}
+	return key, cert, nil
+}
+
+func serviceAccountToken(ctx context.Context, ctrlClientset typedcorev1.CoreV1Interface, namespace string, serviceAccountRef *esmeta.ServiceAccountSelector) ([]byte, error) {
+	expirationSeconds := int64(3600)
+	tr, err := ctrlClientset.ServiceAccounts(namespace).CreateToken(ctx, serviceAccountRef.Name, &authenticationv1.TokenRequest{
+		Spec: authenticationv1.TokenRequestSpec{
+			Audiences:         serviceAccountRef.Audiences,
+			ExpirationSeconds: &expirationSeconds,
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("cannot create service account token: %w", err)
+	}
+	return []byte(tr.Status.Token), nil
+}
+
+func fetchSecretKey(ctx context.Context, mgrClient crclient.Client, namespace string, ref esmeta.SecretKeySelector) ([]byte, error) {
+	secret, err := resolvers.SecretKeyRef(
+		ctx,
+		mgrClient,
+		resolvers.EmptyStoreKind,
+		namespace,
+		&ref,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(secret), nil
 }
 
 func matchAnyPattern(namespace string, patterns []string) bool {
