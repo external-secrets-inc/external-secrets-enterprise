@@ -30,6 +30,7 @@ type Provider struct{}
 type ScanTarget struct {
 	// Virtual Machine Name
 	Name              string
+	Namespace         string
 	URL               string
 	CABundle          []byte
 	AuthBasicUsername *string
@@ -38,6 +39,7 @@ type ScanTarget struct {
 	AuthClientCert    []byte
 	AuthClientKey     []byte
 	Paths             []string
+	KubeClient        client.Client
 }
 
 const (
@@ -68,6 +70,8 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		AuthClientKey:     []byte(key),
 		Paths:             converted.Spec.Paths,
 		Name:              converted.GetName(),
+		Namespace:         converted.GetNamespace(),
+		KubeClient:        client,
 	}, nil
 }
 
@@ -104,6 +108,8 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		AuthClientKey:     []byte(key),
 		Paths:             converted.Spec.Paths,
 		Name:              converted.GetName(),
+		Namespace:         converted.GetNamespace(),
+		KubeClient:        client,
 	}, nil
 }
 

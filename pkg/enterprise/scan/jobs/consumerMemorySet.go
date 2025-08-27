@@ -4,6 +4,7 @@
 package job
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -73,6 +74,12 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 	if !already {
 		acc.status.Locations = append(acc.status.Locations, f.Location)
 	}
+
+	observedIndexKey := f.Location.RemoteRef.Key
+	if strings.TrimSpace(f.Location.RemoteRef.Property) != "" {
+		observedIndexKey = fmt.Sprintf("%s.%s", f.Location.RemoteRef.Key, f.Location.RemoteRef.Property)
+	}
+	acc.status.ObservedIndex[observedIndexKey] = f.ObservedIndex
 }
 
 func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {

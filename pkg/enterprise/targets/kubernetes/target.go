@@ -39,23 +39,18 @@ type Provider struct{}
 
 // ScanTarget wraps everything needed by scan/push logic for a Kubernetes cluster.
 type ScanTarget struct {
-	// Identity
-	Name string
-
-	// Access to the target cluster
-	RestConfig *rest.Config
-	KubeClient crclient.Client
-
-	// Scan scope
-	NamespaceInclude []string
-	NamespaceExclude []string
-	Selector         labels.Selector
-
-	// Scan toggles
+	Name                    string
+	Namespace               string
+	RestConfig              *rest.Config
+	ClusterClient           crclient.Client
+	NamespaceInclude        []string
+	NamespaceExclude        []string
+	Selector                labels.Selector
 	IncludeImagePullSecrets bool
 	IncludeEnvFrom          bool
 	IncludeEnvSecretKeyRefs bool
 	IncludeVolumeSecrets    bool
+	KubeClient              crclient.Client
 }
 
 const (
@@ -121,7 +116,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 	}
 
 	var secretsList corev1.SecretList
-	if err := s.KubeClient.List(ctx, &secretsList, &crclient.ListOptions{}); err != nil {
+	if err := s.ClusterClient.List(ctx, &secretsList, &crclient.ListOptions{}); err != nil {
 		return nil, fmt.Errorf("list secrets: %w", err)
 	}
 
@@ -175,7 +170,7 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 	}
 
 	var pods corev1.PodList
-	if err := s.KubeClient.List(ctx, &pods, &crclient.ListOptions{
+	if err := s.ClusterClient.List(ctx, &pods, &crclient.ListOptions{
 		Namespace:     secretNamespace,
 		LabelSelector: s.SelectorOrEverything(),
 	}); err != nil {
@@ -262,7 +257,7 @@ func (s *ScanTarget) collectReferencedSecrets(ctx context.Context) (map[string]s
 	referencedSecrets := make(map[string]struct{})
 
 	var pods corev1.PodList
-	if err := s.KubeClient.List(ctx, &pods, &crclient.ListOptions{
+	if err := s.ClusterClient.List(ctx, &pods, &crclient.ListOptions{
 		LabelSelector: s.SelectorOrEverything(),
 	}); err != nil {
 		return nil, fmt.Errorf("list pods: %w", err)
@@ -447,7 +442,7 @@ func (s *ScanTarget) topControllerRef(ctx context.Context, pod *corev1.Pod) work
 	switch owner.Kind {
 	case "ReplicaSet":
 		replicaSet := &appsv1.ReplicaSet{}
-		if err := s.KubeClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: owner.Name}, replicaSet); err == nil {
+		if err := s.ClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: owner.Name}, replicaSet); err == nil {
 			up := controllerOwner(replicaSet.OwnerReferences)
 			if up != nil && up.Kind == "Deployment" {
 				return workloadRef{Group: "apps", Version: "v1", Kind: "Deployment", Namespace: replicaSet.Namespace, Name: up.Name}
@@ -464,7 +459,7 @@ func (s *ScanTarget) topControllerRef(ctx context.Context, pod *corev1.Pod) work
 
 	case "Job":
 		job := &batchv1.Job{}
-		if err := s.KubeClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: owner.Name}, job); err == nil {
+		if err := s.ClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: owner.Name}, job); err == nil {
 			up := controllerOwner(job.OwnerReferences)
 			if up != nil && up.Kind == "CronJob" {
 				return workloadRef{Group: "batch", Version: "v1", Kind: "CronJob", Namespace: job.Namespace, Name: up.Name}
@@ -525,8 +520,9 @@ func newClient(ctx context.Context, converted *tgtv1alpha1.KubernetesCluster, mg
 
 	return &ScanTarget{
 		Name:                    converted.GetName(),
+		Namespace:               converted.GetNamespace(),
 		RestConfig:              cfg,
-		KubeClient:              kube,
+		ClusterClient:           kube,
 		NamespaceInclude:        include,
 		NamespaceExclude:        exclude,
 		Selector:                selector,
@@ -534,6 +530,7 @@ func newClient(ctx context.Context, converted *tgtv1alpha1.KubernetesCluster, mg
 		IncludeEnvFrom:          includeEnvFrom,
 		IncludeEnvSecretKeyRefs: includeEnvKeys,
 		IncludeVolumeSecrets:    includeVolumes,
+		KubeClient:              mgrClient,
 	}, nil
 }
 

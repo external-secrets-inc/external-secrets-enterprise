@@ -32,6 +32,7 @@ import (
 type Provider struct{}
 type ScanTarget struct {
 	Name          string
+	Namespace     string
 	Owner         string
 	Repo          string
 	Branch        string // base branch to open the PR against
@@ -41,6 +42,7 @@ type ScanTarget struct {
 	CABundle      string // CA bundle for enterprise https
 	AuthToken     string // GitHub token (App or PAT)
 	GitHubClient  *github.Client
+	KubeClient    client.Client
 }
 
 const (
@@ -72,6 +74,7 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 
 	return &ScanTarget{
 		Name:          converted.GetName(),
+		Namespace:     converted.GetNamespace(),
 		Owner:         converted.Spec.Owner,
 		Repo:          converted.Spec.Repository,
 		Branch:        branch,
@@ -81,6 +84,7 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
 		GitHubClient:  githubClient,
+		KubeClient:    client,
 	}, nil
 }
 
@@ -119,6 +123,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 
 	return &ScanTarget{
 		Name:          converted.GetName(),
+		Namespace:     converted.GetNamespace(),
 		Owner:         converted.Spec.Owner,
 		Repo:          converted.Spec.Repository,
 		Branch:        branch,
@@ -128,6 +133,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
 		GitHubClient:  githubClient,
+		KubeClient:    client,
 	}, nil
 }
 
@@ -209,10 +215,6 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 	owner, repo, branch := s.Owner, s.Repo, s.Branch
 	repoFull := owner + "/" + repo
 	path := strings.TrimSpace(location.RemoteRef.Key)
-	if path == "" {
-		// If we can't tie to a file, it's hard to attribute precisely.
-		return nil, nil
-	}
 
 	unique := make(map[string]tgtv1alpha1.ConsumerFinding)
 	commitSHAs := make(map[string]struct{})

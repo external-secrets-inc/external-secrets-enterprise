@@ -127,8 +127,8 @@ type KubernetesScanOptions struct {
 type KubernetesCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              KubernetesClusterSpec  `json:"spec,omitempty"`
-	Status            esv1.SecretStoreStatus `json:"status,omitempty"`
+	Spec              KubernetesClusterSpec `json:"spec,omitempty"`
+	Status            TargetStatus          `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -151,11 +151,13 @@ func (c *KubernetesCluster) GetSpec() *esv1.SecretStoreSpec {
 }
 
 func (c *KubernetesCluster) GetStatus() esv1.SecretStoreStatus {
-	return c.Status
+	return *TargetToSecretStoreStatus(&c.Status)
 }
 
 func (c *KubernetesCluster) SetStatus(status esv1.SecretStoreStatus) {
-	c.Status = status
+	convertedStatus := SecretStoreToTargetStatus(&status)
+	c.Status.Capabilities = convertedStatus.Capabilities
+	c.Status.Conditions = convertedStatus.Conditions
 }
 
 func (c *KubernetesCluster) GetNamespacedName() string {

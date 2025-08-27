@@ -16,6 +16,7 @@ import (
 	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -95,6 +96,12 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
+
+	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, remoteRef.GetRemoteKey(), remoteRef.GetProperty(), nil)
+	if err != nil {
+		return fmt.Errorf("error updating target status: %w", err)
+	}
+
 	return nil
 }
 
