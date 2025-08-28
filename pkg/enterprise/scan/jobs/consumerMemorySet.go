@@ -60,6 +60,8 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 			},
 			status: v1alpha1.ConsumerStatus{},
 		}
+		acc.status.ObservedIndex = make(map[string]tgtv1alpha1.SecretUpdateRecord)
+
 		FillAttributes(acc, f.Kind, f.Attributes)
 		cs.accums[key] = acc
 	}
@@ -79,7 +81,11 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 	if strings.TrimSpace(f.Location.RemoteRef.Property) != "" {
 		observedIndexKey = fmt.Sprintf("%s.%s", f.Location.RemoteRef.Key, f.Location.RemoteRef.Property)
 	}
-	acc.status.ObservedIndex[observedIndexKey] = f.ObservedIndex
+
+	currentObservedIndex, ok := acc.status.ObservedIndex[observedIndexKey]
+	if !ok || f.ObservedIndex.Timestamp.Time.After(currentObservedIndex.Timestamp.Time) {
+		acc.status.ObservedIndex[observedIndexKey] = f.ObservedIndex
+	}
 }
 
 func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {

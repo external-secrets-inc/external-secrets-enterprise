@@ -1,9 +1,11 @@
+// Copyright External Secrets Inc. 2025
+// All rights reserved
+
 package v1alpha1
 
 import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,8 +34,8 @@ type ConsumerFinding struct {
 
 // SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
 type SecretUpdateRecord struct {
-	Timestamp metav1.Time          `json:"timestamp"`
-	Metadata  apiextensionsv1.JSON `json:"metadata"`
+	Timestamp  metav1.Time `json:"timestamp"`
+	SecretHash string      `json:"secretHash"`
 }
 
 type TargetConditionType string
@@ -72,7 +74,7 @@ type TargetStatus struct {
 	// +optional
 	Capabilities TargetCapabilities `json:"capabilities,omitempty"`
 	// +optional
-	PushIndex map[string]SecretUpdateRecord `json:"pushIndex,omitempty"`
+	PushIndex map[string][]SecretUpdateRecord `json:"pushIndex,omitempty"`
 }
 
 // SecretStoreToTargetStatus converts a SecretStoreStatus into a TargetStatus.
@@ -107,7 +109,7 @@ func convertConditionsSecretStoreToTarget(in []esv1.SecretStoreStatusCondition) 
 	for _, c := range in {
 		out = append(out, TargetStatusCondition{
 			Type:               targetConditionTypeFromString(string(c.Type)),
-			Status:             corev1.ConditionStatus(c.Status),
+			Status:             c.Status,
 			Reason:             c.Reason,
 			Message:            c.Message,
 			LastTransitionTime: metav1.Time{Time: c.LastTransitionTime.Time},
@@ -124,7 +126,7 @@ func convertConditionsTargetToSecretStore(in []TargetStatusCondition) []esv1.Sec
 	for _, c := range in {
 		out = append(out, esv1.SecretStoreStatusCondition{
 			Type:               secretStoreConditionTypeFromString(string(c.Type)),
-			Status:             corev1.ConditionStatus(c.Status),
+			Status:             c.Status,
 			Reason:             c.Reason,
 			Message:            c.Message,
 			LastTransitionTime: metav1.Time{Time: c.LastTransitionTime.Time},

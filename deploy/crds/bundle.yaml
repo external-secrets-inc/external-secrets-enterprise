@@ -29158,13 +29158,13 @@ spec:
                   additionalProperties:
                     description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
                     properties:
-                      metadata:
-                        x-kubernetes-preserve-unknown-fields: true
+                      secretHash:
+                        type: string
                       timestamp:
                         format: date-time
                         type: string
                     required:
-                      - metadata
+                      - secretHash
                       - timestamp
                     type: object
                   type: object
@@ -29737,17 +29737,19 @@ spec:
                   type: array
                 pushIndex:
                   additionalProperties:
-                    description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
-                    properties:
-                      metadata:
-                        x-kubernetes-preserve-unknown-fields: true
-                      timestamp:
-                        format: date-time
-                        type: string
-                    required:
-                      - metadata
-                      - timestamp
-                    type: object
+                    items:
+                      description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
+                      properties:
+                        secretHash:
+                          type: string
+                        timestamp:
+                          format: date-time
+                          type: string
+                      required:
+                        - secretHash
+                        - timestamp
+                      type: object
+                    type: array
                   type: object
               type: object
           type: object
@@ -30113,17 +30115,19 @@ spec:
                   type: array
                 pushIndex:
                   additionalProperties:
-                    description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
-                    properties:
-                      metadata:
-                        x-kubernetes-preserve-unknown-fields: true
-                      timestamp:
-                        format: date-time
-                        type: string
-                    required:
-                      - metadata
-                      - timestamp
-                    type: object
+                    items:
+                      description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
+                      properties:
+                        secretHash:
+                          type: string
+                        timestamp:
+                          format: date-time
+                          type: string
+                      required:
+                        - secretHash
+                        - timestamp
+                      type: object
+                    type: array
                   type: object
               type: object
           type: object
@@ -30354,17 +30358,19 @@ spec:
                   type: array
                 pushIndex:
                   additionalProperties:
-                    description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
-                    properties:
-                      metadata:
-                        x-kubernetes-preserve-unknown-fields: true
-                      timestamp:
-                        format: date-time
-                        type: string
-                    required:
-                      - metadata
-                      - timestamp
-                    type: object
+                    items:
+                      description: SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
+                      properties:
+                        secretHash:
+                          type: string
+                        timestamp:
+                          format: date-time
+                          type: string
+                      required:
+                        - secretHash
+                        - timestamp
+                      type: object
+                    type: array
                   type: object
               type: object
           type: object

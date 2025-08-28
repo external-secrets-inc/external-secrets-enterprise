@@ -46,6 +46,10 @@ func SortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
 	slices.SortFunc(loc, CompareLocations)
 }
 
+func EqualSecretUpdateRecord(a, b tgtv1alpha1.SecretUpdateRecord) bool {
+	return a.SecretHash == b.SecretHash && a.Timestamp.Equal(&b.Timestamp)
+}
+
 func FillAttributes(consumer *consumerAccum, kind string, attrs map[string]string) {
 	switch kind {
 	case tgtv1alpha1.VirtualMachineKind:

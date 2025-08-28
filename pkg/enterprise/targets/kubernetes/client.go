@@ -88,7 +88,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		break
 	}
 
-	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, remoteKey, dataKey, nil)
+	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, remoteKey, dataKey, targets.Hash(newVal))
 	if err != nil {
 		return fmt.Errorf("error updating target status: %w", err)
 	}

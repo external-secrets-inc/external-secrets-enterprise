@@ -127,11 +127,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		return fmt.Errorf("error creating PR: %w", err)
 	}
 
-	meta := map[string]any{
-		"prID": pr.GetID(),
-	}
-
-	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, filename, indexes, meta)
+	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, filename, indexes, targets.Hash(newVal))
 	if err != nil {
 		return fmt.Errorf("error updating target status: %w", err)
 	}

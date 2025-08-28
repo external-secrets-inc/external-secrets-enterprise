@@ -5,13 +5,12 @@ package kubernetes
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -31,6 +30,7 @@ import (
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
@@ -159,7 +159,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 	return results, nil
 }
 
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
 	// Parse "<namespace>/<secret>"
 	secretNamespace, secretName, err := parseNamespaceName(location.RemoteRef.Key)
 	if err != nil {
@@ -179,8 +179,9 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 
 	// Group matched pods by top-level controller
 	type agg struct {
-		ref  workloadRef
-		pods []podItem
+		ref                workloadRef
+		pods               []podItem
+		latestPodReadyTime metav1.Time
 	}
 	groups := map[string]*agg{}
 
@@ -218,6 +219,12 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 			Ready:    isPodReady(pod),
 			Reason:   firstNotReadyReason(pod),
 		})
+
+		if t := podReadyTime(pod); !t.IsZero() {
+			if t.After(group.latestPodReadyTime.Time) {
+				group.latestPodReadyTime = metav1.NewTime(t)
+			}
+		}
 	}
 
 	// Build ConsumerFindings (one per workload)
@@ -246,6 +253,10 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 			DisplayName: display,
 			Attributes:  attrs,
 			Location:    location,
+			ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+				Timestamp:  g.latestPodReadyTime,
+				SecretHash: hash,
+			},
 		})
 	}
 
@@ -577,8 +588,7 @@ func stableID(name string, ref workloadRef) string {
 	s = strings.ReplaceAll(s, "/", "-")
 	s = strings.ReplaceAll(s, ".", "-")
 	s = strings.Trim(s, "-")
-	sum := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sum[:])
+	return targets.Hash([]byte(s))
 }
 
 func buildRestConfig(
@@ -721,6 +731,15 @@ func parseNamespaceName(key string) (string, string, error) {
 		return "", "", fmt.Errorf("want \"namespace/name\"")
 	}
 	return parts[0], parts[1], nil
+}
+
+func podReadyTime(pod *corev1.Pod) time.Time {
+	for _, c := range pod.Status.Conditions {
+		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+			return c.LastTransitionTime.UTC()
+		}
+	}
+	return metav1.Now().UTC()
 }
 
 type JobNotReadyErr struct{}

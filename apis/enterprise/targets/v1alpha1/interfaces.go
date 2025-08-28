@@ -23,5 +23,5 @@ type TargetProvider interface {
 // +k8s:deepcopy-gen=nil
 type ScanTarget interface {
 	ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]SecretInStoreRef, error)
-	ScanForConsumers(ctx context.Context, location SecretInStoreRef) ([]ConsumerFinding, error)
+	ScanForConsumers(ctx context.Context, location SecretInStoreRef, hash string) ([]ConsumerFinding, error)
 }

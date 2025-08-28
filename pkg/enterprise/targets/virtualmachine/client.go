@@ -28,7 +28,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	if remoteRef.GetProperty() == "" {
 		return errors.New(errPropertyMandatory)
 	}
-	var value []byte
+	var newVal []byte
 	var ok bool
 	if remoteRef.GetSecretKey() == "" {
 		// Get The full Secret
@@ -36,9 +36,9 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		if err != nil {
 			return fmt.Errorf("error marshaling secret: %w", err)
 		}
-		value = d
+		newVal = d
 	} else {
-		value, ok = secret.Data[remoteRef.GetSecretKey()]
+		newVal, ok = secret.Data[remoteRef.GetSecretKey()]
 		if !ok {
 			return fmt.Errorf("secret key %q not found", remoteRef.GetSecretKey())
 		}
@@ -67,7 +67,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		}
 	}
 	r := PushRequest{
-		Value: string(value),
+		Value: string(newVal),
 	}
 	body, err := json.Marshal(r)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, remoteRef.GetRemoteKey(), remoteRef.GetProperty(), nil)
+	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, remoteRef.GetRemoteKey(), remoteRef.GetProperty(), targets.Hash(newVal))
 	if err != nil {
 		return fmt.Errorf("error updating target status: %w", err)
 	}

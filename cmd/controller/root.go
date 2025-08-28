@@ -57,6 +57,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
+	scanconsumer "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/consumer"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
@@ -361,6 +362,14 @@ var rootCmd = &cobra.Command{
 			Scheme: mgr.GetScheme(),
 		}).SetupWithManager(mgr, controller.Options{}); err != nil {
 			setupLog.Error(err, errCreateController, "controller", "Job")
+			os.Exit(1)
+		}
+		if err = (&scanconsumer.ConsumerController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("Consumer"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "Consumer")
 			os.Exit(1)
 		}
 		if err = (&workflow.WorkflowRunTemplateReconciler{
