@@ -40,5 +40,8 @@ func ForceRegister(feature Feature) {
 
 func Get(featureName string) (Feature, bool) {
 	feature, ok := AvailableFeatures.Load(featureName)
+	if !ok || feature == nil {
+		return nil, false
+	}
 	return feature.(Feature), ok
 }
