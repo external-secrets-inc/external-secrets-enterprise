@@ -253,7 +253,7 @@ func (e JobNotReadyErr) Error() string {
 }
 
 func init() {
-	feat := feature.NewFeature("target.virtualmachine", "Virtual Machine Target")
+	feat := feature.NewFeature("targets.virtualmachine", "Virtual Machine Target")
 	if err := license.Register(feat); err != nil {
 		panic(err)
 	}

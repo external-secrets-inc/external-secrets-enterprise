@@ -131,7 +131,7 @@ func needsToUpdate(existing, finding *v1alpha1.Finding) bool {
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *JobController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	feat := feature.NewFeature("scan.jobs", "Scan jobs controller")
+	feat := feature.NewFeature("scan.job", "Scan jobs controller")
 	if err := license.Register(feat); err != nil {
 		return err
 	}

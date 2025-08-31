@@ -119,7 +119,7 @@ func (c *AuthorizationController) setFinalizer(ctx context.Context, authorizatio
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *AuthorizationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	feat := feature.NewFeature("authorization", "Authorization controller")
+	feat := feature.NewFeature("federation.authorization", "Authorization controller")
 	if err := license.Register(feat); err != nil {
 		return err
 	}
