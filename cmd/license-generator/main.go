@@ -121,11 +121,49 @@ var workflowTrial = []license.LicenseSubscription{
 	},
 }
 
-var federationTrial = []license.LicenseSubscription{}
+var federationTrial = []license.LicenseSubscription{
+	{
+		Name:       "federation.authorization",
+		ExpiryDate: date.String(),
+		MaxLimit:   0, // Unlimited - core authorization functionality
+	},
+	{
+		Name:       "federation.kubernetes",
+		ExpiryDate: date.String(),
+		MaxLimit:   0, // Unlimited - core Kubernetes federation provider
+	},
+	{
+		Name:       "federation.spiffe",
+		ExpiryDate: date.String(),
+		MaxLimit:   0, // Unlimited - core SPIFFE federation provider
+	},
+}
 
-var scanTrial = []license.LicenseSubscription{}
+var scanTrial = []license.LicenseSubscription{
+	{
+		Name:       "scan.job",
+		ExpiryDate: date.String(),
+		MaxLimit:   5, // Limited - trial users can create up to 5 scan jobs
+	},
+	{
+		Name:       "scan.finding",
+		ExpiryDate: date.String(),
+		MaxLimit:   0, // Unlimited - findings are results, shouldn't be limited
+	},
+}
 
-var targetsTrial = []license.LicenseSubscription{}
+var targetsTrial = []license.LicenseSubscription{
+	{
+		Name:       "targets.virtualmachine",
+		ExpiryDate: date.String(),
+		MaxLimit:   3, // Limited - trial users can register up to 3 VMs
+	},
+	{
+		Name:       "targets.core",
+		ExpiryDate: date.String(),
+		MaxLimit:   0, // Unlimited - core target functionality
+	},
+}
 
 var generatorTrial = []license.LicenseSubscription{
 	{
