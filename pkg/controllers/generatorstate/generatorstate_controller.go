@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -32,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 type Reconciler struct {
@@ -41,6 +42,7 @@ type Reconciler struct {
 	Scheme     *runtime.Scheme
 	RestConfig *rest.Config
 	recorder   record.EventRecorder
+	feature    feature.Feature
 }
 
 const generatorStateFinalizer = "generatorstate.externalsecrets.io/finalizer"
@@ -49,9 +51,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	generatorState := &genv1alpha1.GeneratorState{}
 	err = r.Get(ctx, req.NamespacedName, generatorState)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
+		return feature.UnregisterIfNotFound(r.feature, generatorState, err)
+	}
+	if err := feature.RegisterOrFail(r.feature, generatorState); err != nil {
 		return ctrl.Result{}, err
 	}
 	gen, err := r.getGenerator(generatorState.Spec.Resource.Raw)
@@ -195,9 +197,17 @@ func (r *Reconciler) markSuccess(conditionType genv1alpha1.GeneratorStateConditi
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	r.recorder = mgr.GetEventRecorderFor("external-secrets")
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(&genv1alpha1.GeneratorState{}).
-		Complete(r)
+	feat := feature.NewFeature("generator.state", "Generator state controller")
+	if err := license.Register(feat); err != nil {
+		return err
+	}
+	r.feature = feat
+	if feat.IsAvailable() {
+		r.recorder = mgr.GetEventRecorderFor("external-secrets")
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(&genv1alpha1.GeneratorState{}).
+			Complete(r)
+	}
+	return nil
 }
