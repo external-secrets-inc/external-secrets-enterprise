@@ -27,7 +27,6 @@ import (
 
 type TestSuite struct {
 	suite.Suite
-	builder  *fake.ClientBuilder
 	scheme   *runtime.Scheme
 	recorder record.EventRecorder
 }
