@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.20.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.19.0...v1.20.0) (2025-09-01)
+
+
+### Features
+
+* add kubernetes target ([#449](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/449)) ([5cf6aa8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5cf6aa8245d7ca3daad81816b8250ea3f7649ca0))
+* add reloader to external-secrets enterprise ([#454](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/454)) ([281d8e0](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/281d8e0586707f87931c57e486b1d3638c27f480))
+* consumer status ([#452](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/452)) ([a4a404d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/a4a404d0b1096d857e502b08d483abd2888cc1d8))
+
+
+### Bug Fixes
+
+* check-diff ([#456](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/456)) ([b89e38f](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/b89e38f1042f1282304447d2f53481a9fcd63951))
+* findings label field ([#451](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/451)) ([49e4047](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/49e404763ff06b4cec6663eb3180162d7567f7db))
+* lint timeout ([#455](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/455)) ([8afe9b1](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8afe9b18bc6cc7d00e58d605a37f3e375117f309))
+* tests for controller-runtime ([#457](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/457)) ([dbfa577](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/dbfa577dee1e73b6bedad13a03e4ae2d32f31c84))
+
 ## [1.19.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.18.0...v1.19.0) (2025-08-21)
 
 
