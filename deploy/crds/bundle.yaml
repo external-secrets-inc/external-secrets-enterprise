@@ -3800,6 +3800,8 @@ spec:
                               - value
                             type: object
                           type: array
+                        validationResult:
+                          type: integer
                       required:
                         - data
                       type: object
@@ -6563,6 +6565,18 @@ spec:
                                 - ConfigMap
                               type: string
                           type: object
+                        checkAndSet:
+                          description: |-
+                            CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                            Only applies to Vault KV v2 stores. When enabled, write operations must include
+                            the current version of the secret to prevent unintentional overwrites.
+                          properties:
+                            required:
+                              description: |-
+                                Required when true, all write operations must include a check-and-set parameter.
+                                This helps prevent unintentional overwrites of secrets.
+                              type: boolean
+                          type: object
                         forwardInconsistent:
                           description: |-
                             ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -6863,7 +6877,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Certificate Manager
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -6934,7 +6948,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Lockbox
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -12014,6 +12028,11 @@ spec:
                   type: string
               type: object
           type: object
+      selectableFields:
+        - jsonPath: .spec.secretStoreRef.name
+        - jsonPath: .spec.secretStoreRef.kind
+        - jsonPath: .spec.target.name
+        - jsonPath: .spec.refreshInterval
       served: true
       storage: true
       subresources:
@@ -14925,6 +14944,8 @@ spec:
                               - value
                             type: object
                           type: array
+                        validationResult:
+                          type: integer
                       required:
                         - data
                       type: object
@@ -17688,6 +17709,18 @@ spec:
                                 - ConfigMap
                               type: string
                           type: object
+                        checkAndSet:
+                          description: |-
+                            CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                            Only applies to Vault KV v2 stores. When enabled, write operations must include
+                            the current version of the secret to prevent unintentional overwrites.
+                          properties:
+                            required:
+                              description: |-
+                                Required when true, all write operations must include a check-and-set parameter.
+                                This helps prevent unintentional overwrites of secrets.
+                              type: boolean
+                          type: object
                         forwardInconsistent:
                           description: |-
                             ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -17988,7 +18021,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Certificate Manager
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -18059,7 +18092,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Lockbox
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -24874,6 +24907,18 @@ spec:
                                     - ConfigMap
                                   type: string
                               type: object
+                            checkAndSet:
+                              description: |-
+                                CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                the current version of the secret to prevent unintentional overwrites.
+                              properties:
+                                required:
+                                  description: |-
+                                    Required when true, all write operations must include a check-and-set parameter.
+                                    This helps prevent unintentional overwrites of secrets.
+                                  type: boolean
+                              type: object
                             forwardInconsistent:
                               description: |-
                                 ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -28545,6 +28590,18 @@ spec:
                             - Secret
                             - ConfigMap
                           type: string
+                      type: object
+                    checkAndSet:
+                      description: |-
+                        CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                        Only applies to Vault KV v2 stores. When enabled, write operations must include
+                        the current version of the secret to prevent unintentional overwrites.
+                      properties:
+                        required:
+                          description: |-
+                            Required when true, all write operations must include a check-and-set parameter.
+                            This helps prevent unintentional overwrites of secrets.
+                          type: boolean
                       type: object
                     forwardInconsistent:
                       description: |-
