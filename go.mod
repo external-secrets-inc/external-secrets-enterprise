@@ -131,7 +131,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.142.5
 	golang.org/x/sync v0.16.0
-	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3
+	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b
 	sigs.k8s.io/yaml v1.6.0
 	software.sslmate.com/src/go-pkcs12 v0.6.0
 )
