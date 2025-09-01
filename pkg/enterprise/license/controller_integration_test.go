@@ -5,12 +5,12 @@ package license
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -257,7 +257,10 @@ func TestReconcile_UnregisterIfNotFound_ObjectDeleted(t *testing.T) {
 	assert.True(t, feat.IsRegistered(obj), "Object should be registered")
 
 	// Simulate object not found (deleted)
-	notFoundError := errors.New("object not found")
+	notFoundError := apierrors.NewNotFound(schema.GroupResource{
+		Group:    "test",
+		Resource: "testobjects",
+	}, "test-object")
 	result, err := feature.UnregisterIfNotFound(feat, obj, notFoundError)
 
 	// UnregisterIfNotFound should handle not-found errors gracefully

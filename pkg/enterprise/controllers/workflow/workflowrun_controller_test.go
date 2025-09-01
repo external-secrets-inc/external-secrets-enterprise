@@ -22,6 +22,7 @@ import (
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	targetsv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -106,11 +107,15 @@ func (s *WorkflowRunReconcilerTestSuite) TestReconcileWorkflowCreated() {
 	}
 
 	cl := s.builder.WithObjects(template, run).WithStatusSubresource(template, run).Build()
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	reconciler := &WorkflowRunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
 		Recorder: s.recorder,
+		feature:  testFeature,
 	}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
@@ -146,11 +151,15 @@ func (s *WorkflowRunReconcilerTestSuite) TestReconcileTemplateNotFound() {
 	}
 
 	cl := s.builder.WithObjects(run).WithStatusSubresource(run).Build()
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	reconciler := &WorkflowRunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
 		Recorder: s.recorder,
+		feature:  testFeature,
 	}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
@@ -252,11 +261,15 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding(
 	}
 
 	cl := s.builder.WithObjects(finding, secondFinding).Build()
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	reconciler := &WorkflowRunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
 		Recorder: s.recorder,
+		feature:  testFeature,
 	}
 
 	workflow, err := reconciler.resolveWorkflowFromTemplate(context.Background(), template, run)
@@ -355,11 +368,15 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 	}
 
 	cl := s.builder.WithObjects(finding, secondFinding).Build()
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	reconciler := &WorkflowRunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
 		Recorder: s.recorder,
+		feature:  testFeature,
 	}
 
 	workflow, err := reconciler.resolveWorkflowFromTemplate(context.Background(), template, run)

@@ -21,6 +21,7 @@ import (
 
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 // (For testing purposes, ensure that your v1alpha1 package registers the Workflow type into the scheme.)
@@ -43,12 +44,16 @@ func TestReconcileNotFound(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	recorder := record.NewFakeRecorder(10)
 
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	r := &Reconciler{
 		Client:   fakeClient,
 		Log:      logr.Discard(),
 		Scheme:   scheme,
 		Recorder: recorder,
 		Manager:  secretstore.NewManager(fakeClient, "", false),
+		feature:  testFeature,
 	}
 
 	req := ctrl.Request{
@@ -99,12 +104,16 @@ func TestReconcileTerminalWorkflow(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(workflowObj).Build()
 	recorder := record.NewFakeRecorder(10)
 
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	r := &Reconciler{
 		Client:   fakeClient,
 		Log:      logr.Discard(),
 		Scheme:   scheme,
 		Recorder: recorder,
 		Manager:  secretstore.NewManager(fakeClient, "", false),
+		feature:  testFeature,
 	}
 
 	req := ctrl.Request{
@@ -280,12 +289,17 @@ func TestMarkWorkflowFailed(t *testing.T) {
 		Build()
 
 	recorder := record.NewFakeRecorder(10)
+
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	r := &Reconciler{
 		Client:   fakeClient,
 		Log:      logr.Discard(),
 		Scheme:   scheme,
 		Recorder: recorder,
 		Manager:  secretstore.NewManager(fakeClient, "", false),
+		feature:  testFeature,
 	}
 	res, err := r.markWorkflowFailed(context.Background(), wf, "TestFailure", "failure message")
 	if err != nil {
@@ -348,12 +362,17 @@ func TestInitializeWorkflow(t *testing.T) {
 		Build()
 
 	recorder := record.NewFakeRecorder(10)
+
+	// Create a test feature for workflows
+	testFeature := feature.NewFeature("workflows", "Workflow management")
+
 	r := &Reconciler{
 		Client:   fakeClient,
 		Log:      logr.Discard(),
 		Scheme:   scheme,
 		Recorder: recorder,
 		Manager:  secretstore.NewManager(fakeClient, "", false),
+		feature:  testFeature,
 	}
 
 	ctx := context.Background()
