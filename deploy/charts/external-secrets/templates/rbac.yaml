@@ -24,6 +24,8 @@ rules:
     - "get"
     - "list"
     - "watch"
+    - "update"
+    - "patch"
   - apiGroups:
     - batch
     resources:
@@ -33,6 +35,8 @@ rules:
     - "get"
     - "list"
     - "watch"
+    - "update"
+    - "patch"
   - apiGroups:
     - "target.external-secrets.io"
     resources:
@@ -118,6 +122,22 @@ rules:
     - "workflowruns/status"
     - "workflowtemplates/status"
     - "workflowruntemplates/status"
+    verbs:
+    - "get"
+    - "update"
+    - "patch"
+  - apiGroups:
+    - "reloader.enterprise.external-secrets.io"
+    resources:
+    - "configs"
+    verbs:
+    - "get"
+    - "list"
+    - "watch"
+  - apiGroups: 
+    - "reloader.enterprise.external-secrets.io"
+    resources:
+    - "configs/status"
     verbs:
     - "get"
     - "update"
