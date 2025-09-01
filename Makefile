@@ -78,7 +78,7 @@ reviewable: generate docs manifests helm.generate helm.schema.update helm.docs l
 
 check-diff: reviewable ## Ensure branch is clean.
 	@$(INFO) checking that branch is clean
-	@test -z "$$(git status --porcelain | grep -v 'pkg/enterprise/license/zz_keys_generated.go')" || (echo "$$(git status --porcelain)" && $(FAIL))
+	@test -z "$$(git status --porcelain)" || (echo "$$(git status --porcelain)" && $(FAIL))
 	@$(OK) branch is clean
 
 update-deps:
