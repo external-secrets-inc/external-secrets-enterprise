@@ -1,5 +1,105 @@
 # Changelog
 
+## [1.19.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.18.0...v1.19.0) (2025-08-21)
+
+
+### Features
+
+* add consumer finding ([#443](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/443)) ([c1baa13](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c1baa13cae705e5f96b8aa7f2a64eb9ce5d8ff52))
+* Add GitHub target ([#431](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/431)) ([d1bc9fe](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d1bc9fe5aecd6fdc64b11f2bf41cc7be4f1b766e))
+* add liveness probe to eso controller ([#4930](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4930)) ([5000a9d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5000a9dd54b78a070f151382909fa5f5041ff830))
+* **helm:** Add control of response to missing prometheus ([#5087](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5087)) ([2f72f03](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2f72f034e01da81d507c6cd1d916fcc6d1faeb1a))
+
+
+### Bug Fixes
+
+* bump support table & update roadmap ([#5135](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5135)) ([f6b47d5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f6b47d56d1a5e86eaa3176b40bd00a86598b417e))
+* chart-lock ([#446](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/446)) ([68acf14](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/68acf140adee5791f6adc78ab4092ca950f9fdc3))
+* finding fuzzle match ([#439](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/439)) ([447c253](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/447c25309e8c2d9c9b4511d74c99c5640f77647b))
+* fix conflicts ([1bc8a94](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1bc8a941f7e4ed4410ca6a293a4b8c845b621a51))
+* generator state duplication ([#445](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/445)) ([d983f16](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d983f16afde6b5c883939834160b6385d06121b3))
+* **helm:** add boolean for  processClusterGenerator ([#5144](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5144)) ([5b46d48](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5b46d48a1f3baf0ea98f2bac5c296b8e48957aa0))
+* **provider/kubernetes:** make auth field optional ([#5064](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5064)) ([8e953c7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8e953c750fdbb85d8452fbd9391e3e26337e0bc6))
+* scope secret list call to the namespace the push secret was created ([#5133](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5133)) ([39cdba5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/39cdba5863533007b582dc63dd300839326b2f1d))
+* update from upstream ([#429](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/429)) ([5c68e2c](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5c68e2c05b10151813e4aaf6063636f8e22c2f28))
+
+## [1.18.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.5...v1.18.0) (2025-08-12)
+
+
+### Features
+
+* postgres idle cleanup implementation ([#402](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/402)) ([4969f00](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4969f00106047703499173a77f211d9ad6d676f4))
+
+
+### Bug Fixes
+
+* bump image digest to fix e2e tests ([#5127](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5127)) ([88cca3d](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/88cca3d5bb106a4b385ca457cf35a230bb858777))
+* conflicts ([724cf05](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/724cf0568f9d2aee56b76152a57c7f6232bab51e))
+* jobs behaviour on timeout/failed ([#422](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/422)) ([c584c72](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c584c72b85bee57f8d6f70a604d28948f1ce4ab0))
+* kube-openapi ([2723409](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/27234096ff188bdd78f715f54f26f1d9d055b26d))
+* update dependencies ([#425](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/425)) ([4306fa2](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4306fa2025e7ae5b84cc51840e0542d7ebc464a0))
+* update from upstream ([#424](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/424)) ([89db95a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/89db95a0f1f30c14469e68b9ff888eea3d8a535f))
+
+## [1.17.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.4...v1.17.5) (2025-08-11)
+
+
+### Bug Fixes
+
+* add last status on generatorstates ([#420](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/420)) ([f9465bd](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f9465bddbb00261086a5f3d44795e9a98ba3898b))
+
+## [1.17.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.3...v1.17.4) (2025-08-11)
+
+
+### Bug Fixes
+
+* mark status as genstate subresource ([#418](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/418)) ([4e47cae](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4e47caeb913d8556e71d4c412c0c5d9121b6f993))
+
+## [1.17.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.2...v1.17.3) (2025-08-11)
+
+
+### Bug Fixes
+
+* generator state status ([#416](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/416)) ([3b8a5bb](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3b8a5bbef073b0728744b91880510051b84afa43))
+
+## [1.17.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.1...v1.17.2) (2025-08-11)
+
+
+### Bug Fixes
+
+* webhook permissions ([#414](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/414)) ([083992a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/083992aaf4efacd71877950ba91db459420a57c0))
+
+## [1.17.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.17.0...v1.17.1) (2025-08-11)
+
+
+### Bug Fixes
+
+* bump golang ([256dec7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/256dec7cd04f3c531e20e1d4896d1926a7ad9ccf))
+* conflicts ([378393b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/378393b46c0d0b3e1af457bbdd33fd529cae13cf))
+* do not run ApplyTemplate for immutable secrets in `mutationFunc` ([#5110](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5110)) ([df939d8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/df939d824ddbd0fd6b3ae310a928cc1ec3aa7de4))
+* generator status permission: ([#413](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/413)) ([e919274](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e9192743aa840b17c3af2cf07b085e73bb07ad56))
+* makefile and helm schema ([354cfb0](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/354cfb07c63393e22f084e1b5323f0b8380a267e))
+* several fixes to secretstore crds ([#412](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/412)) ([63985b7](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/63985b7e45c685a281d6e525dae499d2b55fe836))
+* update from upstream ([#410](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/410)) ([41c3104](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/41c310416447708a30d830674d5dfaad5c3b744e))
+
+## [1.17.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.16.3...v1.17.0) (2025-08-07)
+
+
+### Features
+
+* migration from endpoint to endpointslice ([#5008](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5008)) ([e212695](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e21269538d1e987820935be68673b2ac99d76a73))
+
+
+### Bug Fixes
+
+* check-diff ([e00a30e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e00a30e0e470c1e86e50e84d43567a70b8e9a1cb))
+* conflicts ([814c3a6](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/814c3a676b1b74bb21cf580de6f5e4be491d7049))
+* fail helm install if ClusterPushSecrets processing is enabled but PushSecrets processing is disabled. ([#4896](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/4896)) ([3c847e3](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/3c847e36c35b770063fa73fb3ed004097453cb41))
+* make secretstore change/addition/update to trigger scan jobs ([#406](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/406)) ([d169979](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/d169979b6c1396fa1dcc1f4465aad357149d5099))
+* move folders to enterprise ([#348](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/348)) ([e00a30e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e00a30e0e470c1e86e50e84d43567a70b8e9a1cb))
+* update dependencies ([#354](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/354)) ([5d3b9c0](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/5d3b9c0b7eec8d6f1d83839d811f83aad116798d))
+* update from upstream ([#355](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/355)) ([577fa3b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/577fa3b751bf86c5c762a6a9ccfedf3d933d65af))
+* use server-side apply for CRD installation in Makefile ([#5103](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/5103)) ([2bdee92](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2bdee9240dd1c3b26d3e6aef72e2cc97588023b5))
+
 ## [1.16.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.16.2...v1.16.3) (2025-08-04)
 
 

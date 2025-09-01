@@ -5,14 +5,22 @@ package virtualmachine
 import (
 	"bytes"
 	"context"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
@@ -28,6 +36,7 @@ type Provider struct{}
 type ScanTarget struct {
 	// Virtual Machine Name
 	Name              string
+	Namespace         string
 	URL               string
 	CABundle          []byte
 	AuthBasicUsername *string
@@ -36,11 +45,13 @@ type ScanTarget struct {
 	AuthClientCert    []byte
 	AuthClientKey     []byte
 	Paths             []string
+	KubeClient        client.Client
 }
 
 const (
 	errNotImplemented    = "not implemented"
 	errPropertyMandatory = "property is mandatory"
+	HTTPS                = "https"
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
@@ -65,6 +76,8 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		AuthClientKey:     []byte(key),
 		Paths:             converted.Spec.Paths,
 		Name:              converted.GetName(),
+		Namespace:         converted.GetNamespace(),
+		KubeClient:        client,
 	}, nil
 }
 
@@ -101,10 +114,12 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		AuthClientKey:     []byte(key),
 		Paths:             converted.Spec.Paths,
 		Name:              converted.GetName(),
+		Namespace:         converted.GetNamespace(),
+		KubeClient:        client,
 	}, nil
 }
 
-func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -112,7 +127,7 @@ func (s *ScanTarget) Scan(ctx context.Context, regexes []string, threshold int) 
 
 	client := &http.Client{}
 
-	if u.Scheme == "https" {
+	if u.Scheme == HTTPS {
 		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 		if len(s.CABundle) > 0 {
 			caCertPool := x509.NewCertPool()
@@ -246,6 +261,156 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	return secrets, nil
 }
 
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
+	}
+
+	client := &http.Client{}
+	if u.Scheme == HTTPS {
+		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+		if len(s.CABundle) > 0 {
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(s.CABundle)
+			tlsConfig.RootCAs = caCertPool
+		}
+		if len(s.AuthClientCert) > 0 && len(s.AuthClientKey) > 0 {
+			cert, err := tls.X509KeyPair(s.AuthClientCert, s.AuthClientKey)
+			if err != nil {
+				return nil, fmt.Errorf("loading client certificate: %w", err)
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
+		client.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	}
+
+	reqBody := ConsumerRequest{
+		Location: location,
+		Paths:    s.Paths,
+	}
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling consumer request: %w", err)
+	}
+
+	api := fmt.Sprintf("%s/api/v1/scanconsumer", s.URL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, api, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("creating consumer request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
+		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
+	} else if s.AuthBearerToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing consumer request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var scanResp ScanJobResponse
+	if err := json.NewDecoder(resp.Body).Decode(&scanResp); err != nil {
+		return nil, fmt.Errorf("decoding consumer response: %w", err)
+	}
+
+	// Poll for completion (10m timeout, same as ScanForSecrets)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	return s.checkForConsumerJob(ctx, client, scanResp.JobID, location, hash)
+}
+
+func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+	findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
+	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
+		return nil, err
+	}
+	if err == nil {
+		return findings, nil
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
+			if err != nil {
+				if errors.Is(err, JobNotReadyErr{}) {
+					continue
+				}
+				return nil, err
+			}
+			return findings, nil
+		}
+	}
+}
+
+func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+	api := fmt.Sprintf("%s/api/v1/scanconsumer/%s", s.URL, jobID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("creating consumer job request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
+		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
+	} else if s.AuthBearerToken != nil {
+		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing consumer job request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var jobResp ConsumerScanJobResponse
+	if err := json.NewDecoder(resp.Body).Decode(&jobResp); err != nil {
+		return nil, fmt.Errorf("decoding consumer job response: %w", err)
+	}
+	if jobResp.Status != "completed" {
+		return nil, JobNotReadyErr{}
+	}
+
+	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(jobResp.Consumers))
+	for _, attrs := range jobResp.Consumers {
+		display, ok := attrs["hostname"]
+		if !ok || display == "" {
+			display = attrs["executable"]
+		}
+
+		observedIndexTimestamp := metav1.NewTime(metav1.Now().UTC())
+		observedIndexTimestampString, ok := attrs["startTimestamp"]
+		if ok {
+			parsedTimestamp, err := parseStringToTime(observedIndexTimestampString)
+			if err == nil {
+				observedIndexTimestamp = metav1.NewTime(parsedTimestamp)
+			} else {
+				log.Printf("Warning: error parsing vm start timestamp: %v", err)
+			}
+		}
+
+		out = append(out, tgtv1alpha1.ConsumerFinding{
+			ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+				Timestamp:  observedIndexTimestamp,
+				SecretHash: hash,
+			},
+			Location:    location,
+			Kind:        tgtv1alpha1.VirtualMachineKind,
+			ID:          stableConsumerID(attrs),
+			DisplayName: display,
+			Attributes:  attrs,
+		})
+	}
+	return out, nil
+}
+
 type JobNotReadyErr struct{}
 
 func (e JobNotReadyErr) Error() string {
@@ -259,7 +424,7 @@ func init() {
 	}
 	if feat.IsAvailable() {
 		tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
-		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind)
+		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind, esv1.MaintenanceStatusMaintained)
 	}
 }
 
@@ -297,4 +462,80 @@ func getCertAuth(ctx context.Context, client client.Client, namespace string, au
 		}
 	}
 	return cert, key, nil
+}
+
+// stableConsumerID returns a stable external ID based on attributes that
+// do not change across restarts. For VMs we avoid PID on purpose.
+func stableConsumerID(attrs map[string]string) string {
+	host := strings.ToLower(strings.TrimSpace(attrs["hostname"]))
+	exe := strings.TrimSpace(attrs["executable"])
+	cmd := normalizeCmdline(attrs["cmdline"])
+
+	var base string
+	if host != "" || exe != "" || cmd != "" {
+		base = host + "|" + exe + "|" + cmd
+	} else {
+		// Fallback: hash over all attributes (sorted) if the preferred keys are missing
+		keys := make([]string, 0, len(attrs))
+		for k := range attrs {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		var b strings.Builder
+		for _, k := range keys {
+			b.WriteString(k)
+			b.WriteString("=")
+			b.WriteString(attrs[k])
+			b.WriteString(";")
+		}
+		base = b.String()
+	}
+	sum := sha512.Sum512([]byte(base))
+	return hex.EncodeToString(sum[:])
+}
+
+func normalizeCmdline(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	// collapse all whitespace to single spaces for stability
+	return strings.Join(strings.Fields(s), " ")
+}
+
+func parseStringToTime(s string) (time.Time, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return time.Time{}, fmt.Errorf("empty")
+	}
+
+	layouts := []string{
+		time.ANSIC,                      // "Mon Jan _2 15:04:05 2006" (no TZ)
+		time.UnixDate,                   // "Mon Jan _2 15:04:05 MST 2006"
+		time.RubyDate,                   // "Mon Jan 02 15:04:05 -0700 2006"
+		time.RFC3339,                    // ISO8601
+		time.RFC3339Nano,                // ISO8601 (nano)
+		"Mon 2006-01-02 15:04:05 MST",   // systemd-ish with TZ name
+		"Mon 2006-01-02 15:04:05 -0700", // systemd-ish with numeric offset
+	}
+
+	var lastErr error
+	for _, layout := range layouts {
+		var t time.Time
+		switch layout {
+		case time.ANSIC:
+			t, lastErr = time.ParseInLocation(layout, s, time.Local)
+		default:
+			t, lastErr = time.Parse(layout, s)
+		}
+		if lastErr == nil {
+			return t.UTC(), nil
+		}
+	}
+
+	if sec, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return time.Unix(sec, 0).UTC(), nil
+	}
+
+	return time.Time{}, fmt.Errorf("unrecognized time %q: %w", s, lastErr)
 }

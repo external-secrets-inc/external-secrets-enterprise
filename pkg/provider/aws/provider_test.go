@@ -120,7 +120,7 @@ func TestProvider(t *testing.T) {
 					Provider: &esv1.SecretStoreProvider{
 						AWS: &esv1.AWSProvider{
 							Service: esv1.AWSServiceParameterStore,
-							Auth: esv1.AWSAuth{
+							Auth: &esv1.AWSAuth{
 								SecretRef: &esv1.AWSAuthSecretRef{
 									AccessKeyID: esmeta.SecretKeySelector{
 										Name:      "foo",
@@ -271,7 +271,7 @@ func TestValidateStore(t *testing.T) {
 							AWS: &esv1.AWSProvider{
 								Region:  validRegion,
 								Service: esv1.AWSServiceSecretsManager,
-								Auth: esv1.AWSAuth{
+								Auth: &esv1.AWSAuth{
 									SecretRef: &esv1.AWSAuthSecretRef{
 										AccessKeyID: esmeta.SecretKeySelector{
 											Name:      "foobar",
@@ -295,7 +295,7 @@ func TestValidateStore(t *testing.T) {
 							AWS: &esv1.AWSProvider{
 								Region:  validRegion,
 								Service: esv1.AWSServiceSecretsManager,
-								Auth: esv1.AWSAuth{
+								Auth: &esv1.AWSAuth{
 									SecretRef: &esv1.AWSAuthSecretRef{
 										SecretAccessKey: esmeta.SecretKeySelector{
 											Name:      "foobar",
@@ -322,7 +322,7 @@ func TestValidateStore(t *testing.T) {
 							AWS: &esv1.AWSProvider{
 								Region:  validRegion,
 								Service: esv1.AWSServiceSecretsManager,
-								Auth: esv1.AWSAuth{
+								Auth: &esv1.AWSAuth{
 									SecretRef: &esv1.AWSAuthSecretRef{
 										SecretAccessKey: esmeta.SecretKeySelector{
 											Name: "foobar",
@@ -348,7 +348,7 @@ func TestValidateStore(t *testing.T) {
 							AWS: &esv1.AWSProvider{
 								Region:  validRegion,
 								Service: esv1.AWSServiceSecretsManager,
-								Auth: esv1.AWSAuth{
+								Auth: &esv1.AWSAuth{
 									SecretRef: &esv1.AWSAuthSecretRef{
 										AccessKeyID: esmeta.SecretKeySelector{
 											Name: "foobar",
@@ -374,7 +374,7 @@ func TestValidateStore(t *testing.T) {
 							AWS: &esv1.AWSProvider{
 								Region:  validRegion,
 								Service: esv1.AWSServiceSecretsManager,
-								Auth: esv1.AWSAuth{
+								Auth: &esv1.AWSAuth{
 									JWTAuth: &esv1.AWSJWTAuth{
 										ServiceAccountRef: &esmeta.ServiceAccountSelector{
 											Name: "foobar",
@@ -397,7 +397,7 @@ func TestValidateStore(t *testing.T) {
 							AWS: &esv1.AWSProvider{
 								Region:  validRegion,
 								Service: esv1.AWSServiceSecretsManager,
-								Auth: esv1.AWSAuth{
+								Auth: &esv1.AWSAuth{
 									JWTAuth: &esv1.AWSJWTAuth{
 										ServiceAccountRef: &esmeta.ServiceAccountSelector{
 											Name:      "foobar",
@@ -488,7 +488,7 @@ func TestValidRetryInput(t *testing.T) {
 				AWS: &esv1.AWSProvider{
 					Service: "ParameterStore",
 					Region:  validRegion,
-					Auth: esv1.AWSAuth{
+					Auth: &esv1.AWSAuth{
 						SecretRef: &esv1.AWSAuthSecretRef{
 							SecretAccessKey: esmeta.SecretKeySelector{
 								Name: "creds",

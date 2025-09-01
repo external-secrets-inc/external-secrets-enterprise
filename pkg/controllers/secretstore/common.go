@@ -47,7 +47,7 @@ type Opts struct {
 	RequeueInterval time.Duration
 }
 
-func reconcile(ctx context.Context, req ctrl.Request, ss esapi.GenericStore, cl client.Client, log logr.Logger, opts Opts) (ctrl.Result, error) {
+func Reconcile(ctx context.Context, req ctrl.Request, ss esapi.GenericStore, cl client.Client, log logr.Logger, opts Opts) (ctrl.Result, error) {
 	if !ShouldProcessStore(ss, opts.ControllerClass) {
 		log.V(1).Info("skip store")
 		return ctrl.Result{}, nil

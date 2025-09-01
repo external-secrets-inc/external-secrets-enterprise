@@ -33,7 +33,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
-var (
+const (
 	GeneratorGroup   = "generators.external-secrets.io"
 	GeneratorVersion = "v1alpha1"
 )
@@ -51,30 +51,30 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
-	generic_generator, err := BuildGeneratorObject(r.Scheme, r.Kind)
+	genericGenerator, err := BuildGeneratorObject(r.Scheme, r.Kind)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error building generator object: %w", err)
 	}
 
-	if err := r.Get(ctx, req.NamespacedName, generic_generator); err != nil {
-		return feature.UnregisterIfNotFound(r.feature, generic_generator, err)
+	if err := r.Get(ctx, req.NamespacedName, genericGenerator); err != nil {
+		return feature.UnregisterIfNotFound(r.feature, genericGenerator, err)
 	}
-	if err := feature.RegisterOrFail(r.feature, generic_generator); err != nil {
+	if err := feature.RegisterOrFail(r.feature, genericGenerator); err != nil {
 		return ctrl.Result{}, err
 	}
-	gvk := generic_generator.GetObjectKind().GroupVersionKind()
+	gvk := genericGenerator.GetObjectKind().GroupVersionKind()
 
 	generator, found := genv1alpha1.GetGeneratorByKind(gvk.Kind)
 	if !found {
 		return ctrl.Result{}, fmt.Errorf("generator of kind %s not found", gvk.Kind)
 	}
 
-	err = generic_generator.SetOutputs(generator.GetKeys())
+	err = genericGenerator.SetOutputs(generator.GetKeys())
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error setting outputs: %w", err)
 	}
 
-	err = r.Status().Update(ctx, generic_generator)
+	err = r.Status().Update(ctx, genericGenerator)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error updating generic generator: %w", err)
 	}
@@ -107,6 +107,7 @@ func mapKindToFeatureName(kind string) string {
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts controller.Options) error {
+<<<<<<< HEAD
 	// Create appropriate feature name based on Kind
 	featureName := mapKindToFeatureName(r.Kind)
 	feat := feature.NewFeature(featureName, fmt.Sprintf("%s Generator controller", r.Kind))
@@ -122,6 +123,13 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts 
 			Complete(r)
 	}
 	return nil
+=======
+	r.recorder = mgr.GetEventRecorderFor("generators")
+	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(opts).
+		For(obj).
+		Complete(r)
+>>>>>>> main
 }
 
 func BuildGeneratorObject(scheme *runtime.Scheme, kind string) (genv1alpha1.GenericGenerator, error) {

@@ -227,10 +227,12 @@ const (
 // that contains a PEM-encoded certificate.
 type CAProvider struct {
 	// The type of provider to use such as "Secret", or "ConfigMap".
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum="Secret";"ConfigMap"
 	Type CAProviderType `json:"type"`
 
 	// The name of the object located at the provider type.
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinLength:=1
 	// +kubebuilder:validation:MaxLength:=253
 	// +kubebuilder:validation:Pattern:=^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$

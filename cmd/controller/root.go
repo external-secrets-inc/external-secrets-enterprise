@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -58,11 +59,16 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
 	k8sfed "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation/kubernetes"
 	spiffefed "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation/spiffe"
+	scanconsumer "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/consumer"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow"
 	workflowapi "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/api"
 	workflowcommon "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/common"
 	federationserver "github.com/external-secrets/external-secrets/pkg/enterprise/federation/server"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/generator/postgresql"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/pkg/feature"
 
 	// To allow using gcp auth.
@@ -74,6 +80,7 @@ var (
 	setupLog                              = ctrl.Log.WithName("setup")
 	dnsName                               string
 	certDir                               string
+	liveAddr                              string
 	metricsAddr                           string
 	healthzAddr                           string
 	controllerClass                       string
@@ -172,6 +179,7 @@ var rootCmd = &cobra.Command{
 			Metrics: server.Options{
 				BindAddress: metricsAddr,
 			},
+			HealthProbeBindAddress: liveAddr,
 			WebhookServer: webhook.NewServer(webhook.Options{
 				Port: 9443,
 			}),
@@ -234,6 +242,24 @@ var rootCmd = &cobra.Command{
 				RateLimiter:             ctrlcommon.BuildRateLimiter(),
 			}); err != nil {
 				setupLog.Error(err, errCreateController, "controller", "ClusterSecretStore")
+				os.Exit(1)
+			}
+		}
+		tmetrics.SetUpMetrics()
+		allTargets := tgtv1alpha1.GetAllTargets()
+		for kind, genericStore := range allTargets {
+			if err = (&target.TargetReconciler{
+				Client:          mgr.GetClient(),
+				Log:             ctrl.Log.WithName("controllers").WithName("Target"),
+				Scheme:          mgr.GetScheme(),
+				ControllerClass: controllerClass,
+				RequeueInterval: storeRequeueInterval,
+				Kind:            kind,
+			}).SetupWithManager(mgr, genericStore, controller.Options{
+				MaxConcurrentReconciles: concurrent,
+				RateLimiter:             ctrlcommon.BuildRateLimiter(),
+			}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "Target")
 				os.Exit(1)
 			}
 		}
@@ -340,6 +366,14 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "Job")
 			os.Exit(1)
 		}
+		if err = (&scanconsumer.ConsumerController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("Consumer"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "Consumer")
+			os.Exit(1)
+		}
 		if err = (&workflow.WorkflowRunTemplateReconciler{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowRunTemplate"),
@@ -394,6 +428,18 @@ var rootCmd = &cobra.Command{
 		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
 		go handler.SetupEcho(cmd.Context())
 
+		sched := scheduler.New(mgr.GetClient(), ctrl.Log.WithName("scheduler"))
+		if err := mgr.Add(sched); err != nil {
+			setupLog.Error(err, "unable to add scheduler")
+			os.Exit(1)
+		}
+		scheduler.SetGlobal(sched)
+
+		pgBootstrap := postgresql.NewPostgreSQLBootstrap(mgr.GetClient(), mgr)
+		if err := mgr.Add(pgBootstrap); err != nil {
+			setupLog.Error(err, "unable to add postgresql bootstrap")
+			os.Exit(1)
+		}
 		// Start the workflow API server if enabled
 		if enableWorkflowAPI {
 			apiServer := workflowapi.NewServer(mgr.GetClient(), ctrl.Log.WithName("api").WithName("Workflow"))
@@ -421,6 +467,11 @@ var rootCmd = &cobra.Command{
 				setupLog.Error(err, errCreateController, "controller", "ClusterPushSecret")
 				os.Exit(1)
 			}
+		}
+
+		if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+			setupLog.Error(err, "unable to add controller healthz check")
+			os.Exit(1)
 		}
 
 		fs := feature.Features()
@@ -451,6 +502,7 @@ func init() {
 	rootCmd.Flags().IntVar(&concurrent, "concurrent", 1, "The number of concurrent reconciles.")
 	rootCmd.Flags().Float32Var(&clientQPS, "client-qps", 50, "QPS configuration to be passed to rest.Client")
 	rootCmd.Flags().IntVar(&clientBurst, "client-burst", 100, "Maximum Burst allowed to be passed to rest.Client")
+	rootCmd.Flags().StringVar(&liveAddr, "live-addr", ":8082", "The address the live endpoint binds to.")
 	rootCmd.Flags().StringVar(&loglevel, "loglevel", "info", "loglevel to use, one of: debug, info, warn, error, dpanic, panic, fatal")
 	rootCmd.Flags().StringVar(&serverPort, "server-port", ":8000", "federation server port")
 	rootCmd.Flags().StringVar(&serverTLSPort, "server-tls-port", ":8001", "federation server TLS port")

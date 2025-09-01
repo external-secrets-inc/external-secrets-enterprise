@@ -56,6 +56,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	if err := feature.RegisterOrFail(r.feature, generatorState); err != nil {
 		return ctrl.Result{}, err
 	}
+	defer func() {
+		err := r.Status().Update(ctx, generatorState)
+		if err != nil {
+			r.Log.Error(err, "could not update generator state status")
+		}
+	}()
 	gen, err := r.getGenerator(generatorState.Spec.Resource.Raw)
 	if err != nil {
 		r.markAsFailed(genv1alpha1.GeneratorStatePendingDeletion, "Could not get generator", err, generatorState)
@@ -77,7 +83,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			return ctrl.Result{}, fmt.Errorf("could not get cleanup policy: %w", err)
 		}
 
-		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy {
+		gcDeadlineReached := generatorState.Spec.GarbageCollectionDeadline.Time.Before(time.Now())
+		if cleanupPolicy != nil && cleanupPolicy.Type == genv1alpha1.IdleCleanupPolicy && gcDeadlineReached {
 			if generatorState.DeletionTimestamp != nil {
 				return ctrl.Result{}, nil
 			}
@@ -103,7 +110,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			return ctrl.Result{RequeueAfter: cleanupPolicy.IdleTimeout.Duration}, nil
 		}
 
-		if generatorState.Spec.GarbageCollectionDeadline.Time.Before(time.Now()) {
+		if gcDeadlineReached {
 			if generatorState.DeletionTimestamp != nil {
 				return ctrl.Result{}, nil
 			}
@@ -188,11 +195,13 @@ func (r *Reconciler) isIdleTimeoutExpired(ctx context.Context, policy genv1alpha
 func (r *Reconciler) markAsFailed(conditionType genv1alpha1.GeneratorStateConditionType, msg string, err error, gs *genv1alpha1.GeneratorState) {
 	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionFalse, genv1alpha1.ConditionReasonError, fmt.Sprintf("%s: %v", msg, err))
 	SetGeneratorStateCondition(gs, *conditionSynced)
+	SetLastGeneratorStateCondition(gs, *conditionSynced)
 }
 
 func (r *Reconciler) markSuccess(conditionType genv1alpha1.GeneratorStateConditionType, conditionReason, msg string, gs *genv1alpha1.GeneratorState) {
 	conditionSynced := NewGeneratorStateCondition(conditionType, v1.ConditionTrue, conditionReason, msg)
 	SetGeneratorStateCondition(gs, *conditionSynced)
+	SetLastGeneratorStateCondition(gs, *conditionSynced)
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.

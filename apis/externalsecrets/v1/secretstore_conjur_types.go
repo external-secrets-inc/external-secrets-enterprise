@@ -34,6 +34,8 @@ type ConjurProvider struct {
 	Auth ConjurAuth `json:"auth"`
 }
 
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type ConjurAuth struct {
 	// Authenticates with Conjur using an API key.
 	// +optional

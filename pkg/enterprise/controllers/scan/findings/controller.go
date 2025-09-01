@@ -1,7 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
-package federation
+package findings
 
 import (
 	"context"

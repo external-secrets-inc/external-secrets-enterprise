@@ -87,11 +87,15 @@ const (
 )
 
 type GeneratorStateStatus struct {
-	Conditions []GeneratorStateStatusCondition `json:"conditions,omitempty"`
+	LastType    GeneratorStateConditionType     `json:"lastType,omitempty"`
+	LastReason  string                          `json:"lastReason,omitempty"`
+	LastMessage string                          `json:"lastMessage,omitempty"`
+	Conditions  []GeneratorStateStatusCondition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:subresource:status
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:printcolumn:name="GC Deadline",type="string",JSONPath=".spec.garbageCollectionDeadline"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

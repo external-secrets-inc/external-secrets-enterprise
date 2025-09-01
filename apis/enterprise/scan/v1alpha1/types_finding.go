@@ -8,8 +8,9 @@ import (
 )
 
 type FindingSpec struct {
-	// Hash of the finding (salted)
-	Hash           string                `json:"hash,omitempty"`
+	ID             string                `json:"id"`
+	DisplayName    string                `json:"displayName,omitempty"`
+	Hash           string                `json:"hash,omitempty"` // Hash of the finding (salted)
 	RunTemplateRef *RunTemplateReference `json:"runTemplateRef,omitempty"`
 }
 
