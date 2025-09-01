@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.0...v1.20.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* permissions ([#458](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/458)) ([76bb4b5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/76bb4b51b43d44729bef478f6c2a819b9c085863))
+
 ## [1.20.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.19.0...v1.20.0) (2025-09-01)
 
 
