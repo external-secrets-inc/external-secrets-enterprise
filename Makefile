@@ -131,7 +131,7 @@ build-%: generate ## Build binary for the specified arch
 	@$(OK) go build $*
 
 lint: golangci-lint ## Run golangci-lint
-	@if ! $(GOLANGCI_LINT) run; then \
+	@if ! $(GOLANGCI_LINT) run --timeout=15m; then \
 		echo -e "\033[0;33mgolangci-lint failed: some checks can be fixed with \`\033[0;32mmake fmt\033[0m\033[0;33m\`\033[0m"; \
 		exit 1; \
 	fi
