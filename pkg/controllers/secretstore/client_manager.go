@@ -29,7 +29,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 )
 
@@ -45,7 +44,6 @@ const (
 // of a client (due to limitations in GCP / see mutexlock there)
 // If the controller requests another instance of a given client
 // we will close the old client first and then construct a new one.
-// Manager implements the ManagerInterface.
 type Manager struct {
 	log             logr.Logger
 	client          client.Client
@@ -146,10 +144,18 @@ func (m *Manager) getStoredClient(ctx context.Context, storeProvider esv1.Provid
 	if !ok {
 		return nil
 	}
+	valGVK, err := m.client.GroupVersionKindFor(val.store)
+	if err != nil {
+		return nil
+	}
+	storeGVK, err := m.client.GroupVersionKindFor(store)
+	if err != nil {
+		return nil
+	}
 	storeName := fmt.Sprintf("%s/%s", store.GetNamespace(), store.GetName())
 	// return client if it points to the very same store
 	if val.store.GetObjectMeta().Generation == store.GetGeneration() &&
-		val.store.GetTypeMeta().Kind == store.GetTypeMeta().Kind &&
+		valGVK == storeGVK &&
 		val.store.GetName() == store.GetName() &&
 		val.store.GetNamespace() == store.GetNamespace() {
 		m.log.V(1).Info("reusing stored client",
@@ -178,15 +184,6 @@ func storeKey(storeProvider esv1.Provider) clientKey {
 func (m *Manager) getStore(ctx context.Context, storeRef *esv1.SecretStoreRef, namespace string) (esv1.GenericStore, error) {
 	ref := types.NamespacedName{
 		Name: storeRef.Name,
-	}
-	if storeRef.Group == "target.external-secrets.io" {
-		obj := tgtv1alpha1.GetObjFromKind(storeRef.Kind)
-		ref.Namespace = namespace
-		err := m.client.Get(ctx, ref, obj)
-		if err != nil {
-			return nil, fmt.Errorf(errGetSecretStore, ref.Name, err)
-		}
-		return obj, nil
 	}
 	if storeRef.Kind == esv1.ClusterSecretStoreKind {
 		var store esv1.ClusterSecretStore
