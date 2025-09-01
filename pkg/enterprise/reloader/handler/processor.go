@@ -7,6 +7,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -20,6 +21,7 @@ type EventHandler struct {
 	ctx    context.Context
 	client client.Client
 	cache  []esov1alpha1.DestinationToWatch
+	mu     sync.RWMutex
 }
 
 func NewEventHandler(client client.Client) *EventHandler {
@@ -31,11 +33,15 @@ func NewEventHandler(client client.Client) *EventHandler {
 }
 
 func (h *EventHandler) UpdateDestinationsToWatch(watch []esov1alpha1.DestinationToWatch) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.cache = watch
 }
 
 func (h *EventHandler) HandleEvent(ctx context.Context, event events.SecretRotationEvent) error {
 	logger := log.FromContext(ctx)
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	for _, watchCriteria := range h.cache {
 		prov := schema.GetProvider(watchCriteria.Type)
 		if prov == nil {
