@@ -12,11 +12,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
@@ -30,6 +34,7 @@ type Provider struct{}
 type ScanTarget struct {
 	// Virtual Machine Name
 	Name              string
+	Namespace         string
 	URL               string
 	CABundle          []byte
 	AuthBasicUsername *string
@@ -38,6 +43,7 @@ type ScanTarget struct {
 	AuthClientCert    []byte
 	AuthClientKey     []byte
 	Paths             []string
+	KubeClient        client.Client
 }
 
 const (
@@ -68,6 +74,8 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		AuthClientKey:     []byte(key),
 		Paths:             converted.Spec.Paths,
 		Name:              converted.GetName(),
+		Namespace:         converted.GetNamespace(),
+		KubeClient:        client,
 	}, nil
 }
 
@@ -104,6 +112,8 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		AuthClientKey:     []byte(key),
 		Paths:             converted.Spec.Paths,
 		Name:              converted.GetName(),
+		Namespace:         converted.GetNamespace(),
+		KubeClient:        client,
 	}, nil
 }
 
@@ -249,7 +259,7 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	return secrets, nil
 }
 
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -308,11 +318,11 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 	// Poll for completion (10m timeout, same as ScanForSecrets)
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
-	return s.checkForConsumerJob(ctx, client, scanResp.JobID, location)
+	return s.checkForConsumerJob(ctx, client, scanResp.JobID, location, hash)
 }
 
-func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
-	findings, err := s.getConsumerJobMatches(ctx, client, jobID, location)
+func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+	findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
 	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
 		return nil, err
 	}
@@ -327,7 +337,7 @@ func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Clien
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			findings, err := s.getConsumerJobMatches(ctx, client, jobID, location)
+			findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
 			if err != nil {
 				if errors.Is(err, JobNotReadyErr{}) {
 					continue
@@ -339,7 +349,7 @@ func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Clien
 	}
 }
 
-func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
 	api := fmt.Sprintf("%s/api/v1/scanconsumer/%s", s.URL, jobID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, http.NoBody)
 	if err != nil {
@@ -368,13 +378,27 @@ func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Cli
 
 	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(jobResp.Consumers))
 	for _, attrs := range jobResp.Consumers {
-		hostname := attrs["hostname"]
-		display := hostname
-		if display == "" {
+		display, ok := attrs["hostname"]
+		if !ok || display == "" {
 			display = attrs["executable"]
 		}
 
+		observedIndexTimestamp := metav1.NewTime(metav1.Now().UTC())
+		observedIndexTimestampString, ok := attrs["startTimestamp"]
+		if ok {
+			parsedTimestamp, err := parseStringToTime(observedIndexTimestampString)
+			if err == nil {
+				observedIndexTimestamp = metav1.NewTime(parsedTimestamp)
+			} else {
+				log.Printf("Warning: error parsing vm start timestamp: %v", err)
+			}
+		}
+
 		out = append(out, tgtv1alpha1.ConsumerFinding{
+			ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+				Timestamp:  observedIndexTimestamp,
+				SecretHash: hash,
+			},
 			Location:    location,
 			Kind:        tgtv1alpha1.VirtualMachineKind,
 			ID:          stableConsumerID(attrs),
@@ -469,4 +493,41 @@ func normalizeCmdline(s string) string {
 	}
 	// collapse all whitespace to single spaces for stability
 	return strings.Join(strings.Fields(s), " ")
+}
+
+func parseStringToTime(s string) (time.Time, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return time.Time{}, fmt.Errorf("empty")
+	}
+
+	layouts := []string{
+		time.ANSIC,                      // "Mon Jan _2 15:04:05 2006" (no TZ)
+		time.UnixDate,                   // "Mon Jan _2 15:04:05 MST 2006"
+		time.RubyDate,                   // "Mon Jan 02 15:04:05 -0700 2006"
+		time.RFC3339,                    // ISO8601
+		time.RFC3339Nano,                // ISO8601 (nano)
+		"Mon 2006-01-02 15:04:05 MST",   // systemd-ish with TZ name
+		"Mon 2006-01-02 15:04:05 -0700", // systemd-ish with numeric offset
+	}
+
+	var lastErr error
+	for _, layout := range layouts {
+		var t time.Time
+		switch layout {
+		case time.ANSIC:
+			t, lastErr = time.ParseInLocation(layout, s, time.Local)
+		default:
+			t, lastErr = time.Parse(layout, s)
+		}
+		if lastErr == nil {
+			return t.UTC(), nil
+		}
+	}
+
+	if sec, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return time.Unix(sec, 0).UTC(), nil
+	}
+
+	return time.Time{}, fmt.Errorf("unrecognized time %q: %w", s, lastErr)
 }

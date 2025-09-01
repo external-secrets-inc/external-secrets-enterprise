@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-github/v74/github"
 	"github.com/labstack/gommon/log"
 	"golang.org/x/oauth2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -32,6 +33,7 @@ import (
 type Provider struct{}
 type ScanTarget struct {
 	Name          string
+	Namespace     string
 	Owner         string
 	Repo          string
 	Branch        string // base branch to open the PR against
@@ -41,6 +43,7 @@ type ScanTarget struct {
 	CABundle      string // CA bundle for enterprise https
 	AuthToken     string // GitHub token (App or PAT)
 	GitHubClient  *github.Client
+	KubeClient    client.Client
 }
 
 const (
@@ -72,6 +75,7 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 
 	return &ScanTarget{
 		Name:          converted.GetName(),
+		Namespace:     converted.GetNamespace(),
 		Owner:         converted.Spec.Owner,
 		Repo:          converted.Spec.Repository,
 		Branch:        branch,
@@ -81,6 +85,7 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
 		GitHubClient:  githubClient,
+		KubeClient:    client,
 	}, nil
 }
 
@@ -119,6 +124,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 
 	return &ScanTarget{
 		Name:          converted.GetName(),
+		Namespace:     converted.GetNamespace(),
 		Owner:         converted.Spec.Owner,
 		Repo:          converted.Spec.Repository,
 		Branch:        branch,
@@ -128,6 +134,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		CABundle:      converted.Spec.CABundle,
 		AuthToken:     token,
 		GitHubClient:  githubClient,
+		KubeClient:    client,
 	}, nil
 }
 
@@ -205,14 +212,10 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 }
 
 // Refactor to get actor based on github audit log so we can get everyone who cloned the repo as well.
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
 	owner, repo, branch := s.Owner, s.Repo, s.Branch
 	repoFull := owner + "/" + repo
 	path := strings.TrimSpace(location.RemoteRef.Key)
-	if path == "" {
-		// If we can't tie to a file, it's hard to attribute precisely.
-		return nil, nil
-	}
 
 	unique := make(map[string]tgtv1alpha1.ConsumerFinding)
 	commitSHAs := make(map[string]struct{})
@@ -255,8 +258,15 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 				"event":      "commit",
 			}
 			id := stableGitHubActorID(repoFull, actorType, actorLogin, actorID)
+
+			commitTime := getCommitTime(commit)
+
 			if _, ok := unique[id]; !ok {
 				unique[id] = tgtv1alpha1.ConsumerFinding{
+					ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+						Timestamp:  metav1.NewTime(commitTime),
+						SecretHash: hash,
+					},
 					Location:    location,
 					Kind:        tgtv1alpha1.GithubTargetKind,
 					ID:          id,
@@ -308,8 +318,13 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 					"workflowRunID": strconv.FormatInt(run.GetID(), 10),
 				}
 				id := stableGitHubActorID(repoFull, actorType, actorLogin, actorID)
+
 				if _, ok := unique[id]; !ok {
 					unique[id] = tgtv1alpha1.ConsumerFinding{
+						ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+							Timestamp:  metav1.NewTime(run.UpdatedAt.Time.UTC()),
+							SecretHash: hash,
+						},
 						Location:    location,
 						Kind:        tgtv1alpha1.GithubTargetKind,
 						ID:          id,
@@ -520,6 +535,18 @@ func stableGitHubActorID(repoFull, actorType, actorLogin, actorID string) string
 	key := fmt.Sprintf("%s|%s|%s", strings.ToLower(repoFull), actorType, firstNonEmpty(actorID, strings.ToLower(actorLogin)))
 	sum := sha256.Sum256([]byte(key))
 	return hex.EncodeToString(sum[:])
+}
+
+func getCommitTime(rc *github.RepositoryCommit) time.Time {
+	if rc.GetCommit() != nil {
+		if c := rc.GetCommit().GetCommitter(); !c.GetDate().IsZero() {
+			return c.GetDate().UTC()
+		}
+		if a := rc.GetCommit().GetAuthor(); !a.GetDate().IsZero() {
+			return a.GetDate().UTC()
+		}
+	}
+	return time.Now().UTC()
 }
 
 func firstNonEmpty(a, b string) string {

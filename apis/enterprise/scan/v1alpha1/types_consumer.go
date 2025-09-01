@@ -7,6 +7,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ConsumerConditionType string
+
+const (
+	ConsumerPendingUpdate ConsumerConditionType = "PendingUpdate"
+	ConsumerLatestVersion ConsumerConditionType = "UsingLatestVersion"
+)
+
 type ConsumerSpec struct {
 	Target TargetReference `json:"target"`
 
@@ -28,9 +35,10 @@ type ConsumerSpec struct {
 }
 
 type ConsumerStatus struct {
-	Locations  []tgtv1alpha1.SecretInStoreRef `json:"locations,omitempty"`
-	Conditions []metav1.Condition             `json:"conditions,omitempty"`
-	Pods       []K8sPodItem                   `json:"pods,omitempty"`
+	ObservedIndex map[string]tgtv1alpha1.SecretUpdateRecord `json:"observedIndex,omitempty"`
+	Locations     []tgtv1alpha1.SecretInStoreRef            `json:"locations,omitempty"`
+	Conditions    []metav1.Condition                        `json:"conditions,omitempty"`
+	Pods          []K8sPodItem                              `json:"pods,omitempty"`
 }
 
 type TargetReference struct {

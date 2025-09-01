@@ -26,7 +26,7 @@ for i in "${HELM_DIR}"/templates/crds/*.yml; do
     $SEDPRG -i 's/       additionalPrinterColumns:/    - additionalPrinterColumns:/' "$i.bkp"
   fi
 
-  if [[ "$CRDS_FLAG_NAME" == *"Cluster"* ]]; then
+  if [[ "$CRDS_FLAG_NAME" == *"Cluster"* && "$CRDS_FLAG_NAME" != *"KubernetesCluster"* ]]; then
     echo "{{- if and (.Values.installCRDs) (.Values.crds.$CRDS_FLAG_NAME) }}" > "$i"
   elif [[ "$CRDS_FLAG_NAME" == *"PushSecret"* ]]; then
 			echo "{{- if and (.Values.installCRDs) (.Values.crds.$CRDS_FLAG_NAME) }}" > "$i"

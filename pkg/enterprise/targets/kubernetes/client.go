@@ -12,6 +12,7 @@ import (
 	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
 	authv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,14 +44,15 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		}
 	}
 
-	namespace, name, err := parseNamespaceName(remoteRef.GetRemoteKey())
+	remoteKey := remoteRef.GetRemoteKey()
+	namespace, name, err := parseNamespaceName(remoteKey)
 	if err != nil {
-		return fmt.Errorf("invalid remote key %q: %w", remoteRef.GetRemoteKey(), err)
+		return fmt.Errorf("invalid remote key %q: %w", remoteKey, err)
 	}
 	dataKey := strings.TrimSpace(remoteRef.GetProperty())
 
 	var destination corev1.Secret
-	err = s.KubeClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &destination)
+	err = s.ClusterClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &destination)
 	switch {
 	case apierrors.IsNotFound(err):
 		destination = corev1.Secret{
@@ -61,8 +63,11 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 			Data: map[string][]byte{dataKey: append([]byte(nil), newVal...)},
 		}
 
-		return s.KubeClient.Create(ctx, &destination)
-
+		err = s.ClusterClient.Create(ctx, &destination)
+		if err != nil {
+			return fmt.Errorf("error creating secret %s/%s: %w", namespace, name, err)
+		}
+		break
 	case err != nil:
 		return err
 
@@ -76,8 +81,19 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		}
 		destination.Data[dataKey] = append([]byte(nil), newVal...)
 
-		return s.KubeClient.Update(ctx, &destination)
+		err = s.ClusterClient.Update(ctx, &destination)
+		if err != nil {
+			return fmt.Errorf("error updating secret %s/%s: %w", namespace, name, err)
+		}
+		break
 	}
+
+	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, remoteKey, dataKey, targets.Hash(newVal))
+	if err != nil {
+		return fmt.Errorf("error updating target status: %w", err)
+	}
+
+	return nil
 }
 
 func (s *ScanTarget) DeleteSecret(ctx context.Context, remoteRef esv1.PushSecretRemoteRef) error {
@@ -106,7 +122,7 @@ func (s *ScanTarget) Close(ctx context.Context) error {
 }
 
 func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
-	if s.KubeClient == nil {
+	if s.ClusterClient == nil {
 		return esv1.ValidationResultError, fmt.Errorf("kube client is nil")
 	}
 
@@ -202,7 +218,7 @@ func (s *ScanTarget) canI(ctx context.Context, group, resource, verb, name strin
 			},
 		},
 	}
-	if err := s.KubeClient.Create(ctx, ssar, &crclient.CreateOptions{}); err != nil {
+	if err := s.ClusterClient.Create(ctx, ssar, &crclient.CreateOptions{}); err != nil {
 		return false, err
 	}
 	return ssar.Status.Allowed, nil
