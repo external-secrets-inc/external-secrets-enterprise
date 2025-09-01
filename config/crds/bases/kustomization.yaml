@@ -37,6 +37,7 @@ resources:
   - generators.external-secrets.io_uuids.yaml
   - generators.external-secrets.io_vaultdynamicsecrets.yaml
   - generators.external-secrets.io_webhooks.yaml
+  - reloader.enterprise.external-secrets.io_configs.yaml
   - scan.external-secrets.io_consumers.yaml
   - scan.external-secrets.io_findings.yaml
   - scan.external-secrets.io_jobs.yaml

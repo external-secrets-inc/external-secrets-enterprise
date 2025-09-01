@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
+	reloaderv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/reloader/v1alpha1"
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	wfv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
@@ -59,6 +60,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
 	k8sfed "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation/kubernetes"
 	spiffefed "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation/spiffe"
+	reloadercontroller "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/reloader"
 	scanconsumer "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/consumer"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target"
@@ -140,6 +142,7 @@ func init() {
 	utilruntime.Must(wfv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(scanv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(tgtv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(reloaderv1alpha1.AddToScheme(scheme))
 }
 
 var rootCmd = &cobra.Command{
@@ -451,7 +454,13 @@ var rootCmd = &cobra.Command{
 				}
 			}()
 		}
-
+		if err = (reloadercontroller.NewReloaderReconciler(
+			mgr.GetClient(),
+			mgr.GetScheme(),
+		)).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Reloader")
+			os.Exit(1)
+		}
 		if enableClusterPushSecretReconciler {
 			cpsmetrics.SetUpMetrics()
 
