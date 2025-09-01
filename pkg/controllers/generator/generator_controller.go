@@ -82,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	return ctrl.Result{}, nil
 }
 
-// mapKindToFeatureName converts generator Kind to the exact feature name used in trial license
+// mapKindToFeatureName converts generator Kind to the exact feature name used in trial license.
 func mapKindToFeatureName(kind string) string {
 	// Map generator kinds to their exact trial license subscription names
 	kindToSubscription := map[string]string{

@@ -17,7 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// Mock Kubernetes object for testing
+// Mock Kubernetes object for testing.
 type mockObject struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta

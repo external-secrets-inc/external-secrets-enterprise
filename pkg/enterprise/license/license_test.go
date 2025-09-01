@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Test data constants
+// Test data constants.
 const testValidLicenseYAML = `
 signature: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJsaWNlbnNlSWQiOiJ0ZXN0LWxpY2Vuc2UiLCJjdXN0b21lck5hbWUiOiJ0ZXN0LWN1c3RvbWVyIiwiaXNzdWVEYXRlIjoxNzI1MTA3ODgyLCJleHBpcmF0aW9uRGF0ZSI6MTcyNzcwMjQ4MiwidmVyc2lvbiI6InRyaWFsIiwic3Vic2NyaXB0aW9ucyI6W3sibmFtZSI6InRlc3QuZmVhdHVyZSIsImV4cGlyeURhdGUiOiIyMDI1LTEwLTAxVDA5OjQ2OjIyLjcwODQ3MyswMzowMCIsIm1heExpbWl0IjoxMH1dfQ.invalid_signature_for_testing
 data:
@@ -50,7 +50,7 @@ data:
 subscriptions: []
 `
 
-// Mock feature for testing
+// Mock feature for testing.
 type mockFeature struct {
 	name        string
 	description string
