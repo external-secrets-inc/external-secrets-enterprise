@@ -73,8 +73,8 @@ type GithubAppAuth struct {
 type GithubRepository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              GithubRepositorySpec   `json:"spec,omitempty"`
-	Status            esv1.SecretStoreStatus `json:"status,omitempty"`
+	Spec              GithubRepositorySpec `json:"spec,omitempty"`
+	Status            TargetStatus         `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -97,11 +97,13 @@ func (c *GithubRepository) GetSpec() *esv1.SecretStoreSpec {
 }
 
 func (c *GithubRepository) GetStatus() esv1.SecretStoreStatus {
-	return c.Status
+	return *TargetToSecretStoreStatus(&c.Status)
 }
 
 func (c *GithubRepository) SetStatus(status esv1.SecretStoreStatus) {
-	c.Status = status
+	convertedStatus := SecretStoreToTargetStatus(&status)
+	c.Status.Capabilities = convertedStatus.Capabilities
+	c.Status.Conditions = convertedStatus.Conditions
 }
 
 func (c *GithubRepository) GetNamespacedName() string {

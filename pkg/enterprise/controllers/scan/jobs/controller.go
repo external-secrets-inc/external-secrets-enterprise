@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"sync"
@@ -166,10 +167,12 @@ func consumerNeedsToUpdate(existing, consumer *v1alpha1.Consumer) bool {
 	if consumer == nil {
 		return true
 	}
-	loc1 := existing.Status.Locations
-	loc2 := consumer.Status.Locations
 
-	return !(slices.EqualFunc(loc1, loc2, utils.EqualLocations) && slices.Equal(existing.Status.Conditions, consumer.Status.Conditions) && slices.Equal(existing.Status.Pods, consumer.Status.Pods))
+	equalLocations := slices.EqualFunc(existing.Status.Locations, consumer.Status.Locations, utils.EqualLocations)
+	equalPods := slices.Equal(existing.Status.Pods, consumer.Status.Pods)
+	equalObservedIndex := maps.EqualFunc(existing.Status.ObservedIndex, consumer.Status.ObservedIndex, utils.EqualSecretUpdateRecord)
+
+	return !(equalLocations && equalPods && equalObservedIndex)
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.

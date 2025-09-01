@@ -16,6 +16,7 @@ import (
 	"time"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
 	"github.com/google/go-github/v74/github"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -124,6 +125,11 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	})
 	if err != nil {
 		return fmt.Errorf("error creating PR: %w", err)
+	}
+
+	err = targets.UpdateTargetPushIndex(ctx, s.KubeClient, s.Name, s.Namespace, filename, indexes, targets.Hash(newVal))
+	if err != nil {
+		return fmt.Errorf("error updating target status: %w", err)
 	}
 
 	log.Printf("pull request created by push secret: %d", *pr.Number)

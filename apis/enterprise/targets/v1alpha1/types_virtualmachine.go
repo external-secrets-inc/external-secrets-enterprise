@@ -47,8 +47,8 @@ type BasicAuth struct {
 type VirtualMachine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              VirtualMachineSpec     `json:"spec,omitempty"`
-	Status            esv1.SecretStoreStatus `json:"status,omitempty"`
+	Spec              VirtualMachineSpec `json:"spec,omitempty"`
+	Status            TargetStatus       `json:"status,omitempty"`
 }
 
 // VirtualMachineList contains a list of VirtualMachine resources.
@@ -72,11 +72,13 @@ func (c *VirtualMachine) GetSpec() *esv1.SecretStoreSpec {
 }
 
 func (c *VirtualMachine) GetStatus() esv1.SecretStoreStatus {
-	return c.Status
+	return *TargetToSecretStoreStatus(&c.Status)
 }
 
 func (c *VirtualMachine) SetStatus(status esv1.SecretStoreStatus) {
-	c.Status = status
+	convertedStatus := SecretStoreToTargetStatus(&status)
+	c.Status.Capabilities = convertedStatus.Capabilities
+	c.Status.Conditions = convertedStatus.Conditions
 }
 
 func (c *VirtualMachine) GetNamespacedName() string {

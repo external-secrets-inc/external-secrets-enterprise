@@ -4,6 +4,7 @@
 package job
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -59,6 +60,8 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 			},
 			status: v1alpha1.ConsumerStatus{},
 		}
+		acc.status.ObservedIndex = make(map[string]tgtv1alpha1.SecretUpdateRecord)
+
 		FillAttributes(acc, f.Kind, f.Attributes)
 		cs.accums[key] = acc
 	}
@@ -72,6 +75,16 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 	}
 	if !already {
 		acc.status.Locations = append(acc.status.Locations, f.Location)
+	}
+
+	observedIndexKey := f.Location.RemoteRef.Key
+	if strings.TrimSpace(f.Location.RemoteRef.Property) != "" {
+		observedIndexKey = fmt.Sprintf("%s.%s", f.Location.RemoteRef.Key, f.Location.RemoteRef.Property)
+	}
+
+	currentObservedIndex, ok := acc.status.ObservedIndex[observedIndexKey]
+	if !ok || f.ObservedIndex.Timestamp.Time.After(currentObservedIndex.Timestamp.Time) {
+		acc.status.ObservedIndex[observedIndexKey] = f.ObservedIndex
 	}
 }
 

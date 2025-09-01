@@ -274,7 +274,8 @@ func (j *JobRunner) attributeTargetConsumers(ctx context.Context, kind, name str
 	}
 
 	for _, location := range locations {
-		consumers, err := cl.ScanForConsumers(ctx, location)
+		hash := j.locationMemset.entries[location]
+		consumers, err := cl.ScanForConsumers(ctx, location, hash)
 		if err != nil {
 			return err
 		}
