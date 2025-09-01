@@ -107,7 +107,6 @@ func mapKindToFeatureName(kind string) string {
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts controller.Options) error {
-<<<<<<< HEAD
 	// Create appropriate feature name based on Kind
 	featureName := mapKindToFeatureName(r.Kind)
 	feat := feature.NewFeature(featureName, fmt.Sprintf("%s Generator controller", r.Kind))
@@ -123,13 +122,6 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts 
 			Complete(r)
 	}
 	return nil
-=======
-	r.recorder = mgr.GetEventRecorderFor("generators")
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(obj).
-		Complete(r)
->>>>>>> main
 }
 
 func BuildGeneratorObject(scheme *runtime.Scheme, kind string) (genv1alpha1.GenericGenerator, error) {
