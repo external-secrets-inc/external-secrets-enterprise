@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: clusterexternalsecrets.external-secrets.io
@@ -1465,7 +1465,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: clusterpushsecrets.external-secrets.io
@@ -1966,7 +1966,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: clustersecretstores.external-secrets.io
@@ -3800,6 +3800,8 @@ spec:
                               - value
                             type: object
                           type: array
+                        validationResult:
+                          type: integer
                       required:
                         - data
                       type: object
@@ -6563,6 +6565,18 @@ spec:
                                 - ConfigMap
                               type: string
                           type: object
+                        checkAndSet:
+                          description: |-
+                            CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                            Only applies to Vault KV v2 stores. When enabled, write operations must include
+                            the current version of the secret to prevent unintentional overwrites.
+                          properties:
+                            required:
+                              description: |-
+                                Required when true, all write operations must include a check-and-set parameter.
+                                This helps prevent unintentional overwrites of secrets.
+                              type: boolean
+                          type: object
                         forwardInconsistent:
                           description: |-
                             ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -6863,7 +6877,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Certificate Manager
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -6934,7 +6948,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Lockbox
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -11415,7 +11429,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: externalsecrets.external-secrets.io
@@ -12014,6 +12028,11 @@ spec:
                   type: string
               type: object
           type: object
+      selectableFields:
+        - jsonPath: .spec.secretStoreRef.name
+        - jsonPath: .spec.secretStoreRef.kind
+        - jsonPath: .spec.target.name
+        - jsonPath: .spec.refreshInterval
       served: true
       storage: true
       subresources:
@@ -12632,7 +12651,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: pushsecrets.external-secrets.io
@@ -13091,7 +13110,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: secretstores.external-secrets.io
@@ -14925,6 +14944,8 @@ spec:
                               - value
                             type: object
                           type: array
+                        validationResult:
+                          type: integer
                       required:
                         - data
                       type: object
@@ -17688,6 +17709,18 @@ spec:
                                 - ConfigMap
                               type: string
                           type: object
+                        checkAndSet:
+                          description: |-
+                            CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                            Only applies to Vault KV v2 stores. When enabled, write operations must include
+                            the current version of the secret to prevent unintentional overwrites.
+                          properties:
+                            required:
+                              description: |-
+                                Required when true, all write operations must include a check-and-set parameter.
+                                This helps prevent unintentional overwrites of secrets.
+                              type: boolean
+                          type: object
                         forwardInconsistent:
                           description: |-
                             ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -17988,7 +18021,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Certificate Manager
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -18059,7 +18092,7 @@ spec:
                           description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                           type: string
                         auth:
-                          description: Auth defines the information necessary to authenticate against Yandex Lockbox
+                          description: Auth defines the information necessary to authenticate against Yandex.Cloud
                           properties:
                             authorizedKeySecretRef:
                               description: The authorized key used for authentication
@@ -22540,7 +22573,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: authorizations.federation.external-secrets.io
@@ -22657,7 +22690,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: kubernetesfederations.federation.external-secrets.io
@@ -22714,7 +22747,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: spiffefederations.federation.external-secrets.io
@@ -22771,7 +22804,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: acraccesstokens.generators.external-secrets.io
@@ -22983,7 +23016,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: awsiamkeys.generators.external-secrets.io
@@ -23186,7 +23219,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: basicauths.generators.external-secrets.io
@@ -23321,7 +23354,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: clustergenerators.generators.external-secrets.io
@@ -24874,6 +24907,18 @@ spec:
                                     - ConfigMap
                                   type: string
                               type: object
+                            checkAndSet:
+                              description: |-
+                                CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                the current version of the secret to prevent unintentional overwrites.
+                              properties:
+                                required:
+                                  description: |-
+                                    Required when true, all write operations must include a check-and-set parameter.
+                                    This helps prevent unintentional overwrites of secrets.
+                                  type: boolean
+                              type: object
                             forwardInconsistent:
                               description: |-
                                 ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -25228,7 +25273,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: ecrauthorizationtokens.generators.external-secrets.io
@@ -25428,7 +25473,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: fakes.generators.external-secrets.io
@@ -25499,7 +25544,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: federations.generators.external-secrets.io
@@ -25643,7 +25688,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: gcraccesstokens.generators.external-secrets.io
@@ -25781,7 +25826,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: generatorstates.generators.external-secrets.io
@@ -25891,7 +25936,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: githubaccesstokens.generators.external-secrets.io
@@ -26009,7 +26054,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: grafanas.generators.external-secrets.io
@@ -26146,7 +26191,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: mfas.generators.external-secrets.io
@@ -26244,7 +26289,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: mongodbs.generators.external-secrets.io
@@ -26420,7 +26465,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: neo4js.generators.external-secrets.io
@@ -26616,7 +26661,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: openais.generators.external-secrets.io
@@ -26752,7 +26797,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: passwords.generators.external-secrets.io
@@ -26845,7 +26890,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: postgresqls.generators.external-secrets.io
@@ -27056,7 +27101,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: quayaccesstokens.generators.external-secrets.io
@@ -27149,7 +27194,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: rabbitmqs.generators.external-secrets.io
@@ -27323,7 +27368,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: sendgridauthorizationtokens.generators.external-secrets.io
@@ -27421,7 +27466,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: sshkeys.generators.external-secrets.io
@@ -27496,7 +27541,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: sshs.generators.external-secrets.io
@@ -27576,7 +27621,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: stssessiontokens.generators.external-secrets.io
@@ -27786,7 +27831,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: uuids.generators.external-secrets.io
@@ -27842,7 +27887,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: vaultdynamicsecrets.generators.external-secrets.io
@@ -28546,6 +28591,18 @@ spec:
                             - ConfigMap
                           type: string
                       type: object
+                    checkAndSet:
+                      description: |-
+                        CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                        Only applies to Vault KV v2 stores. When enabled, write operations must include
+                        the current version of the secret to prevent unintentional overwrites.
+                      properties:
+                        required:
+                          description: |-
+                            Required when true, all write operations must include a check-and-set parameter.
+                            This helps prevent unintentional overwrites of secrets.
+                          type: boolean
+                      type: object
                     forwardInconsistent:
                       description: |-
                         ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -28702,7 +28759,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: webhooks.generators.external-secrets.io
@@ -28928,7 +28985,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: configs.reloader.enterprise.external-secrets.io
 spec:
   group: reloader.enterprise.external-secrets.io
@@ -30199,7 +30256,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: consumers.scan.external-secrets.io
@@ -30470,7 +30527,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: findings.scan.external-secrets.io
@@ -30568,7 +30625,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: jobs.scan.external-secrets.io
@@ -30825,7 +30882,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: githubrepositories.target.external-secrets.io
@@ -31033,7 +31090,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: kubernetesclusters.target.external-secrets.io
@@ -31411,7 +31468,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     external-secrets.io/component: controller
   name: virtualmachines.target.external-secrets.io
@@ -31654,7 +31711,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: workflowruns.workflows.external-secrets.io
 spec:
   group: workflows.external-secrets.io
@@ -31835,7 +31892,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: workflowruntemplates.workflows.external-secrets.io
 spec:
   group: workflows.external-secrets.io
@@ -32116,7 +32173,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: workflows.workflows.external-secrets.io
 spec:
   group: workflows.external-secrets.io
@@ -33820,6 +33877,18 @@ spec:
                                                         - ConfigMap
                                                       type: string
                                                   type: object
+                                                checkAndSet:
+                                                  description: |-
+                                                    CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                                    Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                                    the current version of the secret to prevent unintentional overwrites.
+                                                  properties:
+                                                    required:
+                                                      description: |-
+                                                        Required when true, all write operations must include a check-and-set parameter.
+                                                        This helps prevent unintentional overwrites of secrets.
+                                                      type: boolean
+                                                  type: object
                                                 forwardInconsistent:
                                                   description: |-
                                                     ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -36262,6 +36331,18 @@ spec:
                                                         - Secret
                                                         - ConfigMap
                                                       type: string
+                                                  type: object
+                                                checkAndSet:
+                                                  description: |-
+                                                    CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                                    Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                                    the current version of the secret to prevent unintentional overwrites.
+                                                  properties:
+                                                    required:
+                                                      description: |-
+                                                        Required when true, all write operations must include a check-and-set parameter.
+                                                        This helps prevent unintentional overwrites of secrets.
+                                                      type: boolean
                                                   type: object
                                                 forwardInconsistent:
                                                   description: |-
@@ -38715,6 +38796,18 @@ spec:
                                                               - ConfigMap
                                                             type: string
                                                         type: object
+                                                      checkAndSet:
+                                                        description: |-
+                                                          CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                                          Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                                          the current version of the secret to prevent unintentional overwrites.
+                                                        properties:
+                                                          required:
+                                                            description: |-
+                                                              Required when true, all write operations must include a check-and-set parameter.
+                                                              This helps prevent unintentional overwrites of secrets.
+                                                            type: boolean
+                                                        type: object
                                                       forwardInconsistent:
                                                         description: |-
                                                           ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -39684,7 +39777,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: workflowtemplates.workflows.external-secrets.io
 spec:
   group: workflows.external-secrets.io
@@ -41382,6 +41475,18 @@ spec:
                                                         - ConfigMap
                                                       type: string
                                                   type: object
+                                                checkAndSet:
+                                                  description: |-
+                                                    CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                                    Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                                    the current version of the secret to prevent unintentional overwrites.
+                                                  properties:
+                                                    required:
+                                                      description: |-
+                                                        Required when true, all write operations must include a check-and-set parameter.
+                                                        This helps prevent unintentional overwrites of secrets.
+                                                      type: boolean
+                                                  type: object
                                                 forwardInconsistent:
                                                   description: |-
                                                     ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -43824,6 +43929,18 @@ spec:
                                                         - Secret
                                                         - ConfigMap
                                                       type: string
+                                                  type: object
+                                                checkAndSet:
+                                                  description: |-
+                                                    CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                                    Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                                    the current version of the secret to prevent unintentional overwrites.
+                                                  properties:
+                                                    required:
+                                                      description: |-
+                                                        Required when true, all write operations must include a check-and-set parameter.
+                                                        This helps prevent unintentional overwrites of secrets.
+                                                      type: boolean
                                                   type: object
                                                 forwardInconsistent:
                                                   description: |-
@@ -46276,6 +46393,18 @@ spec:
                                                               - Secret
                                                               - ConfigMap
                                                             type: string
+                                                        type: object
+                                                      checkAndSet:
+                                                        description: |-
+                                                          CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
+                                                          Only applies to Vault KV v2 stores. When enabled, write operations must include
+                                                          the current version of the secret to prevent unintentional overwrites.
+                                                        properties:
+                                                          required:
+                                                            description: |-
+                                                              Required when true, all write operations must include a check-and-set parameter.
+                                                              This helps prevent unintentional overwrites of secrets.
+                                                            type: boolean
                                                         type: object
                                                       forwardInconsistent:
                                                         description: |-

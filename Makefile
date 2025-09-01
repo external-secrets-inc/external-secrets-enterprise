@@ -131,7 +131,7 @@ build-%: generate ## Build binary for the specified arch
 	@$(OK) go build $*
 
 lint: golangci-lint ## Run golangci-lint
-	@if ! $(GOLANGCI_LINT) run; then \
+	@if ! $(GOLANGCI_LINT) run --timeout=15m; then \
 		echo -e "\033[0;33mgolangci-lint failed: some checks can be fixed with \`\033[0;32mmake fmt\033[0m\033[0;33m\`\033[0m"; \
 		exit 1; \
 	fi
@@ -184,7 +184,7 @@ helm.docs: ## Generate helm docs
 	@cd $(HELM_DIR); \
 	$(DOCKER) run --rm -v $(shell pwd)/$(HELM_DIR):/helm-docs -u $(shell id -u) docker.io/jnorwood/helm-docs:v1.7.0
 
-HELM_VERSION ?= $(shell helm show chart $(HELM_DIR) | grep 'version:' | sed 's/version: //g')
+HELM_VERSION ?= $(shell helm show chart $(HELM_DIR) | grep '^version:' | sed 's/version: //g')
 
 helm.build: helm.generate ## Build helm chart
 	@$(INFO) helm package
@@ -192,10 +192,24 @@ helm.build: helm.generate ## Build helm chart
 	@mv $(OUTPUT_DIR)/chart/external-secrets-$(HELM_VERSION).tgz $(OUTPUT_DIR)/chart/external-secrets.tgz
 	@$(OK) helm package
 
+HELM_SCHEMA_NAME := schema
+HELM_SCHEMA_VER  := 2.2.1
+HELM_SCHEMA_URL  := https://github.com/losisin/helm-values-schema-json.git
+
 helm.schema.plugin:
-	@$(INFO) Installing helm-values-schema-json plugin
-	@helm plugin install --version v2.2.1 https://github.com/losisin/helm-values-schema-json.git || true
-	@$(OK) Installed helm-values-schema-json plugin
+	@v=$$(helm plugin list | awk '$$1=="$(HELM_SCHEMA_NAME)"{print $$2}'); \
+	if [ -z "$$v" ]; then \
+		$(INFO) "Installing $(HELM_SCHEMA_NAME) v$(HELM_SCHEMA_VER)"; \
+		helm plugin install --version $(HELM_SCHEMA_VER) $(HELM_SCHEMA_URL); \
+		$(OK) "Installed $(HELM_SCHEMA_NAME) v$(HELM_SCHEMA_VER)"; \
+	elif [ "$$v" != "$(HELM_SCHEMA_VER)" ]; then \
+		$(INFO) "Found $(HELM_SCHEMA_NAME) $$v. Reinstalling v$(HELM_SCHEMA_VER)"; \
+		helm plugin remove $(HELM_SCHEMA_NAME); \
+		helm plugin install --version $(HELM_SCHEMA_VER) $(HELM_SCHEMA_URL); \
+		$(OK) "Reinstalled $(HELM_SCHEMA_NAME) v$(HELM_SCHEMA_VER)"; \
+	else \
+		$(OK) "$(HELM_SCHEMA_NAME) already at v$(HELM_SCHEMA_VER)"; \
+	fi
 
 helm.schema.update: helm.schema.plugin
 	@$(INFO) Generating values.schema.json
