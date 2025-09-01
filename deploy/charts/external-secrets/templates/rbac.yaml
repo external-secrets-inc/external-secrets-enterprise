@@ -46,6 +46,14 @@ rules:
     - "list"
     - "watch"
   - apiGroups:
+    - "target.external-secrets.io"
+    resources:
+    - "*/status"
+    verbs:
+    - "get"
+    - "update"
+    - "patch"
+  - apiGroups:
     - "scan.external-secrets.io"
     resources:
     - "jobs"
