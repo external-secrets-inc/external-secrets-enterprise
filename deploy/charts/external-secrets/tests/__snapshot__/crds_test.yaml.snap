@@ -4,7 +4,7 @@ should match snapshot of default values:
     kind: CustomResourceDefinition
     metadata:
       annotations:
-        controller-gen.kubebuilder.io/version: v0.18.0
+        controller-gen.kubebuilder.io/version: v0.19.0
       labels:
         external-secrets.io/component: controller
       name: secretstores.external-secrets.io
@@ -4615,18 +4615,6 @@ should match snapshot of default values:
                                     This helps prevent unintentional overwrites of secrets.
                                   type: boolean
                               type: object
-                            checkAndSet:
-                              description: |-
-                                CheckAndSet defines the Check-And-Set (CAS) settings for PushSecret operations.
-                                Only applies to Vault KV v2 stores. When enabled, write operations must include
-                                the current version of the secret to prevent unintentional overwrites.
-                              properties:
-                                required:
-                                  description: |-
-                                    Required when true, all write operations must include a check-and-set parameter.
-                                    This helps prevent unintentional overwrites of secrets.
-                                  type: boolean
-                              type: object
                             forwardInconsistent:
                               description: |-
                                 ForwardInconsistent tells Vault to forward read-after-write requests to the Vault
@@ -4927,7 +4915,7 @@ should match snapshot of default values:
                               description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                               type: string
                             auth:
-                              description: Auth defines the information necessary to authenticate against Yandex Certificate Manager
+                              description: Auth defines the information necessary to authenticate against Yandex.Cloud
                               properties:
                                 authorizedKeySecretRef:
                                   description: The authorized key used for authentication
@@ -4998,7 +4986,7 @@ should match snapshot of default values:
                               description: Yandex.Cloud API endpoint (e.g. 'api.cloud.yandex.net:443')
                               type: string
                             auth:
-                              description: Auth defines the information necessary to authenticate against Yandex Lockbox
+                              description: Auth defines the information necessary to authenticate against Yandex.Cloud
                               properties:
                                 authorizedKeySecretRef:
                                   description: The authorized key used for authentication
