@@ -35,7 +35,7 @@ require (
 	github.com/oracle/oci-go-sdk/v65 v65.99.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/yandex-cloud/go-genproto v0.19.0
@@ -115,7 +115,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.1.6
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
 	github.com/michaelklishin/rabbit-hole/v3 v3.2.0
-	github.com/neo4j/neo4j-go-driver/v5 v5.28.2
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.3
 	github.com/passbolt/go-passbolt v0.7.2
 	github.com/previder/vault-cli v0.1.2
 	github.com/pulumi/esc-sdk/sdk v0.12.1
@@ -133,14 +133,14 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	gitlab.com/gitlab-org/api/client-go v0.142.5
 	golang.org/x/sync v0.16.0
-	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b
+	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3
 	sigs.k8s.io/yaml v1.6.0
 	software.sslmate.com/src/go-pkcs12 v0.6.0
 )
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0 // indirect
-	cloud.google.com/go v0.121.4 // indirect
+	cloud.google.com/go v0.121.6 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/pubsub/v2 v2.0.0 // indirect
