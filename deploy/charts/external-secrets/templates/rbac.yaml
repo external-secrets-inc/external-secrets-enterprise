@@ -137,10 +137,13 @@ rules:
     - "get"
     - "list"
     - "watch"
+    - "patch"
+    - "update"
   - apiGroups: 
     - "reloader.enterprise.external-secrets.io"
     resources:
     - "configs/status"
+    - "configs/finalizers"
     verbs:
     - "get"
     - "update"
