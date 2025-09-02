@@ -11,6 +11,7 @@ import (
 )
 
 var KubernetesTargetKind = "KubernetesCluster"
+var KubernetesTargetSubscriptionName = "target.kubernetes_cluster"
 
 type KubernetesClusterSpec struct {
 	// configures the Kubernetes server Address.

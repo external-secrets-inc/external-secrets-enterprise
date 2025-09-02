@@ -20,17 +20,23 @@ import (
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 )
 
 type ConsumerController struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log     logr.Logger
+	Scheme  *runtime.Scheme
+	feature feature.Feature
 }
 
 func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	consumer := &scanv1alpha1.Consumer{}
 	if err := c.Get(ctx, req.NamespacedName, consumer); err != nil {
+		return feature.UnregisterIfNotFound(c.feature, consumer, err)
+	}
+	if err := feature.RegisterOrFail(c.feature, consumer); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -40,7 +46,7 @@ func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (r
 		obj = &targetv1alpha1.GithubRepository{}
 	case targetv1alpha1.KubernetesTargetKind:
 		obj = &targetv1alpha1.KubernetesCluster{}
-	case targetv1alpha1.VirtualMachineKind:
+	case targetv1alpha1.VirtualMachineTargetKind:
 		obj = &targetv1alpha1.VirtualMachine{}
 	default:
 		return ctrl.Result{}, fmt.Errorf("unsupported target kind: %q", consumer.Spec.Type)
@@ -76,10 +82,18 @@ func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *ConsumerController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(&v1alpha1.Consumer{}).
-		Complete(c)
+	feat := feature.NewFeature("scan.consumer", "Scan consumers controller")
+	if err := license.Register(feat); err != nil {
+		return err
+	}
+	c.feature = feat
+	if feat.IsAvailable() {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(&v1alpha1.Consumer{}).
+			Complete(c)
+	}
+	return nil
 }
 
 func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]targetv1alpha1.SecretUpdateRecord) error {

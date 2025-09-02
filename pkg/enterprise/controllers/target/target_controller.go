@@ -6,6 +6,7 @@ package target
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -17,10 +18,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 
 	// Loading registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
@@ -40,6 +44,7 @@ type TargetReconciler struct {
 	recorder        record.EventRecorder
 	RequeueInterval time.Duration
 	ControllerClass string
+	feature         feature.Feature
 
 	Kind string
 }
@@ -59,11 +64,14 @@ func (r *TargetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	err = r.Get(ctx, req.NamespacedName, genericStore)
-	if apierrors.IsNotFound(err) {
-		tmetrics.RemoveMetrics(req.Namespace, req.Name)
-		return ctrl.Result{}, nil
-	} else if err != nil {
+	if err != nil {
 		log.Error(err, "unable to get Target")
+		if apierrors.IsNotFound(err) {
+			tmetrics.RemoveMetrics(req.Namespace, req.Name)
+		}
+		return feature.UnregisterIfNotFound(r.feature, genericStore, err)
+	}
+	if err := feature.RegisterOrFail(r.feature, genericStore); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -77,11 +85,21 @@ func (r *TargetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (r *TargetReconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts controller.Options) error {
-	r.recorder = mgr.GetEventRecorderFor("target")
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(opts).
-		For(obj).
-		Complete(r)
+	// Create appropriate feature name based on Kind
+	featureName := mapKindToFeatureName(r.Kind)
+	feat := feature.NewFeature(featureName, fmt.Sprintf("%s Generator controller", r.Kind))
+	if err := license.Register(feat); err != nil {
+		return err
+	}
+	r.feature = feat
+	if feat.IsAvailable() {
+		r.recorder = mgr.GetEventRecorderFor("target")
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(opts).
+			For(obj).
+			Complete(r)
+	}
+	return nil
 }
 
 func BuildTargetObject(scheme *runtime.Scheme, kind string) (esv1.GenericStore, error) {
@@ -95,4 +113,20 @@ func BuildTargetObject(scheme *runtime.Scheme, kind string) (esv1.GenericStore, 
 		return nil, fmt.Errorf("invalid object: %T", obj)
 	}
 	return co, nil
+}
+
+// mapKindToFeatureName converts target Kind to the exact feature name used in trial license.
+func mapKindToFeatureName(kind string) string {
+	// Map target kinds to their exact trial license subscription names
+	kindToSubscription := map[string]string{
+		tgtv1alpha1.GithubTargetKind:         tgtv1alpha1.GithubTargetSubscriptionName,
+		tgtv1alpha1.KubernetesTargetKind:     tgtv1alpha1.KubernetesTargetSubscriptionName,
+		tgtv1alpha1.VirtualMachineTargetKind: tgtv1alpha1.VirtualMachineTargetSubscriptionName,
+	}
+
+	if subscriptionName, exists := kindToSubscription[kind]; exists {
+		return subscriptionName
+	}
+	// Fallback to lowercase conversion for unknown kinds
+	return fmt.Sprintf("target.%s", strings.ToLower(kind))
 }
