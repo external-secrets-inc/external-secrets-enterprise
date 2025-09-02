@@ -70,6 +70,3 @@ terraform.rc
 tmp/
 tests/crds/*.yml
 .tilt-tmp
-
-# Generated license keys (regenerated on each build)
-pkg/enterprise/license/zz_keys_generated.go
