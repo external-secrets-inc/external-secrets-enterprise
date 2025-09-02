@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.2...v1.20.3) (2025-09-02)
+
+
+### Bug Fixes
+
+* reloader permissions ([#464](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/464)) ([2f6fa9e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/2f6fa9e7bd112de66779625d23ea2f8bbd3eb7a2))
+
 ## [1.20.2](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.1...v1.20.2) (2025-09-02)
 
 
