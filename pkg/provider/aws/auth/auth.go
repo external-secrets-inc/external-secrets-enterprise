@@ -337,12 +337,9 @@ type STSprovider interface {
 type STSProvider func(*aws.Config) STSprovider
 
 func DefaultSTSProvider(cfg *aws.Config) STSprovider {
-<<<<<<< HEAD
 	if cfg == nil {
 		return nil
 	}
-=======
->>>>>>> upstream/main
 	stsClient := sts.NewFromConfig(*cfg, func(o *sts.Options) {
 		o.EndpointResolverV2 = customEndpointResolver{}
 	})
