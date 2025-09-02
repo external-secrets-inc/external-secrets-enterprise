@@ -27,7 +27,6 @@ import (
 
 type TestSuite struct {
 	suite.Suite
-	builder  *fake.ClientBuilder
 	scheme   *runtime.Scheme
 	recorder record.EventRecorder
 }
@@ -36,7 +35,6 @@ func (s *TestSuite) SetupTest() {
 	s.scheme = runtime.NewScheme()
 	workflows.AddToScheme(s.scheme)
 	s.recorder = record.NewFakeRecorder(10)
-	s.builder = fake.NewClientBuilder().WithScheme(s.scheme)
 }
 func TestRunSuite(t *testing.T) {
 	suite.Run(t, new(TestSuite))
@@ -531,7 +529,7 @@ func (s *TestSuite) TestCreateWorkflowRun() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			cl := s.builder.Build()
+			cl := fake.NewClientBuilder().WithScheme(s.scheme).Build()
 			reconciler := &WorkflowRunTemplateReconciler{
 				Client:   cl,
 				Log:      logr.Discard(),
@@ -615,7 +613,7 @@ func (s *TestSuite) TestUpdateWorkflowRunTemplate() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			cl := s.builder.WithObjects(tc.args.objsForClient...).WithStatusSubresource(tc.args.objsForClient...).Build()
+			cl := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).WithStatusSubresource(tc.args.objsForClient...).Build()
 			reconciler := &WorkflowRunTemplateReconciler{
 				Client:   cl,
 				Log:      logr.Discard(),
@@ -688,7 +686,7 @@ func (s *TestSuite) TestCleanup() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			client := s.builder.WithObjects(tc.args.objsForClient...).Build()
+			client := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).Build()
 			reconciler := &WorkflowRunTemplateReconciler{
 				Client:   client,
 				Log:      logr.Discard(),
@@ -921,7 +919,7 @@ func (s *TestSuite) TestGetChildrenFor() {
 	}
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			client := s.builder.WithObjects(tc.args.objsForClient...).Build()
+			client := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).Build()
 			reconciler := &WorkflowRunTemplateReconciler{
 				Client:   client,
 				Log:      logr.Discard(),

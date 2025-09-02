@@ -41,10 +41,13 @@ rules:
     - "target.external-secrets.io"
     resources:
     - "*"
+    - "*/status"
     verbs:
     - "get"
     - "list"
     - "watch"
+    - "update"
+    - "patch"
   - apiGroups:
     - "scan.external-secrets.io"
     resources:
