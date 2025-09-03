@@ -172,6 +172,18 @@ func (c *KubernetesCluster) Copy() esv1.GenericStore {
 	return c.DeepCopy()
 }
 
+func (c *KubernetesCluster) GetTargetStatus() TargetStatus {
+	return c.Status
+}
+
+func (c *KubernetesCluster) SetTargetStatus(status TargetStatus) {
+	c.Status = status
+}
+
+func (c *KubernetesCluster) CopyTarget() GenericTarget {
+	return c.DeepCopy()
+}
+
 func init() {
 	RegisterObjKind(KubernetesTargetKind, &KubernetesCluster{})
 }

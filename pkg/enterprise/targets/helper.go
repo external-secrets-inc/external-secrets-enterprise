@@ -13,6 +13,7 @@ import (
 
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,6 +23,7 @@ const maxHistoryPerLocation = 20
 
 func UpdateTargetPushIndex(
 	ctx context.Context,
+	objKind string,
 	kubeClient client.Client,
 	name string,
 	namespace string,
@@ -39,16 +41,23 @@ func UpdateTargetPushIndex(
 	}
 
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var obj tgtv1alpha1.GithubRepository
-		if err := kubeClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &obj); err != nil {
-			return err
+		gvk := schema.GroupVersionKind{Group: tgtv1alpha1.Group, Version: tgtv1alpha1.Version, Kind: objKind}
+		obj, err := kubeClient.Scheme().New(gvk)
+		if err != nil {
+			return fmt.Errorf("failed to create object %v: %w", gvk, err)
+		}
+		genericTarget, ok := obj.(tgtv1alpha1.GenericTarget)
+		if !ok {
+			return fmt.Errorf("invalid object: %T", obj)
+		}
+		err = kubeClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, genericTarget)
+
+		status := genericTarget.GetTargetStatus()
+		if status.PushIndex == nil {
+			status.PushIndex = make(map[string][]tgtv1alpha1.SecretUpdateRecord, 1)
 		}
 
-		if obj.Status.PushIndex == nil {
-			obj.Status.PushIndex = make(map[string][]tgtv1alpha1.SecretUpdateRecord, 1)
-		}
-
-		hist := obj.Status.PushIndex[locationKey]
+		hist := status.PushIndex[locationKey]
 
 		hist = append(hist, tgtv1alpha1.SecretUpdateRecord{
 			Timestamp:  metav1.NewTime(metav1.Now().UTC()),
@@ -58,9 +67,10 @@ func UpdateTargetPushIndex(
 		if len(hist) > maxHistoryPerLocation {
 			hist = hist[len(hist)-maxHistoryPerLocation:]
 		}
-		obj.Status.PushIndex[locationKey] = hist
+		status.PushIndex[locationKey] = hist
+		genericTarget.SetTargetStatus(status)
 
-		return kubeClient.Status().Update(ctx, &obj)
+		return kubeClient.Status().Update(ctx, genericTarget)
 	})
 }
 

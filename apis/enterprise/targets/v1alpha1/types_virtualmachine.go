@@ -93,6 +93,18 @@ func (c *VirtualMachine) Copy() esv1.GenericStore {
 	return c.DeepCopy()
 }
 
+func (c *VirtualMachine) GetTargetStatus() TargetStatus {
+	return c.Status
+}
+
+func (c *VirtualMachine) SetTargetStatus(status TargetStatus) {
+	c.Status = status
+}
+
+func (c *VirtualMachine) CopyTarget() GenericTarget {
+	return c.DeepCopy()
+}
+
 func init() {
 	RegisterObjKind(VirtualMachineKind, &VirtualMachine{})
 }

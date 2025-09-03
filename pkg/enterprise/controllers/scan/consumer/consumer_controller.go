@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,39 +35,27 @@ func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (r
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var obj client.Object
-	switch consumer.Spec.Type {
-	case targetv1alpha1.GithubTargetKind:
-		obj = &targetv1alpha1.GithubRepository{}
-	case targetv1alpha1.KubernetesTargetKind:
-		obj = &targetv1alpha1.KubernetesCluster{}
-	case targetv1alpha1.VirtualMachineKind:
-		obj = &targetv1alpha1.VirtualMachine{}
-	default:
-		return ctrl.Result{}, fmt.Errorf("unsupported target kind: %q", consumer.Spec.Type)
+	gvk := schema.GroupVersionKind{Group: targetv1alpha1.Group, Version: targetv1alpha1.Version, Kind: consumer.Spec.Type}
+	obj, err := c.Scheme.New(gvk)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to create object %v: %w", gvk, err)
+	}
+	genericTarget, ok := obj.(targetv1alpha1.GenericTarget)
+	if !ok {
+		return ctrl.Result{}, fmt.Errorf("invalid object: %T", obj)
 	}
 
 	key := types.NamespacedName{
 		Namespace: consumer.Spec.Target.Namespace,
 		Name:      consumer.Spec.Target.Name,
 	}
-	if err := c.Get(ctx, key, obj); err != nil {
+	if err := c.Get(ctx, key, genericTarget); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var pushSecretIndex map[string][]targetv1alpha1.SecretUpdateRecord
-	switch t := obj.(type) {
-	case *targetv1alpha1.GithubRepository:
-		pushSecretIndex = t.Status.PushIndex
-	case *targetv1alpha1.KubernetesCluster:
-		pushSecretIndex = t.Status.PushIndex
-	case *targetv1alpha1.VirtualMachine:
-		pushSecretIndex = t.Status.PushIndex
-	default:
-		return ctrl.Result{}, fmt.Errorf("unexpected type %T", obj)
-	}
+	status := genericTarget.GetTargetStatus()
 
-	err = c.CheckConsumerStatus(ctx, consumer, pushSecretIndex)
+	err = c.CheckConsumerStatus(ctx, consumer, status.PushIndex)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to check consumer status: %w", err)
 	}

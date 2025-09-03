@@ -118,6 +118,18 @@ func (c *GithubRepository) Copy() esv1.GenericStore {
 	return c.DeepCopy()
 }
 
+func (c *GithubRepository) GetTargetStatus() TargetStatus {
+	return c.Status
+}
+
+func (c *GithubRepository) SetTargetStatus(status TargetStatus) {
+	c.Status = status
+}
+
+func (c *GithubRepository) CopyTarget() GenericTarget {
+	return c.DeepCopy()
+}
+
 func init() {
 	RegisterObjKind(GithubTargetKind, &GithubRepository{})
 }

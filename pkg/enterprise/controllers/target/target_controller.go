@@ -27,11 +27,6 @@ import (
 	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
 )
 
-const (
-	TargetGroup   = "target.external-secrets.io"
-	TargetVersion = "v1alpha1"
-)
-
 // TargetReconciler reconciles a Target object.
 type TargetReconciler struct {
 	client.Client
@@ -85,7 +80,7 @@ func (r *TargetReconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object,
 }
 
 func BuildTargetObject(scheme *runtime.Scheme, kind string) (esv1.GenericStore, error) {
-	gvk := schema.GroupVersionKind{Group: TargetGroup, Version: TargetVersion, Kind: kind}
+	gvk := schema.GroupVersionKind{Group: tgtv1alpha1.Group, Version: tgtv1alpha1.Version, Kind: kind}
 	obj, err := scheme.New(gvk)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create object %v: %w", gvk, err)
