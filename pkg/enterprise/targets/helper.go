@@ -51,6 +51,9 @@ func UpdateTargetPushIndex(
 			return fmt.Errorf("invalid object: %T", obj)
 		}
 		err = kubeClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, genericTarget)
+		if err != nil {
+			return fmt.Errorf("failed to get object %s/%s: %w", namespace, name, err)
+		}
 
 		status := genericTarget.GetTargetStatus()
 		if status.PushIndex == nil {

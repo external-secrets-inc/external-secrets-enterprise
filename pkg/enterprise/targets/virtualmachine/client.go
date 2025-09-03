@@ -98,7 +98,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	err = targets.UpdateTargetPushIndex(ctx, tgtv1alpha1.VirtualMachineTargetKind, s.KubeClient, s.Name, s.Namespace, remoteRef.GetRemoteKey(), remoteRef.GetProperty(), targets.Hash(newVal))
+	err = targets.UpdateTargetPushIndex(ctx, tgtv1alpha1.VirtualMachineKind, s.KubeClient, s.Name, s.Namespace, remoteRef.GetRemoteKey(), remoteRef.GetProperty(), targets.Hash(newVal))
 	if err != nil {
 		return fmt.Errorf("error updating target status: %w", err)
 	}

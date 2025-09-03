@@ -32,7 +32,7 @@ type ScanTarget interface {
 // +kubebuilder:object:generate:false
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
-// GenericTarget is a common interface for interacting with Targets
+// GenericTarget is a common interface for interacting with Targets.
 type GenericTarget interface {
 	runtime.Object
 	metav1.Object
