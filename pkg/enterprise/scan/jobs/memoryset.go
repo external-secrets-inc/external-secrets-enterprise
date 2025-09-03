@@ -167,7 +167,7 @@ func (ms *LocationMemorySet) GetDuplicates() []v1alpha1.Finding {
 			finding.Status.Locations = append(finding.Status.Locations, key)
 		}
 		SortLocations(finding.Status.Locations)
-		finding.Spec.DisplayName = strings.TrimSuffix(strings.TrimPrefix(finding.Status.Locations[0].RemoteRef.Key, "/"), "/")
+		finding.Spec.DisplayName = finding.Status.Locations[0].RemoteRef.Key
 		findings = append(findings, finding)
 	}
 	return findings
