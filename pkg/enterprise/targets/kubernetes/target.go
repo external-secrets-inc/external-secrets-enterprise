@@ -30,6 +30,8 @@ import (
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/license/feature"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -749,6 +751,12 @@ func (e JobNotReadyErr) Error() string {
 }
 
 func init() {
-	tgtv1alpha1.Register(tgtv1alpha1.KubernetesTargetKind, &Provider{})
-	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.KubernetesTargetKind, esv1.MaintenanceStatusMaintained)
+	feat := feature.NewFeature(tgtv1alpha1.KubernetesTargetSubscriptionName, "Kubernetes Cluster Target")
+	if err := license.Register(feat); err != nil {
+		panic(err)
+	}
+	if feat.IsAvailable() {
+		tgtv1alpha1.Register(tgtv1alpha1.KubernetesTargetKind, &Provider{})
+		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.KubernetesTargetKind, esv1.MaintenanceStatusMaintained)
+	}
 }

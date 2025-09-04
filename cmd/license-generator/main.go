@@ -150,6 +150,11 @@ var scanTrial = []license.LicenseSubscription{
 		ExpiryDate: date.String(),
 		MaxLimit:   0, // Unlimited - findings are results, shouldn't be limited
 	},
+	{
+		Name:       "scan.consumer",
+		ExpiryDate: date.String(),
+		MaxLimit:   0, // Unlimited - consumers are results, shouldn't be limited
+	},
 }
 
 var targetsTrial = []license.LicenseSubscription{

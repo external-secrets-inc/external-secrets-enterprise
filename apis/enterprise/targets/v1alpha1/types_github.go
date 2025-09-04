@@ -11,6 +11,7 @@ import (
 )
 
 var GithubTargetKind = "GithubRepository"
+var GithubTargetSubscriptionName = "target.github_repository"
 
 type GithubRepositorySpec struct {
 	// Owner of the repository (user or organization).

@@ -249,7 +249,7 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	for _, match := range scanJobResponse.Match {
 		secret := tgtv1alpha1.SecretInStoreRef{
 			APIVersion: tgtv1alpha1.SchemeGroupVersion.String(),
-			Kind:       tgtv1alpha1.VirtualMachineKind,
+			Kind:       tgtv1alpha1.VirtualMachineTargetKind,
 			Name:       s.Name,
 			RemoteRef: tgtv1alpha1.RemoteRef{
 				Key:      match.Key,
@@ -402,7 +402,7 @@ func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Cli
 				SecretHash: hash,
 			},
 			Location:    location,
-			Kind:        tgtv1alpha1.VirtualMachineKind,
+			Kind:        tgtv1alpha1.VirtualMachineTargetKind,
 			ID:          stableConsumerID(attrs),
 			DisplayName: display,
 			Attributes:  attrs,
@@ -418,13 +418,13 @@ func (e JobNotReadyErr) Error() string {
 }
 
 func init() {
-	feat := feature.NewFeature("targets.virtualmachine", "Virtual Machine Target")
+	feat := feature.NewFeature(tgtv1alpha1.GithubTargetSubscriptionName, "Virtual Machine Target")
 	if err := license.Register(feat); err != nil {
 		panic(err)
 	}
 	if feat.IsAvailable() {
-		tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineKind, &Provider{})
-		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineKind, esv1.MaintenanceStatusMaintained)
+		tgtv1alpha1.Register(tgtv1alpha1.VirtualMachineTargetKind, &Provider{})
+		esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.VirtualMachineTargetKind, esv1.MaintenanceStatusMaintained)
 	}
 }
 

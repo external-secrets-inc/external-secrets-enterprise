@@ -52,7 +52,7 @@ func EqualSecretUpdateRecord(a, b tgtv1alpha1.SecretUpdateRecord) bool {
 
 func FillAttributes(consumer *consumerAccum, kind string, attrs map[string]string) {
 	switch kind {
-	case tgtv1alpha1.VirtualMachineKind:
+	case tgtv1alpha1.VirtualMachineTargetKind:
 		consumer.spec.VMProcess = &v1alpha1.VMProcessSpec{
 			Hostname:   attrs["hostname"],
 			Executable: attrs["executable"],

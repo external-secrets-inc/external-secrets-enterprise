@@ -10,7 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var VirtualMachineKind = "VirtualMachine"
+var VirtualMachineTargetKind = "VirtualMachine"
+var VirtualMachineTargetSubscriptionName = "target.virtual_machine"
 
 type VirtualMachineSpec struct {
 	URL      string          `json:"url"`
@@ -86,7 +87,7 @@ func (c *VirtualMachine) GetNamespacedName() string {
 }
 
 func (c *VirtualMachine) GetKind() string {
-	return VirtualMachineKind
+	return VirtualMachineTargetKind
 }
 
 func (c *VirtualMachine) Copy() esv1.GenericStore {
@@ -94,5 +95,5 @@ func (c *VirtualMachine) Copy() esv1.GenericStore {
 }
 
 func init() {
-	RegisterObjKind(VirtualMachineKind, &VirtualMachine{})
+	RegisterObjKind(VirtualMachineTargetKind, &VirtualMachine{})
 }
