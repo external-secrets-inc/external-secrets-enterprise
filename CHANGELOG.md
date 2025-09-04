@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.3...v1.20.4) (2025-09-04)
+
+
+### Bug Fixes
+
+* UpdateTargetPushIndex function; add generic target interface ([#468](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/468)) ([1f81072](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/1f81072b94cd4730ad5e84f51e051a5d47d9a3c3))
+
 ## [1.20.3](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.2...v1.20.3) (2025-09-02)
 
 
