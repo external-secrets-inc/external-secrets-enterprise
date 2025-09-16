@@ -94,11 +94,11 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 		consumerStatusMessage = fmt.Sprint("Observed locations out of date: ", strings.Join(locationsOutOfDateMessages, "; "))
 	}
 
-	for _, pods := range consumer.Status.Pods {
-		if pods.Phase != "Running" {
+	for _, pod := range consumer.Status.Pods {
+		if (!pod.Ready && pod.Phase != "Succeeded") || (pod.Phase != "Running" && pod.Phase != "Succeeded") {
 			consumerStatusCondition = metav1.ConditionFalse
 			consumerStatusReason = scanv1alpha1.ConsumerPodsNotReady
-			consumerStatusMessage = "Not all pods related to this consumer are 'Running'"
+			consumerStatusMessage = "Not all pods related to this consumer are working properly"
 			break
 		}
 	}
