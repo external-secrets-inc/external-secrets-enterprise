@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.4...v1.20.5) (2025-09-16)
+
+
+### Bug Fixes
+
+* update consumers status to handle pods ([#473](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/473)) ([bfddf3b](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/bfddf3bf4867cb9ccc34723fbb02399bfe8e2299))
+
 ## [1.20.4](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.3...v1.20.4) (2025-09-04)
 
 
