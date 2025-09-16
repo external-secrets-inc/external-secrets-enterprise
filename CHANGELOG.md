@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.6](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.5...v1.20.6) (2025-09-16)
+
+
+### Bug Fixes
+
+* pods not ready if condition ([#475](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/475)) ([c854029](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/c8540291ec5e19830e05c08b93b12cb439b82a84))
+
 ## [1.20.5](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.4...v1.20.5) (2025-09-16)
 
 
