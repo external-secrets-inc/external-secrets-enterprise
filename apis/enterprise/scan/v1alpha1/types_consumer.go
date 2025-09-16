@@ -10,8 +10,13 @@ import (
 type ConsumerConditionType string
 
 const (
-	ConsumerPendingUpdate ConsumerConditionType = "PendingUpdate"
 	ConsumerLatestVersion ConsumerConditionType = "UsingLatestVersion"
+)
+
+const (
+	ConsumerLocationsUpToDate  = "LocationsUpToDate"
+	ConsumerLocationsOutOfDate = "LocationsOutOfDate"
+	ConsumerPodsNotReady       = "PodsNotReady"
 )
 
 type ConsumerSpec struct {

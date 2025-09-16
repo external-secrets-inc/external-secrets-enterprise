@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -55,12 +56,7 @@ func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 	status := genericTarget.GetTargetStatus()
 
-	err = c.CheckConsumerStatus(ctx, consumer, status.PushIndex)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to check consumer status: %w", err)
-	}
-
-	return ctrl.Result{}, nil
+	return c.CheckConsumerStatus(ctx, consumer, status.PushIndex)
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
@@ -71,9 +67,9 @@ func (c *ConsumerController) SetupWithManager(mgr ctrl.Manager, opts controller.
 		Complete(c)
 }
 
-func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]targetv1alpha1.SecretUpdateRecord) error {
-	consumerStatusType := scanv1alpha1.ConsumerLatestVersion
-	consumerStatusReason := "LocationsUpToDate"
+func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]targetv1alpha1.SecretUpdateRecord) (ctrl.Result, error) {
+	consumerStatusCondition := metav1.ConditionTrue
+	consumerStatusReason := scanv1alpha1.ConsumerLocationsUpToDate
 	consumerStatusMessage := "All observed locations are up to date"
 
 	locationsOutOfDate := make([]string, 0)
@@ -93,22 +89,36 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 	}
 
 	if len(locationsOutOfDate) > 0 {
-		consumerStatusType = scanv1alpha1.ConsumerPendingUpdate
-		consumerStatusReason = "LocationsOutOfDate"
+		consumerStatusCondition = metav1.ConditionFalse
+		consumerStatusReason = scanv1alpha1.ConsumerLocationsOutOfDate
 		consumerStatusMessage = fmt.Sprint("Observed locations out of date: ", strings.Join(locationsOutOfDateMessages, "; "))
 	}
 
+	for _, pods := range consumer.Status.Pods {
+		if pods.Phase != "Running" {
+			consumerStatusCondition = metav1.ConditionFalse
+			consumerStatusReason = scanv1alpha1.ConsumerPodsNotReady
+			consumerStatusMessage = "Not all pods related to this consumer are 'Running'"
+			break
+		}
+	}
+
 	changed := meta.SetStatusCondition(&consumer.Status.Conditions, metav1.Condition{
-		Type:    string(consumerStatusType),
-		Status:  metav1.ConditionTrue,
+		Type:    string(scanv1alpha1.ConsumerLatestVersion),
+		Status:  consumerStatusCondition,
 		Reason:  consumerStatusReason,
 		Message: consumerStatusMessage,
 	})
 	if changed {
 		err := c.Status().Update(ctx, consumer)
 		if err != nil {
-			return fmt.Errorf("failed to update consumer status: %w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to update consumer status: %w", err)
 		}
 	}
-	return nil
+
+	if consumerStatusCondition == metav1.ConditionFalse {
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
+	}
+
+	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
