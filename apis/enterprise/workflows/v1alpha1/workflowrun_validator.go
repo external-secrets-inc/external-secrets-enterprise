@@ -204,12 +204,10 @@ func validateSingleValue(ctx context.Context, param *Parameter, value interface{
 			}
 
 			customType := param.Type.ExtractCustomObjectType()
-			tempParam := Parameter{
-				Name: param.Name,
-				Type: customType,
-			}
+			tempParam := param.DeepCopy()
+			tempParam.Type = customType
 			for _, customValue := range customObject {
-				err := validateSingleValue(ctx, &tempParam, customValue, namespace)
+				err := validateSingleValue(ctx, tempParam, customValue, namespace)
 				if err != nil {
 					return err
 				}
@@ -256,9 +254,10 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			return err
 		}
 
-		param.Type = ParameterTypeSecretStore
+		tempParam := param.DeepCopy()
+		tempParam.Type = ParameterTypeSecretStore
 		for i := range resourceList {
-			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+			if err := validateKubernetesResource(ctx, tempParam, resourceList[i], namespace); err != nil {
 				return err
 			}
 		}
@@ -269,9 +268,10 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			return err
 		}
 
-		param.Type = ParameterTypeSecretLocation
+		tempParam := param.DeepCopy()
+		tempParam.Type = ParameterTypeSecretLocation
 		for i := range resourceList {
-			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+			if err := validateKubernetesResource(ctx, tempParam, resourceList[i], namespace); err != nil {
 				return err
 			}
 		}
@@ -282,9 +282,10 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			return err
 		}
 
-		param.Type = ParameterTypeFinding
+		tempParam := param.DeepCopy()
+		tempParam.Type = ParameterTypeFinding
 		for i := range resourceList {
-			if err := validateKubernetesResource(ctx, param, resourceList[i], namespace); err != nil {
+			if err := validateKubernetesResource(ctx, tempParam, resourceList[i], namespace); err != nil {
 				return err
 			}
 		}

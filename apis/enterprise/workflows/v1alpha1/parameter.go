@@ -294,10 +294,8 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 				}
 
 				customType := p.Type.ExtractCustomObjectType()
-				tempParam := Parameter{
-					Name: p.Name,
-					Type: customType,
-				}
+				tempParam := p.DeepCopy()
+				tempParam.Type = customType
 				for _, customValue := range customObject {
 					err := tempParam.ValidateValue(customValue)
 					if err != nil {
@@ -365,10 +363,8 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 			}
 
 			customType := p.Type.ExtractCustomObjectType()
-			tempParam := Parameter{
-				Name: p.Name,
-				Type: customType,
-			}
+			tempParam := p.DeepCopy()
+			tempParam.Type = customType
 			for _, customValue := range customObject {
 				err := tempParam.ValidateValue(customValue)
 				if err != nil {
