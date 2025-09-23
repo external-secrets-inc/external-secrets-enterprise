@@ -15,13 +15,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
@@ -117,7 +117,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	}, nil
 }
 
-func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]scanv1alpha1.SecretInStoreRef, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -183,7 +183,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, thres
 	return s.checkForJob(ctx, client, scanResponse.JobId)
 }
 
-func (s *ScanTarget) checkForJob(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) checkForJob(ctx context.Context, client *http.Client, jobID string) ([]scanv1alpha1.SecretInStoreRef, error) {
 	matches, err := s.runMatches(ctx, client, jobID)
 	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
 		return nil, err
@@ -211,7 +211,7 @@ func (s *ScanTarget) checkForJob(ctx context.Context, client *http.Client, jobID
 	}
 }
 
-func (s *ScanTarget) runMatches(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) runMatches(ctx context.Context, client *http.Client, jobID string) ([]scanv1alpha1.SecretInStoreRef, error) {
 	matches, err := s.getJobMatches(ctx, client, jobID)
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func (s *ScanTarget) runMatches(ctx context.Context, client *http.Client, jobID 
 	return matches, nil
 }
 
-func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, jobID string) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, jobID string) ([]scanv1alpha1.SecretInStoreRef, error) {
 	scanApi := fmt.Sprintf("%s/api/v1/scan/%s", s.URL, jobID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, scanApi, http.NoBody)
 	if err != nil {
@@ -243,13 +243,13 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	if scanJobResponse.Status != "completed" {
 		return nil, JobNotReadyErr{}
 	}
-	secrets := []tgtv1alpha1.SecretInStoreRef{}
+	secrets := []scanv1alpha1.SecretInStoreRef{}
 	for _, match := range scanJobResponse.Match {
-		secret := tgtv1alpha1.SecretInStoreRef{
+		secret := scanv1alpha1.SecretInStoreRef{
 			APIVersion: tgtv1alpha1.SchemeGroupVersion.String(),
 			Kind:       tgtv1alpha1.VirtualMachineKind,
 			Name:       s.Name,
-			RemoteRef: tgtv1alpha1.RemoteRef{
+			RemoteRef: scanv1alpha1.RemoteRef{
 				Key:      match.Key,
 				Property: match.Property,
 			},
@@ -259,7 +259,7 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 	return secrets, nil
 }
 
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -321,7 +321,7 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 	return s.checkForConsumerJob(ctx, client, scanResp.JobID, location, hash)
 }
 
-func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
 	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
 		return nil, err
@@ -349,7 +349,7 @@ func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Clien
 	}
 }
 
-func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	api := fmt.Sprintf("%s/api/v1/scanconsumer/%s", s.URL, jobID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, http.NoBody)
 	if err != nil {
@@ -376,17 +376,16 @@ func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Cli
 		return nil, JobNotReadyErr{}
 	}
 
-	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(jobResp.Consumers))
+	out := make([]scanv1alpha1.ConsumerFinding, 0, len(jobResp.Consumers))
 	for _, attrs := range jobResp.Consumers {
-		display, ok := attrs["hostname"]
-		if !ok || display == "" {
-			display = attrs["executable"]
+		display := attrs.Attributes.Hostname
+		if display == "" {
+			display = attrs.Attributes.Executable
 		}
 
 		observedIndexTimestamp := metav1.NewTime(metav1.Now().UTC())
-		observedIndexTimestampString, ok := attrs["startTimestamp"]
-		if ok {
-			parsedTimestamp, err := parseStringToTime(observedIndexTimestampString)
+		if attrs.StartTimestamp != "" {
+			parsedTimestamp, err := parseStringToTime(attrs.StartTimestamp)
 			if err == nil {
 				observedIndexTimestamp = metav1.NewTime(parsedTimestamp)
 			} else {
@@ -394,16 +393,18 @@ func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Cli
 			}
 		}
 
-		out = append(out, tgtv1alpha1.ConsumerFinding{
-			ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+		out = append(out, scanv1alpha1.ConsumerFinding{
+			ObservedIndex: scanv1alpha1.SecretUpdateRecord{
 				Timestamp:  observedIndexTimestamp,
 				SecretHash: hash,
 			},
 			Location:    location,
-			Kind:        tgtv1alpha1.VirtualMachineKind,
-			ID:          stableConsumerID(attrs),
+			Type:        tgtv1alpha1.VirtualMachineKind,
+			ID:          stableConsumerID(attrs.Attributes),
 			DisplayName: display,
-			Attributes:  attrs,
+			Attributes: scanv1alpha1.ConsumerAttrs{
+				VMProcess: &attrs.Attributes,
+			},
 		})
 	}
 	return out, nil
@@ -458,40 +459,23 @@ func getCertAuth(ctx context.Context, client client.Client, namespace string, au
 
 // stableConsumerID returns a stable external ID based on attributes that
 // do not change across restarts. For VMs we avoid PID on purpose.
-func stableConsumerID(attrs map[string]string) string {
-	host := strings.ToLower(strings.TrimSpace(attrs["hostname"]))
-	exe := strings.TrimSpace(attrs["executable"])
-	cmd := normalizeCmdline(attrs["cmdline"])
+func stableConsumerID(attrs scanv1alpha1.VMProcessSpec) string {
+	host := strings.ToLower(strings.TrimSpace(attrs.Hostname))
+	exe := strings.TrimSpace(attrs.Executable)
+	cmd := normalizeCmdline(attrs.Cmdline)
 
-	var base string
-	if host != "" || exe != "" || cmd != "" {
-		base = host + "|" + exe + "|" + cmd
-	} else {
-		// Fallback: hash over all attributes (sorted) if the preferred keys are missing
-		keys := make([]string, 0, len(attrs))
-		for k := range attrs {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		var b strings.Builder
-		for _, k := range keys {
-			b.WriteString(k)
-			b.WriteString("=")
-			b.WriteString(attrs[k])
-			b.WriteString(";")
-		}
-		base = b.String()
-	}
+	base := host + "|" + exe + "|" + cmd
 	sum := sha512.Sum512([]byte(base))
 	return hex.EncodeToString(sum[:])
 }
 
-func normalizeCmdline(s string) string {
+func normalizeCmdline(cmdLines []string) string {
+	s := strings.Join(cmdLines, " ")
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return ""
 	}
-	// collapse all whitespace to single spaces for stability
+
 	return strings.Join(strings.Fields(s), " ")
 }
 

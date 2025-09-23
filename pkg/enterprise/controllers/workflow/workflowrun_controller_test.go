@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	targetsv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +46,6 @@ func (s *WorkflowRunReconcilerTestSuite) SetupTest() {
 	s.scheme = runtime.NewScheme()
 	workflows.AddToScheme(s.scheme)
 	scanv1alpha1.AddToScheme(s.scheme)
-	targetsv1alpha1.AddToScheme(s.scheme)
 	corev1.AddToScheme(s.scheme)
 
 	s.recorder = record.NewFakeRecorder(20)
@@ -175,11 +173,11 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding(
 			Namespace: "default",
 		},
 		Status: scanv1alpha1.FindingStatus{
-			Locations: []targetsv1alpha1.SecretInStoreRef{{
+			Locations: []scanv1alpha1.SecretInStoreRef{{
 				Name:       "secret-store",
 				Kind:       "SecretStore",
 				APIVersion: "external-secrets.io/v1",
-				RemoteRef: targetsv1alpha1.RemoteRef{
+				RemoteRef: scanv1alpha1.RemoteRef{
 					Key:      "secret-key",
 					Property: "secret-property",
 				},
@@ -193,11 +191,11 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding(
 			Namespace: "default",
 		},
 		Status: scanv1alpha1.FindingStatus{
-			Locations: []targetsv1alpha1.SecretInStoreRef{{
+			Locations: []scanv1alpha1.SecretInStoreRef{{
 				Name:       "second-secret-store",
 				Kind:       "SecretStore",
 				APIVersion: "external-secrets.io/v1",
-				RemoteRef: targetsv1alpha1.RemoteRef{
+				RemoteRef: scanv1alpha1.RemoteRef{
 					Key:      "secret-key",
 					Property: "secret-property",
 				},
@@ -274,11 +272,11 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 			Namespace: "default",
 		},
 		Status: scanv1alpha1.FindingStatus{
-			Locations: []targetsv1alpha1.SecretInStoreRef{{
+			Locations: []scanv1alpha1.SecretInStoreRef{{
 				Name:       "secret-store",
 				Kind:       "SecretStore",
 				APIVersion: "external-secrets.io/v1",
-				RemoteRef: targetsv1alpha1.RemoteRef{
+				RemoteRef: scanv1alpha1.RemoteRef{
 					Key:      "secret-key",
 					Property: "secret-property",
 				},
@@ -292,11 +290,11 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 			Namespace: "default",
 		},
 		Status: scanv1alpha1.FindingStatus{
-			Locations: []targetsv1alpha1.SecretInStoreRef{{
+			Locations: []scanv1alpha1.SecretInStoreRef{{
 				Name:       "secret-store2",
 				Kind:       "SecretStore",
 				APIVersion: "external-secrets.io/v1",
-				RemoteRef: targetsv1alpha1.RemoteRef{
+				RemoteRef: scanv1alpha1.RemoteRef{
 					Key:      "secret-key",
 					Property: "secret-property",
 				},

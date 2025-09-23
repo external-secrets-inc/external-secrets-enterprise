@@ -4,17 +4,14 @@
 package job
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 )
 
-func Sanitize(ref tgtv1alpha1.SecretInStoreRef) string {
+func Sanitize(ref scanv1alpha1.SecretInStoreRef) string {
 	cleanedName := strings.ToLower(strings.TrimSpace(ref.Name))
 	cleanedKind := strings.ToLower(strings.TrimSpace(ref.Kind))
 	cleanedKey := strings.TrimSuffix(strings.TrimPrefix(ref.RemoteRef.Key, "/"), "/")
@@ -26,11 +23,11 @@ func Sanitize(ref tgtv1alpha1.SecretInStoreRef) string {
 	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ans, "_", "-"), "/", "-"), ":", "-"))
 }
 
-func EqualLocations(a, b tgtv1alpha1.SecretInStoreRef) bool {
+func EqualLocations(a, b scanv1alpha1.SecretInStoreRef) bool {
 	return a.Name == b.Name && a.Kind == b.Kind && a.APIVersion == b.APIVersion && a.RemoteRef.Key == b.RemoteRef.Key && a.RemoteRef.Property == b.RemoteRef.Property
 }
 
-func CompareLocations(a, b tgtv1alpha1.SecretInStoreRef) int {
+func CompareLocations(a, b scanv1alpha1.SecretInStoreRef) int {
 	aIdx := fmt.Sprintf("%s.%s", a.RemoteRef.Key, a.RemoteRef.Property)
 	if a.RemoteRef.Property == "" {
 		aIdx = a.RemoteRef.Key
@@ -42,68 +39,10 @@ func CompareLocations(a, b tgtv1alpha1.SecretInStoreRef) int {
 	return strings.Compare(aIdx, bIdx)
 }
 
-func SortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
+func SortLocations(loc []scanv1alpha1.SecretInStoreRef) {
 	slices.SortFunc(loc, CompareLocations)
 }
 
-func EqualSecretUpdateRecord(a, b tgtv1alpha1.SecretUpdateRecord) bool {
+func EqualSecretUpdateRecord(a, b scanv1alpha1.SecretUpdateRecord) bool {
 	return a.SecretHash == b.SecretHash
-}
-
-func EqualPods(a, b v1alpha1.K8sPodItem) bool {
-	return a.Name == b.Name && a.NodeName == b.NodeName && a.Phase == b.Phase && a.Ready == b.Ready && a.Reason == b.Reason && a.UID == b.UID
-}
-
-func ComparePods(a, b v1alpha1.K8sPodItem) int {
-	if a.UID == b.UID {
-		return strings.Compare(a.Name, b.Name)
-	}
-	return strings.Compare(a.UID, b.UID)
-}
-
-func SortPods(pods []v1alpha1.K8sPodItem) {
-	slices.SortFunc(pods, ComparePods)
-}
-
-func FillAttributes(consumer *consumerAccum, kind string, attrs map[string]string) {
-	switch kind {
-	case tgtv1alpha1.VirtualMachineKind:
-		consumer.spec.VMProcess = &v1alpha1.VMProcessSpec{
-			Hostname:   attrs["hostname"],
-			Executable: attrs["executable"],
-			User:       attrs["user"],
-		}
-		if pid, ok := attrs["pid"]; ok {
-			if p, err := strconv.ParseInt(pid, 10, 64); err == nil {
-				consumer.spec.VMProcess.PID = p
-			}
-		}
-	case tgtv1alpha1.GithubTargetKind:
-		consumer.spec.GitHubActor = &v1alpha1.GitHubActorSpec{
-			Repository:    attrs["repository"],
-			ActorType:     attrs["actorType"],
-			ActorLogin:    attrs["actorLogin"],
-			ActorID:       attrs["actorID"],
-			Event:         attrs["event"],
-			WorkflowRunID: attrs["workflowRunID"],
-		}
-	case tgtv1alpha1.KubernetesTargetKind:
-		ws := &v1alpha1.K8sWorkloadSpec{
-			ClusterName:     attrs["clusterName"],
-			Namespace:       attrs["namespace"],
-			WorkloadKind:    attrs["workloadKind"],
-			WorkloadGroup:   attrs["workloadGroup"],
-			WorkloadVersion: attrs["workloadVersion"],
-			WorkloadName:    attrs["workloadName"],
-			WorkloadUID:     attrs["workloadUID"],
-			Controller:      attrs["controller"],
-		}
-
-		pods := make([]v1alpha1.K8sPodItem, 0)
-		if podJson := attrs["pods"]; podJson != "" {
-			_ = json.Unmarshal([]byte(podJson), &pods)
-		}
-		consumer.spec.K8sWorkload = ws
-		consumer.status.Pods = pods
-	}
 }

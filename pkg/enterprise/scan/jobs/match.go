@@ -5,7 +5,7 @@ package job
 
 import (
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -49,7 +49,7 @@ func Jaccard(newSet, currentSet map[string]struct{}) (intersection, union int, j
 	return intersection, union, float64(intersection) / float64(union)
 }
 
-func LocationsToStringSet(locations []tgtv1alpha1.SecretInStoreRef) map[string]struct{} {
+func LocationsToStringSet(locations []scanv1alpha1.SecretInStoreRef) map[string]struct{} {
 	locationsSet := make(map[string]struct{}, len(locations))
 	for _, location := range locations {
 		locationsSet[Sanitize(location)] = struct{}{}

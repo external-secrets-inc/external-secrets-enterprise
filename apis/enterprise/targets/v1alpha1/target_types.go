@@ -7,36 +7,9 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 )
-
-type SecretInStoreRef struct {
-	Name       string    `json:"name"`
-	Kind       string    `json:"kind"`
-	APIVersion string    `json:"apiVersion"`
-	RemoteRef  RemoteRef `json:"remoteRef"`
-}
-
-type RemoteRef struct {
-	Key        string `json:"key"`
-	Property   string `json:"property,omitempty"`
-	StartIndex *int   `json:"startIndex,omitempty"`
-	EndIndex   *int   `json:"endIndex,omitempty"`
-}
-
-type ConsumerFinding struct {
-	ObservedIndex SecretUpdateRecord `json:"observedIndex"`
-	Location      SecretInStoreRef   `json:"location"`
-	Kind          string             `json:"kind"`
-	ID            string             `json:"externalID"`
-	DisplayName   string             `json:"displayName,omitempty"`
-	Attributes    map[string]string  `json:"attributes,omitempty"`
-}
-
-// SecretUpdateRecord defines the timestamp when a PushSecret was applied to a secret.
-type SecretUpdateRecord struct {
-	Timestamp  metav1.Time `json:"timestamp"`
-	SecretHash string      `json:"secretHash"`
-}
 
 type TargetConditionType string
 
@@ -74,7 +47,7 @@ type TargetStatus struct {
 	// +optional
 	Capabilities TargetCapabilities `json:"capabilities,omitempty"`
 	// +optional
-	PushIndex map[string][]SecretUpdateRecord `json:"pushIndex,omitempty"`
+	PushIndex map[string][]scanv1alpha1.SecretUpdateRecord `json:"pushIndex,omitempty"`
 }
 
 // SecretStoreToTargetStatus converts a SecretStoreStatus into a TargetStatus.

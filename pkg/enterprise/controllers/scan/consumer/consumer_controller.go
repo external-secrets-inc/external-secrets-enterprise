@@ -76,7 +76,7 @@ func (c *ConsumerController) SetupWithManager(mgr ctrl.Manager, opts controller.
 		Complete(c)
 }
 
-func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]targetv1alpha1.SecretUpdateRecord) (ctrl.Result, error) {
+func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]scanv1alpha1.SecretUpdateRecord) (ctrl.Result, error) {
 	consumerStatusCondition := metav1.ConditionTrue
 	consumerStatusReason := scanv1alpha1.ConsumerLocationsUpToDate
 	consumerStatusMessage := "All observed locations are up to date"
@@ -103,8 +103,8 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 		consumerStatusMessage = fmt.Sprint("Observed locations out of date: ", strings.Join(locationsOutOfDateMessages, "; "))
 	}
 
-	if consumer.Spec.K8sWorkload != nil {
-		health, err := CheckWorkloadHealth(ctx, c.Client, consumer.Spec.K8sWorkload)
+	if consumer.Spec.Attributes.K8sWorkload != nil {
+		health, err := CheckWorkloadHealth(ctx, c.Client, consumer.Spec.Attributes.K8sWorkload)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("error checking workload health: %v", err)
 		}

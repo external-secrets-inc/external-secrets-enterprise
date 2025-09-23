@@ -3,7 +3,6 @@
 package v1alpha1
 
 import (
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,16 +32,19 @@ type ConsumerSpec struct {
 	DisplayName string `json:"displayName"`
 
 	// Exactly one of the following should be set according to Type.
+	Attributes ConsumerAttrs `json:"attributes"`
+}
+
+type ConsumerAttrs struct {
 	VMProcess   *VMProcessSpec   `json:"vmProcess,omitempty"`
-	GitHubActor *GitHubActorSpec `json:"githubActor,omitempty"`
+	GitHubActor *GitHubActorSpec `json:"gitHubActor,omitempty"`
 	K8sWorkload *K8sWorkloadSpec `json:"k8sWorkload,omitempty"`
 }
 
 type ConsumerStatus struct {
-	ObservedIndex map[string]tgtv1alpha1.SecretUpdateRecord `json:"observedIndex,omitempty"`
-	Locations     []tgtv1alpha1.SecretInStoreRef            `json:"locations,omitempty"`
-	Conditions    []metav1.Condition                        `json:"conditions,omitempty"`
-	Pods          []K8sPodItem                              `json:"pods,omitempty"`
+	ObservedIndex map[string]SecretUpdateRecord `json:"observedIndex,omitempty"`
+	Locations     []SecretInStoreRef            `json:"locations,omitempty"`
+	Conditions    []metav1.Condition            `json:"conditions,omitempty"`
 }
 
 type TargetReference struct {
@@ -74,15 +76,6 @@ type GitHubActorSpec struct {
 	WorkflowRunID string `json:"workflowRunID,omitempty"`
 }
 
-type K8sPodItem struct {
-	Name     string `json:"name"`
-	UID      string `json:"uid,omitempty"`
-	NodeName string `json:"nodeName,omitempty"`
-	Phase    string `json:"phase,omitempty"`
-	Ready    bool   `json:"ready"`
-	Reason   string `json:"reason,omitempty"`
-}
-
 type K8sWorkloadSpec struct {
 	ClusterName string `json:"clusterName,omitempty"`
 
@@ -98,6 +91,15 @@ type K8sWorkloadSpec struct {
 
 	// Convenience string for UIs: "deployment.apps/api"
 	Controller string `json:"controller,omitempty"`
+}
+
+type ConsumerFinding struct {
+	ObservedIndex SecretUpdateRecord `json:"observedIndex"`
+	Location      SecretInStoreRef   `json:"location"`
+	Type          string             `json:"type"`
+	ID            string             `json:"externalID"`
+	DisplayName   string             `json:"displayName,omitempty"`
+	Attributes    ConsumerAttrs      `json:"attributes,omitempty"`
 }
 
 // Consumer is the schema to store duplicate findings from a job

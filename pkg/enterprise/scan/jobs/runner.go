@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	store "github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
@@ -18,14 +18,14 @@ import (
 type JobRunner struct {
 	client.Client
 	logr.Logger
-	Constraints    *v1alpha1.JobConstraints
+	Constraints    *scanv1alpha1.JobConstraints
 	mgr            *store.Manager
 	Namespace      string
 	locationMemset *LocationMemorySet
 	consumerMemset *ConsumerMemorySet
 }
 
-func NewJobRunner(client client.Client, logger logr.Logger, namespace string, constraints *v1alpha1.JobConstraints) *JobRunner {
+func NewJobRunner(client client.Client, logger logr.Logger, namespace string, constraints *scanv1alpha1.JobConstraints) *JobRunner {
 	mgr := store.NewManager(client, "", false)
 	return &JobRunner{
 		Client:         client,
@@ -42,7 +42,7 @@ func (j *JobRunner) Close(ctx context.Context) error {
 	return j.mgr.Close(ctx)
 }
 
-func (j *JobRunner) Run(ctx context.Context) ([]v1alpha1.Finding, []v1alpha1.Consumer, []esv1.SecretStore, error) {
+func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha1.Consumer, []esv1.SecretStore, error) {
 	// List Secret Stores
 	// TODO - apply constraints
 	j.Logger.V(1).Info("Listing Secret Stores")
@@ -218,8 +218,8 @@ func (j JobRunner) scanTargets(ctx context.Context, list client.ObjectList, getO
 	return nil
 }
 
-func (j *JobRunner) attributeConsumers(ctx context.Context, findings []v1alpha1.Finding) error {
-	locationsPerKindMap := make(map[string][]tgtv1alpha1.SecretInStoreRef, 0)
+func (j *JobRunner) attributeConsumers(ctx context.Context, findings []scanv1alpha1.Finding) error {
+	locationsPerKindMap := make(map[string][]scanv1alpha1.SecretInStoreRef, 0)
 	for _, finding := range findings {
 		for _, location := range finding.Status.Locations {
 			locationsPerKindMap[location.Kind] = append(locationsPerKindMap[location.Kind], location)
@@ -263,7 +263,7 @@ func (j *JobRunner) attributeConsumers(ctx context.Context, findings []v1alpha1.
 	return nil
 }
 
-func (j *JobRunner) attributeTargetConsumers(ctx context.Context, kind, name string, obj client.Object, locations []tgtv1alpha1.SecretInStoreRef) error {
+func (j *JobRunner) attributeTargetConsumers(ctx context.Context, kind, name string, obj client.Object, locations []scanv1alpha1.SecretInStoreRef) error {
 	prov, ok := tgtv1alpha1.GetTargetByName(kind)
 	if !ok {
 		return fmt.Errorf("target kind %q not supported", kind)
@@ -280,23 +280,23 @@ func (j *JobRunner) attributeTargetConsumers(ctx context.Context, kind, name str
 			return err
 		}
 
-		targetRef := v1alpha1.TargetReference{
+		targetRef := scanv1alpha1.TargetReference{
 			Name:      name,
 			Namespace: j.Namespace,
 		}
-		for _, f := range consumers {
-			j.consumerMemset.Add(targetRef, f)
+		for _, consumer := range consumers {
+			j.consumerMemset.Add(targetRef, consumer)
 		}
 	}
 	return nil
 }
 
-func newStoreInRef(store, key, property string) tgtv1alpha1.SecretInStoreRef {
-	return tgtv1alpha1.SecretInStoreRef{
+func newStoreInRef(store, key, property string) scanv1alpha1.SecretInStoreRef {
+	return scanv1alpha1.SecretInStoreRef{
 		Name:       store,
 		Kind:       "SecretStore",
 		APIVersion: "external-secrets.io/v1",
-		RemoteRef: tgtv1alpha1.RemoteRef{
+		RemoteRef: scanv1alpha1.RemoteRef{
 			Key:      key,
 			Property: property,
 		},

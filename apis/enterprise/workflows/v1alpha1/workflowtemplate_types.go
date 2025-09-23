@@ -14,7 +14,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -100,7 +100,7 @@ type GeneratorParameterType struct {
 }
 
 // SecretLocationParameter defines a parameter to be passed to a secret location type.
-type SecretLocationParameterType = tgtv1alpha1.SecretInStoreRef
+type SecretLocationParameterType = scanv1alpha1.SecretInStoreRef
 
 // FindingParameter defines a parameter to be passed to a secret store type.
 type FindingParameterType struct {

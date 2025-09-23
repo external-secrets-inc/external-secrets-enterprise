@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -134,7 +133,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 			RunTemplateRef: &scanv1alpha1.RunTemplateReference{Name: "sample-template"},
 		},
 		Status: scanv1alpha1.FindingStatus{
-			Locations: []tgtv1alpha1.SecretInStoreRef{}, // empty list acceptable
+			Locations: []scanv1alpha1.SecretInStoreRef{}, // empty list acceptable
 		},
 	}
 
@@ -151,7 +150,7 @@ func TestValidateKubernetesResourceValidation(t *testing.T) {
 			RunTemplateRef: &scanv1alpha1.RunTemplateReference{Name: "another-template"},
 		},
 		Status: scanv1alpha1.FindingStatus{
-			Locations: []tgtv1alpha1.SecretInStoreRef{},
+			Locations: []scanv1alpha1.SecretInStoreRef{},
 		},
 	}
 

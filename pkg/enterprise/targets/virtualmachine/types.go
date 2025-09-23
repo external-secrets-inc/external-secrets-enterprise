@@ -2,7 +2,7 @@
 // All Rights reserved.
 package virtualmachine
 
-import tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+import scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 
 type Request struct {
 	Regexes   []string `json:"regexes"`
@@ -33,11 +33,16 @@ type PushRequest struct {
 }
 
 type ConsumerRequest struct {
-	Location tgtv1alpha1.SecretInStoreRef `json:"location"`
-	Paths    []string                     `json:"paths"`
+	Location scanv1alpha1.SecretInStoreRef `json:"location"`
+	Paths    []string                      `json:"paths"`
 }
 
 type ConsumerScanJobResponse struct {
 	Status    string              `json:"status"`
-	Consumers []map[string]string `json:"consumers"`
+	Consumers []VMProcessResponse `json:"consumers"`
+}
+
+type VMProcessResponse struct {
+	Attributes     scanv1alpha1.VMProcessSpec `json:"attributes"`
+	StartTimestamp string                     `json:"startTimestamp"`
 }

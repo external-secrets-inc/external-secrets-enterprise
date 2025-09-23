@@ -3,7 +3,6 @@
 package v1alpha1
 
 import (
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,7 +18,7 @@ type RunTemplateReference struct {
 }
 
 type FindingStatus struct {
-	Locations []tgtv1alpha1.SecretInStoreRef `json:"locations,omitempty"`
+	Locations []SecretInStoreRef `json:"locations,omitempty"`
 }
 
 // Finding is the schema to store duplicate findings from a job

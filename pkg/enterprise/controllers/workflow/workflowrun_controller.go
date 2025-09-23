@@ -22,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
 )
 
@@ -401,7 +400,7 @@ func (r *WorkflowRunReconciler) parseCustomTypes(ctx context.Context, namespace 
 			return nil, fmt.Errorf("error converting value %v to finding array type: %w", value, err)
 		}
 
-		locations := make([]tgtv1alpha1.SecretInStoreRef, 0, len(findingArrayValue))
+		locations := make([]scanv1alpha1.SecretInStoreRef, 0, len(findingArrayValue))
 		for _, findingValue := range findingArrayValue {
 			location, err := r.getLocationsArrayFromFindingParam(
 				ctx, namespace, param, &findingValue,
@@ -441,7 +440,7 @@ func (r *WorkflowRunReconciler) parseCustomTypes(ctx context.Context, namespace 
 	return value, nil
 }
 
-func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Context, resourceNamespace string, param workflows.Parameter, findingValue *workflows.FindingParameterType) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Context, resourceNamespace string, param workflows.Parameter, findingValue *workflows.FindingParameterType) ([]scanv1alpha1.SecretInStoreRef, error) {
 	if param.ResourceConstraints != nil && param.ResourceConstraints.Namespace != "" {
 		resourceNamespace = param.ResourceConstraints.Namespace
 	}

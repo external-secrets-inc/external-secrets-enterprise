@@ -5,7 +5,6 @@ package kubernetes
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -27,6 +26,7 @@ import (
 	ctrlcfg "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
@@ -109,7 +109,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	return newClient(ctx, converted, mgrClient, clientset.CoreV1())
 }
 
-func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]scanv1alpha1.SecretInStoreRef, error) {
 	referencedSecrets, err := s.collectReferencedSecrets(ctx)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 		return nil, fmt.Errorf("list secrets: %w", err)
 	}
 
-	results := make([]tgtv1alpha1.SecretInStoreRef, 0, 64)
+	results := make([]scanv1alpha1.SecretInStoreRef, 0, 64)
 	for i := range secretsList.Items {
 		secret := &secretsList.Items[i]
 		if !s.namespaceAllowed(secret.Namespace) {
@@ -143,11 +143,11 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 					continue
 				}
 
-				results = append(results, tgtv1alpha1.SecretInStoreRef{
+				results = append(results, scanv1alpha1.SecretInStoreRef{
 					APIVersion: tgtv1alpha1.SchemeGroupVersion.String(),
 					Kind:       tgtv1alpha1.KubernetesTargetKind,
 					Name:       s.Name,
-					RemoteRef: tgtv1alpha1.RemoteRef{
+					RemoteRef: scanv1alpha1.RemoteRef{
 						Key:      key, // "<namespace>/<secretName>"
 						Property: dataKey,
 					},
@@ -159,7 +159,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 	return results, nil
 }
 
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	// Parse "<namespace>/<secret>"
 	secretNamespace, secretName, err := parseNamespaceName(location.RemoteRef.Key)
 	if err != nil {
@@ -180,7 +180,6 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 	// Group matched pods by top-level controller
 	type agg struct {
 		ref                workloadRef
-		pods               []podItem
 		latestPodReadyTime metav1.Time
 	}
 	groups := map[string]*agg{}
@@ -210,16 +209,6 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 			groups[key] = group
 		}
 
-		// Pod snapshot
-		group.pods = append(group.pods, podItem{
-			Name:     pod.Name,
-			UID:      string(pod.UID),
-			NodeName: pod.Spec.NodeName,
-			Phase:    string(pod.Status.Phase),
-			Ready:    isPodReady(pod),
-			Reason:   firstNotReadyReason(pod),
-		})
-
 		if t := podReadyTime(pod); !t.IsZero() {
 			if t.After(group.latestPodReadyTime.Time) {
 				group.latestPodReadyTime = metav1.NewTime(t)
@@ -228,32 +217,29 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 	}
 
 	// Build ConsumerFindings (one per workload)
-	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(groups))
+	out := make([]scanv1alpha1.ConsumerFinding, 0, len(groups))
 	for _, g := range groups {
-		podsJSON, _ := json.Marshal(g.pods)
-
-		attrs := map[string]string{
-			"clusterName":     s.Name,
-			"namespace":       g.ref.Namespace,
-			"workloadKind":    g.ref.Kind,
-			"workloadGroup":   g.ref.Group,
-			"workloadVersion": g.ref.Version,
-			"workloadName":    g.ref.Name,
-			"workloadUID":     g.ref.UID,
-			"controller":      controllerString(g.ref),
-			"pods":            string(podsJSON),
-		}
-
 		id := stableID(s.Name, g.ref)
 		display := fmt.Sprintf("%s/%s (%s)", g.ref.Namespace, g.ref.Name, g.ref.Kind)
 
-		out = append(out, tgtv1alpha1.ConsumerFinding{
-			Kind:        tgtv1alpha1.KubernetesTargetKind,
+		out = append(out, scanv1alpha1.ConsumerFinding{
+			Type:        tgtv1alpha1.KubernetesTargetKind,
 			ID:          id,
 			DisplayName: display,
-			Attributes:  attrs,
-			Location:    location,
-			ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+			Attributes: scanv1alpha1.ConsumerAttrs{
+				K8sWorkload: &scanv1alpha1.K8sWorkloadSpec{
+					ClusterName:     s.Name,
+					Namespace:       g.ref.Namespace,
+					WorkloadKind:    g.ref.Kind,
+					WorkloadGroup:   g.ref.Group,
+					WorkloadVersion: g.ref.Version,
+					WorkloadName:    g.ref.Name,
+					WorkloadUID:     g.ref.UID,
+					Controller:      controllerString(g.ref),
+				},
+			},
+			Location: location,
+			ObservedIndex: scanv1alpha1.SecretUpdateRecord{
 				Timestamp:  g.latestPodReadyTime,
 				SecretHash: hash,
 			},
@@ -552,24 +538,6 @@ func controllerOwner(refs []metav1.OwnerReference) *metav1.OwnerReference {
 		}
 	}
 	return nil
-}
-
-func isPodReady(p *corev1.Pod) bool {
-	for _, c := range p.Status.Conditions {
-		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-			return true
-		}
-	}
-	return false
-}
-
-func firstNotReadyReason(p *corev1.Pod) string {
-	for _, c := range p.Status.Conditions {
-		if c.Type == corev1.PodReady && c.Status != corev1.ConditionTrue {
-			return c.Reason
-		}
-	}
-	return ""
 }
 
 func controllerString(w workloadRef) string {

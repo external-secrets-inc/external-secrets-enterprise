@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -57,12 +58,12 @@ func UpdateTargetPushIndex(
 
 		status := genericTarget.GetTargetStatus()
 		if status.PushIndex == nil {
-			status.PushIndex = make(map[string][]tgtv1alpha1.SecretUpdateRecord, 1)
+			status.PushIndex = make(map[string][]scanv1alpha1.SecretUpdateRecord, 1)
 		}
 
 		hist := status.PushIndex[locationKey]
 
-		hist = append(hist, tgtv1alpha1.SecretUpdateRecord{
+		hist = append(hist, scanv1alpha1.SecretUpdateRecord{
 			Timestamp:  metav1.NewTime(metav1.Now().UTC()),
 			SecretHash: hash,
 		})

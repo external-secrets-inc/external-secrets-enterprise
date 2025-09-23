@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,14 +38,14 @@ func NewConsumerMemorySet() *ConsumerMemorySet {
 	}
 }
 
-func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.ConsumerFinding) {
+func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f scanv1alpha1.ConsumerFinding) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 
 	key := ConsumerKey{
 		TargetNS: target.Namespace,
 		Target:   target.Name,
-		Type:     f.Kind,
+		Type:     f.Type,
 		ID:       f.ID,
 	}
 	acc, ok := cs.accums[key]
@@ -53,15 +53,14 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f tgtv1alpha1.
 		acc = &consumerAccum{
 			spec: v1alpha1.ConsumerSpec{
 				Target:      target,
-				Type:        f.Kind,
+				Type:        f.Type,
 				ID:          f.ID,
 				DisplayName: f.DisplayName,
 			},
 			status: v1alpha1.ConsumerStatus{},
 		}
-		acc.status.ObservedIndex = make(map[string]tgtv1alpha1.SecretUpdateRecord)
-
-		FillAttributes(acc, f.Kind, f.Attributes)
+		acc.spec.Attributes = *f.Attributes.DeepCopy()
+		acc.status.ObservedIndex = make(map[string]scanv1alpha1.SecretUpdateRecord)
 		cs.accums[key] = acc
 	}
 
@@ -93,7 +92,6 @@ func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {
 	out := make([]v1alpha1.Consumer, 0, len(cs.accums))
 	for _, acc := range cs.accums {
 		SortLocations(acc.status.Locations)
-		SortPods(acc.status.Pods)
 		out = append(out, v1alpha1.Consumer{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: acc.spec.ID,

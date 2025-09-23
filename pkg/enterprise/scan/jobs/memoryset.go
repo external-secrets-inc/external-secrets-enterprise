@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 )
 
 const (
@@ -24,16 +24,16 @@ const (
 
 type LocationMemorySet struct {
 	mu          sync.RWMutex
-	entries     map[tgtv1alpha1.SecretInStoreRef]string
+	entries     map[scanv1alpha1.SecretInStoreRef]string
 	regexMap    map[string][]string
-	valueToKeys map[string][]tgtv1alpha1.SecretInStoreRef
+	valueToKeys map[string][]scanv1alpha1.SecretInStoreRef
 	threshold   int
 }
 
 func NewLocationMemorySet() *LocationMemorySet {
 	return &LocationMemorySet{
-		entries:     make(map[tgtv1alpha1.SecretInStoreRef]string),
-		valueToKeys: make(map[string][]tgtv1alpha1.SecretInStoreRef),
+		entries:     make(map[scanv1alpha1.SecretInStoreRef]string),
+		valueToKeys: make(map[string][]scanv1alpha1.SecretInStoreRef),
 		mu:          sync.RWMutex{},
 		regexMap:    make(map[string][]string),
 		// Todo flexibilize this
@@ -122,13 +122,13 @@ func (ms *LocationMemorySet) GetThreshold() int {
 	return ms.threshold
 }
 
-func (ms *LocationMemorySet) AddByRegex(hash string, location tgtv1alpha1.SecretInStoreRef) {
+func (ms *LocationMemorySet) AddByRegex(hash string, location scanv1alpha1.SecretInStoreRef) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.valueToKeys[hash] = append(ms.valueToKeys[hash], location)
 }
 
-func (ms *LocationMemorySet) Add(secret tgtv1alpha1.SecretInStoreRef, value []byte) {
+func (ms *LocationMemorySet) Add(secret scanv1alpha1.SecretInStoreRef, value []byte) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 

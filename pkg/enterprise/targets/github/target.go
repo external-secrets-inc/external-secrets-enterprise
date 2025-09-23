@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
@@ -138,7 +139,7 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	}, nil
 }
 
-func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]tgtv1alpha1.SecretInStoreRef, error) {
+func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]scanv1alpha1.SecretInStoreRef, error) {
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
 	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
@@ -155,7 +156,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 		return nil, fmt.Errorf("error getting tree: %w", err)
 	}
 
-	var results []tgtv1alpha1.SecretInStoreRef
+	var results []scanv1alpha1.SecretInStoreRef
 
 	pathFilters := newPathFilter(s.Paths)
 
@@ -196,11 +197,11 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 			start := idx
 			end := idx + len(secret)
 
-			results = append(results, tgtv1alpha1.SecretInStoreRef{
+			results = append(results, scanv1alpha1.SecretInStoreRef{
 				APIVersion: tgtv1alpha1.SchemeGroupVersion.String(),
 				Kind:       tgtv1alpha1.GithubTargetKind,
 				Name:       s.Name,
-				RemoteRef: tgtv1alpha1.RemoteRef{
+				RemoteRef: scanv1alpha1.RemoteRef{
 					Key:      path,                             // file path
 					Property: fmt.Sprintf("%d:%d", start, end), // start:end format
 				},
@@ -212,12 +213,12 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 }
 
 // Refactor to get actor based on github audit log so we can get everyone who cloned the repo as well.
-func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	owner, repo, branch := s.Owner, s.Repo, s.Branch
 	repoFull := owner + "/" + repo
 	path := strings.TrimSpace(location.RemoteRef.Key)
 
-	unique := make(map[string]tgtv1alpha1.ConsumerFinding)
+	unique := make(map[string]scanv1alpha1.ConsumerFinding)
 	commitSHAs := make(map[string]struct{})
 
 	commitOpts := &github.CommitsListOptions{
@@ -250,28 +251,28 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 			actorID := strconv.FormatInt(user.GetID(), 10)
 			actorType := normalizeActorType(user.GetType(), actorLogin)
 
-			attrs := map[string]string{
-				"repository": repoFull,
-				"actorType":  actorType,
-				"actorLogin": actorLogin,
-				"actorID":    actorID,
-				"event":      "commit",
-			}
 			id := stableGitHubActorID(repoFull, actorType, actorLogin, actorID)
-
 			commitTime := getCommitTime(commit)
 
 			if _, ok := unique[id]; !ok {
-				unique[id] = tgtv1alpha1.ConsumerFinding{
-					ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+				unique[id] = scanv1alpha1.ConsumerFinding{
+					ObservedIndex: scanv1alpha1.SecretUpdateRecord{
 						Timestamp:  metav1.NewTime(commitTime),
 						SecretHash: hash,
 					},
 					Location:    location,
-					Kind:        tgtv1alpha1.GithubTargetKind,
+					Type:        tgtv1alpha1.GithubTargetKind,
 					ID:          id,
 					DisplayName: actorLogin,
-					Attributes:  attrs,
+					Attributes: scanv1alpha1.ConsumerAttrs{
+						GitHubActor: &scanv1alpha1.GitHubActorSpec{
+							Repository: repoFull,
+							ActorType:  actorType,
+							ActorLogin: actorLogin,
+							ActorID:    actorID,
+							Event:      "commit",
+						},
+					},
 				}
 			}
 		}
@@ -309,27 +310,28 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 				actorID := strconv.FormatInt(user.GetID(), 10)
 				actorType := normalizeActorType(user.GetType(), actorLogin)
 
-				attrs := map[string]string{
-					"repository":    repoFull,
-					"actorType":     actorType,
-					"actorLogin":    actorLogin,
-					"actorID":       actorID,
-					"event":         "workflow",
-					"workflowRunID": strconv.FormatInt(run.GetID(), 10),
-				}
 				id := stableGitHubActorID(repoFull, actorType, actorLogin, actorID)
 
 				if _, ok := unique[id]; !ok {
-					unique[id] = tgtv1alpha1.ConsumerFinding{
-						ObservedIndex: tgtv1alpha1.SecretUpdateRecord{
+					unique[id] = scanv1alpha1.ConsumerFinding{
+						ObservedIndex: scanv1alpha1.SecretUpdateRecord{
 							Timestamp:  metav1.NewTime(run.UpdatedAt.Time.UTC()),
 							SecretHash: hash,
 						},
 						Location:    location,
-						Kind:        tgtv1alpha1.GithubTargetKind,
+						Type:        tgtv1alpha1.GithubTargetKind,
 						ID:          id,
 						DisplayName: actorLogin,
-						Attributes:  attrs,
+						Attributes: scanv1alpha1.ConsumerAttrs{
+							GitHubActor: &scanv1alpha1.GitHubActorSpec{
+								Repository:    repoFull,
+								ActorType:     actorType,
+								ActorLogin:    actorLogin,
+								ActorID:       actorID,
+								Event:         "workflow",
+								WorkflowRunID: strconv.FormatInt(run.GetID(), 10),
+							},
+						},
 					}
 				}
 			}
@@ -339,7 +341,7 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.
 		}
 	}
 
-	out := make([]tgtv1alpha1.ConsumerFinding, 0, len(unique))
+	out := make([]scanv1alpha1.ConsumerFinding, 0, len(unique))
 	for _, v := range unique {
 		out = append(out, v)
 	}
