@@ -15,6 +15,8 @@ const (
 const (
 	ConsumerLocationsUpToDate  = "LocationsUpToDate"
 	ConsumerLocationsOutOfDate = "LocationsOutOfDate"
+	ConsumerWorkloadReady      = "WorkloadReady"
+	ConsumerWorkloadNotReady   = "WorkloadNotReady"
 )
 
 type ConsumerSpec struct {

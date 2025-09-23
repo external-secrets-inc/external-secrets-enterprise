@@ -106,7 +106,7 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 	if consumer.Spec.Attributes.K8sWorkload != nil {
 		health, err := CheckWorkloadHealth(ctx, c.Client, consumer.Spec.Attributes.K8sWorkload)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("error checking workload health: %v", err)
+			return ctrl.Result{}, fmt.Errorf("error checking workload health: %w", err)
 		}
 
 		if !health.Healthy {
@@ -182,15 +182,31 @@ func deploymentHealth(d *appsv1.Deployment) Health {
 	avail := getCond(d.Status.Conditions, appsv1.DeploymentAvailable)
 	prog := getCond(d.Status.Conditions, appsv1.DeploymentProgressing)
 
-	readyEq := d.Status.ReadyReplicas == d.Status.Replicas && d.Status.UpdatedReplicas == d.Status.Replicas
-	healthy := genOK && readyEq && avail == corev1.ConditionTrue && prog == corev1.ConditionTrue
+	ready := d.Status.ReadyReplicas
+	replicas := d.Status.Replicas
+	updated := d.Status.UpdatedReplicas
 
-	reason := "OK"
-	msg := "deployment healthy"
+	missingReady := int32(0)
+	if replicas > ready {
+		missingReady = replicas - ready
+	}
+	outdated := int32(0)
+	if replicas > updated {
+		outdated = replicas - updated
+	}
+
+	healthy := genOK && ready == replicas && updated == replicas && avail == corev1.ConditionTrue && prog == corev1.ConditionTrue
+
+	reason := scanv1alpha1.ConsumerWorkloadReady
+	msg := "Deployment healthy"
 	if !healthy {
-		reason, msg = "NotReady",
-			fmt.Sprintf("genOK=%t ready=%d/%d updated=%d availableCond=%s progressingCond=%s",
-				genOK, d.Status.ReadyReplicas, d.Status.Replicas, d.Status.UpdatedReplicas, avail, prog)
+		reason, msg = scanv1alpha1.ConsumerWorkloadNotReady,
+			fmt.Sprintf(
+				"Deployment %s/%s: generation(observed=%d desired=%d): %t, ready=%d/%d (missing=%d), updated=%d/%d (outdated=%d), Available=%s, Progressing=%s",
+				d.Namespace, d.Name, d.Status.ObservedGeneration, d.Generation,
+				genOK, d.Status.ReadyReplicas, d.Status.Replicas, missingReady,
+				updated, replicas, outdated, avail, prog,
+			)
 	}
 	return Health{Healthy: healthy, Reason: reason, Message: msg}
 }
@@ -198,11 +214,14 @@ func deploymentHealth(d *appsv1.Deployment) Health {
 func replicasetHealth(rs *appsv1.ReplicaSet) Health {
 	readyEq := rs.Status.ReadyReplicas == rs.Status.Replicas
 	healthy := readyEq
-	reason := "OK"
-	msg := "replicaset healthy"
+	reason := scanv1alpha1.ConsumerWorkloadReady
+	msg := "Replicaset healthy"
 	if !healthy {
-		reason, msg = "NotReady",
-			fmt.Sprintf("ready=%d replicas=%d", rs.Status.ReadyReplicas, rs.Status.Replicas)
+		reason, msg = scanv1alpha1.ConsumerWorkloadNotReady,
+			fmt.Sprintf(
+				"Replicaset %s/%s: ready=%d replicas=%d",
+				rs.Namespace, rs.Name, rs.Status.ReadyReplicas, rs.Status.Replicas,
+			)
 	}
 	return Health{Healthy: healthy, Reason: reason, Message: msg}
 }
@@ -211,11 +230,15 @@ func statefulsetHealth(sts *appsv1.StatefulSet) Health {
 	genOK := sts.Status.ObservedGeneration >= sts.Generation
 	readyEq := sts.Status.ReadyReplicas == sts.Status.Replicas
 	healthy := genOK && readyEq
-	reason := "OK"
-	msg := "statefulset healthy"
+	reason := scanv1alpha1.ConsumerWorkloadReady
+	msg := "Statefulset healthy"
 	if !healthy {
-		reason, msg = "NotReady",
-			fmt.Sprintf("genOK=%t ready=%d/%d", genOK, sts.Status.ReadyReplicas, sts.Status.Replicas)
+		reason, msg = scanv1alpha1.ConsumerWorkloadNotReady,
+			fmt.Sprintf(
+				"Statefulset %s/%s: generation(observed=%d desired=%d)=%t ready=%d/%d",
+				sts.Namespace, sts.Name, sts.Status.ObservedGeneration, sts.Generation,
+				genOK, sts.Status.ReadyReplicas, sts.Status.Replicas,
+			)
 	}
 	return Health{Healthy: healthy, Reason: reason, Message: msg}
 }
@@ -225,12 +248,15 @@ func daemonsetHealth(ds *appsv1.DaemonSet) Health {
 	readyEq := ds.Status.NumberReady == ds.Status.DesiredNumberScheduled
 	updatedEq := ds.Status.UpdatedNumberScheduled == ds.Status.DesiredNumberScheduled
 	healthy := genOK && readyEq && updatedEq
-	reason := "OK"
-	msg := "daemonset healthy"
+	reason := scanv1alpha1.ConsumerWorkloadReady
+	msg := "Daemonset healthy"
 	if !healthy {
-		reason, msg = "NotReady",
-			fmt.Sprintf("genOK=%t ready=%d/%d updated=%d",
-				genOK, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled, ds.Status.UpdatedNumberScheduled)
+		reason, msg = scanv1alpha1.ConsumerWorkloadNotReady,
+			fmt.Sprintf(
+				"Daemonset %s/%s: generation(observed=%d desired=%d)=%t ready=%d/%d updated=%d",
+				ds.Namespace, ds.Name, ds.Status.ObservedGeneration, ds.Generation,
+				genOK, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled, ds.Status.UpdatedNumberScheduled,
+			)
 	}
 	return Health{Healthy: healthy, Reason: reason, Message: msg}
 }
@@ -247,14 +273,20 @@ func jobHealth(j *batchv1.Job) Health {
 		backoff = *j.Spec.BackoffLimit
 	}
 	healthy := succeeded >= want
-	reason := "OK"
-	msg := "job completed"
+	reason := scanv1alpha1.ConsumerWorkloadReady
+	msg := "Job completed"
 	if !healthy {
 		if failed > backoff {
-			return Health{Healthy: false, Reason: "Failed", Message: fmt.Sprintf("failed=%d backoffLimit=%d", failed, backoff)}
+			reason, msg = "Failed", fmt.Sprintf(
+				"Job %s/%s: failed=%d backoffLimit=%d",
+				j.Namespace, j.Name, failed, backoff,
+			)
+		} else {
+			reason, msg = "Running", fmt.Sprintf(
+				"Job %s/%s: succeeded=%d/%d active=%d failed=%d",
+				j.Namespace, j.Name, succeeded, want, j.Status.Active, failed,
+			)
 		}
-		reason, msg = "Running", fmt.Sprintf("succeeded=%d/%d active=%d failed=%d",
-			succeeded, want, j.Status.Active, failed)
 	}
 	return Health{Healthy: healthy, Reason: reason, Message: msg}
 }
