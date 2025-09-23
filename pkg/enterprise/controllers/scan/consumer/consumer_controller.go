@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,12 +24,19 @@ import (
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	"github.com/go-logr/logr"
 )
 
 type ConsumerController struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+}
+
+type Health struct {
+	Healthy bool
+	Reason  string
+	Message string
 }
 
 func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
@@ -94,12 +103,16 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 		consumerStatusMessage = fmt.Sprint("Observed locations out of date: ", strings.Join(locationsOutOfDateMessages, "; "))
 	}
 
-	for _, pod := range consumer.Status.Pods {
-		if (!pod.Ready && pod.Phase != "Succeeded") || (pod.Phase != "Running" && pod.Phase != "Succeeded") {
+	if consumer.Spec.K8sWorkload != nil {
+		health, err := CheckWorkloadHealth(ctx, c.Client, consumer.Spec.K8sWorkload)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("error checking workload health: %v", err)
+		}
+
+		if !health.Healthy {
 			consumerStatusCondition = metav1.ConditionFalse
-			consumerStatusReason = scanv1alpha1.ConsumerPodsNotReady
-			consumerStatusMessage = "Not all pods related to this consumer are working properly"
-			break
+			consumerStatusReason = health.Reason
+			consumerStatusMessage = health.Message
 		}
 	}
 
@@ -121,4 +134,136 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 	}
 
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+}
+
+func CheckWorkloadHealth(ctx context.Context, client client.Client, wl *scanv1alpha1.K8sWorkloadSpec) (Health, error) {
+	switch wl.WorkloadKind {
+	case "Deployment":
+		var obj appsv1.Deployment
+		if err := client.Get(ctx, namespacedName(wl), &obj); err != nil {
+			return Health{}, err
+		}
+		return deploymentHealth(&obj), nil
+	case "ReplicaSet":
+		var obj appsv1.ReplicaSet
+		if err := client.Get(ctx, namespacedName(wl), &obj); err != nil {
+			return Health{}, err
+		}
+		return replicasetHealth(&obj), nil
+	case "StatefulSet":
+		var obj appsv1.StatefulSet
+		if err := client.Get(ctx, namespacedName(wl), &obj); err != nil {
+			return Health{}, err
+		}
+		return statefulsetHealth(&obj), nil
+	case "DaemonSet":
+		var obj appsv1.DaemonSet
+		if err := client.Get(ctx, namespacedName(wl), &obj); err != nil {
+			return Health{}, err
+		}
+		return daemonsetHealth(&obj), nil
+	case "Job":
+		var obj batchv1.Job
+		if err := client.Get(ctx, namespacedName(wl), &obj); err != nil {
+			return Health{}, err
+		}
+		return jobHealth(&obj), nil
+	default:
+		return Health{}, fmt.Errorf("unsupported kind %q (group=%s version=%s)", wl.WorkloadKind, wl.WorkloadGroup, wl.WorkloadVersion)
+	}
+}
+
+func namespacedName(w *scanv1alpha1.K8sWorkloadSpec) types.NamespacedName {
+	return types.NamespacedName{Namespace: w.Namespace, Name: w.WorkloadName}
+}
+
+func deploymentHealth(d *appsv1.Deployment) Health {
+	genOK := d.Status.ObservedGeneration >= d.Generation
+	avail := getCond(d.Status.Conditions, appsv1.DeploymentAvailable)
+	prog := getCond(d.Status.Conditions, appsv1.DeploymentProgressing)
+
+	readyEq := d.Status.ReadyReplicas == d.Status.Replicas && d.Status.UpdatedReplicas == d.Status.Replicas
+	healthy := genOK && readyEq && avail == corev1.ConditionTrue && prog == corev1.ConditionTrue
+
+	reason := "OK"
+	msg := "deployment healthy"
+	if !healthy {
+		reason, msg = "NotReady",
+			fmt.Sprintf("genOK=%t ready=%d/%d updated=%d availableCond=%s progressingCond=%s",
+				genOK, d.Status.ReadyReplicas, d.Status.Replicas, d.Status.UpdatedReplicas, avail, prog)
+	}
+	return Health{Healthy: healthy, Reason: reason, Message: msg}
+}
+
+func replicasetHealth(rs *appsv1.ReplicaSet) Health {
+	readyEq := rs.Status.ReadyReplicas == rs.Status.Replicas
+	healthy := readyEq
+	reason := "OK"
+	msg := "replicaset healthy"
+	if !healthy {
+		reason, msg = "NotReady",
+			fmt.Sprintf("ready=%d replicas=%d", rs.Status.ReadyReplicas, rs.Status.Replicas)
+	}
+	return Health{Healthy: healthy, Reason: reason, Message: msg}
+}
+
+func statefulsetHealth(sts *appsv1.StatefulSet) Health {
+	genOK := sts.Status.ObservedGeneration >= sts.Generation
+	readyEq := sts.Status.ReadyReplicas == sts.Status.Replicas
+	healthy := genOK && readyEq
+	reason := "OK"
+	msg := "statefulset healthy"
+	if !healthy {
+		reason, msg = "NotReady",
+			fmt.Sprintf("genOK=%t ready=%d/%d", genOK, sts.Status.ReadyReplicas, sts.Status.Replicas)
+	}
+	return Health{Healthy: healthy, Reason: reason, Message: msg}
+}
+
+func daemonsetHealth(ds *appsv1.DaemonSet) Health {
+	genOK := ds.Status.ObservedGeneration >= ds.Generation
+	readyEq := ds.Status.NumberReady == ds.Status.DesiredNumberScheduled
+	updatedEq := ds.Status.UpdatedNumberScheduled == ds.Status.DesiredNumberScheduled
+	healthy := genOK && readyEq && updatedEq
+	reason := "OK"
+	msg := "daemonset healthy"
+	if !healthy {
+		reason, msg = "NotReady",
+			fmt.Sprintf("genOK=%t ready=%d/%d updated=%d",
+				genOK, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled, ds.Status.UpdatedNumberScheduled)
+	}
+	return Health{Healthy: healthy, Reason: reason, Message: msg}
+}
+
+func jobHealth(j *batchv1.Job) Health {
+	want := int32(1)
+	if j.Spec.Completions != nil {
+		want = *j.Spec.Completions
+	}
+	succeeded := j.Status.Succeeded
+	failed := j.Status.Failed
+	backoff := int32(6)
+	if j.Spec.BackoffLimit != nil {
+		backoff = *j.Spec.BackoffLimit
+	}
+	healthy := succeeded >= want
+	reason := "OK"
+	msg := "job completed"
+	if !healthy {
+		if failed > backoff {
+			return Health{Healthy: false, Reason: "Failed", Message: fmt.Sprintf("failed=%d backoffLimit=%d", failed, backoff)}
+		}
+		reason, msg = "Running", fmt.Sprintf("succeeded=%d/%d active=%d failed=%d",
+			succeeded, want, j.Status.Active, failed)
+	}
+	return Health{Healthy: healthy, Reason: reason, Message: msg}
+}
+
+func getCond(conds []appsv1.DeploymentCondition, t appsv1.DeploymentConditionType) corev1.ConditionStatus {
+	for _, c := range conds {
+		if c.Type == t {
+			return c.Status
+		}
+	}
+	return corev1.ConditionUnknown
 }

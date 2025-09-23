@@ -78,7 +78,7 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		}
 		cur := destination.Data[dataKey]
 		if bytes.Equal(cur, newVal) {
-			return nil
+			break
 		}
 		destination.Data[dataKey] = append([]byte(nil), newVal...)
 

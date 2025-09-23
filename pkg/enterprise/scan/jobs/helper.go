@@ -47,7 +47,22 @@ func SortLocations(loc []tgtv1alpha1.SecretInStoreRef) {
 }
 
 func EqualSecretUpdateRecord(a, b tgtv1alpha1.SecretUpdateRecord) bool {
-	return a.SecretHash == b.SecretHash && a.Timestamp.Equal(&b.Timestamp)
+	return a.SecretHash == b.SecretHash
+}
+
+func EqualPods(a, b v1alpha1.K8sPodItem) bool {
+	return a.Name == b.Name && a.NodeName == b.NodeName && a.Phase == b.Phase && a.Ready == b.Ready && a.Reason == b.Reason && a.UID == b.UID
+}
+
+func ComparePods(a, b v1alpha1.K8sPodItem) int {
+	if a.UID == b.UID {
+		return strings.Compare(a.Name, b.Name)
+	}
+	return strings.Compare(a.UID, b.UID)
+}
+
+func SortPods(pods []v1alpha1.K8sPodItem) {
+	slices.SortFunc(pods, ComparePods)
 }
 
 func FillAttributes(consumer *consumerAccum, kind string, attrs map[string]string) {

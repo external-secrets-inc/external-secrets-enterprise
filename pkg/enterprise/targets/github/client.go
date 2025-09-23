@@ -87,45 +87,44 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	buf.WriteString(content[end:])
 	newContent := buf.Bytes()
 
-	if content == string(newContent) {
-		return nil
-	}
+	if content != string(newContent) {
+		ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
+		if err != nil {
+			return fmt.Errorf("error getting repository ref: %w", err)
+		}
+		newBranch := fmt.Sprintf("external-secrets-update-%d", time.Now().Unix())
+		_, _, err = s.GitHubClient.Git.CreateRef(ctx, owner, repo, &github.Reference{
+			Ref: github.Ptr("refs/heads/" + newBranch),
+			Object: &github.GitObject{
+				SHA: ref.Object.SHA,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("error creating new branch: %w", err)
+		}
 
-	ref, _, err := s.GitHubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+baseBranch)
-	if err != nil {
-		return fmt.Errorf("error getting repository ref: %w", err)
-	}
-	newBranch := fmt.Sprintf("external-secrets-update-%d", time.Now().Unix())
-	_, _, err = s.GitHubClient.Git.CreateRef(ctx, owner, repo, &github.Reference{
-		Ref: github.Ptr("refs/heads/" + newBranch),
-		Object: &github.GitObject{
-			SHA: ref.Object.SHA,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("error creating new branch: %w", err)
-	}
+		commitMsg := fmt.Sprintf("chore: update secret in %s", filename)
+		_, _, err = s.GitHubClient.Repositories.UpdateFile(ctx, owner, repo, filename, &github.RepositoryContentFileOptions{
+			Message: github.Ptr(commitMsg),
+			Content: newContent,
+			SHA:     github.Ptr(fileSHA),
+			Branch:  github.Ptr(newBranch),
+		})
+		if err != nil {
+			return fmt.Errorf("update file: %w", err)
+		}
 
-	commitMsg := fmt.Sprintf("chore: update secret in %s", filename)
-	_, _, err = s.GitHubClient.Repositories.UpdateFile(ctx, owner, repo, filename, &github.RepositoryContentFileOptions{
-		Message: github.Ptr(commitMsg),
-		Content: newContent,
-		SHA:     github.Ptr(fileSHA),
-		Branch:  github.Ptr(newBranch),
-	})
-	if err != nil {
-		return fmt.Errorf("update file: %w", err)
-	}
-
-	title := fmt.Sprintf("[External Secrets] Update secret in %s", filename)
-	pr, _, err := s.GitHubClient.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
-		Title: github.Ptr(title),
-		Head:  github.Ptr(newBranch),
-		Base:  github.Ptr(baseBranch),
-		Body:  github.Ptr("This PR was created automatically by [External Secrets](https://www.externalsecrets.com/) to update a hardcoded secret."),
-	})
-	if err != nil {
-		return fmt.Errorf("error creating PR: %w", err)
+		title := fmt.Sprintf("[External Secrets] Update secret in %s", filename)
+		pr, _, err := s.GitHubClient.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
+			Title: github.Ptr(title),
+			Head:  github.Ptr(newBranch),
+			Base:  github.Ptr(baseBranch),
+			Body:  github.Ptr("This PR was created automatically by [External Secrets](https://www.externalsecrets.com/) to update a hardcoded secret."),
+		})
+		if err != nil {
+			return fmt.Errorf("error creating PR: %w", err)
+		}
+		log.Printf("pull request created by push secret: %d", *pr.Number)
 	}
 
 	err = targets.UpdateTargetPushIndex(ctx, tgtv1alpha1.GithubTargetKind, s.KubeClient, s.Name, s.Namespace, filename, indexes, targets.Hash(newVal))
@@ -133,7 +132,6 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 		return fmt.Errorf("error updating target status: %w", err)
 	}
 
-	log.Printf("pull request created by push secret: %d", *pr.Number)
 	return nil
 }
 

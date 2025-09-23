@@ -5,7 +5,6 @@ package job
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"sync"
 
@@ -94,12 +93,7 @@ func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {
 	out := make([]v1alpha1.Consumer, 0, len(cs.accums))
 	for _, acc := range cs.accums {
 		SortLocations(acc.status.Locations)
-		slices.SortFunc(acc.status.Pods, func(a, b v1alpha1.K8sPodItem) int {
-			if a.UID == b.UID {
-				return strings.Compare(a.Name, b.Name)
-			}
-			return strings.Compare(a.UID, b.UID)
-		})
+		SortPods(acc.status.Pods)
 		out = append(out, v1alpha1.Consumer{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: acc.spec.ID,

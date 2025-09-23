@@ -169,7 +169,7 @@ func consumerNeedsToUpdate(existing, consumer *v1alpha1.Consumer) bool {
 	}
 
 	equalLocations := slices.EqualFunc(existing.Status.Locations, consumer.Status.Locations, utils.EqualLocations)
-	equalPods := slices.Equal(existing.Status.Pods, consumer.Status.Pods)
+	equalPods := slices.EqualFunc(existing.Status.Pods, consumer.Status.Pods, utils.EqualPods)
 	equalObservedIndex := maps.EqualFunc(existing.Status.ObservedIndex, consumer.Status.ObservedIndex, utils.EqualSecretUpdateRecord)
 
 	return !(equalLocations && equalPods && equalObservedIndex)

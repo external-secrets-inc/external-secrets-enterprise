@@ -16,7 +16,6 @@ const (
 const (
 	ConsumerLocationsUpToDate  = "LocationsUpToDate"
 	ConsumerLocationsOutOfDate = "LocationsOutOfDate"
-	ConsumerPodsNotReady       = "PodsNotReady"
 )
 
 type ConsumerSpec struct {
