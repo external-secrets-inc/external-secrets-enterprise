@@ -34,6 +34,7 @@ type ConsumerSpec struct {
 	DisplayName string `json:"displayName"`
 
 	// Exactly one of the following should be set according to Type.
+	// +kubebuilder:validation:Required
 	Attributes ConsumerAttrs `json:"attributes"`
 }
 
@@ -78,6 +79,7 @@ type GitHubActorSpec struct {
 	WorkflowRunID string `json:"workflowRunID,omitempty"`
 }
 
+// K8sWorkloadSpec describes the workload that is interacting with a kubernetes target
 type K8sWorkloadSpec struct {
 	ClusterName string `json:"clusterName,omitempty"`
 
@@ -101,7 +103,7 @@ type ConsumerFinding struct {
 	Type          string             `json:"type"`
 	ID            string             `json:"externalID"`
 	DisplayName   string             `json:"displayName,omitempty"`
-	Attributes    ConsumerAttrs      `json:"attributes,omitempty"`
+	Attributes    ConsumerAttrs      `json:"attributes"`
 }
 
 // Consumer is the schema to store duplicate findings from a job

@@ -30343,6 +30343,7 @@ spec:
                         - repository
                       type: object
                     k8sWorkload:
+                      description: K8sWorkloadSpec describes the workload that is interacting with a kubernetes target
                       properties:
                         clusterName:
                           type: string

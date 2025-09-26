@@ -18,11 +18,14 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	utils "github.com/external-secrets/external-secrets/pkg/enterprise/scan/jobs"
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -346,64 +349,86 @@ func (c *JobController) UpdateFindings(ctx context.Context, findings []v1alpha1.
 	return v1alpha1.JobRunStatusRunning, metav1.Now(), nil
 }
 
-func (c *JobController) UpdateConsumers(ctx context.Context, consumers []v1alpha1.Consumer, namespace string) (v1alpha1.JobRunStatus, metav1.Time, error) {
-	c.Log.V(1).Info("Found consumers for job", "total consumers", len(consumers))
-	// for each consumer, see if it already exists and update it if it does;
-	currentConsumers := &v1alpha1.ConsumerList{}
-	c.Log.V(1).Info("Listing Current consumers")
-	if err := c.List(ctx, currentConsumers, client.InNamespace(namespace)); err != nil {
+func (c *JobController) UpdateConsumers(
+	ctx context.Context,
+	consumers []v1alpha1.Consumer,
+	namespace string,
+) (v1alpha1.JobRunStatus, metav1.Time, error) {
+
+	c.Log.V(1).Info("Found consumers for job", "total", len(consumers))
+
+	seenIDs := make(map[string]struct{}, len(consumers))
+	for i := range consumers {
+		if consumers[i].Name == "" {
+			consumers[i].Name = consumers[i].Spec.ID
+		}
+		consumers[i].Namespace = namespace
+		seenIDs[consumers[i].Spec.ID] = struct{}{}
+	}
+
+	// Upsert each desired Consumer with retry-on-conflict.
+	for i := range consumers {
+		newCons := consumers[i]
+		namespacedName := types.NamespacedName{Namespace: newCons.Namespace, Name: newCons.Name}
+
+		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			var cur v1alpha1.Consumer
+			err := c.Get(ctx, namespacedName, &cur)
+			if apierrors.IsNotFound(err) {
+				cur = v1alpha1.Consumer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        newCons.Name,
+						Namespace:   newCons.Namespace,
+						Labels:      newCons.Labels,
+						Annotations: newCons.Annotations,
+					},
+					Spec: newCons.Spec,
+				}
+				c.Log.V(1).Info("Creating consumer", "name", cur.Name)
+				if err := c.Create(ctx, &cur); err != nil {
+					if !apierrors.IsAlreadyExists(err) {
+						return err
+					}
+				}
+
+				if err := c.Get(ctx, namespacedName, &cur); err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+
+			if !consumerNeedsToUpdate(&cur, &newCons) {
+				return nil
+			}
+			base := cur.DeepCopy()
+			cur.Status = newCons.Status
+			c.Log.V(1).Info("Patching consumer status", "name", cur.Name)
+
+			return c.Status().Patch(ctx, &cur, ctrlclient.MergeFrom(base))
+		}); err != nil {
+			return v1alpha1.JobRunStatusFailed, metav1.Now(), fmt.Errorf("upsert consumer %s/%s: %w", namespace, newCons.Name, err)
+		}
+	}
+
+	// Delete Consumers that were NOT seen this run.
+	var current v1alpha1.ConsumerList
+	c.Log.V(1).Info("Listing current consumers before deletion")
+	if err := c.List(ctx, &current, ctrlclient.InNamespace(namespace)); err != nil {
 		return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 	}
-	c.Log.V(1).Info("Found Current consumers", "total consumers", len(currentConsumers.Items))
 
-	currentConsumersByID := map[string]*v1alpha1.Consumer{}
-	for i := range currentConsumers.Items {
-		consumer := &currentConsumers.Items[i]
-		currentConsumersByID[consumer.Spec.ID] = consumer
-	}
-
-	seenIDs := make(map[string]struct{}, len(currentConsumersByID))
-
-	for i := range consumers {
-		newConsumer := &consumers[i]
-		seenIDs[newConsumer.Spec.ID] = struct{}{}
-
-		// Current update assumes that the ID will be the same for every consumer
-		if currentConsumer, ok := currentConsumersByID[newConsumer.Spec.ID]; ok {
-			if !consumerNeedsToUpdate(currentConsumer, newConsumer) {
-				continue
-			}
-
-			currentConsumer.Status = newConsumer.Status
-			c.Log.V(1).Info("Updating consumer", "consumer", currentConsumer.Spec.ID)
-			if err := c.Status().Update(ctx, currentConsumer); err != nil {
-				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
-			}
-		} else {
-			// create new CR with stable name
-			create := newConsumer.DeepCopy()
-			create.SetNamespace(namespace)
-			c.Log.V(1).Info("Creating consumer", "consumer", create.GetName())
-			if err := c.Create(ctx, create); err != nil {
-				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
-			}
-			create.Status.Locations = newConsumer.Status.Locations
-			c.Log.V(1).Info("Updating consumer status", "consumer", create.GetName())
-			if err := c.Status().Update(ctx, create); err != nil {
-				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
-			}
+	for i := range current.Items {
+		cur := current.Items[i]
+		if _, ok := seenIDs[cur.Spec.ID]; ok {
+			continue
+		}
+		c.Log.V(1).Info("Deleting stale consumer (not observed this run)", "id", cur.Spec.ID, "name", cur.Name)
+		if err := c.Delete(ctx, &cur); err != nil && !apierrors.IsNotFound(err) {
+			return v1alpha1.JobRunStatusFailed, metav1.Now(), err
 		}
 	}
 
-	// Delete Consumers that are no longer found
-	for id, currentConsumer := range currentConsumersByID {
-		if _, ok := seenIDs[id]; !ok {
-			c.Log.V(1).Info("Deleting stale consumer (not observed this run)", "id", id, "name", currentConsumer.GetName())
-			if err := c.Delete(ctx, currentConsumer); err != nil {
-				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
-			}
-		}
-	}
 	return v1alpha1.JobRunStatusRunning, metav1.Now(), nil
 }
 

@@ -56,10 +56,10 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f scanv1alpha1
 				Type:        f.Type,
 				ID:          f.ID,
 				DisplayName: f.DisplayName,
+				Attributes:  f.Attributes,
 			},
 			status: v1alpha1.ConsumerStatus{},
 		}
-		acc.spec.Attributes = *f.Attributes.DeepCopy()
 		acc.status.ObservedIndex = make(map[string]scanv1alpha1.SecretUpdateRecord)
 		cs.accums[key] = acc
 	}

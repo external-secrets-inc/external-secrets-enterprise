@@ -41,7 +41,6 @@ type WorkflowRunReconciler struct {
 // Reconcile handles WorkflowRun resources.
 func (r *WorkflowRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("workflowrun", req.NamespacedName)
-	log.Info("reconciling WorkflowRun")
 
 	// Fetch the WorkflowRun instance
 	run := &workflows.WorkflowRun{}

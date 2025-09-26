@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
@@ -94,23 +93,6 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	err = targets.UpdateTargetPushIndex(ctx, tgtv1alpha1.KubernetesTargetKind, s.KubeClient, s.Name, s.Namespace, remoteKey, dataKey, newHash)
 	if err != nil {
 		return fmt.Errorf("error updating target status: %w", err)
-	}
-
-	consumers, err := s.ScanForConsumers(ctx, v1alpha1.SecretInStoreRef{
-		APIVersion: tgtv1alpha1.Group + "/" + tgtv1alpha1.Version,
-		Kind:       tgtv1alpha1.KubernetesTargetKind,
-		Name:       s.Name,
-		RemoteRef: v1alpha1.RemoteRef{
-			Key:      remoteKey,
-			Property: dataKey,
-		},
-	}, newHash)
-	if err != nil {
-		return fmt.Errorf("scan for consumers: %w", err)
-	}
-
-	if err := targets.UpdateConsumersFromFindings(ctx, s.KubeClient, s.Namespace, consumers); err != nil {
-		return fmt.Errorf("update consumer statuses: %w", err)
 	}
 
 	return nil
