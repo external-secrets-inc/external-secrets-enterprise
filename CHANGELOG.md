@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.9](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.8...v1.20.9) (2025-09-26)
+
+
+### Bug Fixes
+
+* add targets observed digest to rerun scan jobs ([#483](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/483)) ([ba680d8](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ba680d8940af909a024ce41d187dca01d5a1c116))
+
 ## [1.20.8](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.7...v1.20.8) (2025-09-26)
 
 
