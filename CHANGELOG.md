@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.7](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.6...v1.20.7) (2025-09-26)
+
+
+### Bug Fixes
+
+* add nil return for vm target scan consumer ([#481](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/481)) ([4b3cef0](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4b3cef02ac699a327647360735ad8cb4e64f1aaf))
+* workflow findings array validation ([#477](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/477)) ([bbc30ef](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/bbc30ef315987cef9d96f3c2a107093979c5acd0))
+
 ## [1.20.6](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.5...v1.20.6) (2025-09-16)
 
 
