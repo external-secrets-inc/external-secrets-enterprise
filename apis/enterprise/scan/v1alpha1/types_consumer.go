@@ -79,7 +79,7 @@ type GitHubActorSpec struct {
 	WorkflowRunID string `json:"workflowRunID,omitempty"`
 }
 
-// K8sWorkloadSpec describes the workload that is interacting with a kubernetes target
+// K8sWorkloadSpec describes the workload that is interacting with a kubernetes target.
 type K8sWorkloadSpec struct {
 	ClusterName string `json:"clusterName,omitempty"`
 

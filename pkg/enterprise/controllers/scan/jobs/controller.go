@@ -354,7 +354,6 @@ func (c *JobController) UpdateConsumers(
 	consumers []v1alpha1.Consumer,
 	namespace string,
 ) (v1alpha1.JobRunStatus, metav1.Time, error) {
-
 	c.Log.V(1).Info("Found consumers for job", "total", len(consumers))
 
 	seenIDs := make(map[string]struct{}, len(consumers))
