@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.8](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.7...v1.20.8) (2025-09-26)
+
+
+### Bug Fixes
+
+* kubernetes consumer status ([#479](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/479)) ([e2d6538](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e2d653843e0d22615313d6d0cf213e8087e709b2))
+
 ## [1.20.7](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.6...v1.20.7) (2025-09-26)
 
 
