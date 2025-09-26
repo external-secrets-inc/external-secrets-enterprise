@@ -30871,6 +30871,9 @@ spec:
                 observedSecretStoresDigest:
                   description: ObservedSecretStoresDigest is a digest of the SecretStores that were used in the last run.
                   type: string
+                observedTargetsDigest:
+                  description: ObservedTargetsDigest is a digest of the Targets that were used in the last run.
+                  type: string
                 runStatus:
                   type: string
               type: object

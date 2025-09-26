@@ -17,6 +17,7 @@ const (
 	ConsumerLocationsOutOfDate = "LocationsOutOfDate"
 	ConsumerWorkloadReady      = "WorkloadReady"
 	ConsumerWorkloadNotReady   = "WorkloadNotReady"
+	ConsumerNotReady           = "ConsumerNotReady"
 )
 
 type ConsumerSpec struct {

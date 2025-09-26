@@ -42,14 +42,14 @@ func (j *JobRunner) Close(ctx context.Context) error {
 	return j.mgr.Close(ctx)
 }
 
-func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha1.Consumer, []esv1.SecretStore, error) {
+func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha1.Consumer, []esv1.SecretStore, []tgtv1alpha1.GenericTarget, error) {
 	// List Secret Stores
 	// TODO - apply constraints
 	j.Logger.V(1).Info("Listing Secret Stores")
 	usedStores := make([]esv1.SecretStore, 0)
 	stores := &esv1.SecretStoreList{}
 	if err := j.Client.List(ctx, stores, client.InNamespace(j.Namespace)); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	secretValues := make(map[string]struct{}, 0)
@@ -88,7 +88,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1al
 						j.locationMemset.Add(newStoreInRef(store.GetName(), key, k), []byte(v))
 						secretValues[v] = struct{}{}
 					default:
-						return nil, nil, nil, fmt.Errorf("no conversion for value of type %T", v)
+						return nil, nil, nil, nil, fmt.Errorf("no conversion for value of type %T", v)
 					}
 				}
 			} else {
@@ -98,45 +98,48 @@ func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1al
 			}
 		}
 	}
+
+	usedTargets := make([]tgtv1alpha1.GenericTarget, 0)
 	// Check All duplicates on all created targets
 	j.Logger.V(1).Info("Getting Virtual Machine Targets")
-	err := j.scanVirtualMachineTargets(ctx)
+	usedTargets, err := j.scanVirtualMachineTargets(ctx, usedTargets)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	j.Logger.V(1).Info("Getting Github Repository Targets")
-	err = j.scanGithubRepositoryTargets(ctx, secretValues)
+	usedTargets, err = j.scanGithubRepositoryTargets(ctx, secretValues, usedTargets)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	j.Logger.V(1).Info("Getting Kubernetes Cluster Targets")
-	err = j.scanKubernetesClusterTargets(ctx, secretValues)
+	usedTargets, err = j.scanKubernetesClusterTargets(ctx, secretValues, usedTargets)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	findings := j.locationMemset.GetDuplicates()
 
 	j.Logger.V(1).Info("Attributing Consumers across targets")
 	if err := j.attributeConsumers(ctx, findings); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	consumers := j.consumerMemset.List()
 
 	j.Logger.V(1).Info("Run Complete")
-	return findings, consumers, usedStores, nil
+	return findings, consumers, usedStores, usedTargets, nil
 }
 
-func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
+func (j JobRunner) scanVirtualMachineTargets(ctx context.Context, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
 	vmTargets := &tgtv1alpha1.VirtualMachineList{}
 	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
-		return err
+		return nil, err
 	}
-	for _, target := range vmTargets.Items {
+	for i, target := range vmTargets.Items {
 		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
+		usedTargets = append(usedTargets, &vmTargets.Items[i])
 		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
 		if !ok {
 			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
@@ -161,26 +164,28 @@ func (j JobRunner) scanVirtualMachineTargets(ctx context.Context) error {
 			}
 		}
 	}
-	return nil
+	return usedTargets, nil
 }
 
-func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}) error {
+func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
 	list := &tgtv1alpha1.GithubRepositoryList{}
-	return j.scanTargets(ctx, list, func() []client.Object {
+	return usedTargets, j.scanTargets(ctx, list, func() []client.Object {
 		objs := make([]client.Object, len(list.Items))
 		for i := range list.Items {
-			objs[i] = &list.Items[i] // pointer to each item
+			objs[i] = &list.Items[i]
+			usedTargets = append(usedTargets, &list.Items[i])
 		}
 		return objs
 	}, secretValues)
 }
 
-func (j JobRunner) scanKubernetesClusterTargets(ctx context.Context, secretValues map[string]struct{}) error {
+func (j JobRunner) scanKubernetesClusterTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
 	list := &tgtv1alpha1.KubernetesClusterList{}
-	return j.scanTargets(ctx, list, func() []client.Object {
+	return usedTargets, j.scanTargets(ctx, list, func() []client.Object {
 		objs := make([]client.Object, len(list.Items))
 		for i := range list.Items {
 			objs[i] = &list.Items[i]
+			usedTargets = append(usedTargets, &list.Items[i])
 		}
 		return objs
 	}, secretValues)

@@ -50,6 +50,9 @@ type JobStatus struct {
 	// ObservedSecretStoresDigest is a digest of the SecretStores that were used in the last run.
 	// +optional
 	ObservedSecretStoresDigest string `json:"observedSecretStoresDigest,omitempty"`
+	// ObservedTargetsDigest is a digest of the Targets that were used in the last run.
+	// +optional
+	ObservedTargetsDigest string `json:"observedTargetsDigest,omitempty"`
 
 	LastRunTime metav1.Time        `json:"lastRunTime,omitempty"`
 	RunStatus   JobRunStatus       `json:"runStatus,omitempty"`

@@ -94,6 +94,14 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 		if latestRecord.SecretHash != observedIndex.SecretHash {
 			locationsOutOfDate = append(locationsOutOfDate, observedIndexKey)
 			locationsOutOfDateMessages = append(locationsOutOfDateMessages, fmt.Sprintf("Location %s last updated at %v. Current version updated at %v", observedIndexKey, observedIndex.Timestamp.Time, latestRecord.Timestamp.Time))
+			continue
+		}
+
+		if observedIndex.Timestamp.Before(&latestRecord.Timestamp) {
+			consumerStatusCondition = metav1.ConditionFalse
+			consumerStatusReason = scanv1alpha1.ConsumerNotReady
+			consumerStatusMessage = fmt.Sprintf("Consumer not ready. Last update at: %v", observedIndex.Timestamp.Time)
+			break
 		}
 	}
 

@@ -15,9 +15,11 @@ import (
 	"time"
 
 	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	utils "github.com/external-secrets/external-secrets/pkg/enterprise/scan/jobs"
 	"github.com/go-logr/logr"
+	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,11 +67,19 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 			if err := c.Client.List(ctx, stores, client.InNamespace(jobSpec.Namespace)); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to list secret stores for digest calculation: %w", err)
 			}
-			currentDigest := calculateDigest(stores.Items)
+			currentSecretStoresDigest := calculateSecretStoresDigest(stores.Items)
+
+			targets, err := collectTargets(ctx, c.Client, jobSpec.Namespace)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			currentTargetsDigest := calculateTargetsDigest(targets)
 
 			// If digests are different, a SecretStore has changed, so run immediately.
-			if currentDigest != jobSpec.Status.ObservedSecretStoresDigest {
+			if currentSecretStoresDigest != jobSpec.Status.ObservedSecretStoresDigest {
 				c.Log.V(1).Info("secretstore digest changed, running job immediately", "job", jobSpec.GetName())
+			} else if currentTargetsDigest != jobSpec.Status.ObservedTargetsDigest {
+				c.Log.V(1).Info("target digest changed, running job immediately", "job", jobSpec.GetName())
 			} else {
 				// Otherwise, respect the polling interval
 				timeToReconcile := time.Since(jobSpec.Status.LastRunTime.Time)
@@ -179,14 +189,23 @@ func consumerNeedsToUpdate(existing, consumer *v1alpha1.Consumer) bool {
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
 func (c *JobController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	controller := ctrl.NewControllerManagedBy(mgr).
 		WithOptions(opts).
 		For(&v1alpha1.Job{}).
 		Watches(
 			&esv1.SecretStore{},
 			handler.EnqueueRequestsFromMapFunc(c.mapSecretStoreToJobs),
-		).
-		Complete(c)
+		)
+
+	targets := targetv1alpha1.GetAllTargets()
+	for _, target := range targets {
+		controller = controller.Watches(
+			target,
+			handler.EnqueueRequestsFromMapFunc(c.mapTargetToJobs),
+		)
+	}
+
+	return controller.Complete(c)
 }
 
 func (c *JobController) mapSecretStoreToJobs(ctx context.Context, obj client.Object) []reconcile.Request {
@@ -210,8 +229,29 @@ func (c *JobController) mapSecretStoreToJobs(ctx context.Context, obj client.Obj
 	return requests
 }
 
-// calculateDigest computes a sha256 digest from the resourceVersions of the provided SecretStores.
-func calculateDigest(stores []esv1.SecretStore) string {
+func (c *JobController) mapTargetToJobs(ctx context.Context, obj client.Object) []reconcile.Request {
+	c.Log.V(1).Info("reconciling all jobs due to Target change", "target", obj.GetName())
+
+	jobList := &v1alpha1.JobList{}
+	if err := c.List(ctx, jobList, client.InNamespace(obj.GetNamespace())); err != nil {
+		c.Log.Error(err, "failed to list jobs for target change")
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(jobList.Items))
+	for i, job := range jobList.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      job.Name,
+				Namespace: job.Namespace,
+			},
+		}
+	}
+	return requests
+}
+
+// calculateSecretStoresDigest computes a sha256 digest from the resourceVersions of the provided SecretStores.
+func calculateSecretStoresDigest(stores []esv1.SecretStore) string {
 	if len(stores) == 0 {
 		return ""
 	}
@@ -226,6 +266,77 @@ func calculateDigest(stores []esv1.SecretStore) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
+// collectTargets lists all Target CRDs in a namespace and returns them as GenericTarget.
+func collectTargets(ctx context.Context, c client.Client, ns string) ([]targetv1alpha1.GenericTarget, error) {
+	var (
+		out       []targetv1alpha1.GenericTarget
+		mu        sync.Mutex
+		eg, egCtx = errgroup.WithContext(ctx)
+	)
+
+	add := func(f func() error) { eg.Go(func() error { return f() }) }
+
+	add(func() error {
+		l := &targetv1alpha1.GithubRepositoryList{}
+		if err := c.List(egCtx, l, client.InNamespace(ns)); err != nil {
+			return fmt.Errorf("list github targets: %w", err)
+		}
+		mu.Lock()
+		for i := range l.Items {
+			out = append(out, &l.Items[i]) // IMPORTANT: take address by index
+		}
+		mu.Unlock()
+		return nil
+	})
+
+	add(func() error {
+		l := &targetv1alpha1.KubernetesClusterList{}
+		if err := c.List(egCtx, l, client.InNamespace(ns)); err != nil {
+			return fmt.Errorf("list kubernetes targets: %w", err)
+		}
+		mu.Lock()
+		for i := range l.Items {
+			out = append(out, &l.Items[i])
+		}
+		mu.Unlock()
+		return nil
+	})
+
+	add(func() error {
+		l := &targetv1alpha1.VirtualMachineList{}
+		if err := c.List(egCtx, l, client.InNamespace(ns)); err != nil {
+			return fmt.Errorf("list vm targets: %w", err)
+		}
+		mu.Lock()
+		for i := range l.Items {
+			out = append(out, &l.Items[i])
+		}
+		mu.Unlock()
+		return nil
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// calculateTargetsDigest computes a sha256 digest from the resourceVersions of the provided Targets.
+func calculateTargetsDigest(targets []targetv1alpha1.GenericTarget) string {
+	if len(targets) == 0 {
+		return ""
+	}
+	// Sort by name to ensure consistent digest
+	sort.Slice(targets, func(i, j int) bool {
+		return targets[i].GetName() < targets[j].GetName()
+	})
+	hash := sha256.New()
+	for _, target := range targets {
+		hash.Write([]byte(target.GetResourceVersion()))
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
 func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *utils.JobRunner) error {
 	defer func() {
 		err := j.Close(context.Background())
@@ -236,11 +347,13 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 	var jobTime metav1.Time
 	var jobStatus v1alpha1.JobRunStatus
 	var observedSecretStoresDigest string
+	var observedTargetsDigest string
 	defer func() {
 		jobSpec.Status = v1alpha1.JobStatus{
 			LastRunTime:                jobTime,
 			RunStatus:                  jobStatus,
 			ObservedSecretStoresDigest: observedSecretStoresDigest,
+			ObservedTargetsDigest:      observedTargetsDigest,
 		}
 		c.Log.V(1).Info("Updating Job Status", "RunStatus", jobStatus)
 		if err := c.Status().Update(ctx, jobSpec); err != nil {
@@ -248,7 +361,7 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 		}
 	}()
 	c.Log.V(1).Info("Running Job", "job", jobSpec.GetName())
-	findings, consumers, usedStores, err := j.Run(ctx)
+	findings, consumers, usedStores, usedTargets, err := j.Run(ctx)
 	if err != nil {
 		jobStatus = v1alpha1.JobRunStatusFailed
 		jobTime = metav1.Now()
@@ -267,7 +380,8 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 
 	jobStatus = v1alpha1.JobRunStatusSucceeded
 	jobTime = metav1.Now()
-	observedSecretStoresDigest = calculateDigest(usedStores)
+	observedSecretStoresDigest = calculateSecretStoresDigest(usedStores)
+	observedTargetsDigest = calculateTargetsDigest(usedTargets)
 	return nil
 }
 
