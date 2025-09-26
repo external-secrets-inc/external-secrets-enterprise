@@ -47,9 +47,10 @@ type ScanTarget struct {
 }
 
 const (
-	errNotImplemented    = "not implemented"
-	errPropertyMandatory = "property is mandatory"
-	HTTPS                = "https"
+	errNotImplemented             = "not implemented"
+	errPropertyMandatory          = "property is mandatory"
+	HTTPS                         = "https"
+	IsScanForConsumersImplemented = false
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
@@ -260,6 +261,11 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 }
 
 func (s *ScanTarget) ScanForConsumers(ctx context.Context, location tgtv1alpha1.SecretInStoreRef, hash string) ([]tgtv1alpha1.ConsumerFinding, error) {
+	if !IsScanForConsumersImplemented {
+		// TODO: Remove when endpoint is implemented on vm server
+		return nil, nil
+	}
+
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
