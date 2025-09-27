@@ -57,8 +57,6 @@ const (
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
-	mu.Lock()
-	defer mu.Unlock()
 	converted, ok := target.(*tgtv1alpha1.VirtualMachine)
 	if !ok {
 		return nil, fmt.Errorf("target %q not found", target.GetObjectKind().GroupVersionKind().Kind)
