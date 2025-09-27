@@ -230,6 +230,8 @@ func (c *JobController) mapSecretStoreToJobs(ctx context.Context, obj client.Obj
 }
 
 func (c *JobController) mapTargetToJobs(ctx context.Context, obj client.Object) []reconcile.Request {
+	// TODO - as soon as a PushSecret is done, this is updaated, causing the job reconcile to trigger way before what we want.
+	// We actually want it to trigger only once after all reconciles are done (or sort of),
 	c.Log.V(1).Info("reconciling all jobs due to Target change", "target", obj.GetName())
 
 	jobList := &v1alpha1.JobList{}
@@ -503,8 +505,12 @@ func (c *JobController) UpdateConsumers(
 						return err
 					}
 				}
-
-				if err := c.Get(ctx, namespacedName, &cur); err != nil {
+				err := retry.OnError(retry.DefaultBackoff, func(err error) bool {
+					return apierrors.IsNotFound(err)
+				}, func() error {
+					return c.Get(ctx, namespacedName, &cur)
+				})
+				if err != nil {
 					return err
 				}
 			} else if err != nil {

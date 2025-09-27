@@ -23,6 +23,8 @@ import (
 )
 
 func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remoteRef esv1.PushSecretData) error {
+	mu.Lock()
+	defer mu.Unlock()
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return fmt.Errorf("parsing URL %q: %w", s.URL, err)

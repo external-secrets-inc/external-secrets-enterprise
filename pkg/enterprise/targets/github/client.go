@@ -24,6 +24,8 @@ import (
 
 // PushSecret creates a pull request that replaces the exact old value (Property) in the file (Key).
 func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remoteRef esv1.PushSecretData) error {
+	mu.Lock()
+	defer mu.Unlock()
 	if remoteRef.GetProperty() == "" || remoteRef.GetRemoteKey() == "" {
 		return errors.New("remoteRef.Property and remoteRef.Key are mandatory")
 	}

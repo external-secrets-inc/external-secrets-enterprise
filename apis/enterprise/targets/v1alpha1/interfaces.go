@@ -28,6 +28,8 @@ type TargetProvider interface {
 type ScanTarget interface {
 	ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]scanv1alpha1.SecretInStoreRef, error)
 	ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error)
+	Lock()
+	Unlock()
 }
 
 // +kubebuilder:object:root=false

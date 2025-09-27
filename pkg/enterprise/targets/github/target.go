@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -30,6 +31,8 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
+
+var mu sync.Mutex
 
 type Provider struct{}
 type ScanTarget struct {
@@ -137,6 +140,14 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		GitHubClient:  githubClient,
 		KubeClient:    client,
 	}, nil
+}
+
+func (s *ScanTarget) Lock() {
+	mu.Lock()
+}
+
+func (s *ScanTarget) Unlock() {
+	mu.Unlock()
 }
 
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]scanv1alpha1.SecretInStoreRef, error) {

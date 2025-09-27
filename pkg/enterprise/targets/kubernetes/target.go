@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,6 +35,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/utils"
 	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 )
+
+var mu sync.Mutex
 
 type Provider struct{}
 
@@ -107,6 +110,14 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	}
 
 	return newClient(ctx, converted, mgrClient, clientset.CoreV1())
+}
+
+func (s *ScanTarget) Lock() {
+	mu.Lock()
+}
+
+func (s *ScanTarget) Unlock() {
+	mu.Unlock()
 }
 
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]scanv1alpha1.SecretInStoreRef, error) {

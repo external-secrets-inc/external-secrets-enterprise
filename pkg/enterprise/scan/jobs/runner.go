@@ -208,6 +208,8 @@ func (j JobRunner) scanTargets(ctx context.Context, list client.ObjectList, getO
 			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
 			continue
 		}
+		client.Lock()
+		defer client.Unlock()
 
 		for value := range secretValues {
 			locations, err := client.ScanForSecrets(ctx, []string{value}, 0)

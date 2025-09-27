@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+var mu sync.Mutex
 
 type Provider struct{}
 
@@ -54,6 +57,8 @@ const (
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
+	mu.Lock()
+	defer mu.Unlock()
 	converted, ok := target.(*tgtv1alpha1.VirtualMachine)
 	if !ok {
 		return nil, fmt.Errorf("target %q not found", target.GetObjectKind().GroupVersionKind().Kind)
@@ -116,6 +121,14 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 		Namespace:         converted.GetNamespace(),
 		KubeClient:        client,
 	}, nil
+}
+
+func (s *ScanTarget) Lock() {
+	mu.Lock()
+}
+
+func (s *ScanTarget) Unlock() {
+	mu.Unlock()
 }
 
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, regexes []string, threshold int) ([]scanv1alpha1.SecretInStoreRef, error) {
