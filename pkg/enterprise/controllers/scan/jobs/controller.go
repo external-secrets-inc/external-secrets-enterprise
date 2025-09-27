@@ -505,9 +505,7 @@ func (c *JobController) UpdateConsumers(
 						return err
 					}
 				}
-				err := retry.OnError(retry.DefaultBackoff, func(err error) bool {
-					return apierrors.IsNotFound(err)
-				}, func() error {
+				err := retry.OnError(retry.DefaultBackoff, apierrors.IsNotFound, func() error {
 					return c.Get(ctx, namespacedName, &cur)
 				})
 				if err != nil {
