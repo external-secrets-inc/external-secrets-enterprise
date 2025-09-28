@@ -44,5 +44,5 @@ func SortLocations(loc []scanv1alpha1.SecretInStoreRef) {
 }
 
 func EqualSecretUpdateRecord(a, b scanv1alpha1.SecretUpdateRecord) bool {
-	return a.SecretHash == b.SecretHash
+	return a.SecretHash == b.SecretHash && a.Timestamp.Equal(&b.Timestamp)
 }
