@@ -63,7 +63,7 @@ func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardPa
 		best := Candidate{}
 		for _, currentFinding := range currentFindings {
 			currentLocationsSet := LocationsToStringSet(currentFinding.Status.Locations)
-			intersection, union, jaccardIndex := Jaccard(currentLocationsSet, newLocationsSet)
+			intersection, union, jaccardIndex := Jaccard(newLocationsSet, currentLocationsSet)
 			isSimilarEnough := jaccardIndex >= params.MinJaccard
 			// Fallback for small sets: accept if there's a strong raw overlap,
 			// meaning at least MinIntersection elements match AND the overlap
