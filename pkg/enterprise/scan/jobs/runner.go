@@ -209,7 +209,6 @@ func (j JobRunner) scanTargets(ctx context.Context, list client.ObjectList, getO
 			continue
 		}
 		client.Lock()
-
 		for value := range secretValues {
 			locations, err := client.ScanForSecrets(ctx, []string{value}, 0)
 			if err != nil {

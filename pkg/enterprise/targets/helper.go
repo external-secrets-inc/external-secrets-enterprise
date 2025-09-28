@@ -62,6 +62,11 @@ func UpdateTargetPushIndex(
 
 		hist := status.PushIndex[locationKey]
 
+		// Do not push a new index if hash did not change
+		if len(hist) > 0 && hist[len(hist)-1].SecretHash == hash {
+			return nil
+		}
+
 		hist = append(hist, scanv1alpha1.SecretUpdateRecord{
 			Timestamp:  metav1.NewTime(metav1.Now().UTC()),
 			SecretHash: hash,
