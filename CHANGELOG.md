@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.11](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.10...v1.20.11) (2025-09-28)
+
+
+### Bug Fixes
+
+* skip pushindex updates if no updates ([#488](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/488)) ([84be5c5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/84be5c5679b991ec1b0243a6ae21733abc52f2a6))
+
 ## [1.20.10](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.9...v1.20.10) (2025-09-27)
 
 
