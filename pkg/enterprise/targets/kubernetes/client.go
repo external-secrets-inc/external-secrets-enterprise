@@ -23,8 +23,6 @@ import (
 )
 
 func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remoteRef esv1.PushSecretData) error {
-	// mu.Lock()
-	// defer mu.Unlock()
 	if secret == nil {
 		return fmt.Errorf("secret is nil")
 	}
