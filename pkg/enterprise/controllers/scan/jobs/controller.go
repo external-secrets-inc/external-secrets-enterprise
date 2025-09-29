@@ -458,9 +458,10 @@ func (c *JobController) UpdateFindings(ctx context.Context, findings []v1alpha1.
 	for id, currentFinding := range currentFindingsByID {
 		if _, ok := seenIDs[id]; !ok {
 			c.Log.V(1).Info("Deleting stale finding (not observed this run)", "id", id, "name", currentFinding.GetName())
-			if err := c.Delete(ctx, currentFinding); err != nil {
-				return v1alpha1.JobRunStatusFailed, metav1.Now(), err
-			}
+			// TODO - Fix this nasty concurrency bug
+			// if err := c.Delete(ctx, currentFinding); err != nil {
+			// 	return v1alpha1.JobRunStatusFailed, metav1.Now(), err
+			// }
 		}
 	}
 
