@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.12](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.11...v1.20.12) (2025-09-29)
+
+
+### Bug Fixes
+
+* lint ([#493](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/493)) ([f0e5344](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f0e5344bc55802e4b297b904f768dde830d8ea6b))
+* release ([#491](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/491)) ([70ef28e](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/70ef28edcba7948d5076386d92bfddac993943ad))
+
 ## [1.20.11](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.10...v1.20.11) (2025-09-28)
 
 
