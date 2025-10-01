@@ -12,11 +12,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -50,10 +47,9 @@ type ScanTarget struct {
 }
 
 const (
-	errNotImplemented             = "not implemented"
-	errPropertyMandatory          = "property is mandatory"
-	HTTPS                         = "https"
-	IsScanForConsumersImplemented = false
+	errNotImplemented    = "not implemented"
+	errPropertyMandatory = "property is mandatory"
+	HTTPS                = "https"
 )
 
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
@@ -272,11 +268,6 @@ func (s *ScanTarget) getJobMatches(ctx context.Context, client *http.Client, job
 }
 
 func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
-	if !IsScanForConsumersImplemented {
-		// TODO: Remove when endpoint is implemented on vm server
-		return nil, nil
-	}
-
 	u, err := url.Parse(s.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL %q: %w", s.URL, err)
@@ -309,8 +300,8 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1
 		return nil, fmt.Errorf("marshaling consumer request: %w", err)
 	}
 
-	api := fmt.Sprintf("%s/api/v1/scanconsumer", s.URL)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, api, bytes.NewReader(body))
+	api := fmt.Sprintf("%s/api/v1/consumers?filePath=%s", s.URL, url.QueryEscape(location.RemoteRef.Key))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("creating consumer request: %w", err)
 	}
@@ -327,87 +318,23 @@ func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	var scanResp ScanJobResponse
+	var scanResp []ConsumerScanJobResponse
 	if err := json.NewDecoder(resp.Body).Decode(&scanResp); err != nil {
 		return nil, fmt.Errorf("decoding consumer response: %w", err)
 	}
 
-	// Poll for completion (10m timeout, same as ScanForSecrets)
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
-	return s.checkForConsumerJob(ctx, client, scanResp.JobID, location, hash)
-}
-
-func (s *ScanTarget) checkForConsumerJob(ctx context.Context, client *http.Client, jobID string, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
-	findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
-	if err != nil && !errors.Is(err, JobNotReadyErr{}) {
-		return nil, err
-	}
-	if err == nil {
-		return findings, nil
-	}
-
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-ticker.C:
-			findings, err := s.getConsumerJobMatches(ctx, client, jobID, location, hash)
-			if err != nil {
-				if errors.Is(err, JobNotReadyErr{}) {
-					continue
-				}
-				return nil, err
-			}
-			return findings, nil
-		}
-	}
-}
-
-func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Client, jobID string, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
-	api := fmt.Sprintf("%s/api/v1/scanconsumer/%s", s.URL, jobID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api, http.NoBody)
-	if err != nil {
-		return nil, fmt.Errorf("creating consumer job request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if s.AuthBasicUsername != nil && s.AuthBasicPassword != nil {
-		req.SetBasicAuth(*s.AuthBasicUsername, *s.AuthBasicPassword)
-	} else if s.AuthBearerToken != nil {
-		req.Header.Set("Authorization", "Bearer "+*s.AuthBearerToken)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("executing consumer job request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var jobResp ConsumerScanJobResponse
-	if err := json.NewDecoder(resp.Body).Decode(&jobResp); err != nil {
-		return nil, fmt.Errorf("decoding consumer job response: %w", err)
-	}
-	if jobResp.Status != "completed" {
-		return nil, JobNotReadyErr{}
-	}
-
-	out := make([]scanv1alpha1.ConsumerFinding, 0, len(jobResp.Consumers))
-	for _, attrs := range jobResp.Consumers {
-		display := attrs.Attributes.Hostname
+	out := make([]scanv1alpha1.ConsumerFinding, 0, len(scanResp))
+	for _, consumer := range scanResp {
+		display := consumer.Comm
 		if display == "" {
-			display = attrs.Attributes.Executable
+			display = consumer.Exe
 		}
 
-		observedIndexTimestamp := metav1.NewTime(metav1.Now().UTC())
-		if attrs.StartTimestamp != "" {
-			parsedTimestamp, err := parseStringToTime(attrs.StartTimestamp)
-			if err == nil {
-				observedIndexTimestamp = metav1.NewTime(parsedTimestamp)
-			} else {
-				log.Printf("Warning: error parsing vm start timestamp: %v", err)
-			}
+		var observedIndexTimestamp metav1.Time
+		if !consumer.UpdatedAt.IsZero() {
+			observedIndexTimestamp = metav1.NewTime(consumer.UpdatedAt.UTC())
+		} else {
+			observedIndexTimestamp = metav1.NewTime(consumer.CreatedAt.UTC())
 		}
 
 		out = append(out, scanv1alpha1.ConsumerFinding{
@@ -417,10 +344,15 @@ func (s *ScanTarget) getConsumerJobMatches(ctx context.Context, client *http.Cli
 			},
 			Location:    location,
 			Type:        tgtv1alpha1.VirtualMachineKind,
-			ID:          stableConsumerID(attrs.Attributes),
+			ID:          stableConsumerID(consumer),
 			DisplayName: display,
 			Attributes: scanv1alpha1.ConsumerAttrs{
-				VMProcess: &attrs.Attributes,
+				VMProcess: &scanv1alpha1.VMProcessSpec{
+					RUID:       int64(consumer.RUID),
+					EUID:       int64(consumer.EUID),
+					Executable: consumer.Exe,
+					Cmdline:    consumer.Comm,
+				},
 			},
 		})
 	}
@@ -476,59 +408,8 @@ func getCertAuth(ctx context.Context, client client.Client, namespace string, au
 
 // stableConsumerID returns a stable external ID based on attributes that
 // do not change across restarts. For VMs we avoid PID on purpose.
-func stableConsumerID(attrs scanv1alpha1.VMProcessSpec) string {
-	host := strings.ToLower(strings.TrimSpace(attrs.Hostname))
-	exe := strings.TrimSpace(attrs.Executable)
-	cmd := normalizeCmdline(attrs.Cmdline)
-
-	base := host + "|" + exe + "|" + cmd
+func stableConsumerID(consumer ConsumerScanJobResponse) string {
+	base := consumer.Comm + "|" + consumer.Exe + "|" + fmt.Sprintf("%d|%d", consumer.RUID, consumer.EUID)
 	sum := sha512.Sum512([]byte(base))
 	return hex.EncodeToString(sum[:])
-}
-
-func normalizeCmdline(cmdLines []string) string {
-	s := strings.Join(cmdLines, " ")
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return ""
-	}
-
-	return strings.Join(strings.Fields(s), " ")
-}
-
-func parseStringToTime(s string) (time.Time, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return time.Time{}, fmt.Errorf("empty")
-	}
-
-	layouts := []string{
-		time.ANSIC,                      // "Mon Jan _2 15:04:05 2006" (no TZ)
-		time.UnixDate,                   // "Mon Jan _2 15:04:05 MST 2006"
-		time.RubyDate,                   // "Mon Jan 02 15:04:05 -0700 2006"
-		time.RFC3339,                    // ISO8601
-		time.RFC3339Nano,                // ISO8601 (nano)
-		"Mon 2006-01-02 15:04:05 MST",   // systemd-ish with TZ name
-		"Mon 2006-01-02 15:04:05 -0700", // systemd-ish with numeric offset
-	}
-
-	var lastErr error
-	for _, layout := range layouts {
-		var t time.Time
-		switch layout {
-		case time.ANSIC:
-			t, lastErr = time.ParseInLocation(layout, s, time.Local)
-		default:
-			t, lastErr = time.Parse(layout, s)
-		}
-		if lastErr == nil {
-			return t.UTC(), nil
-		}
-	}
-
-	if sec, err := strconv.ParseInt(s, 10, 64); err == nil {
-		return time.Unix(sec, 0).UTC(), nil
-	}
-
-	return time.Time{}, fmt.Errorf("unrecognized time %q: %w", s, lastErr)
 }

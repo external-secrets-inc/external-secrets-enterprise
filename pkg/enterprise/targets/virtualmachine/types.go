@@ -2,7 +2,11 @@
 // All Rights reserved.
 package virtualmachine
 
-import scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+import (
+	"time"
+
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+)
 
 type Request struct {
 	Regexes   []string `json:"regexes"`
@@ -38,11 +42,13 @@ type ConsumerRequest struct {
 }
 
 type ConsumerScanJobResponse struct {
-	Status    string              `json:"status"`
-	Consumers []VMProcessResponse `json:"consumers"`
-}
-
-type VMProcessResponse struct {
-	Attributes     scanv1alpha1.VMProcessSpec `json:"attributes"`
-	StartTimestamp string                     `json:"startTimestamp"`
+	ID        uint      `json:"id"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	DeletedAt time.Time `json:"deletedAt,omitempty"`
+	FilePath  string    `json:"filePath"`
+	Comm      string    `json:"comm"`
+	Exe       string    `json:"exe"`
+	RUID      int       `json:"ruid"`
+	EUID      int       `json:"euid"`
 }

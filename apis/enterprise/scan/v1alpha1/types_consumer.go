@@ -58,11 +58,10 @@ type TargetReference struct {
 
 // VMProcessSpec describes a process on a VM/host.
 type VMProcessSpec struct {
-	Hostname   string   `json:"hostname"`             // e.g., "ip-10-0-1-23"
-	PID        int64    `json:"pid"`                  // process id
-	Executable string   `json:"executable,omitempty"` // "/usr/sbin/nginx"
-	Cmdline    []string `json:"cmdline,omitempty"`    // ["nginx","-g","daemon off;"]
-	User       string   `json:"user,omitempty"`       // "www-data"
+	RUID       int64  `json:"ruid"`
+	EUID       int64  `json:"euid"`
+	Executable string `json:"executable,omitempty"`
+	Cmdline    string `json:"cmdline,omitempty"`
 }
 
 // GitHubActorSpec describes who/what is interacting with a repo.
