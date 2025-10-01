@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.13](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.12...v1.20.13) (2025-10-01)
+
+
+### Bug Fixes
+
+* update vm_server get consumers endpoint ([#494](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/494)) ([aa25eee](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/aa25eeeccf2d988aef0d69723af626513bcbd09a))
+
 ## [1.20.12](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.11...v1.20.12) (2025-09-29)
 
 
