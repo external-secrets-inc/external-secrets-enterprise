@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.14](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.13...v1.20.14) (2025-10-02)
+
+
+### Bug Fixes
+
+* run policy once should work ([#496](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/496)) ([f11d00a](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/f11d00a609ffee07b08d24f07e2a6ac49f2c8ba5))
+
 ## [1.20.13](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.12...v1.20.13) (2025-10-01)
 
 
