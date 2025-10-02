@@ -51,7 +51,8 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 		return ctrl.Result{}, nil
 	}
 	// Check if we should already run this job
-	if jobSpec.Status.RunStatus != v1alpha1.JobRunStatusRunning {
+	// If there is no status, it means this is the first run and should be ran anyways
+	if jobSpec.Status.RunStatus != "" && jobSpec.Status.RunStatus != v1alpha1.JobRunStatusRunning {
 		// Ignore new Runs
 		if jobSpec.Spec.RunPolicy == v1alpha1.JobRunPolicyOnce {
 			return ctrl.Result{}, nil
@@ -90,10 +91,10 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 		}
 	}
 
-	runningTime := time.Since(jobSpec.Status.LastRunTime.Time)
 	timeout := jobSpec.Spec.JobTimeout.Duration
 
 	if timeout > 0 && jobSpec.Status.RunStatus == v1alpha1.JobRunStatusRunning {
+		runningTime := time.Since(jobSpec.Status.LastRunTime.Time)
 		if runningTime > timeout {
 			c.stopJob(req)
 
