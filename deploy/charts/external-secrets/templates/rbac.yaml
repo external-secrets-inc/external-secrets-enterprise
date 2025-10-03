@@ -80,7 +80,7 @@ rules:
     - "patch"
     - "update"
   - apiGroups:
-    - "federation.external-secrets.io"
+    - "identity.federation.external-secrets.io"
     resources:
     - "*"
     verbs:
