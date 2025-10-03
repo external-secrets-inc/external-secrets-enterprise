@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	idfedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/identity/v1alpha1"
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
 	reloaderv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/reloader/v1alpha1"
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
@@ -141,6 +142,7 @@ func init() {
 
 	// external-secrets-enterprise schemes
 	utilruntime.Must(fedv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(idfedv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(wfv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(scanv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(tgtv1alpha1.AddToScheme(scheme))
