@@ -23,9 +23,8 @@ import (
 
 // Package type metadata.
 const (
-	Group         = "federation.external-secrets.io"
-	IdentityGroup = "identity.federation.external-secrets.io"
-	Version       = "v1alpha1"
+	Group   = "federation.external-secrets.io"
+	Version = "v1alpha1"
 )
 
 var (
