@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.14...v1.21.0) (2025-10-03)
+
+
+### Features
+
+* add identity.federation.external-secrets.io group ([#501](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/501)) ([e8e7adc](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e8e7adc9a5b1febb12639e7ca871a9926bcb9cc1))
+
 ## [1.20.14](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.13...v1.20.14) (2025-10-02)
 
 
