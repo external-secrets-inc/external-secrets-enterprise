@@ -9,8 +9,6 @@ resources:
   - external-secrets.io_pushsecrets.yaml
   - external-secrets.io_secretstores.yaml
   - federation.external-secrets.io_authorizations.yaml
-  - federation.external-secrets.io_kubernetesfederations.yaml
-  - federation.external-secrets.io_spiffefederations.yaml
   - generators.external-secrets.io_acraccesstokens.yaml
   - generators.external-secrets.io_awsiamkeys.yaml
   - generators.external-secrets.io_basicauths.yaml
@@ -37,6 +35,8 @@ resources:
   - generators.external-secrets.io_uuids.yaml
   - generators.external-secrets.io_vaultdynamicsecrets.yaml
   - generators.external-secrets.io_webhooks.yaml
+  - identity.federation.external-secrets.io_kubernetesfederations.yaml
+  - identity.federation.external-secrets.io_spiffefederations.yaml
   - reloader.enterprise.external-secrets.io_configs.yaml
   - scan.external-secrets.io_consumers.yaml
   - scan.external-secrets.io_findings.yaml
