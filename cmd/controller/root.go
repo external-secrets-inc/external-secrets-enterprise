@@ -438,6 +438,14 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "SpiffeFederation")
 			os.Exit(1)
 		}
+		if err = (&federation.AuthorizedIdentityReconciler{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("AuthorizedIdentity"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "AuthorizedIdentity")
+			os.Exit(1)
+		}
 		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
 		go handler.SetupEcho(cmd.Context())
 
