@@ -44,7 +44,7 @@ type ServerHandler struct {
 	tlsPort                string
 	tlsEnabled             bool
 	spireAgentSocketPath   string
-	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
+	generateSecretFn       func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error)
 	getSecretFn            func(ctx context.Context, storeName string, name string) ([]byte, error)
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
@@ -192,10 +192,17 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
 		if contains(spec.AllowedGenerators, d) && principal == authInfo.Subject {
-			secret, err := s.generateSecretFn(c.Request().Context(), generatorName, generatorKind, generatorNamespace, resource)
+			secret, stateName, stateNamespace, err := s.generateSecretFn(c.Request().Context(), generatorName, generatorKind, generatorNamespace, resource)
 			if err != nil {
 				return c.JSON(http.StatusBadRequest, err.Error())
 			}
+
+			// Create or update AuthorizedIdentity
+			stateRef := buildStateRef(stateName, stateNamespace)
+			if err := s.upsertIdentity(c.Request().Context(), authInfo, &spec.FederationRef, generatorName, "", generatorKind, generatorNamespace, stateRef); err != nil {
+				s.log.Error(err, "failed to upsert identity for generator access")
+			}
+
 			return c.JSON(http.StatusOK, secret)
 		}
 	}
@@ -241,6 +248,12 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 			if err != nil {
 				return c.JSON(http.StatusBadRequest, err.Error())
 			}
+
+			// Create or update AuthorizedIdentity
+			if err := s.upsertIdentity(c.Request().Context(), authInfo, &spec.FederationRef, storeName, name, "", "", nil); err != nil {
+				s.log.Error(err, "failed to upsert identity for secret store access")
+			}
+
 			return c.JSON(http.StatusOK, string(secret))
 		}
 	}
@@ -365,9 +378,9 @@ func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) (
 	return client.GetSecret(ctx, ref)
 }
 
-func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, error) {
+func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, string, string, error) {
 	if resource == nil {
-		return nil, errors.New("resource not found")
+		return nil, "", "", errors.New("resource not found")
 	}
 	generatorRef := esv1.GeneratorRef{
 		Name:       generatorName,
@@ -376,18 +389,18 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	}
 	generator, obj, err := resolvers.GeneratorRef(ctx, s.reconciler.Client, s.reconciler.Scheme, namespace, &generatorRef)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 	if generator == nil {
-		return nil, errors.New("generator not found")
+		return nil, "", "", errors.New("generator not found")
 	}
 	data, stateJson, err := generator.Generate(ctx, obj, s.reconciler.Client, namespace)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 	attributes, err := json.Marshal(resource.OwnerAttributes)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 	if stateJson == nil {
 		stateJson = &apiextensions.JSON{Raw: []byte("{}")}
@@ -415,30 +428,30 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 		pod := &v1.Pod{}
 		err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, pod)
 		if err != nil {
-			return nil, err
+			return nil, "", "", err
 		}
 		cobj = pod
 	} else {
 		sa := &v1.ServiceAccount{}
 		err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, sa)
 		if err != nil {
-			return nil, err
+			return nil, "", "", err
 		}
 		cobj = sa
 	}
 	if err := controllerutil.SetOwnerReference(cobj, &generatorState, s.reconciler.Scheme); err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
 	err = s.reconciler.Client.Create(ctx, &generatorState)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 	stringData := map[string]string{}
 	for k, v := range data {
 		stringData[k] = string(v)
 	}
-	return stringData, nil
+	return stringData, generatorState.Name, generatorState.Namespace, nil
 }
 
 type Resource struct {
@@ -446,4 +459,200 @@ type Resource struct {
 	Owner           string            `json:"owner"`
 	OwnerAttributes map[string]string `json:"ownerAttributes"`
 	AuthMethod      string            `json:"authMethod"`
+}
+
+// buildIdentitySpec constructs an IdentitySpec from authInfo and federationRef.
+func buildIdentitySpec(authInfo *auth.AuthInfo, federationRef *fedv1alpha1.FederationRef) fedv1alpha1.IdentitySpec {
+	identitySpec := fedv1alpha1.IdentitySpec{
+		FederationRef: *federationRef,
+	}
+
+	if authInfo.Method == "spiffe" {
+		identitySpec.Spiffe = &fedv1alpha1.FederationSpiffe{
+			SpiffeID: authInfo.Subject,
+		}
+	} else {
+		identitySpec.Subject = &fedv1alpha1.FederationSubject{
+			Issuer:  authInfo.Provider,
+			Subject: authInfo.Subject,
+		}
+	}
+
+	return identitySpec
+}
+
+// buildSourceRef constructs a SourceRef for a SecretStore or Generator.
+func buildSourceRef(name, kind, namespace string) fedv1alpha1.SourceRef {
+	sourceRef := fedv1alpha1.SourceRef{
+		Kind: kind,
+		Name: name,
+	}
+
+	if kind == "ClusterSecretStore" {
+		sourceRef.APIVersion = "external-secrets.io/v1"
+	} else {
+		// Generator kinds
+		sourceRef.APIVersion = "generators.external-secrets.io/v1alpha1"
+		if namespace != "" {
+			sourceRef.Namespace = &namespace
+		}
+	}
+
+	return sourceRef
+}
+
+// buildRemoteRef constructs a RemoteRef for a secret key.
+func buildRemoteRef(remoteKey, property string) *fedv1alpha1.RemoteRef {
+	if remoteKey == "" {
+		return nil
+	}
+	return &fedv1alpha1.RemoteRef{
+		RemoteKey: remoteKey,
+		Property:  property,
+	}
+}
+
+// buildStateRef constructs a StateRef for a GeneratorState.
+func buildStateRef(name, namespace string) *fedv1alpha1.StateRef {
+	if name == "" {
+		return nil
+	}
+	return &fedv1alpha1.StateRef{
+		Kind:       "GeneratorState",
+		APIVersion: "generators.external-secrets.io/v1alpha1",
+		Name:       name,
+		Namespace:  &namespace,
+	}
+}
+
+// upsertIdentity creates or updates an AuthorizedIdentity object.
+func (s *ServerHandler) upsertIdentity(
+	ctx context.Context,
+	authInfo *auth.AuthInfo,
+	federationRef *fedv1alpha1.FederationRef,
+	resourceName string,
+	remoteKey string,
+	resourceKind string,
+	resourceNamespace string,
+	stateRef *fedv1alpha1.StateRef,
+) error {
+	// Skip if reconciler or client is not available (e.g., in tests)
+	if s.reconciler == nil || s.reconciler.Client == nil {
+		return nil
+	}
+
+	// Build the identity spec
+	identitySpec := buildIdentitySpec(authInfo, federationRef)
+
+	// Determine the source ref kind
+	kind := resourceKind
+	if kind == "" {
+		kind = "ClusterSecretStore"
+	}
+
+	// Build the source ref
+	sourceRef := buildSourceRef(resourceName, kind, resourceNamespace)
+
+	// Build the remote ref (optional)
+	remoteRef := buildRemoteRef(remoteKey, "")
+
+	// Build the issued credential
+	issuedCredential := fedv1alpha1.IssuedCredential{
+		SourceRef:    sourceRef,
+		RemoteRef:    remoteRef,
+		StateRef:     stateRef,
+		LastIssuedAt: metav1.Now(),
+	}
+
+	// Generate a deterministic name for the AuthorizedIdentity
+	identityName := fmt.Sprintf("%s-%s", authInfo.Method, sanitizeName(authInfo.Subject))
+
+	// Try to get existing AuthorizedIdentity
+	identity := &fedv1alpha1.AuthorizedIdentity{}
+	err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: identityName}, identity)
+
+	if err != nil {
+		// Create new AuthorizedIdentity
+		identity = &fedv1alpha1.AuthorizedIdentity{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: identityName,
+			},
+			Spec: fedv1alpha1.AuthorizedIdentitySpec{
+				IdentitySpec:      identitySpec,
+				IssuedCredentials: []fedv1alpha1.IssuedCredential{issuedCredential},
+			},
+		}
+		return s.reconciler.Client.Create(ctx, identity)
+	}
+
+	// Update existing AuthorizedIdentity
+	// Check if this credential already exists
+	credentialExists := false
+	for i, cred := range identity.Spec.IssuedCredentials {
+		if credentialsMatch(cred, issuedCredential) {
+			// Update the existing credential
+			identity.Spec.IssuedCredentials[i] = issuedCredential
+			credentialExists = true
+			break
+		}
+	}
+
+	if !credentialExists {
+		// Append new credential
+		identity.Spec.IssuedCredentials = append(identity.Spec.IssuedCredentials, issuedCredential)
+	}
+	// Add an automatic retry condition for colliding updates
+	return s.reconciler.Client.Update(ctx, identity)
+}
+
+// credentialsMatch checks if two credentials reference the same source.
+func credentialsMatch(a, b fedv1alpha1.IssuedCredential) bool {
+	if a.SourceRef.Kind != b.SourceRef.Kind ||
+		a.SourceRef.APIVersion != b.SourceRef.APIVersion ||
+		a.SourceRef.Name != b.SourceRef.Name {
+		return false
+	}
+
+	// Compare namespaces (handle nil cases)
+	if (a.SourceRef.Namespace == nil) != (b.SourceRef.Namespace == nil) {
+		return false
+	}
+	if a.SourceRef.Namespace != nil && b.SourceRef.Namespace != nil {
+		if *a.SourceRef.Namespace != *b.SourceRef.Namespace {
+			return false
+		}
+	}
+
+	// Compare remote refs
+	if (a.RemoteRef == nil) != (b.RemoteRef == nil) {
+		return false
+	}
+	if a.RemoteRef != nil && b.RemoteRef != nil {
+		if a.RemoteRef.RemoteKey != b.RemoteRef.RemoteKey {
+			return false
+		}
+	}
+
+	return true
+}
+
+// sanitizeName converts a subject/spiffeID to a valid Kubernetes resource name.
+func sanitizeName(subject string) string {
+	// Replace invalid characters with dashes
+	sanitized := strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			return r
+		}
+		return '-'
+	}, strings.ToLower(subject))
+
+	// Ensure it doesn't start or end with a dash
+	sanitized = strings.Trim(sanitized, "-")
+
+	// Limit length to 253 characters (k8s limit)
+	if len(sanitized) > 253 {
+		sanitized = sanitized[:253]
+	}
+
+	return sanitized
 }

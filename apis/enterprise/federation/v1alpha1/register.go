@@ -44,6 +44,15 @@ var (
 	AuthorizationGroupVersionKind = SchemeGroupVersion.WithKind(AuthorizationKind)
 )
 
+// AuthorizedIdentity type metadata.
+var (
+	AuthorizedIdentityKind             = reflect.TypeOf(AuthorizedIdentity{}).Name()
+	AuthorizedIdentityGroupKind        = schema.GroupKind{Group: Group, Kind: AuthorizedIdentityKind}.String()
+	AuthorizedIdentityKindAPIVersion   = AuthorizedIdentityKind + "." + SchemeGroupVersion.String()
+	AuthorizedIdentityGroupVersionKind = SchemeGroupVersion.WithKind(AuthorizedIdentityKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&Authorization{}, &AuthorizationList{})
+	SchemeBuilder.Register(&AuthorizedIdentity{}, &AuthorizedIdentityList{})
 }

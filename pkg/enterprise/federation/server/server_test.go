@@ -128,13 +128,13 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 
 			// Mock generateSecretFn on s.server to capture the Resource and perform assertions
 			originalGenerateSecretFn := s.server.generateSecretFn
-			s.server.generateSecretFn = func(ctx context.Context, genName, genKind, genNamespace string, resource *Resource) (map[string]string, error) {
+			s.server.generateSecretFn = func(ctx context.Context, genName, genKind, genNamespace string, resource *Resource) (map[string]string, string, string, error) {
 				s.Require().NotNil(resource, "Resource passed to generateSecretFn was nil")
 				capturedResource = resource // Capture the resource
 				s.Equal(generatorName, genName)
 				s.Equal(generatorKind, genKind)
 				s.Equal(generatorNamespace, genNamespace)
-				return map[string]string{"secretKey": "secretValue"}, nil
+				return map[string]string{"secretKey": "secretValue"}, "test-state", "test-namespace", nil
 			}
 			s.T().Cleanup(func() { s.server.generateSecretFn = originalGenerateSecretFn })
 
@@ -446,7 +446,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 	tests := []struct {
 		name           string
 		setup          func() echo.Context
-		mockGenSecret  func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error)
+		mockGenSecret  func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error)
 		expectedStatus int
 		expectedBody   string
 	}{
@@ -492,16 +492,16 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error) {
 				// Check that the parameters match what we expect
 				if generatorName != "test-generator" || generatorKind != "test-kind" || namespace != testNamespace {
-					return nil, fmt.Errorf("unexpected parameters: %s, %s, %s", generatorName, generatorKind, namespace)
+					return nil, "", "", fmt.Errorf("unexpected parameters: %s, %s, %s", generatorName, generatorKind, namespace)
 				}
-				// Return a mock secret
+
 				return map[string]string{
 					"key1": "value1",
 					"key2": "value2",
-				}, nil
+				}, "test-state", testNamespace, nil
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   "{\"key1\":\"value1\",\"key2\":\"value2\"}",
@@ -547,10 +547,10 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 				s.specs = append(s.specs, spec)
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error) {
 				// This should not be called
 				s.T().Fatalf("mockGenSecret should not be called in this test case")
-				return nil, nil
+				return nil, "", "", nil
 			},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "Not Found",
@@ -597,8 +597,8 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
-				return nil, fmt.Errorf("error generating secret")
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error) {
+				return nil, "", "", fmt.Errorf("error generating secret")
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "error generating secret",
@@ -651,10 +651,10 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error) {
 				// This should not be called
 				s.T().Fatalf("mockGenSecret should not be called in this test case")
-				return nil, nil
+				return nil, "", "", nil
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "missing kubernetes attributes",
@@ -710,10 +710,10 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 
 				return c
 			},
-			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, error) {
+			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error) {
 				// This should not be called
 				s.T().Fatalf("mockGenSecret should not be called in this test case")
-				return nil, nil
+				return nil, "", "", nil
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "missing kubernetes service account",

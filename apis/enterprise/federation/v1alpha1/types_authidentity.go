@@ -1,0 +1,78 @@
+/*
+Copyright External Secrets Inc.
+All Rights Reserved.
+*/
+package v1alpha1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type AuthorizedIdentitySpec struct {
+	IdentitySpec      IdentitySpec       `json:"identitySpec"`
+	IssuedCredentials []IssuedCredential `json:"issuedCredentials"`
+}
+
+type IdentitySpec struct {
+	FederationRef FederationRef `json:"federationRef"`
+
+	// +kubebuilder:validation:Optional
+	Spiffe *FederationSpiffe `json:"spiffe"`
+	// +kubebuilder:validation:Optional
+	Subject *FederationSubject `json:"subject"`
+}
+
+// IssuedCredential maps the credential that was issued to a given identity.
+type IssuedCredential struct {
+	SourceRef    SourceRef   `json:"sourceRef"`
+	RemoteRef    *RemoteRef  `json:"remoteRef"`
+	StateRef     *StateRef   `json:"stateRef"`
+	LastIssuedAt metav1.Time `json:"lastIssuedAt"`
+}
+
+// RemoteRef is a reference within the source Ref, if any, to which key was obtained.
+type RemoteRef struct {
+	RemoteKey string `json:"remoteKey"`
+	Property  string `json:"property"`
+}
+
+// StateRef is a reference to any object containing a state.
+// Typically this is a GeneratorState.
+type StateRef struct {
+	Kind       string `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Name       string `json:"name"`
+	// +kubebuilder:validation:Optional
+	Namespace *string `json:"namespace"`
+}
+
+// SourceRef is a reference to any object that can output a credential.
+// This can be a SecretStore or a Generator.
+type SourceRef struct {
+	Kind       string `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Name       string `json:"name"`
+	// +kubebuilder:validation:Optional
+	Namespace *string `json:"namespace"`
+}
+
+// AuthorizedIdentity is the schema to control which identities were able to get which credentials
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels="external-secrets.io/component=controller"
+// +kubebuilder:resource:scope=Cluster,categories={external-secrets, external-secrets-federation}
+type AuthorizedIdentity struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              AuthorizedIdentitySpec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// AuthorizedIdentityList contains a list of AuthorizedIdentity resources.
+type AuthorizedIdentityList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []AuthorizedIdentity `json:"items"`
+}

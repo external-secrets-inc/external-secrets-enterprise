@@ -90,6 +90,12 @@ rules:
   - apiGroups:
     - "federation.external-secrets.io"
     resources:
+    - "authorizedidentities"
+    verbs:
+    - "*"
+  - apiGroups:
+    - "federation.external-secrets.io"
+    resources:
     - "authorizations"
     verbs:
     - "get"
