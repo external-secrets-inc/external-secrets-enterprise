@@ -24,10 +24,27 @@ type IdentitySpec struct {
 
 // IssuedCredential maps the credential that was issued to a given identity.
 type IssuedCredential struct {
-	SourceRef    SourceRef   `json:"sourceRef"`
-	RemoteRef    *RemoteRef  `json:"remoteRef"`
-	StateRef     *StateRef   `json:"stateRef"`
-	LastIssuedAt metav1.Time `json:"lastIssuedAt"`
+	SourceRef SourceRef `json:"sourceRef"`
+	// +kubebuilder:validation:Optional
+	RemoteRef *RemoteRef `json:"remoteRef,omitempty"`
+	// +kubebuilder:validation:Optional
+	StateRef *StateRef `json:"stateRef,omitempty"`
+	// +kubebuilder:validation:Optional
+	WorkloadBinding *WorkloadBinding `json:"workloadBinding,omitempty"`
+	// +kubebuilder:validation:Optional
+	LastIssuedAt metav1.Time `json:"lastIssuedAt,omitempty"`
+}
+
+// WorkloadBinding describes which workload the credential was bound to.
+type WorkloadBinding struct {
+	// Kind is the kind of workload, e.g., "Pod" or "ServiceAccount".
+	Kind string `json:"kind"`
+	// Name is the name of the workload.
+	Name string `json:"name"`
+	// UID is the UID of the workload.
+	UID string `json:"uid"`
+	// Namespace is the namespace of the workload.
+	Namespace string `json:"namespace"`
 }
 
 // RemoteRef is a reference within the source Ref, if any, to which key was obtained.

@@ -525,6 +525,35 @@ func buildStateRef(name, namespace string) *fedv1alpha1.StateRef {
 	}
 }
 
+// buildWorkloadBinding constructs a WorkloadBinding from authInfo.
+func buildWorkloadBinding(authInfo *auth.AuthInfo) *fedv1alpha1.WorkloadBinding {
+	if authInfo == nil || authInfo.KubeAttributes == nil {
+		return nil
+	}
+
+	// If we have pod information, bind to the pod
+	if authInfo.KubeAttributes.Pod != nil {
+		return &fedv1alpha1.WorkloadBinding{
+			Kind:      "Pod",
+			Name:      authInfo.KubeAttributes.Pod.Name,
+			UID:       authInfo.KubeAttributes.Pod.UID,
+			Namespace: authInfo.KubeAttributes.Namespace,
+		}
+	}
+
+	// Otherwise, bind to the service account
+	if authInfo.KubeAttributes.ServiceAccount != nil {
+		return &fedv1alpha1.WorkloadBinding{
+			Kind:      "ServiceAccount",
+			Name:      authInfo.KubeAttributes.ServiceAccount.Name,
+			UID:       authInfo.KubeAttributes.ServiceAccount.UID,
+			Namespace: authInfo.KubeAttributes.Namespace,
+		}
+	}
+
+	return nil
+}
+
 // upsertIdentity creates or updates an AuthorizedIdentity object.
 func (s *ServerHandler) upsertIdentity(
 	ctx context.Context,
@@ -556,12 +585,16 @@ func (s *ServerHandler) upsertIdentity(
 	// Build the remote ref (optional)
 	remoteRef := buildRemoteRef(remoteKey, "")
 
+	// Build the workload binding
+	workloadBinding := buildWorkloadBinding(authInfo)
+
 	// Build the issued credential
 	issuedCredential := fedv1alpha1.IssuedCredential{
-		SourceRef:    sourceRef,
-		RemoteRef:    remoteRef,
-		StateRef:     stateRef,
-		LastIssuedAt: metav1.Now(),
+		SourceRef:       sourceRef,
+		RemoteRef:       remoteRef,
+		StateRef:        stateRef,
+		WorkloadBinding: workloadBinding,
+		LastIssuedAt:    metav1.Now(),
 	}
 
 	// Generate a deterministic name for the AuthorizedIdentity
@@ -607,13 +640,14 @@ func (s *ServerHandler) upsertIdentity(
 
 // credentialsMatch checks if two credentials reference the same source.
 func credentialsMatch(a, b fedv1alpha1.IssuedCredential) bool {
+	// Compare SourceRef
 	if a.SourceRef.Kind != b.SourceRef.Kind ||
 		a.SourceRef.APIVersion != b.SourceRef.APIVersion ||
 		a.SourceRef.Name != b.SourceRef.Name {
 		return false
 	}
 
-	// Compare namespaces (handle nil cases)
+	// Compare SourceRef namespaces (handle nil cases)
 	if (a.SourceRef.Namespace == nil) != (b.SourceRef.Namespace == nil) {
 		return false
 	}
@@ -623,12 +657,46 @@ func credentialsMatch(a, b fedv1alpha1.IssuedCredential) bool {
 		}
 	}
 
-	// Compare remote refs
+	// Compare RemoteRef
 	if (a.RemoteRef == nil) != (b.RemoteRef == nil) {
 		return false
 	}
 	if a.RemoteRef != nil && b.RemoteRef != nil {
 		if a.RemoteRef.RemoteKey != b.RemoteRef.RemoteKey {
+			return false
+		}
+	}
+
+	// Compare StateRef
+	if (a.StateRef == nil) != (b.StateRef == nil) {
+		return false
+	}
+	if a.StateRef != nil && b.StateRef != nil {
+		if a.StateRef.Kind != b.StateRef.Kind ||
+			a.StateRef.APIVersion != b.StateRef.APIVersion ||
+			a.StateRef.Name != b.StateRef.Name {
+			return false
+		}
+		// Compare StateRef namespace
+		if (a.StateRef.Namespace == nil) != (b.StateRef.Namespace == nil) {
+			return false
+		}
+		if a.StateRef.Namespace != nil && b.StateRef.Namespace != nil {
+			if *a.StateRef.Namespace != *b.StateRef.Namespace {
+				return false
+			}
+		}
+	}
+
+	// Compare WorkloadBinding
+	if (a.WorkloadBinding == nil) != (b.WorkloadBinding == nil) {
+		return false
+	}
+	if a.WorkloadBinding != nil && b.WorkloadBinding != nil {
+		if a.WorkloadBinding.Kind != b.WorkloadBinding.Kind ||
+			a.WorkloadBinding.Name != b.WorkloadBinding.Name ||
+			a.WorkloadBinding.UID != b.WorkloadBinding.UID ||
+			a.WorkloadBinding.Namespace != b.WorkloadBinding.Namespace {
 			return false
 		}
 	}

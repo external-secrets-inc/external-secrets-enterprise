@@ -22780,13 +22780,13 @@ spec:
                   type: object
                 issuedCredentials:
                   items:
-                    description: IssuedCredential maps the credential that was issued to a given identity
+                    description: IssuedCredential maps the credential that was issued to a given identity.
                     properties:
                       lastIssuedAt:
                         format: date-time
                         type: string
                       remoteRef:
-                        description: RemoteRef is a reference within the source Ref, if any, to which key was obtained
+                        description: RemoteRef is a reference within the source Ref, if any, to which key was obtained.
                         properties:
                           property:
                             type: string
@@ -22798,8 +22798,8 @@ spec:
                         type: object
                       sourceRef:
                         description: |-
-                          SourceRef is a reference to any object that can output a credential
-                          This can be a SecretStore or a Generator
+                          SourceRef is a reference to any object that can output a credential.
+                          This can be a SecretStore or a Generator.
                         properties:
                           apiVersion:
                             type: string
@@ -22817,7 +22817,7 @@ spec:
                       stateRef:
                         description: |-
                           StateRef is a reference to any object containing a state.
-                          Typically this is a GeneratorState
+                          Typically this is a GeneratorState.
                         properties:
                           apiVersion:
                             type: string
@@ -22832,11 +22832,29 @@ spec:
                           - kind
                           - name
                         type: object
+                      workloadBinding:
+                        description: WorkloadBinding describes which workload the credential was bound to.
+                        properties:
+                          kind:
+                            description: Kind is the kind of workload, e.g., "Pod" or "ServiceAccount".
+                            type: string
+                          name:
+                            description: Name is the name of the workload.
+                            type: string
+                          namespace:
+                            description: Namespace is the namespace of the workload.
+                            type: string
+                          uid:
+                            description: UID is the UID of the workload.
+                            type: string
+                        required:
+                          - kind
+                          - name
+                          - namespace
+                          - uid
+                        type: object
                     required:
-                      - lastIssuedAt
-                      - remoteRef
                       - sourceRef
-                      - stateRef
                     type: object
                   type: array
               required:
