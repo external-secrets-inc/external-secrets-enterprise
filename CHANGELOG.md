@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.22.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.21.0...v1.22.0) (2025-10-06)
+
+
+### Features
+
+* authorizedidentities crd ([#505](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/505)) ([4448cb5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4448cb58075a62c6eb60a28f41aee52a75372e0e))
+
+
+### Bug Fixes
+
+* fix group for federation permissions ([#503](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/503)) ([4f9b807](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4f9b8074430d7f050531c83ea414ef56305119ab))
+* ignore upsert if weird error ([4448cb5](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/4448cb58075a62c6eb60a28f41aee52a75372e0e))
+* lint ([#506](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/506)) ([e823a39](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/e823a3982104a548682b7a79792400875b43d461))
+
 ## [1.21.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.20.14...v1.21.0) (2025-10-03)
 
 
