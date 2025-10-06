@@ -1153,14 +1153,14 @@ func TestAuthMiddlewareSuite(t *testing.T) {
 	suite.Run(t, new(AuthMiddlewareSuite))
 }
 
-// mockClient is a mock implementation of client.Client for testing
+// mockClient is a mock implementation of client.Client for testing.
 type mockClient struct {
-	getErr       error
-	createErr    error
-	updateErr    error
-	getCalled    bool
-	createCalled bool
-	updateCalled bool
+	getErr         error
+	createErr      error
+	updateErr      error
+	getCalled      bool
+	createCalled   bool
+	updateCalled   bool
 	storedIdentity *fedv1alpha1.AuthorizedIdentity
 }
 
@@ -1249,21 +1249,21 @@ func (m *mockClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, 
 func TestUpsertIdentityConnectionError(t *testing.T) {
 	// Test that upsertIdentity returns early when Get returns a non-NotFound error
 	ctx := context.Background()
-	
+
 	// Create a mock client that returns a connection error
 	connectionErr := errors.New("connection refused")
 	mockClient := &mockClient{getErr: connectionErr}
-	
+
 	// Create a minimal reconciler with the mock client
 	reconciler := &externalsecrets.Reconciler{
 		Client: mockClient,
 	}
-	
+
 	// Create the server handler with the mock reconciler
 	server := &ServerHandler{
 		reconciler: reconciler,
 	}
-	
+
 	// Create test auth info
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
@@ -1277,13 +1277,13 @@ func TestUpsertIdentityConnectionError(t *testing.T) {
 			},
 		},
 	}
-	
+
 	// Create test parameters
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity
 	err := server.upsertIdentity(
 		ctx,
@@ -1295,12 +1295,12 @@ func TestUpsertIdentityConnectionError(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Assert that the error is returned (should contain the connection error)
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
-	
+
 	// Verify the error message contains our connection error
 	if !strings.Contains(err.Error(), "failed to get AuthorizedIdentity") {
 		t.Errorf("expected error to contain 'failed to get AuthorizedIdentity', got: %v", err)
@@ -1310,19 +1310,19 @@ func TestUpsertIdentityConnectionError(t *testing.T) {
 func TestUpsertIdentityCreateNew(t *testing.T) {
 	// Test that upsertIdentity creates a new AuthorizedIdentity when it doesn't exist
 	ctx := context.Background()
-	
+
 	// Create a mock client that returns NotFound error
 	notFoundErr := apierrors.NewNotFound(schema.GroupResource{Group: "federation.external-secrets.io", Resource: "authorizedidentities"}, "test-identity")
 	mockClient := &mockClient{getErr: notFoundErr}
-	
+
 	reconciler := &externalsecrets.Reconciler{
 		Client: mockClient,
 	}
-	
+
 	server := &ServerHandler{
 		reconciler: reconciler,
 	}
-	
+
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
 		Provider: "test-provider",
@@ -1335,12 +1335,12 @@ func TestUpsertIdentityCreateNew(t *testing.T) {
 			},
 		},
 	}
-	
+
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity
 	err := server.upsertIdentity(
 		ctx,
@@ -1352,31 +1352,31 @@ func TestUpsertIdentityCreateNew(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Should succeed
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	
+
 	// Verify Create was called
 	if !mockClient.createCalled {
 		t.Error("expected Create to be called")
 	}
-	
+
 	// Verify Update was not called
 	if mockClient.updateCalled {
 		t.Error("expected Update to not be called")
 	}
-	
+
 	// Verify the created identity has the credential
 	if mockClient.storedIdentity == nil {
 		t.Fatal("expected identity to be stored")
 	}
-	
+
 	if len(mockClient.storedIdentity.Spec.IssuedCredentials) != 1 {
 		t.Errorf("expected 1 credential, got %d", len(mockClient.storedIdentity.Spec.IssuedCredentials))
 	}
-	
+
 	// Verify the credential has correct source
 	cred := mockClient.storedIdentity.Spec.IssuedCredentials[0]
 	if cred.SourceRef.Name != "test-generator" {
@@ -1387,7 +1387,7 @@ func TestUpsertIdentityCreateNew(t *testing.T) {
 func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 	// Test that upsertIdentity appends a new credential to an existing identity
 	ctx := context.Background()
-	
+
 	// Create an existing identity with one credential
 	existingIdentity := &fedv1alpha1.AuthorizedIdentity{
 		Spec: fedv1alpha1.AuthorizedIdentitySpec{
@@ -1401,19 +1401,19 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 			},
 		},
 	}
-	
+
 	mockClient := &mockClient{
 		storedIdentity: existingIdentity,
 	}
-	
+
 	reconciler := &externalsecrets.Reconciler{
 		Client: mockClient,
 	}
-	
+
 	server := &ServerHandler{
 		reconciler: reconciler,
 	}
-	
+
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
 		Provider: "test-provider",
@@ -1426,12 +1426,12 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 			},
 		},
 	}
-	
+
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity with a different generator
 	err := server.upsertIdentity(
 		ctx,
@@ -1443,26 +1443,26 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Should succeed
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	
+
 	// Verify Update was called, not Create
 	if mockClient.createCalled {
 		t.Error("expected Create to not be called")
 	}
-	
+
 	if !mockClient.updateCalled {
 		t.Error("expected Update to be called")
 	}
-	
+
 	// Verify we now have 2 credentials
 	if len(mockClient.storedIdentity.Spec.IssuedCredentials) != 2 {
 		t.Errorf("expected 2 credentials, got %d", len(mockClient.storedIdentity.Spec.IssuedCredentials))
 	}
-	
+
 	// Verify both credentials are present
 	foundExisting := false
 	foundNew := false
@@ -1474,7 +1474,7 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 			foundNew = true
 		}
 	}
-	
+
 	if !foundExisting {
 		t.Error("existing credential was not preserved")
 	}
@@ -1487,7 +1487,7 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 	// Test that upsertIdentity updates an existing credential without duplication
 	// when the SAME workload re-requests the SAME credential
 	ctx := context.Background()
-	
+
 	// Create an existing identity with one credential
 	// Must match what buildSourceRef creates for Generator kind
 	testNamespace := "test-namespace"
@@ -1515,19 +1515,19 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 			},
 		},
 	}
-	
+
 	mockClient := &mockClient{
 		storedIdentity: existingIdentity,
 	}
-	
+
 	reconciler := &externalsecrets.Reconciler{
 		Client: mockClient,
 	}
-	
+
 	server := &ServerHandler{
 		reconciler: reconciler,
 	}
-	
+
 	// Same pod re-requesting
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
@@ -1540,17 +1540,17 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 				UID:  "test-uid",
 			},
 			Pod: &auth.PodInfo{
-				Name: "test-pod",       // Same pod name
-				UID:  testPodUID,       // Same pod UID
+				Name: "test-pod", // Same pod name
+				UID:  testPodUID, // Same pod UID
 			},
 		},
 	}
-	
+
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity with the same generator, key, and workload (should update, not append)
 	err := server.upsertIdentity(
 		ctx,
@@ -1562,22 +1562,22 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Should succeed
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
-	
+
 	// Verify Update was called
 	if !mockClient.updateCalled {
 		t.Error("expected Update to be called")
 	}
-	
+
 	// Verify we still have only 1 credential (not duplicated)
 	if len(mockClient.storedIdentity.Spec.IssuedCredentials) != 1 {
 		t.Errorf("expected 1 credential (no duplication), got %d", len(mockClient.storedIdentity.Spec.IssuedCredentials))
 	}
-	
+
 	// Verify the LastIssuedAt was updated (credential refreshed)
 	cred := mockClient.storedIdentity.Spec.IssuedCredentials[0]
 	if cred.WorkloadBinding == nil || cred.WorkloadBinding.Name != "test-pod" {
@@ -1588,22 +1588,22 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 func TestUpsertIdentityCreateError(t *testing.T) {
 	// Test that upsertIdentity returns error when Create fails
 	ctx := context.Background()
-	
+
 	createErr := errors.New("create failed")
 	notFoundErr := apierrors.NewNotFound(schema.GroupResource{Group: "federation.external-secrets.io", Resource: "authorizedidentities"}, "test-identity")
 	mockClient := &mockClient{
 		getErr:    notFoundErr,
 		createErr: createErr,
 	}
-	
+
 	reconciler := &externalsecrets.Reconciler{
 		Client: mockClient,
 	}
-	
+
 	server := &ServerHandler{
 		reconciler: reconciler,
 	}
-	
+
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
 		Provider: "test-provider",
@@ -1616,12 +1616,12 @@ func TestUpsertIdentityCreateError(t *testing.T) {
 			},
 		},
 	}
-	
+
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity
 	err := server.upsertIdentity(
 		ctx,
@@ -1633,12 +1633,12 @@ func TestUpsertIdentityCreateError(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Should return the create error
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
-	
+
 	if !errors.Is(err, createErr) {
 		t.Errorf("expected create error, got: %v", err)
 	}
@@ -1647,27 +1647,27 @@ func TestUpsertIdentityCreateError(t *testing.T) {
 func TestUpsertIdentityUpdateError(t *testing.T) {
 	// Test that upsertIdentity returns error when Update fails
 	ctx := context.Background()
-	
+
 	updateErr := errors.New("update failed")
 	existingIdentity := &fedv1alpha1.AuthorizedIdentity{
 		Spec: fedv1alpha1.AuthorizedIdentitySpec{
 			IssuedCredentials: []fedv1alpha1.IssuedCredential{},
 		},
 	}
-	
+
 	mockClient := &mockClient{
 		storedIdentity: existingIdentity,
 		updateErr:      updateErr,
 	}
-	
+
 	reconciler := &externalsecrets.Reconciler{
 		Client: mockClient,
 	}
-	
+
 	server := &ServerHandler{
 		reconciler: reconciler,
 	}
-	
+
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
 		Provider: "test-provider",
@@ -1680,12 +1680,12 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 			},
 		},
 	}
-	
+
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity
 	err := server.upsertIdentity(
 		ctx,
@@ -1697,12 +1697,12 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Should return the update error
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
-	
+
 	if !errors.Is(err, updateErr) {
 		t.Errorf("expected update error, got: %v", err)
 	}
@@ -1711,11 +1711,11 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 func TestUpsertIdentityNilReconciler(t *testing.T) {
 	// Test that upsertIdentity handles nil reconciler gracefully
 	ctx := context.Background()
-	
+
 	server := &ServerHandler{
 		reconciler: nil, // No reconciler
 	}
-	
+
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
 		Provider: "test-provider",
@@ -1728,12 +1728,12 @@ func TestUpsertIdentityNilReconciler(t *testing.T) {
 			},
 		},
 	}
-	
+
 	federationRef := &fedv1alpha1.FederationRef{
 		Kind: "Kubernetes",
 		Name: "test-federation",
 	}
-	
+
 	// Call upsertIdentity - should return nil without panicking
 	err := server.upsertIdentity(
 		ctx,
@@ -1745,7 +1745,7 @@ func TestUpsertIdentityNilReconciler(t *testing.T) {
 		"test-namespace",
 		nil,
 	)
-	
+
 	// Should succeed (early return)
 	if err != nil {
 		t.Errorf("expected no error with nil reconciler, got: %v", err)
