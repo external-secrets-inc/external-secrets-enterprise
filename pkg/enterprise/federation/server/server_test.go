@@ -14,9 +14,15 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/suite"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
+	externalsecrets "github.com/external-secrets/external-secrets/pkg/controllers/externalsecret"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
@@ -1145,4 +1151,603 @@ func (s *AuthMiddlewareSuite) Test_AllProvidersFail() {
 
 func TestAuthMiddlewareSuite(t *testing.T) {
 	suite.Run(t, new(AuthMiddlewareSuite))
+}
+
+// mockClient is a mock implementation of client.Client for testing
+type mockClient struct {
+	getErr       error
+	createErr    error
+	updateErr    error
+	getCalled    bool
+	createCalled bool
+	updateCalled bool
+	storedIdentity *fedv1alpha1.AuthorizedIdentity
+}
+
+func (m *mockClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	m.getCalled = true
+	if m.getErr != nil {
+		return m.getErr
+	}
+	// If we have a stored identity, copy it to obj
+	if m.storedIdentity != nil {
+		if identity, ok := obj.(*fedv1alpha1.AuthorizedIdentity); ok {
+			*identity = *m.storedIdentity.DeepCopy()
+		}
+	}
+	return nil
+}
+
+func (m *mockClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	return nil
+}
+
+func (m *mockClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	m.createCalled = true
+	if m.createErr != nil {
+		return m.createErr
+	}
+	// Store the created identity
+	if identity, ok := obj.(*fedv1alpha1.AuthorizedIdentity); ok {
+		m.storedIdentity = identity.DeepCopy()
+	}
+	return nil
+}
+
+func (m *mockClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	return nil
+}
+
+func (m *mockClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	m.updateCalled = true
+	if m.updateErr != nil {
+		return m.updateErr
+	}
+	// Update the stored identity
+	if identity, ok := obj.(*fedv1alpha1.AuthorizedIdentity); ok {
+		m.storedIdentity = identity.DeepCopy()
+	}
+	return nil
+}
+
+func (m *mockClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return nil
+}
+
+func (m *mockClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+	return nil
+}
+
+func (m *mockClient) Status() client.StatusWriter {
+	return nil
+}
+
+func (m *mockClient) Scheme() *runtime.Scheme {
+	return nil
+}
+
+func (m *mockClient) RESTMapper() meta.RESTMapper {
+	return nil
+}
+
+func (m *mockClient) SubResource(subResource string) client.SubResourceClient {
+	return nil
+}
+
+func (m *mockClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
+	return schema.GroupVersionKind{}, nil
+}
+
+func (m *mockClient) IsObjectNamespaced(obj runtime.Object) (bool, error) {
+	return false, nil
+}
+
+func (m *mockClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+	return nil
+}
+
+func TestUpsertIdentityConnectionError(t *testing.T) {
+	// Test that upsertIdentity returns early when Get returns a non-NotFound error
+	ctx := context.Background()
+	
+	// Create a mock client that returns a connection error
+	connectionErr := errors.New("connection refused")
+	mockClient := &mockClient{getErr: connectionErr}
+	
+	// Create a minimal reconciler with the mock client
+	reconciler := &externalsecrets.Reconciler{
+		Client: mockClient,
+	}
+	
+	// Create the server handler with the mock reconciler
+	server := &ServerHandler{
+		reconciler: reconciler,
+	}
+	
+	// Create test auth info
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+		},
+	}
+	
+	// Create test parameters
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"test-generator",
+		"test-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Assert that the error is returned (should contain the connection error)
+	if err == nil {
+		t.Fatal("expected error but got nil")
+	}
+	
+	// Verify the error message contains our connection error
+	if !strings.Contains(err.Error(), "failed to get AuthorizedIdentity") {
+		t.Errorf("expected error to contain 'failed to get AuthorizedIdentity', got: %v", err)
+	}
+}
+
+func TestUpsertIdentityCreateNew(t *testing.T) {
+	// Test that upsertIdentity creates a new AuthorizedIdentity when it doesn't exist
+	ctx := context.Background()
+	
+	// Create a mock client that returns NotFound error
+	notFoundErr := apierrors.NewNotFound(schema.GroupResource{Group: "federation.external-secrets.io", Resource: "authorizedidentities"}, "test-identity")
+	mockClient := &mockClient{getErr: notFoundErr}
+	
+	reconciler := &externalsecrets.Reconciler{
+		Client: mockClient,
+	}
+	
+	server := &ServerHandler{
+		reconciler: reconciler,
+	}
+	
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+		},
+	}
+	
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"test-generator",
+		"test-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Should succeed
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	
+	// Verify Create was called
+	if !mockClient.createCalled {
+		t.Error("expected Create to be called")
+	}
+	
+	// Verify Update was not called
+	if mockClient.updateCalled {
+		t.Error("expected Update to not be called")
+	}
+	
+	// Verify the created identity has the credential
+	if mockClient.storedIdentity == nil {
+		t.Fatal("expected identity to be stored")
+	}
+	
+	if len(mockClient.storedIdentity.Spec.IssuedCredentials) != 1 {
+		t.Errorf("expected 1 credential, got %d", len(mockClient.storedIdentity.Spec.IssuedCredentials))
+	}
+	
+	// Verify the credential has correct source
+	cred := mockClient.storedIdentity.Spec.IssuedCredentials[0]
+	if cred.SourceRef.Name != "test-generator" {
+		t.Errorf("expected source name 'test-generator', got '%s'", cred.SourceRef.Name)
+	}
+}
+
+func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
+	// Test that upsertIdentity appends a new credential to an existing identity
+	ctx := context.Background()
+	
+	// Create an existing identity with one credential
+	existingIdentity := &fedv1alpha1.AuthorizedIdentity{
+		Spec: fedv1alpha1.AuthorizedIdentitySpec{
+			IssuedCredentials: []fedv1alpha1.IssuedCredential{
+				{
+					SourceRef: fedv1alpha1.SourceRef{
+						Name: "existing-generator",
+						Kind: "Generator",
+					},
+				},
+			},
+		},
+	}
+	
+	mockClient := &mockClient{
+		storedIdentity: existingIdentity,
+	}
+	
+	reconciler := &externalsecrets.Reconciler{
+		Client: mockClient,
+	}
+	
+	server := &ServerHandler{
+		reconciler: reconciler,
+	}
+	
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+		},
+	}
+	
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity with a different generator
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"new-generator",
+		"test-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Should succeed
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	
+	// Verify Update was called, not Create
+	if mockClient.createCalled {
+		t.Error("expected Create to not be called")
+	}
+	
+	if !mockClient.updateCalled {
+		t.Error("expected Update to be called")
+	}
+	
+	// Verify we now have 2 credentials
+	if len(mockClient.storedIdentity.Spec.IssuedCredentials) != 2 {
+		t.Errorf("expected 2 credentials, got %d", len(mockClient.storedIdentity.Spec.IssuedCredentials))
+	}
+	
+	// Verify both credentials are present
+	foundExisting := false
+	foundNew := false
+	for _, cred := range mockClient.storedIdentity.Spec.IssuedCredentials {
+		if cred.SourceRef.Name == "existing-generator" {
+			foundExisting = true
+		}
+		if cred.SourceRef.Name == "new-generator" {
+			foundNew = true
+		}
+	}
+	
+	if !foundExisting {
+		t.Error("existing credential was not preserved")
+	}
+	if !foundNew {
+		t.Error("new credential was not added")
+	}
+}
+
+func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
+	// Test that upsertIdentity updates an existing credential without duplication
+	// when the SAME workload re-requests the SAME credential
+	ctx := context.Background()
+	
+	// Create an existing identity with one credential
+	// Must match what buildSourceRef creates for Generator kind
+	testNamespace := "test-namespace"
+	testPodUID := "test-pod-uid-123"
+	existingIdentity := &fedv1alpha1.AuthorizedIdentity{
+		Spec: fedv1alpha1.AuthorizedIdentitySpec{
+			IssuedCredentials: []fedv1alpha1.IssuedCredential{
+				{
+					SourceRef: fedv1alpha1.SourceRef{
+						Name:       "test-generator",
+						Kind:       "Generator",
+						APIVersion: "generators.external-secrets.io/v1alpha1",
+						Namespace:  &testNamespace,
+					},
+					RemoteRef: &fedv1alpha1.RemoteRef{
+						RemoteKey: "same-key",
+					},
+					WorkloadBinding: &fedv1alpha1.WorkloadBinding{
+						Kind:      "Pod",
+						Name:      "test-pod",
+						UID:       testPodUID,
+						Namespace: "test-ns",
+					},
+				},
+			},
+		},
+	}
+	
+	mockClient := &mockClient{
+		storedIdentity: existingIdentity,
+	}
+	
+	reconciler := &externalsecrets.Reconciler{
+		Client: mockClient,
+	}
+	
+	server := &ServerHandler{
+		reconciler: reconciler,
+	}
+	
+	// Same pod re-requesting
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+			Pod: &auth.PodInfo{
+				Name: "test-pod",       // Same pod name
+				UID:  testPodUID,       // Same pod UID
+			},
+		},
+	}
+	
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity with the same generator, key, and workload (should update, not append)
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"test-generator",
+		"same-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Should succeed
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	
+	// Verify Update was called
+	if !mockClient.updateCalled {
+		t.Error("expected Update to be called")
+	}
+	
+	// Verify we still have only 1 credential (not duplicated)
+	if len(mockClient.storedIdentity.Spec.IssuedCredentials) != 1 {
+		t.Errorf("expected 1 credential (no duplication), got %d", len(mockClient.storedIdentity.Spec.IssuedCredentials))
+	}
+	
+	// Verify the LastIssuedAt was updated (credential refreshed)
+	cred := mockClient.storedIdentity.Spec.IssuedCredentials[0]
+	if cred.WorkloadBinding == nil || cred.WorkloadBinding.Name != "test-pod" {
+		t.Error("credential workload binding changed unexpectedly")
+	}
+}
+
+func TestUpsertIdentityCreateError(t *testing.T) {
+	// Test that upsertIdentity returns error when Create fails
+	ctx := context.Background()
+	
+	createErr := errors.New("create failed")
+	notFoundErr := apierrors.NewNotFound(schema.GroupResource{Group: "federation.external-secrets.io", Resource: "authorizedidentities"}, "test-identity")
+	mockClient := &mockClient{
+		getErr:    notFoundErr,
+		createErr: createErr,
+	}
+	
+	reconciler := &externalsecrets.Reconciler{
+		Client: mockClient,
+	}
+	
+	server := &ServerHandler{
+		reconciler: reconciler,
+	}
+	
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+		},
+	}
+	
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"test-generator",
+		"test-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Should return the create error
+	if err == nil {
+		t.Fatal("expected error but got nil")
+	}
+	
+	if !errors.Is(err, createErr) {
+		t.Errorf("expected create error, got: %v", err)
+	}
+}
+
+func TestUpsertIdentityUpdateError(t *testing.T) {
+	// Test that upsertIdentity returns error when Update fails
+	ctx := context.Background()
+	
+	updateErr := errors.New("update failed")
+	existingIdentity := &fedv1alpha1.AuthorizedIdentity{
+		Spec: fedv1alpha1.AuthorizedIdentitySpec{
+			IssuedCredentials: []fedv1alpha1.IssuedCredential{},
+		},
+	}
+	
+	mockClient := &mockClient{
+		storedIdentity: existingIdentity,
+		updateErr:      updateErr,
+	}
+	
+	reconciler := &externalsecrets.Reconciler{
+		Client: mockClient,
+	}
+	
+	server := &ServerHandler{
+		reconciler: reconciler,
+	}
+	
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+		},
+	}
+	
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"test-generator",
+		"test-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Should return the update error
+	if err == nil {
+		t.Fatal("expected error but got nil")
+	}
+	
+	if !errors.Is(err, updateErr) {
+		t.Errorf("expected update error, got: %v", err)
+	}
+}
+
+func TestUpsertIdentityNilReconciler(t *testing.T) {
+	// Test that upsertIdentity handles nil reconciler gracefully
+	ctx := context.Background()
+	
+	server := &ServerHandler{
+		reconciler: nil, // No reconciler
+	}
+	
+	authInfo := &auth.AuthInfo{
+		Method:   "oidc",
+		Provider: "test-provider",
+		Subject:  "test-subject",
+		KubeAttributes: &auth.KubeAttributes{
+			Namespace: "test-ns",
+			ServiceAccount: &auth.ServiceAccount{
+				Name: "test-sa",
+				UID:  "test-uid",
+			},
+		},
+	}
+	
+	federationRef := &fedv1alpha1.FederationRef{
+		Kind: "Kubernetes",
+		Name: "test-federation",
+	}
+	
+	// Call upsertIdentity - should return nil without panicking
+	err := server.upsertIdentity(
+		ctx,
+		authInfo,
+		federationRef,
+		"test-generator",
+		"test-key",
+		"Generator",
+		"test-namespace",
+		nil,
+	)
+	
+	// Should succeed (early return)
+	if err != nil {
+		t.Errorf("expected no error with nil reconciler, got: %v", err)
+	}
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	v1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -605,6 +606,11 @@ func (s *ServerHandler) upsertIdentity(
 	err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: identityName}, identity)
 
 	if err != nil {
+		// If error is not NotFound, return early (e.g., connection errors)
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get AuthorizedIdentity: %w", err)
+		}
+
 		// Create new AuthorizedIdentity
 		identity = &fedv1alpha1.AuthorizedIdentity{
 			ObjectMeta: metav1.ObjectMeta{
