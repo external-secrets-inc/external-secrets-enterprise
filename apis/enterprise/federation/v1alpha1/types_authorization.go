@@ -87,7 +87,7 @@ type FederationRef struct {
 	Name string `json:"name"`
 }
 
-// +kubebuilder:validation:MinProperties=0
+// +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type FederationSubject struct {
 	// +kubebuilder:validation:Optional
