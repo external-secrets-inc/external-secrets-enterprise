@@ -22676,7 +22676,7 @@ spec:
                   type: object
                 subject:
                   maxProperties: 1
-                  minProperties: 0
+                  minProperties: 1
                   properties:
                     oidc:
                       properties:
@@ -22770,7 +22770,7 @@ spec:
                       type: object
                     subject:
                       maxProperties: 1
-                      minProperties: 0
+                      minProperties: 1
                       properties:
                         oidc:
                           properties:
