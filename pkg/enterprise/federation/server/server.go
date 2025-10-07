@@ -469,13 +469,17 @@ func buildIdentitySpec(authInfo *auth.AuthInfo, federationRef *fedv1alpha1.Feder
 	}
 
 	if authInfo.Method == "spiffe" {
-		identitySpec.Spiffe = &fedv1alpha1.FederationSpiffe{
-			SpiffeID: authInfo.Subject,
+		identitySpec.Subject = &fedv1alpha1.FederationSubject{
+			Spiffe: &fedv1alpha1.FederationSpiffe{
+				SpiffeID: authInfo.Subject,
+			},
 		}
 	} else {
 		identitySpec.Subject = &fedv1alpha1.FederationSubject{
-			Issuer:  authInfo.Provider,
-			Subject: authInfo.Subject,
+			OIDC: &fedv1alpha1.FederationOIDC{
+				Issuer:  authInfo.Provider,
+				Subject: authInfo.Subject,
+			},
 		}
 	}
 

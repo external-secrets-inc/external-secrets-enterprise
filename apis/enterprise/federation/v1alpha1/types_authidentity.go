@@ -16,10 +16,8 @@ type AuthorizedIdentitySpec struct {
 type IdentitySpec struct {
 	FederationRef FederationRef `json:"federationRef"`
 
-	// +kubebuilder:validation:Optional
-	Spiffe *FederationSpiffe `json:"spiffe"`
-	// +kubebuilder:validation:Optional
-	Subject *FederationSubject `json:"subject"`
+	// +kubebuilder:validation:Required
+	Subject *FederationSubject `json:"subject,omitempty"`
 }
 
 // IssuedCredential maps the credential that was issued to a given identity.

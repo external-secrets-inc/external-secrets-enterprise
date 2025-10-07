@@ -174,8 +174,10 @@ func (s *FindJWKSTestSuite) TestFindJWKS() {
 						Kind: "Kubernetes",
 					},
 					Subject: &fedv1alpha1.FederationSubject{
-						Subject: "test-subject",
-						Issuer:  "test-issuer",
+						OIDC: &fedv1alpha1.FederationOIDC{
+							Subject: "test-subject",
+							Issuer:  "test-issuer",
+						},
 					},
 				}
 
@@ -217,8 +219,10 @@ func (s *FindJWKSTestSuite) TestFindJWKS() {
 						Kind: "Kubernetes",
 					},
 					Subject: &fedv1alpha1.FederationSubject{
-						Subject: "test-subject",
-						Issuer:  "test-issuer-error",
+						OIDC: &fedv1alpha1.FederationOIDC{
+							Subject: "test-subject",
+							Issuer:  "test-issuer-error",
+						},
 					},
 				}
 
@@ -342,8 +346,10 @@ func (s *GenParseTokenTestSuite) TestGenParseToken() {
 						Kind: "Kubernetes",
 					},
 					Subject: &fedv1alpha1.FederationSubject{
-						Subject: "test-subject",
-						Issuer:  "test-issuer",
+						OIDC: &fedv1alpha1.FederationOIDC{
+							Subject: "test-subject",
+							Issuer:  "test-issuer",
+						},
 					},
 				}
 
@@ -524,8 +530,10 @@ func (s *AuthenticateTestSuite) TestAuthenticate() {
 						Kind: "Kubernetes",
 					},
 					Subject: &fedv1alpha1.FederationSubject{
-						Subject: "test-subject",
-						Issuer:  "test-issuer",
+						OIDC: &fedv1alpha1.FederationOIDC{
+							Subject: "test-subject",
+							Issuer:  "test-issuer",
+						},
 					},
 				}
 

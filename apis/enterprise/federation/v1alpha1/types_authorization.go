@@ -20,14 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:XValidation:rule="(has(self.spiffe) && !has(self.subject)) || (!has(self.spiffe) && has(self.subject))",message="spiffe or subject must be set"
+// +kubebuilder:validation:XValidation:rule="(has(self.subject.spiffe) && !has(self.subject.oidc)) || (!has(self.subject.spiffe) && has(self.subject.oidc))",message="spiffe or subject must be set"
 type AuthorizationSpec struct {
 	FederationRef FederationRef `json:"federationRef"`
 
-	// +kubebuilder:validation:Optional
-	Spiffe *FederationSpiffe `json:"spiffe"`
-	// +kubebuilder:validation:Optional
-	Subject *FederationSubject `json:"subject"`
+	// +kubebuilder:validation:Required
+	Subject *FederationSubject `json:"subject,omitempty"`
 
 	// Which ClusterSecretStores can this subject request
 	AllowedClusterSecretStores []string `json:"allowedClusterSecretStores"`
@@ -39,9 +37,9 @@ type AuthorizationSpec struct {
 
 func (a *AuthorizationSpec) RequiresTLS() bool {
 	switch {
-	case a.Spiffe != nil:
+	case a.Subject.Spiffe != nil:
 		return true
-	case a.Subject != nil:
+	case a.Subject.OIDC != nil:
 		return false
 	default:
 		return false
@@ -50,10 +48,10 @@ func (a *AuthorizationSpec) RequiresTLS() bool {
 
 func (a *AuthorizationSpec) Principal() (string, error) {
 	switch {
-	case a.Spiffe != nil:
-		return a.Spiffe.SpiffeID, nil
-	case a.Subject != nil:
-		return a.Subject.Subject, nil
+	case a.Subject.Spiffe != nil:
+		return a.Subject.Spiffe.SpiffeID, nil
+	case a.Subject.OIDC != nil:
+		return a.Subject.OIDC.Subject, nil
 	default:
 		return "", errors.New("no subject configured (choose spiffe or subject)")
 	}
@@ -61,14 +59,14 @@ func (a *AuthorizationSpec) Principal() (string, error) {
 
 func (a *AuthorizationSpec) Authority() (string, error) {
 	switch {
-	case a.Spiffe != nil:
-		spiffeID, err := spiffeid.FromString(a.Spiffe.SpiffeID)
+	case a.Subject.Spiffe != nil:
+		spiffeID, err := spiffeid.FromString(a.Subject.Spiffe.SpiffeID)
 		if err != nil {
 			return "", err
 		}
 		return spiffeID.TrustDomain().Name(), nil
-	case a.Subject != nil:
-		return a.Subject.Issuer, nil
+	case a.Subject.OIDC != nil:
+		return a.Subject.OIDC.Issuer, nil
 	default:
 		return "", errors.New("no issuer configured (choose spiffe or subject)")
 	}
@@ -81,13 +79,24 @@ type AllowedGenerator struct {
 	Name      string `json:"name"`
 	Kind      string `json:"kind"`
 	Namespace string `json:"namespace"`
+	// +kubebuilder:default="generators.external-secrets.io/v1alpha1"
+	ApiVersion string `json:"apiVersion"`
 }
 type FederationRef struct {
 	Kind string `json:"kind"`
 	Name string `json:"name"`
 }
 
+// +kubebuilder:validation:MinProperties=0
+// +kubebuilder:validation:MaxProperties=1
 type FederationSubject struct {
+	// +kubebuilder:validation:Optional
+	Spiffe *FederationSpiffe `json:"spiffe"`
+	// +kubebuilder:validation:Optional
+	OIDC *FederationOIDC `json:"oidc"`
+}
+
+type FederationOIDC struct {
 	Issuer  string `json:"issuer"`
 	Subject string `json:"subject"`
 }
