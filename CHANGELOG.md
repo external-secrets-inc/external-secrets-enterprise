@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.22.0...v1.22.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* update authorization model ([#507](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/507)) ([8058976](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8058976e26eea4ef8e0f222d4a09259991234a78))
+
 ## [1.22.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.21.0...v1.22.0) (2025-10-06)
 
 
