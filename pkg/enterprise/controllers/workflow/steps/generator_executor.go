@@ -5,6 +5,8 @@ package steps
 
 import (
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -135,9 +137,10 @@ func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf
 		}
 		generatorState.SetCleanupPolicy(cleanupPolicy)
 
-		genStateKey := fmt.Sprintf("%s.%s.%s", wf.Namespace, statefulResource.GetName(), jobName)
+		genStateKey := fmt.Sprintf("%s.%s.%s.%s", statefulResource.GetObjectKind().GroupVersionKind().String(), wf.Namespace, statefulResource.GetName(), jobName)
+		hash := sha512.Sum512([]byte(genStateKey))
 		if generatorState != nil {
-			generatorState.EnqueueCreateState(genStateKey, namespace, obj, gen, newGenState)
+			generatorState.EnqueueCreateState(hex.EncodeToString(hash[:]), namespace, obj, gen, newGenState)
 		}
 	}
 
