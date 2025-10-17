@@ -265,6 +265,12 @@ func (r *AuthorizedIdentityReconciler) checkWorkloadExists(ctx context.Context, 
 // checkExternalIdentityExists checks if an external identity (Okta app, OIDC client, etc.) still exists.
 // This is used for OAuth2-based auth methods that don't have WorkloadBinding.
 func (r *AuthorizedIdentityReconciler) checkExternalIdentityExists(ctx context.Context, log logr.Logger, identitySpec *fedv1alpha1.IdentitySpec) bool {
+	// If no Subject is defined, we can't check - keep the credential
+	if identitySpec.Subject == nil {
+		log.V(1).Info("No subject defined in identity spec, keeping credential")
+		return true
+	}
+
 	// Create a temporary AuthorizationSpec to use its Principal() helper method
 	tempSpec := &fedv1alpha1.AuthorizationSpec{
 		FederationRef: identitySpec.FederationRef,

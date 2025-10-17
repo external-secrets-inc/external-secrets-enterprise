@@ -641,7 +641,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 			expectedBody:   "error generating secret",
 		},
 		{
-			name: "error missing kubernetes attributes",
+			name: "success with OAuth2 auth (no kubernetes attributes)",
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
@@ -658,6 +658,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 					Method:   "oidc",
 					Provider: testIssuer,
 					Subject:  testSubject,
+					// No KubeAttributes - OAuth2 auth
 				}
 				c.Set("authInfo", customAuthInfo)
 
@@ -691,15 +692,21 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 				return c
 			},
 			mockGenSecret: func(ctx context.Context, generatorName string, generatorKind string, namespace string, resource *Resource) (map[string]string, string, string, error) {
-				// This should not be called
-				s.T().Fatalf("mockGenSecret should not be called in this test case")
-				return nil, "", "", nil
+				// Verify resource attributes for OAuth2 auth
+				s.Assert().Equal("oidc", resource.AuthMethod)
+				s.Assert().Equal(testSubject, resource.Owner)
+				s.Assert().Equal(testIssuer, resource.OwnerAttributes["issuer"])
+				s.Assert().Equal(testSubject, resource.OwnerAttributes["subject"])
+				s.Assert().Equal("oidc", resource.OwnerAttributes["method"])
+				return map[string]string{
+					"password": "generated-oauth2-password",
+				}, "test-state", testNamespace, nil
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "missing kubernetes attributes",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "{\"password\":\"generated-oauth2-password\"}",
 		},
 		{
-			name: "error missing kubernetes attributes",
+			name: "error missing kubernetes service account",
 			setup: func() echo.Context {
 				// Create a mock Echo context
 				e := echo.New()
