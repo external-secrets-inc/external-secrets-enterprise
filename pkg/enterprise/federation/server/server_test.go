@@ -27,6 +27,8 @@ import (
 	store "github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
 
+const testState = "test-state"
+
 type GenerateSecretsTestSuite struct {
 	suite.Suite
 	server *ServerHandler
@@ -145,7 +147,7 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 				s.Equal(generatorName, genName)
 				s.Equal(generatorKind, genKind)
 				s.Equal(generatorNamespace, genNamespace)
-				return map[string]string{"secretKey": "secretValue"}, "test-state", "test-namespace", nil
+				return map[string]string{"secretKey": "secretValue"}, testState, "test-namespace", nil
 			}
 			s.T().Cleanup(func() { s.server.generateSecretFn = originalGenerateSecretFn })
 
@@ -534,7 +536,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 				return map[string]string{
 					"key1": "value1",
 					"key2": "value2",
-				}, "test-state", testNamespace, nil
+				}, testState, testNamespace, nil
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   "{\"key1\":\"value1\",\"key2\":\"value2\"}",
@@ -700,7 +702,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 				s.Assert().Equal("oidc", resource.OwnerAttributes["method"])
 				return map[string]string{
 					"password": "generated-oauth2-password",
-				}, "test-state", testNamespace, nil
+				}, testState, testNamespace, nil
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   "{\"password\":\"generated-oauth2-password\"}",
