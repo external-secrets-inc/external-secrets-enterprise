@@ -160,32 +160,45 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 		Namespace: generatorNamespace,
 	}
 
-	if authInfo.KubeAttributes == nil {
-		return c.JSON(http.StatusBadRequest, "missing kubernetes attributes")
-	}
+	// Build resource based on authentication method
+	var resource *Resource
+	if authInfo.KubeAttributes != nil {
+		// Kubernetes-based authentication (has workload context)
+		if authInfo.KubeAttributes.ServiceAccount == nil {
+			return c.JSON(http.StatusBadRequest, "missing kubernetes service account")
+		}
 
-	if authInfo.KubeAttributes.ServiceAccount == nil {
-		return c.JSON(http.StatusBadRequest, "missing kubernetes service account")
-	}
+		owner := authInfo.KubeAttributes.ServiceAccount.Name
+		if authInfo.KubeAttributes.Pod != nil {
+			owner = authInfo.KubeAttributes.Pod.Name
+		}
 
-	owner := authInfo.KubeAttributes.ServiceAccount.Name
-	if authInfo.KubeAttributes.Pod != nil {
-		owner = authInfo.KubeAttributes.Pod.Name
-	}
-
-	resource := &Resource{
-		Name:       generatorName,
-		AuthMethod: "KubernetesServiceAccount",
-		Owner:      owner,
-		OwnerAttributes: map[string]string{
-			"namespace":            authInfo.KubeAttributes.Namespace,
-			"issuer":               authInfo.Provider,
-			"serviceaccount-uid":   authInfo.KubeAttributes.ServiceAccount.UID,
-			"service-account-name": authInfo.KubeAttributes.ServiceAccount.Name,
-		},
-	}
-	if authInfo.KubeAttributes.Pod != nil {
-		resource.OwnerAttributes["pod-uid"] = authInfo.KubeAttributes.Pod.UID
+		resource = &Resource{
+			Name:       generatorName,
+			AuthMethod: "KubernetesServiceAccount",
+			Owner:      owner,
+			OwnerAttributes: map[string]string{
+				"namespace":            authInfo.KubeAttributes.Namespace,
+				"issuer":               authInfo.Provider,
+				"serviceaccount-uid":   authInfo.KubeAttributes.ServiceAccount.UID,
+				"service-account-name": authInfo.KubeAttributes.ServiceAccount.Name,
+			},
+		}
+		if authInfo.KubeAttributes.Pod != nil {
+			resource.OwnerAttributes["pod-uid"] = authInfo.KubeAttributes.Pod.UID
+		}
+	} else {
+		// OAuth2-based authentication (Okta, OIDC, etc. - no workload context)
+		resource = &Resource{
+			Name:       generatorName,
+			AuthMethod: authInfo.Method, // "okta", "oidc", etc.
+			Owner:      authInfo.Subject,
+			OwnerAttributes: map[string]string{
+				"issuer":  authInfo.Provider,
+				"subject": authInfo.Subject,
+				"method":  authInfo.Method,
+			},
+		}
 	}
 	for _, spec := range AuthorizationSpecs {
 		principal, err := spec.Principal()

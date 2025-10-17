@@ -272,7 +272,15 @@ func TestShouldKeepCredential(t *testing.T) {
 				Scheme: scheme,
 			}
 
-			got := reconciler.shouldKeepCredential(context.Background(), reconciler.Log, tt.credential)
+			// Create a dummy IdentitySpec for the test
+			identitySpec := &fedv1alpha1.IdentitySpec{
+				FederationRef: fedv1alpha1.FederationRef{
+					Kind: "KubernetesFederation",
+					Name: "test-fed",
+				},
+			}
+
+			got := reconciler.shouldKeepCredential(context.Background(), reconciler.Log, tt.credential, identitySpec)
 			assert.Equal(t, tt.want, got)
 		})
 	}

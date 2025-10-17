@@ -30,6 +30,15 @@ func NewProvider(url string) *KubernetesProvider {
 	}
 }
 
+// CheckIdentityExists checks if a Kubernetes service account still exists.
+// For Kubernetes federation, identity lifecycle is managed through WorkloadBinding,
+// so this always returns true (identity check happens via pod/SA checks in AuthorizedIdentity controller).
+func (k *KubernetesProvider) CheckIdentityExists(ctx context.Context, subject string) (bool, error) {
+	// Kubernetes federation uses WorkloadBinding for lifecycle management
+	// This method is not used for K8s identities
+	return true, nil
+}
+
 func (k *KubernetesProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
 	// make url call to kubernetes endpoint using specified caCrt to validate tls
 	// Parse

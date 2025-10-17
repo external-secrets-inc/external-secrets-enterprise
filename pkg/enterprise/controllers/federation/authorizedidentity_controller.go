@@ -28,6 +28,7 @@ import (
 
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
 
 // AuthorizedIdentityReconciler reconciles AuthorizedIdentity objects.
@@ -53,13 +54,23 @@ func (r *AuthorizedIdentityReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Check each issued credential
 	for _, credential := range identity.Spec.IssuedCredentials {
-		if r.shouldKeepCredential(ctx, log, &credential) {
+		if r.shouldKeepCredential(ctx, log, &credential, &identity.Spec.IdentitySpec) {
 			validCredentials = append(validCredentials, credential)
 		} else {
 			needsUpdate = true
 			log.Info("Removing stale credential",
 				"sourceRef", credential.SourceRef.Name,
 				"sourceKind", credential.SourceRef.Kind)
+
+			// Delete associated GeneratorState if it exists
+			if credential.StateRef != nil {
+				if err := r.deleteGeneratorState(ctx, log, credential.StateRef); err != nil {
+					log.Error(err, "Failed to delete GeneratorState, will retry",
+						"name", credential.StateRef.Name,
+						"namespace", credential.StateRef.Namespace)
+					// Don't fail the reconciliation, we'll retry on next reconcile
+				}
+			}
 		}
 	}
 
@@ -77,13 +88,7 @@ func (r *AuthorizedIdentityReconciler) Reconcile(ctx context.Context, req ctrl.R
 }
 
 // shouldKeepCredential determines if a credential should be kept or cleaned up.
-func (r *AuthorizedIdentityReconciler) shouldKeepCredential(ctx context.Context, log logr.Logger, credential *fedv1alpha1.IssuedCredential) bool {
-	// If the credential has neither StateRef nor WorkloadBinding, it's likely
-	// a persistent generator action or SecretStore call - keep it
-	if credential.StateRef == nil && credential.WorkloadBinding == nil {
-		return true
-	}
-
+func (r *AuthorizedIdentityReconciler) shouldKeepCredential(ctx context.Context, log logr.Logger, credential *fedv1alpha1.IssuedCredential, identitySpec *fedv1alpha1.IdentitySpec) bool {
 	// Check if GeneratorState exists (if StateRef is present)
 	if credential.StateRef != nil {
 		stateExists := r.checkGeneratorStateExists(ctx, log, credential.StateRef)
@@ -103,6 +108,12 @@ func (r *AuthorizedIdentityReconciler) shouldKeepCredential(ctx context.Context,
 				"kind", credential.WorkloadBinding.Kind,
 				"name", credential.WorkloadBinding.Name,
 				"namespace", credential.WorkloadBinding.Namespace)
+			return false
+		}
+	} else {
+		// No WorkloadBinding - check external identity provider (Okta, OIDC, etc.)
+		identityExists := r.checkExternalIdentityExists(ctx, log, identitySpec)
+		if !identityExists {
 			return false
 		}
 	}
@@ -140,6 +151,44 @@ func (r *AuthorizedIdentityReconciler) checkGeneratorStateExists(ctx context.Con
 	}
 
 	return true
+}
+
+// deleteGeneratorState deletes the referenced GeneratorState resource.
+func (r *AuthorizedIdentityReconciler) deleteGeneratorState(ctx context.Context, log logr.Logger, stateRef *fedv1alpha1.StateRef) error {
+	if stateRef == nil {
+		return nil
+	}
+
+	state := &genv1alpha1.GeneratorState{}
+	namespace := ""
+	if stateRef.Namespace != nil {
+		namespace = *stateRef.Namespace
+	}
+
+	err := r.Get(ctx, types.NamespacedName{
+		Name:      stateRef.Name,
+		Namespace: namespace,
+	}, state)
+
+	if errors.IsNotFound(err) {
+		// Already deleted, nothing to do
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// Delete the GeneratorState
+	if err := r.Delete(ctx, state); err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	log.Info("Deleted GeneratorState",
+		"name", stateRef.Name,
+		"namespace", namespace)
+
+	return nil
 }
 
 // checkWorkloadExists checks if the referenced workload (Pod or ServiceAccount) still exists.
@@ -211,6 +260,40 @@ func (r *AuthorizedIdentityReconciler) checkWorkloadExists(ctx context.Context, 
 		log.Info("Unknown workload kind, keeping credential", "kind", workload.Kind)
 		return true
 	}
+}
+
+// checkExternalIdentityExists checks if an external identity (Okta app, OIDC client, etc.) still exists.
+// This is used for OAuth2-based auth methods that don't have WorkloadBinding.
+func (r *AuthorizedIdentityReconciler) checkExternalIdentityExists(ctx context.Context, log logr.Logger, identitySpec *fedv1alpha1.IdentitySpec) bool {
+	// Create a temporary AuthorizationSpec to use its Principal() helper method
+	tempSpec := &fedv1alpha1.AuthorizationSpec{
+		FederationRef: identitySpec.FederationRef,
+		Subject:       identitySpec.Subject,
+	}
+
+	// Get the subject (client ID, etc.)
+	subject, err := tempSpec.Principal()
+	if err != nil {
+		log.Error(err, "Failed to get principal from identity spec")
+		return true // Keep credential on error to avoid accidental deletion
+	}
+
+	// Call store.CheckIfExists to check with the identity provider
+	exists, err := store.CheckIfExists(ctx, identitySpec.FederationRef, subject)
+	if err != nil {
+		log.Error(err, "Failed to check identity existence",
+			"federationRef", identitySpec.FederationRef,
+			"subject", subject)
+		return true // Keep credential on error to avoid accidental deletion
+	}
+
+	if !exists {
+		log.Info("External identity no longer exists",
+			"federationRef", identitySpec.FederationRef,
+			"subject", subject)
+	}
+
+	return exists
 }
 
 // SetupWithManager sets up the controller with the Manager.

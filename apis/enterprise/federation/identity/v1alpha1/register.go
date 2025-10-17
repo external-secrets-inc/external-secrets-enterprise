@@ -52,7 +52,16 @@ var (
 	SpiffeFederationGroupVersionKind = SchemeGroupVersion.WithKind(SpiffeFederationKind)
 )
 
+// OktaFederation type metadata.
+var (
+	OktaFederationKind             = reflect.TypeOf(OktaFederation{}).Name()
+	OktaFederationGroupKind        = schema.GroupKind{Group: Group, Kind: OktaFederationKind}.String()
+	OktaFederationKindAPIVersion   = OktaFederationKind + "." + SchemeGroupVersion.String()
+	OktaFederationGroupVersionKind = SchemeGroupVersion.WithKind(OktaFederationKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&KubernetesFederation{}, &KubernetesFederationList{})
 	SchemeBuilder.Register(&SpiffeFederation{}, &SpiffeFederationList{})
+	SchemeBuilder.Register(&OktaFederation{}, &OktaFederationList{})
 }

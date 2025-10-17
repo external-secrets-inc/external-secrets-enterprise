@@ -1,0 +1,173 @@
+// 2025
+// Copyright External Secrets Inc.
+// All Rights Reserved.
+
+package provider
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"sync"
+	"time"
+)
+
+const (
+	// Default cache TTL for JWKS (1 hour as recommended by Okta).
+	defaultJWKSCacheTTL = 1 * time.Hour
+)
+
+type OktaProvider struct {
+	Domain                string
+	AuthorizationServerID string
+	ManagementAPIToken    string // Optional: for calling Okta Management API
+	httpClient            *http.Client
+	jwksCache             map[string]map[string]string
+	cacheMutex            sync.RWMutex
+	lastFetch             time.Time
+	cacheTTL              time.Duration
+}
+
+func NewOktaProvider(domain, authServerID string) *OktaProvider {
+	if authServerID == "" {
+		authServerID = "default"
+	}
+
+	return &OktaProvider{
+		Domain:                domain,
+		AuthorizationServerID: authServerID,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+		jwksCache: make(map[string]map[string]string),
+		cacheTTL:  defaultJWKSCacheTTL,
+	}
+}
+
+// GetJWKS fetches the JSON Web Key Set from Okta's public endpoint.
+// The token, issuer, and caCrt parameters are not used for Okta since the
+// JWKS endpoint is publicly accessible over standard HTTPS.
+func (o *OktaProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
+	o.cacheMutex.RLock()
+	// Check if cache is still valid
+	if time.Since(o.lastFetch) < o.cacheTTL && len(o.jwksCache) > 0 {
+		cachedJWKS := o.jwksCache
+		o.cacheMutex.RUnlock()
+		return cachedJWKS, nil
+	}
+	o.cacheMutex.RUnlock()
+
+	// Fetch fresh JWKS
+	return o.fetchAndCacheJWKS(ctx)
+}
+
+func (o *OktaProvider) fetchAndCacheJWKS(ctx context.Context) (map[string]map[string]string, error) {
+	o.cacheMutex.Lock()
+	defer o.cacheMutex.Unlock()
+
+	// Double-check after acquiring write lock
+	if time.Since(o.lastFetch) < o.cacheTTL && len(o.jwksCache) > 0 {
+		return o.jwksCache, nil
+	}
+
+	// Construct JWKS URL
+	// Format: https://{domain}/oauth2/{authServerId}/v1/keys
+	jwksURL := fmt.Sprintf("%s/oauth2/%s/v1/keys", o.Domain, o.AuthorizationServerID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jwksURL, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWKS request: %w", err)
+	}
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch JWKS from Okta: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("JWKS endpoint returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read JWKS response: %w", err)
+	}
+
+	var jwksResponse struct {
+		Keys []map[string]string `json:"keys"`
+	}
+
+	if err := json.Unmarshal(body, &jwksResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse JWKS response: %w", err)
+	}
+
+	// Convert to map[kid]key format
+	jwksMap := make(map[string]map[string]string)
+	for _, key := range jwksResponse.Keys {
+		kid, ok := key["kid"]
+		if !ok {
+			continue
+		}
+		jwksMap[kid] = key
+	}
+
+	if len(jwksMap) == 0 {
+		return nil, fmt.Errorf("no valid keys found in JWKS response")
+	}
+
+	// Update cache
+	o.jwksCache = jwksMap
+	o.lastFetch = time.Now()
+
+	return jwksMap, nil
+}
+
+// CheckIdentityExists checks if an Okta application still exists by calling the Okta Management API.
+// The subject parameter should be the Okta application client ID.
+// Returns true if the app exists, false if deleted/not found.
+// If ManagementAPIToken is not configured, returns true (assume exists).
+func (o *OktaProvider) CheckIdentityExists(ctx context.Context, subject string) (bool, error) {
+	// If no management API token configured, skip the check (assume exists)
+	if o.ManagementAPIToken == "" {
+		return true, nil
+	}
+
+	// Call Okta Management API: GET /api/v1/apps/{clientId}
+	url := fmt.Sprintf("%s/api/v1/apps/%s", o.Domain, subject)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return false, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Okta Management API uses SSWS authentication
+	req.Header.Set("Authorization", "SSWS "+o.ManagementAPIToken)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return false, fmt.Errorf("failed to call Okta Management API: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// App exists
+		return true, nil
+	case http.StatusNotFound:
+		// App deleted or never existed
+		return false, nil
+	default:
+		// Unexpected error - return error to avoid accidental deletion
+		body, _ := io.ReadAll(resp.Body)
+		return false, fmt.Errorf("unexpected status %d from Okta Management API: %s", resp.StatusCode, string(body))
+	}
+}

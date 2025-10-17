@@ -132,6 +132,12 @@ func (m *mockFederationProvider) GetJWKS(ctx context.Context, token, issuer stri
 	return m.jwks, nil
 }
 
+// CheckIdentityExists implements the FederationProvider interface.
+func (m *mockFederationProvider) CheckIdentityExists(ctx context.Context, subject string) (bool, error) {
+	// Mock implementation - always return true for tests
+	return true, nil
+}
+
 type FindJWKSTestSuite struct {
 	suite.Suite
 	// Store specs to clean up after tests

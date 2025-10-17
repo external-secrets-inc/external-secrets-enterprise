@@ -22,6 +22,9 @@ import "context"
 
 type FederationProvider interface {
 	GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error)
+	// CheckIdentityExists checks if the identity (client/app/workload) still exists in the identity provider.
+	// Returns true if exists, false if deleted/doesn't exist, or error if check failed.
+	CheckIdentityExists(ctx context.Context, subject string) (bool, error)
 }
 
 // +kubebuilder:object:root=false

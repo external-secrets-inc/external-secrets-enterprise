@@ -71,3 +71,15 @@ func GetJWKS(ctx context.Context, specs []*api.AuthorizationSpec, token, issuer 
 	}
 	return nil, errors.New("no jwks found")
 }
+
+// CheckIfExists checks if the identity still exists in the identity provider.
+// It looks up the provider by federationRef and calls its CheckIdentityExists method.
+// Returns true if exists, false if deleted, or error if check failed.
+func CheckIfExists(ctx context.Context, federationRef api.FederationRef, subject string) (bool, error) {
+	provider := GetStore(federationRef)
+	if provider == nil {
+		return false, fmt.Errorf("no provider found for federation ref: %s/%s", federationRef.Kind, federationRef.Name)
+	}
+	
+	return provider.CheckIdentityExists(ctx, subject)
+}
