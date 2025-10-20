@@ -130,13 +130,34 @@ func TestOktaProvider_GetJWKS(t *testing.T) {
 			expectError:    true,
 			errorContains:  "failed to parse JWKS response",
 		},
+		{
+			name:           "successful JWKS fetch with custom auth server",
+			authServerID:   "custom",
+			mockStatusCode: http.StatusOK,
+			mockResponse: map[string]interface{}{
+				"keys": []map[string]string{
+					{
+						"kid": "key1",
+						"kty": "RSA",
+						"n":   "test-modulus",
+						"e":   "AQAB",
+					},
+				},
+			},
+			expectedKeys: 1,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Contains(t, r.URL.Path, "/oauth2/"+tt.authServerID+"/v1/keys")
+				// For "default" auth server, Okta uses org authorization server endpoint without auth server ID
+				expectedPath := "/oauth2/v1/keys"
+				if tt.authServerID != "" && tt.authServerID != "default" {
+					expectedPath = "/oauth2/" + tt.authServerID + "/v1/keys"
+				}
+				assert.Contains(t, r.URL.Path, expectedPath)
 
 				w.WriteHeader(tt.mockStatusCode)
 
