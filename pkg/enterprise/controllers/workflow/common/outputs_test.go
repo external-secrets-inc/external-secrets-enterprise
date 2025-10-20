@@ -137,6 +137,50 @@ func TestProcessOutputs(t *testing.T) {
 			expectedSensitive: nil,
 			expectError:       false,
 		},
+		{
+			name: "already processed outputs",
+			outputs: map[string]interface{}{
+				"username":    "john",
+				"is_active":   "true",
+				"login_count": "42",
+				"last_login":  now.Format(time.RFC3339),
+				"metadata":    string(jsonBytes),
+			},
+			step: workflows.Step{
+				Name: "test-step",
+				Outputs: []workflows.OutputDefinition{
+					{
+						Name: "username",
+						Type: workflows.OutputTypeString,
+					},
+					{
+						Name: "is_active",
+						Type: workflows.OutputTypeBool,
+					},
+					{
+						Name: "login_count",
+						Type: workflows.OutputTypeNumber,
+					},
+					{
+						Name: "last_login",
+						Type: workflows.OutputTypeTime,
+					},
+					{
+						Name: "metadata",
+						Type: workflows.OutputTypeMap,
+					},
+				},
+			},
+			expected: map[string]string{
+				"username":    "john",
+				"is_active":   "true",
+				"login_count": "42",
+				"last_login":  now.Format(time.RFC3339),
+				"metadata":    string(jsonBytes),
+			},
+			expectedSensitive: map[string]string{},
+			expectError:       false,
+		},
 	}
 
 	for _, tt := range tests {

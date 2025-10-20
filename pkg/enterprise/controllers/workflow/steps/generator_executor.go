@@ -115,7 +115,7 @@ func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf
 			statefulResource = runTemplate
 		} else {
 			statefulResource = wf
-			log.Error(err, "error getting workflow run template")
+			log.Info(fmt.Sprintf("error getting workflow run template: %v", err))
 		}
 
 		generatorState := statemanager.New(ctx, e.Client, e.Scheme, namespace, statefulResource)

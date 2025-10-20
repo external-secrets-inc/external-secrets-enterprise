@@ -193,11 +193,17 @@ func serializeAndMaskValues(inputs map[string]interface{}, sensitiveKeys []strin
 					serialized[k] = fmt.Sprintf("%v", v)
 				}
 			case workflows.OutputTypeMap:
-				jsonBytes, err := json.Marshal(v)
-				if err != nil {
-					return nil, nil, fmt.Errorf("failed to marshal JSON value for key %s: %w", k, err)
+				stringValue := fmt.Sprintf("%v", v)
+				_, isMap := v.(map[string]interface{})
+				_, isArray := v.([]interface{})
+				if isMap || isArray {
+					jsonBytes, err := json.Marshal(v)
+					if err != nil {
+						return nil, nil, fmt.Errorf("failed to marshal JSON value for key %s: %w", k, err)
+					}
+					stringValue = string(jsonBytes)
 				}
-				serialized[k] = string(jsonBytes)
+				serialized[k] = stringValue
 			case workflows.OutputTypeString:
 				if strVal, ok := v.(string); ok {
 					serialized[k] = strVal
