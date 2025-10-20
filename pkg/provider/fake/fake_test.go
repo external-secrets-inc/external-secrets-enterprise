@@ -402,7 +402,7 @@ func TestSetSecret(t *testing.T) {
 
 				expValue := row.expValue
 				if row.secretKey == "" {
-					expValue = fmt.Sprintf("{\"%s\":\"%s\"}", row.expSecretKey, row.expValue)
+					expValue = fmt.Sprintf("{%q:%q}", row.expSecretKey, row.expValue)
 				}
 
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
