@@ -1,15 +1,4 @@
 ---
-# Example OktaFederation resource for a development Okta organization
-apiVersion: identity.federation.external-secrets.io/v1alpha1
-kind: OktaFederation
-metadata:
-  name: okta-dev
-spec:
-  # Okta organization domain
-  domain: "https://dev-12345.okta.com"
-  # OAuth2 Authorization Server ID (defaults to "default" if not specified)
-  authorizationServerId: "default"
----
 # Example OktaFederation resource for a production Okta organization with custom auth server
 apiVersion: identity.federation.external-secrets.io/v1alpha1
 kind: OktaFederation
@@ -17,6 +6,6 @@ metadata:
   name: okta-prod
 spec:
   # Okta organization domain (can be custom domain)
-  domain: "https://auth.example.com"
+  domain: "https://trial-1038013.okta.com"
   # Custom authorization server ID
-  authorizationServerId: "custom-auth-server"
+  authorizationServerId: ""

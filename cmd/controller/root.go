@@ -429,6 +429,14 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "KubernetesFederation")
 			os.Exit(1)
 		}
+		if err = (&federation.OktaFederationController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("OktaFederation"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "OktaFederation")
+			os.Exit(1)
+		}
 
 		if err = (&federation.SpiffeFederationController{
 			Client: mgr.GetClient(),

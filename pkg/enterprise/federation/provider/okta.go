@@ -73,8 +73,16 @@ func (o *OktaProvider) fetchAndCacheJWKS(ctx context.Context) (map[string]map[st
 	}
 
 	// Construct JWKS URL
-	// Format: https://{domain}/oauth2/{authServerId}/v1/keys
-	jwksURL := fmt.Sprintf("%s/oauth2/%s/v1/keys", o.Domain, o.AuthorizationServerID)
+	// Org authorization server: https://{domain}/oauth2/v1/keys
+	// Custom authorization server: https://{domain}/oauth2/{authServerId}/v1/keys
+	var jwksURL string
+	if o.AuthorizationServerID == "" || o.AuthorizationServerID == "default" {
+		// Org authorization server (no auth server ID in path)
+		jwksURL = fmt.Sprintf("%s/oauth2/v1/keys", o.Domain)
+	} else {
+		// Custom authorization server
+		jwksURL = fmt.Sprintf("%s/oauth2/%s/v1/keys", o.Domain, o.AuthorizationServerID)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jwksURL, http.NoBody)
 	if err != nil {

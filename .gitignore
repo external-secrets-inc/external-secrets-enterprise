@@ -7,6 +7,9 @@
 /vendor
 cover.out
 
+#ignore keys
+key.pem
+
 .go-version
 # ignore vim swp
 *.swp
