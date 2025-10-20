@@ -27,5 +27,11 @@ spec:
   
   # Generators are not yet supported for Okta (requires KubeAttributes)
   # This will be added in a future iteration
-  allowedGenerators: []
+  allowedGenerators:
+  - name: dynamic-generator
+    kind: OpenAI
+    namespace: dynamic
+  - name: dynamic-psql-generator
+    kind: PostgreSql
+    namespace: dynamic
   allowedGeneratorStates: []

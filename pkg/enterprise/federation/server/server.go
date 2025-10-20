@@ -437,26 +437,30 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 			State:    stateJson,
 		},
 	}
-	var cobj client.Object
-	if _, ok := resource.OwnerAttributes["pod-uid"]; ok {
-		pod := &v1.Pod{}
-		err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, pod)
-		if err != nil {
+	// We can bind the Generator State to a GC-linked object
+	if resource.AuthMethod == "KubernetesServiceAccount" {
+		var cobj client.Object
+		if _, ok := resource.OwnerAttributes["pod-uid"]; ok {
+			pod := &v1.Pod{}
+			err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, pod)
+			if err != nil {
+				return nil, "", "", err
+			}
+			cobj = pod
+		} else {
+			sa := &v1.ServiceAccount{}
+			err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, sa)
+			if err != nil {
+				return nil, "", "", err
+			}
+			cobj = sa
+		}
+		if err := controllerutil.SetOwnerReference(cobj, &generatorState, s.reconciler.Scheme); err != nil {
 			return nil, "", "", err
 		}
-		cobj = pod
-	} else {
-		sa := &v1.ServiceAccount{}
-		err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, sa)
-		if err != nil {
-			return nil, "", "", err
-		}
-		cobj = sa
 	}
-	if err := controllerutil.SetOwnerReference(cobj, &generatorState, s.reconciler.Scheme); err != nil {
-		return nil, "", "", err
-	}
-
+	// Any other types, cleanup is done via the `authorized_identity` controller.
+	// TODO - bind workloads to these other type of credentials as well.
 	err = s.reconciler.Client.Create(ctx, &generatorState)
 	if err != nil {
 		return nil, "", "", err
