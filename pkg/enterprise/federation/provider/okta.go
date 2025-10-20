@@ -17,6 +17,7 @@ import (
 const (
 	// Default cache TTL for JWKS (1 hour as recommended by Okta).
 	defaultJWKSCacheTTL = 1 * time.Hour
+	defaultServerID     = "default"
 )
 
 type OktaProvider struct {
@@ -32,7 +33,7 @@ type OktaProvider struct {
 
 func NewOktaProvider(domain, authServerID string) *OktaProvider {
 	if authServerID == "" {
-		authServerID = "default"
+		authServerID = defaultServerID
 	}
 
 	return &OktaProvider{
@@ -76,7 +77,7 @@ func (o *OktaProvider) fetchAndCacheJWKS(ctx context.Context) (map[string]map[st
 	// Org authorization server: https://{domain}/oauth2/v1/keys
 	// Custom authorization server: https://{domain}/oauth2/{authServerId}/v1/keys
 	var jwksURL string
-	if o.AuthorizationServerID == "" || o.AuthorizationServerID == "default" {
+	if o.AuthorizationServerID == "" || o.AuthorizationServerID == defaultServerID {
 		// Org authorization server (no auth server ID in path)
 		jwksURL = fmt.Sprintf("%s/oauth2/v1/keys", o.Domain)
 	} else {
