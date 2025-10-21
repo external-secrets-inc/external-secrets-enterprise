@@ -571,36 +571,6 @@ func buildStateRef(name, namespace string) *fedv1alpha1.StateRef {
 	}
 }
 
-// buildWorkloadBinding constructs a WorkloadBinding from authInfo.
-// Deprecated: Use buildWorkloadBindingFromWorkloadInfo instead.
-func buildWorkloadBinding(authInfo *auth.AuthInfo) *fedv1alpha1.WorkloadBinding {
-	if authInfo == nil || authInfo.KubeAttributes == nil {
-		return nil
-	}
-
-	// If we have pod information, bind to the pod
-	if authInfo.KubeAttributes.Pod != nil {
-		return &fedv1alpha1.WorkloadBinding{
-			Kind:      "Pod",
-			Name:      authInfo.KubeAttributes.Pod.Name,
-			UID:       authInfo.KubeAttributes.Pod.UID,
-			Namespace: authInfo.KubeAttributes.Namespace,
-		}
-	}
-
-	// Otherwise, bind to the service account
-	if authInfo.KubeAttributes.ServiceAccount != nil {
-		return &fedv1alpha1.WorkloadBinding{
-			Kind:      "ServiceAccount",
-			Name:      authInfo.KubeAttributes.ServiceAccount.Name,
-			UID:       authInfo.KubeAttributes.ServiceAccount.UID,
-			Namespace: authInfo.KubeAttributes.Namespace,
-		}
-	}
-
-	return nil
-}
-
 // buildWorkloadBindingFromWorkloadInfo constructs a WorkloadBinding from workloadInfo.
 func buildWorkloadBindingFromWorkloadInfo(workloadInfo *auth.WorkloadInfo) *fedv1alpha1.WorkloadBinding {
 	if workloadInfo == nil {

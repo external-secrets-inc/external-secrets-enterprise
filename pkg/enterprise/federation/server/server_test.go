@@ -29,7 +29,7 @@ import (
 
 const testState = "test-state"
 
-// setAuthContext sets both authInfo and workloadInfo in the echo context (simulating middleware behavior)
+// setAuthContext sets both authInfo and workloadInfo in the echo context (simulating middleware behavior).
 func setAuthContext(c echo.Context, authInfo *auth.AuthInfo) {
 	c.Set("authInfo", authInfo)
 	if authInfo.KubeAttributes != nil {
@@ -1356,7 +1356,7 @@ func TestUpsertIdentityConnectionError(t *testing.T) {
 	err := server.upsertIdentity(
 		ctx,
 		authInfo,
-		nil, //workloadInfo
+		nil, // workloadInfo
 		federationRef,
 		"test-generator",
 		"test-key",
@@ -1414,7 +1414,7 @@ func TestUpsertIdentityCreateNew(t *testing.T) {
 	err := server.upsertIdentity(
 		ctx,
 		authInfo,
-		nil, //workloadInfo
+		nil, // workloadInfo
 		federationRef,
 		"test-generator",
 		"test-key",
@@ -1506,7 +1506,7 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 	err := server.upsertIdentity(
 		ctx,
 		authInfo,
-		nil, //workloadInfo
+		nil, // workloadInfo
 		federationRef,
 		"new-generator",
 		"test-key",
@@ -1705,7 +1705,7 @@ func TestUpsertIdentityCreateError(t *testing.T) {
 	err := server.upsertIdentity(
 		ctx,
 		authInfo,
-		nil, //workloadInfo
+		nil, // workloadInfo
 		federationRef,
 		"test-generator",
 		"test-key",
@@ -1770,7 +1770,7 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 	err := server.upsertIdentity(
 		ctx,
 		authInfo,
-		nil, //workloadInfo
+		nil, // workloadInfo
 		federationRef,
 		"test-generator",
 		"test-key",
@@ -1819,7 +1819,7 @@ func TestUpsertIdentityNilReconciler(t *testing.T) {
 	err := server.upsertIdentity(
 		ctx,
 		authInfo,
-		nil, //workloadInfo
+		nil, // workloadInfo
 		federationRef,
 		"test-generator",
 		"test-key",
