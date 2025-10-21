@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.23.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.22.1...v1.23.0) (2025-10-21)
+
+
+### Features
+
+* okta federation provider - still wip ([#511](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/511)) ([ce11666](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ce1166655c872eab13dcc22d0250733dfa10a9a8))
+
+
+### Bug Fixes
+
+* remove requirement of run template from generator step ([#509](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/509)) ([cfddbf0](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/cfddbf06be2e0abdb48d527b6abe93fedfb29b3b))
+* should also remove credentials if okta app is inactive ([ce11666](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/ce1166655c872eab13dcc22d0250733dfa10a9a8))
+
 ## [1.22.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.22.0...v1.22.1) (2025-10-07)
 
 
