@@ -78,10 +78,16 @@ func (a *OIDCAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 		return nil, errors.New("failed to parse token")
 	}
 	authInfo := &AuthInfo{
-		Method:         "oidc",
-		Provider:       claim.Issuer,
-		Subject:        claim.Subject,
-		KubeAttributes: nil, // Workload context comes from x-workload-token header
+		Method:   "oidc",
+		Provider: claim.Issuer,
+		Subject:  claim.Subject,
+		KubeAttributes: &KubeAttributes{
+			Namespace:      claim.Namespace,
+			ServiceAccount: &ServiceAccount{Name: claim.ServiceAccount.Name, UID: claim.ServiceAccount.UID},
+		},
+	}
+	if claim.Pod != nil {
+		authInfo.KubeAttributes.Pod = &PodInfo{Name: claim.Pod.Name, UID: claim.Pod.UID}
 	}
 	return authInfo, nil
 }

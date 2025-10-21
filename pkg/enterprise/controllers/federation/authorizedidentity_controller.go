@@ -288,14 +288,18 @@ func (r *AuthorizedIdentityReconciler) checkExternalIdentityExists(ctx context.C
 	// Call store.CheckIfExists to check with the identity provider
 	exists, err := store.CheckIfExists(ctx, identitySpec.FederationRef, subject)
 	if err != nil {
-		log.Error(err, "Failed to check identity existence",
+		log.Error(err, "Ran identity check against provider and it failed",
 			"federationRef", identitySpec.FederationRef,
 			"subject", subject)
 		return true // Keep credential on error to avoid accidental deletion
 	}
 
 	if !exists {
-		log.Info("External identity no longer exists",
+		log.Info("Ran identity check against provider - identity no longer exists",
+			"federationRef", identitySpec.FederationRef,
+			"subject", subject)
+	} else {
+		log.Info("Ran identity check against provider and it worked - identity is active",
 			"federationRef", identitySpec.FederationRef,
 			"subject", subject)
 	}

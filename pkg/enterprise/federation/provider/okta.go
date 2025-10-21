@@ -137,9 +137,9 @@ func (o *OktaProvider) fetchAndCacheJWKS(ctx context.Context) (map[string]map[st
 	return jwksMap, nil
 }
 
-// CheckIdentityExists checks if an Okta application still exists by calling the Okta Management API.
+// CheckIdentityExists checks if an Okta application still exists and is active by calling the Okta Management API.
 // The subject parameter should be the Okta application client ID.
-// Returns true if the app exists, false if deleted/not found.
+// Returns true if the app exists and is active, false if deleted/not found/inactive.
 // If ManagementAPIToken is not configured, returns true (assume exists).
 func (o *OktaProvider) CheckIdentityExists(ctx context.Context, subject string) (bool, error) {
 	// If no management API token configured, skip the check (assume exists)
@@ -169,7 +169,25 @@ func (o *OktaProvider) CheckIdentityExists(ctx context.Context, subject string) 
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		// App exists
+		// App exists - now check if it's active
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		var appResponse struct {
+			Status string `json:"status"`
+		}
+		if err := json.Unmarshal(body, &appResponse); err != nil {
+			return false, fmt.Errorf("failed to parse app response: %w", err)
+		}
+
+		// Only consider ACTIVE apps as existing
+		// INACTIVE, DELETED, or any other status should trigger cleanup
+		if appResponse.Status != "ACTIVE" {
+			return false, nil
+		}
+
 		return true, nil
 	case http.StatusNotFound:
 		// App deleted or never existed
