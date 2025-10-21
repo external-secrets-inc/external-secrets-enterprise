@@ -9,3 +9,8 @@ spec:
   domain: "https://trial-1038013.okta.com"
   # Custom authorization server ID
   authorizationServerId: ""
+  managementAPI:
+    apiTokenSecretRef:
+      name: okta-key
+      namespace: external-secrets
+      key: token

@@ -134,13 +134,34 @@ func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
 func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var lastErr error
-		for _, auth := range auth.Registry {
-			info, err := auth.Authenticate(c.Request())
+		for _, authenticator := range auth.Registry {
+			info, err := authenticator.Authenticate(c.Request())
 			if err != nil {
 				lastErr = err
 				continue
 			}
 			c.Set("authInfo", info)
+
+			// Parse optional x-workload-token header
+			workloadInfo, err := auth.ParseWorkloadToken(c.Request())
+			if err != nil {
+				// If token is malformed, return error
+				return c.JSON(http.StatusBadRequest, fmt.Sprintf("invalid x-workload-token: %s", err.Error()))
+			}
+
+			// Merge with existing KubeAttributes if present
+			if workloadInfo == nil && info.KubeAttributes != nil {
+				// Use KubeAttributes from authInfo (e.g., from SPIFFE)
+				workloadInfo = &auth.WorkloadInfo{
+					Namespace:      info.KubeAttributes.Namespace,
+					ServiceAccount: info.KubeAttributes.ServiceAccount,
+					Pod:            info.KubeAttributes.Pod,
+				}
+			}
+
+			// Set workloadInfo in context (may be nil)
+			c.Set("workloadInfo", workloadInfo)
+
 			return next(c)
 		}
 		return c.JSON(http.StatusUnauthorized, lastErr.Error())
@@ -149,6 +170,7 @@ func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 func (s *ServerHandler) generateSecrets(c echo.Context) error {
 	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
 	generatorName := c.Param("generatorName")
@@ -160,17 +182,17 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 		Namespace: generatorNamespace,
 	}
 
-	// Build resource based on authentication method
+	// Build resource based on workload context
 	var resource *Resource
-	if authInfo.KubeAttributes != nil {
-		// Kubernetes-based authentication (has workload context)
-		if authInfo.KubeAttributes.ServiceAccount == nil {
+	if workloadInfo != nil {
+		// Has workload context (from x-workload-token or KubeAttributes)
+		if workloadInfo.ServiceAccount == nil {
 			return c.JSON(http.StatusBadRequest, "missing kubernetes service account")
 		}
 
-		owner := authInfo.KubeAttributes.ServiceAccount.Name
-		if authInfo.KubeAttributes.Pod != nil {
-			owner = authInfo.KubeAttributes.Pod.Name
+		owner := workloadInfo.ServiceAccount.Name
+		if workloadInfo.Pod != nil {
+			owner = workloadInfo.Pod.Name
 		}
 
 		resource = &Resource{
@@ -178,14 +200,14 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 			AuthMethod: "KubernetesServiceAccount",
 			Owner:      owner,
 			OwnerAttributes: map[string]string{
-				"namespace":            authInfo.KubeAttributes.Namespace,
+				"namespace":            workloadInfo.Namespace,
 				"issuer":               authInfo.Provider,
-				"serviceaccount-uid":   authInfo.KubeAttributes.ServiceAccount.UID,
-				"service-account-name": authInfo.KubeAttributes.ServiceAccount.Name,
+				"serviceaccount-uid":   workloadInfo.ServiceAccount.UID,
+				"service-account-name": workloadInfo.ServiceAccount.Name,
 			},
 		}
-		if authInfo.KubeAttributes.Pod != nil {
-			resource.OwnerAttributes["pod-uid"] = authInfo.KubeAttributes.Pod.UID
+		if workloadInfo.Pod != nil {
+			resource.OwnerAttributes["pod-uid"] = workloadInfo.Pod.UID
 		}
 	} else {
 		// OAuth2-based authentication (Okta, OIDC, etc. - no workload context)
@@ -213,7 +235,7 @@ func (s *ServerHandler) generateSecrets(c echo.Context) error {
 
 			// Create or update AuthorizedIdentity
 			stateRef := buildStateRef(stateName, stateNamespace)
-			if err := s.upsertIdentity(c.Request().Context(), authInfo, &spec.FederationRef, generatorName, "", generatorKind, generatorNamespace, stateRef); err != nil {
+			if err := s.upsertIdentity(c.Request().Context(), authInfo, workloadInfo, &spec.FederationRef, generatorName, "", generatorKind, generatorNamespace, stateRef); err != nil {
 				s.log.Error(err, "failed to upsert identity for generator access")
 			}
 
@@ -248,6 +270,7 @@ func contains[T fedv1alpha1.AllowedGenerator | fedv1alpha1.AllowedGeneratorState
 
 func (s *ServerHandler) postSecrets(c echo.Context) error {
 	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
 	storeName := c.Param("secretStoreName")
@@ -264,7 +287,7 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 			}
 
 			// Create or update AuthorizedIdentity
-			if err := s.upsertIdentity(c.Request().Context(), authInfo, &spec.FederationRef, storeName, name, "", "", nil); err != nil {
+			if err := s.upsertIdentity(c.Request().Context(), authInfo, workloadInfo, &spec.FederationRef, storeName, name, "", "", nil); err != nil {
 				s.log.Error(err, "failed to upsert identity for secret store access")
 			}
 
@@ -276,17 +299,18 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 
 func (s *ServerHandler) revokeSelf(c echo.Context) error {
 	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
 	generatorNamespace := c.Param("generatorNamespace")
 	generatorName := c.Param("generatorName")
 	generatorKind := c.Param("generatorKind")
 
-	if authInfo.KubeAttributes == nil {
-		return c.JSON(http.StatusBadRequest, "missing kubernetes attributes")
+	if workloadInfo == nil {
+		return c.JSON(http.StatusBadRequest, "missing workload context")
 	}
 
-	if authInfo.KubeAttributes.ServiceAccount == nil {
+	if workloadInfo.ServiceAccount == nil {
 		return c.JSON(http.StatusBadRequest, "missing kubernetes service account")
 	}
 
@@ -302,9 +326,9 @@ func (s *ServerHandler) revokeSelf(c echo.Context) error {
 		}) || principal != authInfo.Subject {
 			continue
 		}
-		owner := authInfo.KubeAttributes.ServiceAccount.Name
-		if authInfo.KubeAttributes.Pod != nil {
-			owner = authInfo.KubeAttributes.Pod.Name
+		owner := workloadInfo.ServiceAccount.Name
+		if workloadInfo.Pod != nil {
+			owner = workloadInfo.Pod.Name
 		}
 		labels := labels.SelectorFromSet(labels.Set{
 			"federation.externalsecrets.com/owner":          owner,
@@ -548,6 +572,7 @@ func buildStateRef(name, namespace string) *fedv1alpha1.StateRef {
 }
 
 // buildWorkloadBinding constructs a WorkloadBinding from authInfo.
+// Deprecated: Use buildWorkloadBindingFromWorkloadInfo instead.
 func buildWorkloadBinding(authInfo *auth.AuthInfo) *fedv1alpha1.WorkloadBinding {
 	if authInfo == nil || authInfo.KubeAttributes == nil {
 		return nil
@@ -576,10 +601,40 @@ func buildWorkloadBinding(authInfo *auth.AuthInfo) *fedv1alpha1.WorkloadBinding 
 	return nil
 }
 
+// buildWorkloadBindingFromWorkloadInfo constructs a WorkloadBinding from workloadInfo.
+func buildWorkloadBindingFromWorkloadInfo(workloadInfo *auth.WorkloadInfo) *fedv1alpha1.WorkloadBinding {
+	if workloadInfo == nil {
+		return nil
+	}
+
+	// If we have pod information, bind to the pod
+	if workloadInfo.Pod != nil {
+		return &fedv1alpha1.WorkloadBinding{
+			Kind:      "Pod",
+			Name:      workloadInfo.Pod.Name,
+			UID:       workloadInfo.Pod.UID,
+			Namespace: workloadInfo.Namespace,
+		}
+	}
+
+	// Otherwise, bind to the service account
+	if workloadInfo.ServiceAccount != nil {
+		return &fedv1alpha1.WorkloadBinding{
+			Kind:      "ServiceAccount",
+			Name:      workloadInfo.ServiceAccount.Name,
+			UID:       workloadInfo.ServiceAccount.UID,
+			Namespace: workloadInfo.Namespace,
+		}
+	}
+
+	return nil
+}
+
 // upsertIdentity creates or updates an AuthorizedIdentity object.
 func (s *ServerHandler) upsertIdentity(
 	ctx context.Context,
 	authInfo *auth.AuthInfo,
+	workloadInfo *auth.WorkloadInfo,
 	federationRef *fedv1alpha1.FederationRef,
 	resourceName string,
 	remoteKey string,
@@ -607,8 +662,8 @@ func (s *ServerHandler) upsertIdentity(
 	// Build the remote ref (optional)
 	remoteRef := buildRemoteRef(remoteKey, "")
 
-	// Build the workload binding
-	workloadBinding := buildWorkloadBinding(authInfo)
+	// Build the workload binding from workloadInfo
+	workloadBinding := buildWorkloadBindingFromWorkloadInfo(workloadInfo)
 
 	// Build the issued credential
 	issuedCredential := fedv1alpha1.IssuedCredential{

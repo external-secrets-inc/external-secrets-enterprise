@@ -14,7 +14,13 @@
 
 package auth
 
-import "net/http"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 // AuthInfo contains information about the authenticated user.
 type AuthInfo struct {
@@ -52,6 +58,16 @@ type PodInfo struct {
 	UID string `json:"uid"`
 }
 
+// WorkloadInfo contains information about the workload context extracted from x-workload-token.
+type WorkloadInfo struct {
+	// Namespace is the namespace of the workload.
+	Namespace string `json:"namespace"`
+	// ServiceAccount is the workload's service account.
+	ServiceAccount *ServiceAccount `json:"serviceaccount"`
+	// Pod is the workload's pod, if any.
+	Pod *PodInfo `json:"pod,omitempty"`
+}
+
 // Authenticator is the interface that an authentication implementation must
 // implement.
 type Authenticator interface {
@@ -68,4 +84,74 @@ var Registry = make(map[string]Authenticator)
 // Register registers an authenticator implementation with the given name.
 func Register(name string, a Authenticator) {
 	Registry[name] = a
+}
+
+// WorkloadTokenClaims represents the claims in a Kubernetes service account token.
+type WorkloadTokenClaims struct {
+	jwt.RegisteredClaims
+	Kubernetes struct {
+		Namespace      string `json:"namespace"`
+		ServiceAccount struct {
+			Name string `json:"name"`
+			UID  string `json:"uid"`
+		} `json:"serviceaccount"`
+		Pod *struct {
+			Name string `json:"name"`
+			UID  string `json:"uid"`
+		} `json:"pod,omitempty"`
+	} `json:"kubernetes.io"`
+}
+
+// ParseWorkloadToken parses the x-workload-token header and extracts workload information.
+// It performs unverified parsing to extract claims without signature validation.
+// Returns nil if the token is missing (not an error).
+// Returns an error if the token is present but malformed.
+func ParseWorkloadToken(r *http.Request) (*WorkloadInfo, error) {
+	tokenString := r.Header.Get("x-workload-token")
+	if tokenString == "" {
+		// No token provided - this is acceptable
+		return nil, nil
+	}
+
+	// Parse token without verification to extract claims
+	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
+	token, _, err := parser.ParseUnverified(tokenString, &WorkloadTokenClaims{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse x-workload-token: %w", err)
+	}
+
+	claims, ok := token.Claims.(*WorkloadTokenClaims)
+	if !ok {
+		return nil, errors.New("invalid x-workload-token claims format")
+	}
+
+	// Validate required fields
+	if claims.Kubernetes.Namespace == "" {
+		return nil, errors.New("x-workload-token missing kubernetes.io.namespace")
+	}
+	if claims.Kubernetes.ServiceAccount.Name == "" {
+		return nil, errors.New("x-workload-token missing kubernetes.io.serviceaccount.name")
+	}
+	if claims.Kubernetes.ServiceAccount.UID == "" {
+		return nil, errors.New("x-workload-token missing kubernetes.io.serviceaccount.uid")
+	}
+
+	// Build WorkloadInfo
+	workloadInfo := &WorkloadInfo{
+		Namespace: claims.Kubernetes.Namespace,
+		ServiceAccount: &ServiceAccount{
+			Name: claims.Kubernetes.ServiceAccount.Name,
+			UID:  claims.Kubernetes.ServiceAccount.UID,
+		},
+	}
+
+	// Add pod info if available
+	if claims.Kubernetes.Pod != nil {
+		workloadInfo.Pod = &PodInfo{
+			Name: claims.Kubernetes.Pod.Name,
+			UID:  claims.Kubernetes.Pod.UID,
+		}
+	}
+
+	return workloadInfo, nil
 }
