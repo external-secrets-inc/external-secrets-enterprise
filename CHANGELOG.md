@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.23.0...v1.23.1) (2025-10-21)
+
+
+### Bug Fixes
+
+* workflows outputs and fake store push secret ([#512](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/512)) ([8fd29d9](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8fd29d92e13e01c5e7abbfeed30c71585872129d))
+
 ## [1.23.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.22.1...v1.23.0) (2025-10-21)
 
 
