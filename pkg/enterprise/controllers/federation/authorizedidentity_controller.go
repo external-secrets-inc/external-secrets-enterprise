@@ -111,12 +111,11 @@ func (r *AuthorizedIdentityReconciler) shouldKeepCredential(ctx context.Context,
 				"namespace", credential.WorkloadBinding.Namespace)
 			return false
 		}
-	} else {
-		// No WorkloadBinding - check external identity provider (Okta, OIDC, etc.)
-		identityExists := r.checkExternalIdentityExists(ctx, log, identitySpec)
-		if !identityExists {
-			return false
-		}
+	}
+	// check external identity provider (Okta, OIDC, etc.)
+	identityExists := r.checkExternalIdentityExists(ctx, log, identitySpec)
+	if !identityExists {
+		return false
 	}
 
 	return true
