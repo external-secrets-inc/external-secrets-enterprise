@@ -16,6 +16,7 @@ package federation
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
@@ -84,7 +85,7 @@ func (r *AuthorizedIdentityReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log.Info("Updated AuthorizedIdentity", "remainingCredentials", len(validCredentials))
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Minute}, nil
 }
 
 // shouldKeepCredential determines if a credential should be kept or cleaned up.
