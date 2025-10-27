@@ -60,8 +60,17 @@ var (
 	OktaFederationGroupVersionKind = SchemeGroupVersion.WithKind(OktaFederationKind)
 )
 
+// PingIdentityFederation type metadata.
+var (
+	PingIdentityFederationKind             = reflect.TypeOf(PingIdentityFederation{}).Name()
+	PingIdentityFederationGroupKind        = schema.GroupKind{Group: Group, Kind: PingIdentityFederationKind}.String()
+	PingIdentityFederationKindAPIVersion   = PingIdentityFederationKind + "." + SchemeGroupVersion.String()
+	PingIdentityFederationGroupVersionKind = SchemeGroupVersion.WithKind(PingIdentityFederationKind)
+)
+
 func init() {
 	SchemeBuilder.Register(&KubernetesFederation{}, &KubernetesFederationList{})
 	SchemeBuilder.Register(&SpiffeFederation{}, &SpiffeFederationList{})
 	SchemeBuilder.Register(&OktaFederation{}, &OktaFederationList{})
+	SchemeBuilder.Register(&PingIdentityFederation{}, &PingIdentityFederationList{})
 }

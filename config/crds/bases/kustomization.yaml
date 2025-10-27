@@ -38,6 +38,7 @@ resources:
   - generators.external-secrets.io_webhooks.yaml
   - identity.federation.external-secrets.io_kubernetesfederations.yaml
   - identity.federation.external-secrets.io_oktafederations.yaml
+  - identity.federation.external-secrets.io_pingidentityfederations.yaml
   - identity.federation.external-secrets.io_spiffefederations.yaml
   - reloader.enterprise.external-secrets.io_configs.yaml
   - scan.external-secrets.io_consumers.yaml

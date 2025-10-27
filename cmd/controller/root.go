@@ -438,6 +438,14 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if err = (&federation.PingIdentityFederationController{
+			Client: mgr.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("PingIdentityFederation"),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, controller.Options{}); err != nil {
+			setupLog.Error(err, errCreateController, "controller", "PingIdentityFederation")
+			os.Exit(1)
+		}
 		if err = (&federation.SpiffeFederationController{
 			Client: mgr.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("SpiffeFederation"),
