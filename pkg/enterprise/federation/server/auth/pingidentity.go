@@ -54,7 +54,6 @@ func NewPingIdentityAuthenticator() *PingIdentityAuthenticator {
 	}
 }
 
-//nolint:dupl // Similar to Okta authentication but with different claim types
 func (a *PingIdentityAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 	// Extract Bearer token from Authorization header
 	authHeader := r.Header.Get("Authorization")
@@ -120,10 +119,15 @@ func (a *PingIdentityAuthenticator) Authenticate(r *http.Request) (*AuthInfo, er
 		return nil, err
 	}
 
-	// Extract subject - for client credentials flow, sub equals client_id
+	// Extract subject - for client credentials flow, use client_id if sub is not present
 	subject, err := validatedClaims.GetSubject()
 	if err != nil || subject == "" {
-		return nil, errors.New("token missing subject claim")
+		// Fall back to client_id for client credentials grant
+		if validatedClaims.ClientID != "" {
+			subject = validatedClaims.ClientID
+		} else {
+			return nil, errors.New("token missing both subject and client_id claims")
+		}
 	}
 
 	// Build AuthInfo

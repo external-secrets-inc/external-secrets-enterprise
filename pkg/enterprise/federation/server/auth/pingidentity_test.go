@@ -301,3 +301,31 @@ func TestPingIdentityClaims(t *testing.T) {
 	assert.Equal(t, "client-id-123", claims.ClientID)
 	assert.Equal(t, "openid profile", claims.Scope)
 }
+
+func TestPingIdentityClaims_ClientCredentialsFlow(t *testing.T) {
+	// Test client credentials flow where there's no 'sub' claim, only 'client_id'
+	now := time.Now()
+	claims := &PingIdentityClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "https://auth.pingone.com/12345678-1234-1234-1234-123456789abc",
+			ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			// No Subject field - this is typical for client credentials grant
+		},
+		ClientID: "bbe33b26-1e5e-455b-98a4-a291ddf50c03",
+		Scope:    "openid",
+	}
+
+	issuer, err := claims.GetIssuer()
+	require.NoError(t, err)
+	assert.Equal(t, "https://auth.pingone.com/12345678-1234-1234-1234-123456789abc", issuer)
+
+	// GetSubject will return empty for client credentials tokens
+	subject, err := claims.GetSubject()
+	assert.NoError(t, err)
+	assert.Equal(t, "", subject)
+
+	// But ClientID should be populated
+	assert.Equal(t, "bbe33b26-1e5e-455b-98a4-a291ddf50c03", claims.ClientID)
+	assert.Equal(t, "openid", claims.Scope)
+}

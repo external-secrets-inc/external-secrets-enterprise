@@ -45,7 +45,7 @@ type OktaClaims struct {
 }
 
 type OktaAuthenticator struct {
-	mu             sync.RWMutex
+	mu              sync.RWMutex
 	clockSkewLeeway time.Duration
 }
 
@@ -56,7 +56,6 @@ func NewOktaAuthenticator() *OktaAuthenticator {
 	}
 }
 
-//nolint:dupl // Similar to PingIdentity authentication but with different claim types
 func (a *OktaAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 	// Extract Bearer token from Authorization header
 	authHeader := r.Header.Get("Authorization")
