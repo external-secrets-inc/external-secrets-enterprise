@@ -7,13 +7,22 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	testClientID     = "test-client-id"
+	testClientSecret = "test-client-secret"
 )
 
 func TestNewPingIdentityProvider(t *testing.T) {
@@ -169,34 +178,34 @@ func TestPingIdentityProvider_GetJWKS(t *testing.T) {
 				}
 			}))
 			defer jwksServer.Close()
-		jwksURL = jwksServer.URL
+			jwksURL = jwksServer.URL
 
-		discoveryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Verify discovery path
-			assert.Equal(t, "/.well-known/openid-configuration", r.URL.Path)
+			discoveryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Verify discovery path
+				assert.Equal(t, "/.well-known/openid-configuration", r.URL.Path)
 
-			w.WriteHeader(tt.mockDiscoveryStatus)
+				w.WriteHeader(tt.mockDiscoveryStatus)
 
-			// Replace placeholder with actual JWKS URL
-			switch response := tt.mockDiscoveryResponse.(type) {
-			case map[string]interface{}:
-				if response["jwks_uri"] == "JWKS_URL_PLACEHOLDER" {
-					response["jwks_uri"] = jwksURL
+				// Replace placeholder with actual JWKS URL
+				switch response := tt.mockDiscoveryResponse.(type) {
+				case map[string]interface{}:
+					if response["jwks_uri"] == "JWKS_URL_PLACEHOLDER" {
+						response["jwks_uri"] = jwksURL
+					}
+					_ = json.NewEncoder(w).Encode(response)
+				case string:
+					_, _ = w.Write([]byte(response))
+				default:
+					_ = json.NewEncoder(w).Encode(tt.mockDiscoveryResponse)
 				}
-				_ = json.NewEncoder(w).Encode(response)
-			case string:
-				_, _ = w.Write([]byte(response))
-			default:
-				_ = json.NewEncoder(w).Encode(tt.mockDiscoveryResponse)
-			}
-		}))
-		defer discoveryServer.Close()
+			}))
+			defer discoveryServer.Close()
 
-		// Create provider and override the discovery URL for testing
-		provider := NewPingIdentityProvider("com", "test-env-id")
-		provider.discoveryBaseURL = discoveryServer.URL
+			// Create provider and override the discovery URL for testing
+			provider := NewPingIdentityProvider("com", "test-env-id")
+			provider.discoveryBaseURL = discoveryServer.URL
 
-		ctx := context.Background()
+			ctx := context.Background()
 
 			jwks, err := provider.GetJWKS(ctx, "", "", nil)
 
@@ -296,11 +305,159 @@ func TestPingIdentityProvider_GetJWKS_ContextCancellation(t *testing.T) {
 }
 
 func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
-	provider := NewPingIdentityProvider("com", "test-env-id")
-	ctx := context.Background()
+	t.Run("no management API configured - assumes exists", func(t *testing.T) {
+		provider := NewPingIdentityProvider("com", "test-env-id")
+		ctx := context.Background()
 
-	// Should always return true as it's not implemented
-	exists, err := provider.CheckIdentityExists(ctx, "some-client-id")
-	require.NoError(t, err)
-	assert.True(t, exists)
+		// Should return true when no management API credentials are configured
+		exists, err := provider.CheckIdentityExists(ctx, "some-client-id")
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("app exists and is enabled", func(t *testing.T) {
+		// Mock token server
+		tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token": "mock-access-token",
+				"expires_in":   3600,
+			})
+		}))
+		defer tokenServer.Close()
+
+		// Mock management API server
+		managementServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/v1/environments/test-env-id/applications/test-app-id", r.URL.Path)
+			assert.Equal(t, "Bearer mock-access-token", r.Header.Get("Authorization"))
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":      "test-app-id",
+				"enabled": true,
+			})
+		}))
+		defer managementServer.Close()
+
+		provider := NewPingIdentityProvider("com", "test-env-id")
+		provider.ManagementClientID = testClientID
+		provider.ManagementClientSecret = testClientSecret
+
+		// Override URLs for testing
+		provider.httpClient = &http.Client{
+			Transport: &mockRoundTripper{
+				tokenURL:         fmt.Sprintf("https://auth.pingone.com/test-env-id/as/token"),
+				tokenServer:      tokenServer.URL,
+				managementURL:    fmt.Sprintf("https://api.pingone.com/v1/environments/test-env-id/applications/test-app-id"),
+				managementServer: managementServer.URL + "/v1/environments/test-env-id/applications/test-app-id",
+			},
+		}
+
+		ctx := context.Background()
+		exists, err := provider.CheckIdentityExists(ctx, "test-app-id")
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("app exists but is disabled", func(t *testing.T) {
+		tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token": "mock-access-token",
+				"expires_in":   3600,
+			})
+		}))
+		defer tokenServer.Close()
+
+		managementServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":      "test-app-id",
+				"enabled": false, // Disabled
+			})
+		}))
+		defer managementServer.Close()
+
+		provider := NewPingIdentityProvider("com", "test-env-id")
+		provider.ManagementClientID = testClientID
+		provider.ManagementClientSecret = testClientSecret
+
+		provider.httpClient = &http.Client{
+			Transport: &mockRoundTripper{
+				tokenURL:         fmt.Sprintf("https://auth.pingone.com/test-env-id/as/token"),
+				tokenServer:      tokenServer.URL,
+				managementURL:    fmt.Sprintf("https://api.pingone.com/v1/environments/test-env-id/applications/test-app-id"),
+				managementServer: managementServer.URL + "/v1/environments/test-env-id/applications/test-app-id",
+			},
+		}
+
+		ctx := context.Background()
+		exists, err := provider.CheckIdentityExists(ctx, "test-app-id")
+		require.NoError(t, err)
+		assert.False(t, exists) // Should return false for disabled apps
+	})
+
+	t.Run("app not found", func(t *testing.T) {
+		tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token": "mock-access-token",
+				"expires_in":   3600,
+			})
+		}))
+		defer tokenServer.Close()
+
+		managementServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"code":    "NOT_FOUND",
+				"message": "Application not found",
+			})
+		}))
+		defer managementServer.Close()
+
+		provider := NewPingIdentityProvider("com", "test-env-id")
+		provider.ManagementClientID = testClientID
+		provider.ManagementClientSecret = testClientSecret
+
+		provider.httpClient = &http.Client{
+			Transport: &mockRoundTripper{
+				tokenURL:         fmt.Sprintf("https://auth.pingone.com/test-env-id/as/token"),
+				tokenServer:      tokenServer.URL,
+				managementURL:    fmt.Sprintf("https://api.pingone.com/v1/environments/test-env-id/applications/test-app-id"),
+				managementServer: managementServer.URL + "/v1/environments/test-env-id/applications/test-app-id",
+			},
+		}
+
+		ctx := context.Background()
+		exists, err := provider.CheckIdentityExists(ctx, "test-app-id")
+		require.NoError(t, err)
+		assert.False(t, exists) // Should return false for not found
+	})
+}
+
+// mockRoundTripper helps mock HTTP requests for testing.
+type mockRoundTripper struct {
+	tokenURL         string
+	tokenServer      string
+	managementURL    string
+	managementServer string
+}
+
+func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Route token requests to token server
+	if strings.Contains(req.URL.String(), "/as/token") {
+		req.URL, _ = url.Parse(m.tokenServer)
+		return http.DefaultTransport.RoundTrip(req)
+	}
+	// Route management API requests to management server
+	if strings.Contains(req.URL.String(), "/applications/") {
+		req.URL, _ = url.Parse(m.managementServer)
+		return http.DefaultTransport.RoundTrip(req)
+	}
+	return &http.Response{
+		StatusCode: http.StatusNotFound,
+		Body:       io.NopCloser(strings.NewReader("not found")),
+	}, nil
 }

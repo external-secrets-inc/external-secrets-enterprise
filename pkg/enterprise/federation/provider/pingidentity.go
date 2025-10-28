@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -20,17 +21,23 @@ const (
 )
 
 type PingIdentityProvider struct {
-	Region        string
-	EnvironmentID string
-	httpClient    *http.Client
-	jwksCache     map[string]map[string]string
-	cacheMutex    sync.RWMutex
-	lastFetch     time.Time
-	cacheTTL      time.Duration
-	jwksURL       string // Cached JWKS URL from discovery
+	Region                 string
+	EnvironmentID          string
+	ManagementClientID     string // Optional: Worker app client ID for Management API
+	ManagementClientSecret string // Optional: Worker app client secret for Management API
+	httpClient             *http.Client
+	jwksCache              map[string]map[string]string
+	cacheMutex             sync.RWMutex
+	lastFetch              time.Time
+	cacheTTL               time.Duration
+	jwksURL                string // Cached JWKS URL from discovery
 	// discoveryBaseURL is used for testing to override the discovery endpoint
 	// If empty, uses the standard PingOne URL format
 	discoveryBaseURL string
+	// managementAccessToken is cached for Management API calls
+	managementAccessToken string
+	managementTokenExpiry time.Time
+	managementTokenMutex  sync.RWMutex
 }
 
 func NewPingIdentityProvider(region, environmentID string) *PingIdentityProvider {
@@ -195,10 +202,148 @@ func (p *PingIdentityProvider) fetchJWKSURLFromDiscovery(ctx context.Context) er
 	return nil
 }
 
-// CheckIdentityExists is not implemented for PingOne as there's no readily available
-// Management API equivalent to check if applications/clients still exist.
-// Returns true (assume exists) to avoid breaking existing functionality.
+// CheckIdentityExists checks if a PingOne application still exists and is enabled by calling the PingOne Management API.
+// The subject parameter should be the PingOne application client ID.
+// Returns true if the app exists and is enabled, false if deleted/not found/disabled.
+// If Management API credentials are not configured, returns true (assume exists).
 func (p *PingIdentityProvider) CheckIdentityExists(ctx context.Context, subject string) (bool, error) {
-	// No Management API integration - assume identity exists
-	return true, nil
+	// If no management API credentials configured, skip the check (assume exists)
+	if p.ManagementClientID == "" || p.ManagementClientSecret == "" {
+		return true, nil
+	}
+
+	// Get management API access token (with caching)
+	accessToken, err := p.getManagementAccessToken(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get management API access token: %w", err)
+	}
+
+	// Call PingOne Management API: GET /v1/environments/{envId}/applications/{appId}
+	url := fmt.Sprintf("https://api.pingone.%s/v1/environments/%s/applications/%s", p.Region, p.EnvironmentID, subject)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return false, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// PingOne Management API uses Bearer token authentication
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return false, fmt.Errorf("failed to call PingOne Management API: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// App exists - now check if it's enabled
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		var appResponse struct {
+			Enabled bool `json:"enabled"`
+		}
+		if err := json.Unmarshal(body, &appResponse); err != nil {
+			return false, fmt.Errorf("failed to parse app response: %w", err)
+		}
+
+		// Only consider enabled apps as existing
+		// Disabled apps should trigger cleanup
+		if !appResponse.Enabled {
+			return false, nil
+		}
+
+		return true, nil
+
+	case http.StatusNotFound:
+		// App doesn't exist (deleted)
+		return false, nil
+
+	case http.StatusForbidden:
+		// Forbidden - worker app may not have permission
+		// Log this but don't fail - assume exists to avoid false positives
+		return true, nil
+
+	default:
+		// Other errors - read body for details
+		body, _ := io.ReadAll(resp.Body)
+		return false, fmt.Errorf("unexpected status %d from PingOne Management API: %s", resp.StatusCode, string(body))
+	}
+}
+
+// getManagementAccessToken obtains an access token for PingOne Management API using client credentials.
+// Tokens are cached and refreshed when expired.
+func (p *PingIdentityProvider) getManagementAccessToken(ctx context.Context) (string, error) {
+	p.managementTokenMutex.RLock()
+	// Check if we have a valid cached token
+	if p.managementAccessToken != "" && time.Now().Before(p.managementTokenExpiry) {
+		token := p.managementAccessToken
+		p.managementTokenMutex.RUnlock()
+		return token, nil
+	}
+	p.managementTokenMutex.RUnlock()
+
+	// Need to fetch a new token
+	p.managementTokenMutex.Lock()
+	defer p.managementTokenMutex.Unlock()
+
+	// Double-check after acquiring write lock
+	if p.managementAccessToken != "" && time.Now().Before(p.managementTokenExpiry) {
+		return p.managementAccessToken, nil
+	}
+
+	// Fetch token from PingOne using Basic Authentication
+	// Worker apps in PingOne use client_secret_basic authentication method
+	tokenURL := fmt.Sprintf("https://auth.pingone.%s/%s/as/token", p.Region, p.EnvironmentID)
+
+	// Use only grant_type in body, credentials go in Authorization header
+	data := "grant_type=client_credentials"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(data))
+	if err != nil {
+		return "", fmt.Errorf("failed to create token request: %w", err)
+	}
+
+	// Set Basic Authentication with client credentials
+	req.SetBasicAuth(p.ManagementClientID, p.ManagementClientSecret)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch access token: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read token response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("token endpoint returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var tokenResponse struct {
+		AccessToken string `json:"access_token"`
+		ExpiresIn   int    `json:"expires_in"`
+	}
+	if err := json.Unmarshal(body, &tokenResponse); err != nil {
+		return "", fmt.Errorf("failed to parse token response: %w", err)
+	}
+
+	if tokenResponse.AccessToken == "" {
+		return "", fmt.Errorf("token response missing access_token")
+	}
+
+	// Cache the token (with 60 second buffer before expiry)
+	p.managementAccessToken = tokenResponse.AccessToken
+	p.managementTokenExpiry = time.Now().Add(time.Duration(tokenResponse.ExpiresIn-60) * time.Second)
+
+	return tokenResponse.AccessToken, nil
 }

@@ -27,6 +27,24 @@ type PingIdentityFederationSpec struct {
 	// EnvironmentID is the PingOne environment ID (UUID)
 	// +required
 	EnvironmentID string `json:"environmentId"`
+
+	// ManagementAPI credentials for checking if PingOne applications still exist
+	// This is optional - if not provided, identity existence checking will be skipped
+	// Requires a Worker application with appropriate permissions
+	// +optional
+	ManagementAPI *PingIdentityManagementAPI `json:"managementAPI,omitempty"`
+}
+
+// PingIdentityManagementAPI contains credentials for calling PingOne Management API.
+// Use a Worker application type for machine-to-machine authentication.
+type PingIdentityManagementAPI struct {
+	// ClientIDSecretRef references a secret containing the Worker app client ID
+	// +required
+	ClientIDSecretRef SecretKeySelector `json:"clientIdSecretRef"`
+
+	// ClientSecretRef references a secret containing the Worker app client secret
+	// +required
+	ClientSecretRef SecretKeySelector `json:"clientSecretRef"`
 }
 
 // +kubebuilder:object:root=true
