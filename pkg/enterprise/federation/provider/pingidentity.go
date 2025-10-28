@@ -103,21 +103,34 @@ func (p *PingIdentityProvider) fetchAndCacheJWKS(ctx context.Context) (map[strin
 	}
 
 	var jwksResponse struct {
-		Keys []map[string]string `json:"keys"`
+		Keys []map[string]interface{} `json:"keys"`
 	}
 
 	if err := json.Unmarshal(body, &jwksResponse); err != nil {
-		return nil, fmt.Errorf("failed to parse JWKS response: %w", err)
+		return nil, fmt.Errorf("failed to parse JWKS response: %w (body: %s)", err, string(body))
 	}
 
-	// Convert to map[kid]key format
+	// Convert to map[kid]key format, converting values to strings
 	jwksMap := make(map[string]map[string]string)
 	for _, key := range jwksResponse.Keys {
-		kid, ok := key["kid"]
+		kidInterface, ok := key["kid"]
 		if !ok {
 			continue
 		}
-		jwksMap[kid] = key
+		kid, ok := kidInterface.(string)
+		if !ok {
+			continue
+		}
+
+		// Convert interface{} values to strings (skip arrays like x5c)
+		stringKey := make(map[string]string)
+		for k, v := range key {
+			if strVal, ok := v.(string); ok {
+				stringKey[k] = strVal
+			}
+			// Skip arrays and other non-string types
+		}
+		jwksMap[kid] = stringKey
 	}
 
 	if len(jwksMap) == 0 {
@@ -133,14 +146,14 @@ func (p *PingIdentityProvider) fetchAndCacheJWKS(ctx context.Context) (map[strin
 
 // fetchJWKSURLFromDiscovery fetches the JWKS URI from PingOne's OIDC discovery endpoint.
 func (p *PingIdentityProvider) fetchJWKSURLFromDiscovery(ctx context.Context) error {
-	// Construct discovery URL: https://auth.pingone.{region}/{envID}/.well-known/openid-configuration
+	// Construct discovery URL: https://auth.pingone.{region}/{envID}/as/.well-known/openid-configuration
 	var discoveryURL string
 	if p.discoveryBaseURL != "" {
 		// Use override for testing
 		discoveryURL = p.discoveryBaseURL + "/.well-known/openid-configuration"
 	} else {
-		// Use standard PingOne URL format
-		discoveryURL = fmt.Sprintf("https://auth.pingone.%s/%s/.well-known/openid-configuration", p.Region, p.EnvironmentID)
+		// Use standard PingOne URL format (note the /as path component)
+		discoveryURL = fmt.Sprintf("https://auth.pingone.%s/%s/as/.well-known/openid-configuration", p.Region, p.EnvironmentID)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, discoveryURL, http.NoBody)
