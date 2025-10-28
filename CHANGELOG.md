@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.23.1...v1.24.0) (2025-10-28)
+
+
+### Features
+
+* ping identity ([#515](https://github.com/external-secrets-inc/external-secrets-enterprise/issues/515)) ([8fabb74](https://github.com/external-secrets-inc/external-secrets-enterprise/commit/8fabb747afb4cdb429a5b603de67dd2278f1c814))
+
 ## [1.23.1](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.23.0...v1.23.1) (2025-10-21)
 
 
