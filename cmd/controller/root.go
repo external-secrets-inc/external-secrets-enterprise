@@ -1,11 +1,11 @@
 /*
-Copyright © 2022 ESO Maintainer Team
+Copyright © 2025 ESO Maintainer Team
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"crypto/tls"
 	"os"
 	"time"
 
@@ -58,6 +59,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
+<<<<<<< HEAD
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
 	reloadercontroller "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/reloader"
 	scanconsumer "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/consumer"
@@ -71,6 +73,9 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/generator/postgresql"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/pkg/feature"
+=======
+	"github.com/external-secrets/external-secrets/runtime/feature"
+>>>>>>> upstream/main
 
 	// To allow using gcp auth.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -122,8 +127,13 @@ var (
 	certLookaheadInterval                 time.Duration
 	tlsCiphers                            string
 	tlsMinVersion                         string
+<<<<<<< HEAD
 	sensitivePatterns                     []string
 	spireAgentSocketPath                  string
+=======
+	enableHTTP2                           bool
+	allowGenericTargets                   bool
+>>>>>>> upstream/main
 )
 
 const (
@@ -153,7 +163,7 @@ var rootCmd = &cobra.Command{
 	Use:   "external-secrets",
 	Short: "operator that reconciles ExternalSecrets and SecretStores",
 	Long:  `For more information visit https://external-secrets.io`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		setupLogger()
 
 		// Configure workflow sensitive patterns
@@ -189,6 +199,14 @@ var rootCmd = &cobra.Command{
 			metricsOpts.CertName = metricsCertName
 			metricsOpts.KeyName = metricsKeyName
 		}
+<<<<<<< HEAD
+=======
+
+		// Disable HTTP/2 if not explicitly enabled
+		if !enableHTTP2 {
+			metricsOpts.TLSOpts = []func(*tls.Config){disableHTTP2}
+		}
+>>>>>>> upstream/main
 		mgrOpts := ctrl.Options{
 			Scheme:                 scheme,
 			Metrics:                metricsOpts,
@@ -230,11 +248,12 @@ var rootCmd = &cobra.Command{
 
 		ssmetrics.SetUpMetrics()
 		if err = (&secretstore.StoreReconciler{
-			Client:          mgr.GetClient(),
-			Log:             ctrl.Log.WithName("controllers").WithName("SecretStore"),
-			Scheme:          mgr.GetScheme(),
-			ControllerClass: controllerClass,
-			RequeueInterval: storeRequeueInterval,
+			Client:            mgr.GetClient(),
+			Log:               ctrl.Log.WithName("controllers").WithName("SecretStore"),
+			Scheme:            mgr.GetScheme(),
+			ControllerClass:   controllerClass,
+			RequeueInterval:   storeRequeueInterval,
+			PushSecretEnabled: enablePushSecretReconciler,
 		}).SetupWithManager(mgr, controller.Options{
 			MaxConcurrentReconciles: concurrent,
 			RateLimiter:             ctrlcommon.BuildRateLimiter(),
@@ -245,11 +264,12 @@ var rootCmd = &cobra.Command{
 		if enableClusterStoreReconciler {
 			cssmetrics.SetUpMetrics()
 			if err = (&secretstore.ClusterStoreReconciler{
-				Client:          mgr.GetClient(),
-				Log:             ctrl.Log.WithName("controllers").WithName("ClusterSecretStore"),
-				Scheme:          mgr.GetScheme(),
-				ControllerClass: controllerClass,
-				RequeueInterval: storeRequeueInterval,
+				Client:            mgr.GetClient(),
+				Log:               ctrl.Log.WithName("controllers").WithName("ClusterSecretStore"),
+				Scheme:            mgr.GetScheme(),
+				ControllerClass:   controllerClass,
+				RequeueInterval:   storeRequeueInterval,
+				PushSecretEnabled: enablePushSecretReconciler,
 			}).SetupWithManager(mgr, controller.Options{
 				MaxConcurrentReconciles: concurrent,
 				RateLimiter:             ctrlcommon.BuildRateLimiter(),
@@ -317,8 +337,13 @@ var rootCmd = &cobra.Command{
 			ClusterSecretStoreEnabled: enableClusterStoreReconciler,
 			EnableFloodGate:           enableFloodGate,
 			EnableGeneratorState:      enableGeneratorState,
+<<<<<<< HEAD
 		}
 		if err = externalSecretReconciler.SetupWithManager(mgr, controller.Options{
+=======
+			AllowGenericTargets:       allowGenericTargets,
+		}).SetupWithManager(cmd.Context(), mgr, controller.Options{
+>>>>>>> upstream/main
 			MaxConcurrentReconciles: concurrent,
 			RateLimiter:             ctrlcommon.BuildRateLimiter(),
 		}); err != nil {
@@ -334,7 +359,7 @@ var rootCmd = &cobra.Command{
 				ControllerClass: controllerClass,
 				RestConfig:      mgr.GetConfig(),
 				RequeueInterval: time.Hour,
-			}).SetupWithManager(mgr, controller.Options{
+			}).SetupWithManager(cmd.Context(), mgr, controller.Options{
 				MaxConcurrentReconciles: concurrent,
 				RateLimiter:             ctrlcommon.BuildRateLimiter(),
 			}); err != nil {
@@ -532,6 +557,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Execute starts the command execution process.
 func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }
@@ -568,12 +594,23 @@ func init() {
 	rootCmd.Flags().BoolVar(&enableFloodGate, "enable-flood-gate", true, "Enable flood gate. External secret will be reconciled only if the ClusterStore or Store have an healthy or unknown state.")
 	rootCmd.Flags().BoolVar(&enableGeneratorState, "enable-generator-state", true, "Whether the Controller should manage GeneratorState")
 	rootCmd.Flags().BoolVar(&enableExtendedMetricLabels, "enable-extended-metric-labels", false, "Enable recommended kubernetes annotations as labels in metrics.")
+<<<<<<< HEAD
 	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
 	rootCmd.Flags().StringVar(&spireAgentSocketPath, "spire-agent-socket-path", "unix:///tmp/spire-agent/public/api.sock", "Path to the Spiffe agent socket")
 	rootCmd.Flags().BoolVar(&enableFederationTLS, "enable-federation-tls", false, "Enable federation server TLS")
 
+=======
+	rootCmd.Flags().BoolVar(&enableHTTP2, "enable-http2", false,
+		"If set, HTTP/2 will be enabled for the metrics server")
+	rootCmd.Flags().BoolVar(&allowGenericTargets, "unsafe-allow-generic-targets", false, "Enable support for creating generic resources (ConfigMaps, Custom Resources). WARNING: Using generic resources, please sure all policies are correctly configured.")
+>>>>>>> upstream/main
 	fs := feature.Features()
 	for _, f := range fs {
 		rootCmd.Flags().AddFlagSet(f.Flags)
 	}
+}
+
+// disableHTTP2 is a TLS configuration function that disables HTTP/2.
+func disableHTTP2(cfg *tls.Config) {
+	cfg.NextProtos = []string{"http/1.1"}
 }

@@ -11,8 +11,12 @@ resources:
   - federation.external-secrets.io_authorizations.yaml
   - federation.external-secrets.io_authorizedidentities.yaml
   - generators.external-secrets.io_acraccesstokens.yaml
+<<<<<<< HEAD
   - generators.external-secrets.io_awsiamkeys.yaml
   - generators.external-secrets.io_basicauths.yaml
+=======
+  - generators.external-secrets.io_cloudsmithaccesstokens.yaml
+>>>>>>> upstream/main
   - generators.external-secrets.io_clustergenerators.yaml
   - generators.external-secrets.io_ecrauthorizationtokens.yaml
   - generators.external-secrets.io_fakes.yaml

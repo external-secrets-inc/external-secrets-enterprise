@@ -43,9 +43,6 @@
                 "extraVolumes": {
                     "type": "array"
                 },
-                "fullnameOverride": {
-                    "type": "string"
-                },
                 "hostNetwork": {
                     "type": "boolean"
                 },
@@ -106,9 +103,6 @@
                             }
                         }
                     }
-                },
-                "nameOverride": {
-                    "type": "string"
                 },
                 "nodeSelector": {
                     "type": "object"
@@ -237,6 +231,20 @@
                         }
                     }
                 },
+                "startupProbe": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "port": {
+                            "type": "string"
+                        },
+                        "useReadinessProbePort": {
+                            "type": "boolean"
+                        }
+                    }
+                },
                 "strategy": {
                     "type": "object"
                 },
@@ -300,6 +308,7 @@
         "dnsPolicy": {
             "type": "string"
         },
+<<<<<<< HEAD
         "esi-pod-webhook": {
             "type": "object",
             "properties": {
@@ -307,6 +316,10 @@
                     "type": "boolean"
                 }
             }
+=======
+        "enableHTTP2": {
+            "type": "boolean"
+>>>>>>> upstream/main
         },
         "extendedMetricLabels": {
             "type": "boolean"
@@ -358,6 +371,17 @@
         },
         "fullnameOverride": {
             "type": "string"
+        },
+        "genericTargets": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "resources": {
+                    "type": "array"
+                }
+            }
         },
         "global": {
             "type": "object",
@@ -441,37 +465,45 @@
         "livenessProbe": {
             "type": "object",
             "properties": {
-                "address": {
-                    "type": "string"
-                },
                 "enabled": {
                     "type": "boolean"
                 },
-                "failureThreshold": {
-                    "type": "integer"
-                },
-                "httpGet": {
+                "spec": {
                     "type": "object",
                     "properties": {
-                        "path": {
+                        "address": {
                             "type": "string"
                         },
-                        "port": {
-                            "type": "string"
+                        "failureThreshold": {
+                            "type": "integer"
+                        },
+                        "httpGet": {
+                            "type": "object",
+                            "properties": {
+                                "path": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "type": [
+                                        "string",
+                                        "integer"
+                                    ]
+                                }
+                            }
+                        },
+                        "initialDelaySeconds": {
+                            "type": "integer"
+                        },
+                        "periodSeconds": {
+                            "type": "integer"
+                        },
+                        "successThreshold": {
+                            "type": "integer"
+                        },
+                        "timeoutSeconds": {
+                            "type": "integer"
                         }
                     }
-                },
-                "initialDelaySeconds": {
-                    "type": "integer"
-                },
-                "periodSeconds": {
-                    "type": "integer"
-                },
-                "successThreshold": {
-                    "type": "integer"
-                },
-                "timeoutSeconds": {
-                    "type": "integer"
                 }
             }
         },
@@ -863,9 +895,6 @@
                 "failurePolicy": {
                     "type": "string"
                 },
-                "fullnameOverride": {
-                    "type": "string"
-                },
                 "hostNetwork": {
                     "type": "boolean"
                 },
@@ -930,9 +959,6 @@
                         }
                     }
                 },
-                "nameOverride": {
-                    "type": "string"
-                },
                 "nodeSelector": {
                     "type": "object"
                 },
@@ -972,14 +998,6 @@
                 },
                 "priorityClassName": {
                     "type": "string"
-                },
-                "rbac": {
-                    "type": "object",
-                    "properties": {
-                        "create": {
-                            "type": "boolean"
-                        }
-                    }
                 },
                 "readinessProbe": {
                     "type": "object",

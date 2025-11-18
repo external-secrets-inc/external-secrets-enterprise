@@ -1,9 +1,11 @@
 /*
+Copyright © 2025 ESO Maintainer Team
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,13 +22,14 @@ import (
 
 // SSHKeySpec controls the behavior of the ssh key generator.
 type SSHKeySpec struct {
-	// KeyType specifies the SSH key type (rsa, ed25519)
-	// +kubebuilder:validation:Enum=rsa;ed25519
+	// KeyType specifies the SSH key type (rsa, ecdsa, ed25519)
+	// +kubebuilder:validation:Enum=rsa;ecdsa;ed25519
 	// +kubebuilder:default="rsa"
 	KeyType string `json:"keyType,omitempty"`
 
-	// KeySize specifies the key size for RSA keys (default: 2048)
+	// KeySize specifies the key size for RSA keys (default: 2048) and ECDSA keys (default: 256).
 	// For RSA keys: 2048, 3072, 4096
+	// For ECDSA keys: 256, 384, 521
 	// Ignored for ed25519 keys
 	// +kubebuilder:validation:Minimum=256
 	// +kubebuilder:validation:Maximum=8192
