@@ -2,6 +2,11 @@ module github.com/external-secrets/external-secrets/generators/v1/rabbitmq
 
 go 1.25.1
 
+replace (
+	github.com/external-secrets/external-secrets/apis => ../../../apis
+	github.com/external-secrets/external-secrets/generators/v1/password => ../../../generators/v1/password
+)
+
 require (
 	github.com/external-secrets/external-secrets/apis v0.0.0
 	github.com/external-secrets/external-secrets/generators/v1/password v0.0.0-20251118062813-5b49a903f879

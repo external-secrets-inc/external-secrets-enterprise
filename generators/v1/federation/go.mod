@@ -81,3 +81,5 @@ replace (
 	github.com/external-secrets/external-secrets/apis => ../../../apis
 	github.com/external-secrets/external-secrets/runtime => ../../../runtime
 )
+
+replace github.com/external-secrets/external-secrets/generators/v1/password => ../../../generators/v1/password

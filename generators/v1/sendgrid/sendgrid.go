@@ -275,5 +275,5 @@ func NewGenerator() genv1alpha1.Generator {
 
 // Kind returns the generator kind.
 func Kind() string {
-	return string(genv1alpha1.SendgridKind)
+	return genv1alpha1.SendgridKind
 }

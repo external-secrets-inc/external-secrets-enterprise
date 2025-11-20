@@ -97,6 +97,7 @@ require (
 	github.com/external-secrets/external-secrets/generators/v1/mfa v0.0.0-00010101000000-000000000000
 	github.com/external-secrets/external-secrets/generators/v1/mongodb v0.0.0-00010101000000-000000000000
 	github.com/external-secrets/external-secrets/generators/v1/neo4j v0.0.0-00010101000000-000000000000
+	github.com/external-secrets/external-secrets/generators/v1/openai v0.0.0-00010101000000-000000000000
 	github.com/external-secrets/external-secrets/generators/v1/password v0.0.0-20251118062813-5b49a903f879
 	github.com/external-secrets/external-secrets/generators/v1/postgresql v0.0.0-00010101000000-000000000000
 	github.com/external-secrets/external-secrets/generators/v1/quay v0.0.0-00010101000000-000000000000
