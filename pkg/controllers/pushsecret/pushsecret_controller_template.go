@@ -30,8 +30,6 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/template"
 
 	// Load registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-	// Load registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 

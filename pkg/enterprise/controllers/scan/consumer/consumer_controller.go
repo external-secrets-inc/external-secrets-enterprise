@@ -38,9 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	"github.com/go-logr/logr"
 )
 
@@ -92,7 +91,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 func (c *Controller) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(opts).
-		For(&v1alpha1.Consumer{}).
+		For(&scanv1alpha1.Consumer{}).
 		Complete(c)
 }
 

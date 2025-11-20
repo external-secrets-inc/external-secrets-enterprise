@@ -34,14 +34,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
 
 	// Loading registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
 	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 

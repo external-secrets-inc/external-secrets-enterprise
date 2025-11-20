@@ -29,8 +29,7 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/template"
 
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register" // Loading registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/register"                     // Loading registered providers.
+	_ "github.com/external-secrets/external-secrets/pkg/register" // Loading registered providers.
 )
 
 // ApplyTemplate merges templates in the following order:

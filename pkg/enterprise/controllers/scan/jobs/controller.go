@@ -31,10 +31,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
-	utils "github.com/external-secrets/external-secrets/pkg/enterprise/scan/jobs"
+	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	targetv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
+	utils "github.com/external-secrets/external-secrets/pkg/scan/jobs"
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -48,9 +48,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	// Register enterprise targets.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/targets/register"
 )
 
 // JobController reconciles Job resources.
@@ -316,19 +313,6 @@ func collectTargets(ctx context.Context, c client.Client, ns string) ([]targetv1
 		l := &targetv1alpha1.KubernetesClusterList{}
 		if err := c.List(egCtx, l, client.InNamespace(ns)); err != nil {
 			return fmt.Errorf("list kubernetes targets: %w", err)
-		}
-		mu.Lock()
-		for i := range l.Items {
-			out = append(out, &l.Items[i])
-		}
-		mu.Unlock()
-		return nil
-	})
-
-	add(func() error {
-		l := &targetv1alpha1.VirtualMachineList{}
-		if err := c.List(egCtx, l, client.InNamespace(ns)); err != nil {
-			return fmt.Errorf("list vm targets: %w", err)
 		}
 		mu.Lock()
 		for i := range l.Items {

@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 )
 
 // FindingController reconciles Finding resources.
