@@ -385,6 +385,9 @@ webhook:
   # -- Specifies the lookaheadInterval for certificate validity
   lookaheadInterval: ""
   replicaCount: 1
+  # -- specifies rbac for webhook
+  rbac:
+    create: true
   # -- Specifies Log Params to the Webhook
   log:
     level: info

@@ -28856,7 +28856,7 @@ spec:
                       type: string
                   type: object
                 projectId:
-                  description: ProjectId is the id of the project the account will related to.
+                  description: ProjectID is the id of the project the account will related to.
                   type: string
                 serviceAccountNamePrefix:
                   description: ServiceAccountNamePrefix define a prefix to add before the generated name for the service account
@@ -31867,7 +31867,7 @@ spec:
                           Default UpdateStrategy is annotations patch to trigger pushsecret reconcile.
                           Default MatchStrategy is matching secret-key with:
                           * Equality against `spec.selector.secret.name`
-                          * Equality against `spec.data[*].match.remoteRef.remoteKey`
+                          * Equality against `spec.data[*].match.remoteRef.remoteKey`.
                         properties:
                           labelSelectors:
                             description: |-

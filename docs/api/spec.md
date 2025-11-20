@@ -328,7 +328,7 @@ see: <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.
 <a href="#external-secrets.io/v1.AkeylessProvider">AkeylessProvider</a>)
 </p>
 <p>
-<p>AkeylessAuth configures how the operator authenticates with Akeyless.</p>
+<p>AkeylessAuth defines authentication methods for Akeyless.</p>
 </p>
 <table>
 <thead>
@@ -2872,7 +2872,7 @@ within a Secret resource. In some instances, <code>key</code> is a required fiel
 <a href="#external-secrets.io/v1.ConjurProvider">ConjurProvider</a>)
 </p>
 <p>
-<p>ConjurAuth is the way to provide authentication credentials to the ConjurProvider.</p>
+<p>ConjurAuth defines authentication methods for Conjur.</p>
 </p>
 <table>
 <thead>
@@ -6180,7 +6180,7 @@ string
 <a href="#external-secrets.io/v1.InfisicalProvider">InfisicalProvider</a>)
 </p>
 <p>
-<p>InfisicalAuth specifies the authentication configuration for Infisical.</p>
+<p>InfisicalAuth defines authentication methods for Infisical.</p>
 </p>
 <table>
 <thead>
@@ -9241,6 +9241,18 @@ CloudruSMProvider
 <td>
 <em>(Optional)</em>
 <p>CloudruSM configures this store to sync secrets using the Cloud.ru Secret Manager provider</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>externalsecrets</code></br>
+<em>
+External Secrets enterprise/externalsecrets/v1.ExternalSecretsProvider
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExternalSecrets configures this store to sync secrets using the ExternalSecrets provider</p>
 </td>
 </tr>
 <tr>
