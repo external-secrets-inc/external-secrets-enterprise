@@ -6,6 +6,7 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+// WaitStrategy defines a wait strategy.
 type WaitStrategy struct {
 	// Waits for a given time interval to reconcile the next object
 	//+optional
@@ -15,6 +16,7 @@ type WaitStrategy struct {
 	Condition *WaitForCondition `json:"condition,omitempty"`
 }
 
+// WaitForCondition defines a condition to wait for.
 type WaitForCondition struct {
 	// Period to wait before each retry
 	//+optional

@@ -96,14 +96,21 @@ func (w *Grafana) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, pre
 	return nil
 }
 
-func (g *Grafana) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
-	return nil, nil
+// GetCleanupPolicy returns the cleanup policy for the generator.
+func (w *Grafana) GetCleanupPolicy(_ *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+	return &genv1alpha1.CleanupPolicy{
+		// RetainLatestPolicy means we will not look for idle behavior
+		Type: genv1alpha1.RetainLatestPolicy,
+	}, nil
 }
 
-func (g *Grafana) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+// LastActivityTime returns the last activity time for the generator.
+func (w *Grafana) LastActivityTime(_ context.Context, _ *apiextensions.JSON, _ genv1alpha1.GeneratorProviderState, _ client.Client, _ string) (time.Time, bool, error) {
 	return time.Time{}, false, nil
 }
-func (g *Grafana) GetKeys() map[string]string {
+
+// GetKeys returns the keys for the generator.
+func (w *Grafana) GetKeys() map[string]string {
 	return map[string]string{
 		"login": "Grafana service account login username",
 		"token": "Grafana service account API token",
@@ -226,12 +233,6 @@ func parseStatus(data []byte) (*genv1alpha1.GrafanaServiceAccountTokenState, err
 	return &state, err
 }
 
-<<<<<<< HEAD:pkg/generator/grafana/grafana.go
-func init() {
-	genv1alpha1.Register(genv1alpha1.GrafanaKind, &Grafana{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.GrafanaKind, &genv1alpha1.Grafana{})
-=======
-
 // NewGenerator creates a new Generator instance.
 func NewGenerator() genv1alpha1.Generator {
 	return &Grafana{}
@@ -240,5 +241,4 @@ func NewGenerator() genv1alpha1.Generator {
 // Kind returns the generator kind.
 func Kind() string {
 	return string(genv1alpha1.GeneratorKindGrafana)
->>>>>>> upstream/main:generators/v1/grafana/grafana.go
 }

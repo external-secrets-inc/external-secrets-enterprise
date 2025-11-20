@@ -156,7 +156,7 @@ func (s *TestSuite) TestNeedStatusUpdate() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{}
+			reconciler := &RunTemplateReconciler{}
 			needsUpdate := reconciler.needsStatusUpdate(tc.args.workflowRunTemplate, tc.args.workflowRuns)
 			assert.Equal(s.T(), tc.expect.result, needsUpdate)
 		})
@@ -301,7 +301,7 @@ func (s *TestSuite) TestShouldReconcile() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{Log: logr.Discard()}
+			reconciler := &RunTemplateReconciler{Log: logr.Discard()}
 			should := reconciler.shouldReconcile(tc.args.workflowRunTemplate)
 			assert.Equal(s.T(), tc.expect.result, should)
 		})
@@ -406,7 +406,7 @@ func (s *TestSuite) TestRequeueAfter() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{Log: logr.Discard()}
+			reconciler := &RunTemplateReconciler{Log: logr.Discard()}
 			result, err := reconciler.requeueAfter(tc.args.workflowRunTemplate)
 
 			require.NoError(s.T(), err)
@@ -473,7 +473,7 @@ func (s *TestSuite) TestGenerateRevision() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{}
+			reconciler := &RunTemplateReconciler{}
 			revision, err := reconciler.generateRevision(tc.args.workflowRuns)
 
 			if tc.expect.err != nil {
@@ -530,7 +530,7 @@ func (s *TestSuite) TestCreateWorkflowRun() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			cl := fake.NewClientBuilder().WithScheme(s.scheme).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   cl,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,
@@ -614,7 +614,7 @@ func (s *TestSuite) TestUpdateWorkflowRunTemplate() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			cl := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).WithStatusSubresource(tc.args.objsForClient...).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   cl,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,
@@ -687,7 +687,7 @@ func (s *TestSuite) TestCleanup() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			client := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   client,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,
@@ -920,7 +920,7 @@ func (s *TestSuite) TestGetChildrenFor() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			client := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   client,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,

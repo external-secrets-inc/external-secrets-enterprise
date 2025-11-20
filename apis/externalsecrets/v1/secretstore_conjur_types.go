@@ -37,12 +37,9 @@ type ConjurProvider struct {
 	Auth ConjurAuth `json:"auth"`
 }
 
-<<<<<<< HEAD
+// ConjurAuth defines authentication methods for Conjur.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
-=======
-// ConjurAuth is the way to provide authentication credentials to the ConjurProvider.
->>>>>>> upstream/main
 type ConjurAuth struct {
 	// Authenticates with Conjur using an API key.
 	// +optional

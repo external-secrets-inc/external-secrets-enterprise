@@ -365,67 +365,6 @@ var _ = Describe("SecretStore Controller", func() {
 
 			Expect(k8sClient.Delete(context.Background(), test.ps)).ToNot(HaveOccurred())
 
-<<<<<<< HEAD
-	// an unknown store validation result should be reflected
-	// in the store status condition
-	validationUnknown := func(tc *testCase) {
-		spc := tc.store.GetSpec()
-		spc.Provider.Vault = nil
-		validationResultUnknown := esapi.ValidationResultUnknown
-		spc.Provider.Fake = &esapi.FakeProvider{
-			Data:             []esapi.FakeProviderData{},
-			ValidationResult: &validationResultUnknown,
-		}
-
-		tc.assert = func() {
-			Eventually(func() bool {
-				ss := tc.store.Copy()
-				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      defaultStoreName,
-					Namespace: ss.GetNamespace(),
-				}, ss)
-				if err != nil {
-					return false
-				}
-
-				if len(ss.GetStatus().Conditions) != 1 {
-					return false
-				}
-
-				return ss.GetStatus().Conditions[0].Reason == esapi.ReasonValidationUnknown &&
-					ss.GetStatus().Conditions[0].Type == esapi.SecretStoreReady &&
-					ss.GetStatus().Conditions[0].Status == corev1.ConditionTrue &&
-					hasEvent(tc.store.GetTypeMeta().Kind, ss.GetName(), esapi.ReasonValidationUnknown)
-			}).
-				WithTimeout(time.Second * 5).
-				WithPolling(time.Second).
-				Should(BeTrue())
-		}
-	}
-
-	DescribeTable("Controller Reconcile logic", func(muts ...func(tc *testCase)) {
-		for _, mut := range muts {
-			mut(test)
-		}
-		err := k8sClient.Create(context.Background(), test.store.Copy())
-		Expect(err).ToNot(HaveOccurred())
-		test.assert()
-	},
-		// namespaced store
-		Entry("[namespace] invalid provider with secretStore should set InvalidStore condition", invalidProvider),
-		Entry("[namespace] ignore stores with non-matching class", ignoreControllerClass),
-		Entry("[namespace] valid provider has status=ready", validProvider),
-		Entry("[namespace] valid provider has capabilities=ReadWrite", readWrite),
-		Entry("[namespace] validation unknown status should set ValidationUnknown condition", validationUnknown),
-
-		// cluster store
-		Entry("[cluster] invalid provider with secretStore should set InvalidStore condition", invalidProvider, useClusterStore),
-		Entry("[cluster] ignore stores with non-matching class", ignoreControllerClass, useClusterStore),
-		Entry("[cluster] valid provider has status=ready", validProvider, useClusterStore),
-		Entry("[cluster] valid provider has capabilities=ReadWrite", readWrite, useClusterStore),
-		Entry("[cluster] validation unknown status should set ValidationUnknown condition", validationUnknown, useClusterStore),
-	)
-=======
 			// Finalizer should remain because ps2 still exists
 			Consistently(func() []string {
 				return getStoreFinalizers(test.store)
@@ -482,7 +421,6 @@ var _ = Describe("SecretStore Controller", func() {
 			Entry("[cluster] should remove finalizer when DeletionPolicy changes to None", usePushSecret, useClusterStore),
 		)
 	})
->>>>>>> upstream/main
 
 })
 

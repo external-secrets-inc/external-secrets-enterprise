@@ -138,24 +138,24 @@ func (s *PostgresTestSuite) SetupSuite() {
 	})
 }
 
-func newGeneratorSpec(t *testing.T, host, port, username string, destructive bool, reassignTo *string) *enterprise.PostgreSql {
+func newGeneratorSpec(t *testing.T, host, port, username string, destructive bool, reassignTo *string) *enterprise.PostgreSQL {
 	t.Helper()
 
-	return &enterprise.PostgreSql{
-		Spec: enterprise.PostgreSqlSpec{
+	return &enterprise.PostgreSQL{
+		Spec: enterprise.PostgreSQLSpec{
 			Host:     host,
 			Port:     port,
 			Database: "postgres",
-			Auth: enterprise.PostgreSqlAuth{
+			Auth: enterprise.PostgreSQLAuth{
 				Username: "postgres",
 				Password: esmeta.SecretKeySelector{
 					Name: testSecretName,
 					Key:  testSecretKey,
 				},
 			},
-			User: &enterprise.PostgreSqlUser{
+			User: &enterprise.PostgreSQLUser{
 				Username: username,
-				Attributes: []enterprise.PostgreSqlUserAttribute{
+				Attributes: []enterprise.PostgreSQLUserAttribute{
 					{Name: "CREATEDB"},
 				},
 				Roles:              []string{"pg_read_all_data", "customrole"},
@@ -269,7 +269,7 @@ func (s *PostgresTestSuite) TestGenerateWithIdleCleanup() {
 	username := fmt.Sprintf("%s_TestGenerate", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
-	spec.Spec.CleanupPolicy = &enterprise.PostgreSqlCleanupPolicy{
+	spec.Spec.CleanupPolicy = &enterprise.PostgreSQLCleanupPolicy{
 		ActivityTrackingInterval: metav1.Duration{Duration: time.Second * 2},
 		CleanupPolicy: genv1alpha1.CleanupPolicy{
 			Type:        genv1alpha1.IdleCleanupPolicy,
@@ -350,7 +350,7 @@ func (s *PostgresTestSuite) TestGenerateUserWithSameUsername() {
 
 	// Call Generate again with new attributes
 	spec.Spec.User.SuffixSize = ptr.To(0)
-	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{
+	spec.Spec.User.Attributes = []enterprise.PostgreSQLUserAttribute{
 		{Name: "NOINHERIT"},
 		{Name: "CONNECTION_LIMIT", Value: ptr.To("5")},
 	}
@@ -404,7 +404,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	username := fmt.Sprintf("%s_NonDestructive", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, nil)
-	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSQLUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -418,7 +418,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanup() {
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
-	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSQLAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -460,7 +460,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 
 	// Generate reassign user as `username` without suffix
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, nil)
-	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSQLUserAttribute{{Name: "SUPERUSER"}}
 	spec.Spec.User.SuffixSize = ptr.To(0)
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
@@ -470,7 +470,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 	require.NoError(s.T(), err)
 
 	spec = newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, &username)
-	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSQLUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err = yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -484,7 +484,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithExistentReassignUser() 
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
-	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSQLAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -525,7 +525,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithNonExistentReassignUser
 	username := fmt.Sprintf("%s_NonDestructiveWithNonExistentReassignUser", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, false, &username)
-	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSQLUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -539,7 +539,7 @@ func (s *PostgresTestSuite) TestNonDestructiveCleanupWithNonExistentReassignUser
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, false, nil)
-	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSQLAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,
@@ -580,7 +580,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	username := fmt.Sprintf("%s_Destructive", testUser)
 
 	spec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), username, true, nil)
-	spec.Spec.User.Attributes = []enterprise.PostgreSqlUserAttribute{{Name: "SUPERUSER"}}
+	spec.Spec.User.Attributes = []enterprise.PostgreSQLUserAttribute{{Name: "SUPERUSER"}}
 	specJSON, err := yaml.Marshal(spec)
 	require.NoError(s.T(), err)
 
@@ -594,7 +594,7 @@ func (s *PostgresTestSuite) TestDestructiveCleanup() {
 	password := string(result["password"])
 
 	userSpec := newGeneratorSpec(s.T(), "localhost", s.port.Port(), generatedUsername, true, nil)
-	userSpec.Spec.Auth = enterprise.PostgreSqlAuth{
+	userSpec.Spec.Auth = enterprise.PostgreSQLAuth{
 		Username: generatedUsername,
 		Password: esmeta.SecretKeySelector{
 			Name: testGeneratedSecretName,

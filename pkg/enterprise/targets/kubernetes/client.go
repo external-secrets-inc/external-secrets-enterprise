@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package kubernetes implements Kubernetes cluster targets
 package kubernetes
 
 import (
@@ -22,6 +24,7 @@ import (
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// PushSecret pushes a secret to the Kubernetes cluster.
 func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remoteRef esv1.PushSecretData) error {
 	if secret == nil {
 		return fmt.Errorf("secret is nil")
@@ -98,31 +101,38 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	return nil
 }
 
-func (s *ScanTarget) DeleteSecret(ctx context.Context, remoteRef esv1.PushSecretRemoteRef) error {
+// DeleteSecret deletes a secret from the Kubernetes cluster.
+func (s *ScanTarget) DeleteSecret(_ context.Context, _ esv1.PushSecretRemoteRef) error {
 	return errors.New(errNotImplemented)
 }
 
-func (s *ScanTarget) SecretExists(ctx context.Context, ref esv1.PushSecretRemoteRef) (bool, error) {
+// SecretExists checks if a secret exists in the Kubernetes cluster.
+func (s *ScanTarget) SecretExists(_ context.Context, _ esv1.PushSecretRemoteRef) (bool, error) {
 	return false, errors.New(errNotImplemented)
 }
 
-func (s *ScanTarget) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
+// GetAllSecrets gets all secrets from the Kubernetes cluster.
+func (s *ScanTarget) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (map[string][]byte, error) {
 	return nil, fmt.Errorf("not implemented - this provider supports write-only operations")
 }
 
-func (s *ScanTarget) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
+// GetSecret gets a secret from the Kubernetes cluster.
+func (s *ScanTarget) GetSecret(_ context.Context, _ esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
 	return nil, fmt.Errorf("not implemented - this provider supports write-only operations")
 }
 
-func (s *ScanTarget) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
+// GetSecretMap gets a secret map from the Kubernetes cluster.
+func (s *ScanTarget) GetSecretMap(_ context.Context, _ esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
 	return nil, fmt.Errorf("not implemented - this provider supports write-only operations")
 }
 
+// Close closes the Kubernetes client.
 func (s *ScanTarget) Close(ctx context.Context) error {
 	ctx.Done()
 	return nil
 }
 
+// Validate validates the Kubernetes client.
 func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	if s.ClusterClient == nil {
 		return esv1.ValidationResultError, fmt.Errorf("kube client is nil")

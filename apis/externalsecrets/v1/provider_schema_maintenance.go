@@ -69,6 +69,7 @@ func ForceRegisterMaintenanceStatus(status MaintenanceStatus, storeSpec *SecretS
 	maintenance[storeName] = status
 }
 
+// RegisterMaintenanceStatusByKind registers the maintenance status for a provider by kind.
 func RegisterMaintenanceStatusByKind(status MaintenanceStatus, kind string) {
 	mlock.Lock()
 	defer mlock.Unlock()

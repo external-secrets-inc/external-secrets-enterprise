@@ -2,6 +2,7 @@
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package eventgrid implements Azure Event Grid listener.
 package eventgrid
 
 import (
@@ -21,7 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type EventGridEvent struct {
+// Event represents an Azure Event Grid event.
+type Event struct {
 	ID              string          `json:"id"`
 	Topic           string          `json:"topic"`
 	Subject         string          `json:"subject"`
@@ -32,16 +34,19 @@ type EventGridEvent struct {
 	Data            json.RawMessage `json:"data"`
 }
 
+// SecretNewVersionCreatedData represents the data for a secret new version created event.
 type SecretNewVersionCreatedData struct {
 	ObjectType string `json:"objectType"`
 	ObjectName string `json:"objectName"`
 }
 
+// SubscriptionValidationData represents the data for a subscription validation event.
 type SubscriptionValidationData struct {
 	ValidationCode string `json:"validationCode"`
 	ValidationURL  string `json:"validationUrl"`
 }
 
+// AzureEventGridListener listens for Azure Event Grid events.
 type AzureEventGridListener struct {
 	cancel    context.CancelFunc
 	client    client.Client
@@ -52,6 +57,7 @@ type AzureEventGridListener struct {
 	server    *http.Server
 }
 
+// Start starts the Azure Event Grid listener.
 func (a *AzureEventGridListener) Start() error {
 	a.logger.Info("Starting Event Grid listener")
 
@@ -81,6 +87,7 @@ func (a *AzureEventGridListener) Start() error {
 	return nil
 }
 
+// Stop stops the Azure Event Grid listener.
 func (a *AzureEventGridListener) Stop() error {
 	a.logger.Info("Stopping Azure Event Grid Listener...")
 	a.cancel()
@@ -97,7 +104,7 @@ func eventHandler(a *AzureEventGridListener) http.HandlerFunc {
 			return
 		}
 
-		var events []EventGridEvent
+		var events []Event
 		if err := json.Unmarshal(body, &events); err != nil {
 			http.Error(w, "Failed to parse request body", http.StatusBadRequest)
 			return
@@ -117,7 +124,7 @@ func eventHandler(a *AzureEventGridListener) http.HandlerFunc {
 	}
 }
 
-func handleEventGridHandshake(w http.ResponseWriter, r *http.Request, config *v1alpha1.AzureEventGridConfig, event EventGridEvent, logger logr.Logger) {
+func handleEventGridHandshake(w http.ResponseWriter, r *http.Request, config *v1alpha1.AzureEventGridConfig, event Event, logger logr.Logger) {
 	// Read the aeg-subscription-name header
 	subscriptionName := strings.ToLower(r.Header.Get("aeg-subscription-name"))
 	if subscriptionName == "" {
@@ -183,7 +190,7 @@ func handleEventGridHandshake(w http.ResponseWriter, r *http.Request, config *v1
 	}()
 }
 
-func (a *AzureEventGridListener) handleSecretEvent(w http.ResponseWriter, event EventGridEvent) {
+func (a *AzureEventGridListener) handleSecretEvent(w http.ResponseWriter, event Event) {
 	var data SecretNewVersionCreatedData
 	if err := json.Unmarshal(event.Data, &data); err != nil {
 		a.logger.Error(err, "Error unmarshalling secret new version created event")
@@ -196,7 +203,7 @@ func (a *AzureEventGridListener) handleSecretEvent(w http.ResponseWriter, event 
 	rotationEvent := events.SecretRotationEvent{
 		SecretIdentifier:  data.ObjectName,
 		RotationTimestamp: event.EventTime.String(),
-		TriggerSource:     schema.AZURE_EVENT_GRID,
+		TriggerSource:     schema.AzureEventGrid,
 	}
 
 	select {

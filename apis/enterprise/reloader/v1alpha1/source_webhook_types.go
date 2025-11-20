@@ -1,7 +1,6 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
 // WebhookConfig contains configuration for Webhook notifications.
@@ -31,6 +30,7 @@ type WebhookConfig struct {
 	RetryPolicy *RetryPolicy `json:"retryPolicy,omitempty"`
 }
 
+// RetryPolicy represents the policy to retry when a message fails.
 type RetryPolicy struct {
 	// MaxRetries represents the maximum times the reloader should retry to process a message. Numbers greater than 10 will be ignored and 10 will be used instead
 	// +optional

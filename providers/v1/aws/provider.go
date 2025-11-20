@@ -77,16 +77,9 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 	if err != nil {
 		return nil, err
 	}
-	if prov.Auth == nil {
-	}
 	// case: static credentials
-<<<<<<< HEAD:pkg/provider/aws/provider.go
 	if prov.Auth != nil && prov.Auth.SecretRef != nil {
-		if err := utils.ValidateReferentSecretSelector(store, prov.Auth.SecretRef.AccessKeyID); err != nil {
-=======
-	if prov.Auth.SecretRef != nil {
 		if err := esutils.ValidateReferentSecretSelector(store, prov.Auth.SecretRef.AccessKeyID); err != nil {
->>>>>>> upstream/main:providers/v1/aws/provider.go
 			return nil, fmt.Errorf("invalid Auth.SecretRef.AccessKeyID: %w", err)
 		}
 		if err := esutils.ValidateReferentSecretSelector(store, prov.Auth.SecretRef.SecretAccessKey); err != nil {
@@ -100,13 +93,8 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 	}
 
 	// case: jwt credentials
-<<<<<<< HEAD:pkg/provider/aws/provider.go
 	if prov.Auth != nil && prov.Auth.JWTAuth != nil && prov.Auth.JWTAuth.ServiceAccountRef != nil {
-		if err := utils.ValidateReferentServiceAccountSelector(store, *prov.Auth.JWTAuth.ServiceAccountRef); err != nil {
-=======
-	if prov.Auth.JWTAuth != nil && prov.Auth.JWTAuth.ServiceAccountRef != nil {
 		if err := esutils.ValidateReferentServiceAccountSelector(store, *prov.Auth.JWTAuth.ServiceAccountRef); err != nil {
->>>>>>> upstream/main:providers/v1/aws/provider.go
 			return nil, fmt.Errorf("invalid Auth.JWT.ServiceAccountRef: %w", err)
 		}
 	}
@@ -159,13 +147,9 @@ func newClient(ctx context.Context, store esv1.GenericStore, kube client.Client,
 	storeSpec := store.GetSpec()
 	var cfg *aws.Config
 
-<<<<<<< HEAD:pkg/provider/aws/provider.go
-	if util.IsReferentSpec(prov.Auth) && namespace == "" &&
-=======
 	// allow SecretStore controller validation to pass
 	// when using referent namespace.
 	if awsutil.IsReferentSpec(prov.Auth) && namespace == "" &&
->>>>>>> upstream/main:providers/v1/aws/provider.go
 		store.GetObjectKind().GroupVersionKind().Kind == esv1.ClusterSecretStoreKind {
 		cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("eu-west-1"))
 		if err != nil {

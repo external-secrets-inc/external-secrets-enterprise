@@ -1,6 +1,5 @@
 // Copyright External Secrets Inc. All Rights Reserved
-
-package aws_iam
+package awsiam
 
 import (
 	"context"

@@ -1,3 +1,4 @@
+// Package v1alpha1 contains API Schema definitions for the scan v1alpha1 API group
 // Copyright External Secrets Inc. 2025
 // All rights reserved
 package v1alpha1
@@ -6,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// JobSpec defines the desired state of Job.
 type JobSpec struct {
 	// Constrains this job to a given set of SecretStores / Targets.
 	// By default it will run against all SecretStores / Targets on the Job namespace.
@@ -21,31 +23,47 @@ type JobSpec struct {
 	JobTimeout metav1.Duration `json:"jobTimeout,omitempty"`
 }
 
+// JobRunPolicy defines the run policy for a job.
 type JobRunPolicy string
 
 const (
-	JobRunPolicyPull     JobRunPolicy = "Poll"
+	// JobRunPolicyPull defines the run policy for a job.
+	JobRunPolicyPull JobRunPolicy = "Poll"
+	// JobRunPolicyOnChange defines the run policy for a job.
 	JobRunPolicyOnChange JobRunPolicy = "OnChange"
-	JobRunPolicyOnce     JobRunPolicy = "Once"
+	// JobRunPolicyOnce defines the run policy for a job.
+	JobRunPolicyOnce JobRunPolicy = "Once"
 )
 
+// JobConstraints defines the constraints for a job.
 type JobConstraints struct {
+	// SecretStoreConstraints defines the constraints for a job.
 	SecretStoreConstraints []SecretStoreConstraint `json:"secretStoreConstraints,omitempty"`
-	TargetConstraints      []TargetConstraint      `json:"targetConstraints,omitempty"`
+	// TargetConstraints defines the constraints for a job.
+	TargetConstraints []TargetConstraint `json:"targetConstraints,omitempty"`
 }
 
+// SecretStoreConstraint defines the constraints for a job.
 type SecretStoreConstraint struct {
+	// MatchExpressions defines the constraints for a job.
 	MatchExpressions []metav1.LabelSelector `json:"matchExpression,omitempty"`
-	MatchLabels      map[string]string      `json:"matchLabels,omitempty"`
+	// MatchLabels defines the constraints for a job.
+	MatchLabels map[string]string `json:"matchLabels,omitempty"`
 }
 
+// TargetConstraint defines the constraints for a job.
 type TargetConstraint struct {
-	Kind             string                 `json:"kind,omitempty"`
-	APIVersion       string                 `json:"apiVersion,omitempty"`
+	// Kind defines the kind of the target.
+	Kind string `json:"kind,omitempty"`
+	// APIVersion defines the API version of the target.
+	APIVersion string `json:"apiVersion,omitempty"`
+	// MatchExpressions defines the constraints for a job.
 	MatchExpressions []metav1.LabelSelector `json:"matchExpression,omitempty"`
-	MatchLabels      map[string]string      `json:"matchLabels,omitempty"`
+	// MatchLabels defines the constraints for a job.
+	MatchLabels map[string]string `json:"matchLabels,omitempty"`
 }
 
+// JobStatus defines the observed state of a Job.
 type JobStatus struct {
 	// ObservedSecretStoresDigest is a digest of the SecretStores that were used in the last run.
 	// +optional
@@ -53,18 +71,24 @@ type JobStatus struct {
 	// ObservedTargetsDigest is a digest of the Targets that were used in the last run.
 	// +optional
 	ObservedTargetsDigest string `json:"observedTargetsDigest,omitempty"`
-
-	LastRunTime metav1.Time        `json:"lastRunTime,omitempty"`
-	RunStatus   JobRunStatus       `json:"runStatus,omitempty"`
-	Conditions  []metav1.Condition `json:"conditions,omitempty"`
+	// LastRunTime is the time when the job was last run.
+	LastRunTime metav1.Time `json:"lastRunTime,omitempty"`
+	// RunStatus is the status of the job.
+	RunStatus JobRunStatus `json:"runStatus,omitempty"`
+	// Conditions is a list of metav1.Condition.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
+// JobRunStatus defines the status of a job.
 type JobRunStatus string
 
 const (
-	JobRunStatusRunning   JobRunStatus = "Running"
+	// JobRunStatusRunning defines the status of a job.
+	JobRunStatusRunning JobRunStatus = "Running"
+	// JobRunStatusSucceeded defines the status of a job.
 	JobRunStatusSucceeded JobRunStatus = "Succeeded"
-	JobRunStatusFailed    JobRunStatus = "Failed"
+	// JobRunStatusFailed defines the status of a job.
+	JobRunStatusFailed JobRunStatus = "Failed"
 )
 
 // Job is the schema to run a scan job over targets

@@ -40,12 +40,9 @@ type AkeylessProvider struct {
 	CAProvider *CAProvider `json:"caProvider,omitempty"`
 }
 
-<<<<<<< HEAD
+// AkeylessAuth defines authentication methods for Akeyless.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
-=======
-// AkeylessAuth configures how the operator authenticates with Akeyless.
->>>>>>> upstream/main
 type AkeylessAuth struct {
 
 	// Reference to a Secret that contains the details

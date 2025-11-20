@@ -18,12 +18,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// KubernetesFederationSpec defines the specification for Kubernetes federation.
 type KubernetesFederationSpec struct {
 	// kubernetes API Server URL
 	// +required
 	URL string `json:"url"`
 }
 
+// KubernetesFederation represents a Kubernetes federation configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
@@ -37,7 +39,7 @@ type KubernetesFederation struct {
 
 // +kubebuilder:object:root=true
 
-// KubernetesFederation contains a list of KubernetesFederation resources.
+// KubernetesFederationList contains a list of KubernetesFederation resources.
 type KubernetesFederationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

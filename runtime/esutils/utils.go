@@ -833,7 +833,7 @@ func getCertFromConfigMap(ctx context.Context, namespace string, c client.Client
 	return []byte(val), nil
 }
 
-<<<<<<< HEAD:pkg/utils/utils.go
+// GenerateRandomString generates a Random string from a fixed alphabet.
 func GenerateRandomString(size int) (string, error) {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -850,10 +850,8 @@ func GenerateRandomString(size int) (string, error) {
 	return string(b), nil
 }
 
-=======
 // CheckEndpointSlicesReady checks if there are any EndpointSlice objects for the given service
 // that have ready addresses.
->>>>>>> upstream/main:runtime/esutils/utils.go
 func CheckEndpointSlicesReady(ctx context.Context, c client.Client, svcName, svcNamespace string) error {
 	var sliceList discoveryv1.EndpointSliceList
 	err := c.List(ctx, &sliceList,

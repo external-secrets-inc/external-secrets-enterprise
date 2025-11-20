@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// PingIdentityFederationSpec defines the specification for PingIdentity federation.
 type PingIdentityFederationSpec struct {
 	// Region is the PingOne region (e.g., "com", "eu", "asia", "ca")
 	// +required
@@ -47,6 +48,7 @@ type PingIdentityManagementAPI struct {
 	ClientSecretRef SecretKeySelector `json:"clientSecretRef"`
 }
 
+// PingIdentityFederation represents a PingIdentity federation configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status

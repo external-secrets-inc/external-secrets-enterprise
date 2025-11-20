@@ -41,7 +41,7 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	fakesm "github.com/external-secrets/external-secrets/providers/v1/aws/secretsmanager/fake"
-	"github.com/external-secrets/external-secrets/providers/v1/aws/util"
+	awsutil "github.com/external-secrets/external-secrets/providers/v1/aws/util"
 	"github.com/external-secrets/external-secrets/runtime/testing/fake"
 )
 
@@ -548,20 +548,12 @@ func TestSetSecret(t *testing.T) {
 			args: args{
 				store: makeValidSecretStore().Spec.Provider.AWS,
 				client: fakesm.Client{
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					GetSecretValueFn: fakesm.NewGetSecretValueFn(secretValueOutput, nil),
-					PutSecretValueFn: fakesm.NewPutSecretValueFn(putSecretOutput, nil),
-					DescribeSecretFn: fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
-					TagResourceFn:    fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn:  fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					GetSecretValueFn:       fakesm.NewGetSecretValueFn(secretValueOutput, nil),
 					PutSecretValueFn:       fakesm.NewPutSecretValueFn(putSecretOutput, nil),
 					DescribeSecretFn:       fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithoutProperty,
 			},
@@ -579,14 +571,9 @@ func TestSetSecret(t *testing.T) {
 						SecretBinary: []byte(`fake-value`),
 						Version:      aws.String(initialVersion),
 					}),
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					TagResourceFn:   fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn: fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithoutProperty,
 			},
@@ -604,14 +591,9 @@ func TestSetSecret(t *testing.T) {
 						SecretBinary: []byte(`{"other-fake-property":"fake-value"}`),
 						Version:      aws.String(initialVersion),
 					}),
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					TagResourceFn:   fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn: fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithProperty,
 			},
@@ -624,20 +606,12 @@ func TestSetSecret(t *testing.T) {
 			args: args{
 				store: makeValidSecretStore().Spec.Provider.AWS,
 				client: fakesm.Client{
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					GetSecretValueFn: fakesm.NewGetSecretValueFn(secretValueOutput, nil),
-					PutSecretValueFn: fakesm.NewPutSecretValueFn(putSecretOutput, nil),
-					DescribeSecretFn: fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
-					TagResourceFn:    fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn:  fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					GetSecretValueFn:       fakesm.NewGetSecretValueFn(secretValueOutput, nil),
 					PutSecretValueFn:       fakesm.NewPutSecretValueFn(putSecretOutput, nil),
 					DescribeSecretFn:       fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithoutSecretKey,
 			},
@@ -650,20 +624,12 @@ func TestSetSecret(t *testing.T) {
 			args: args{
 				store: makeValidSecretStore().Spec.Provider.AWS,
 				client: fakesm.Client{
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					GetSecretValueFn: fakesm.NewGetSecretValueFn(secretValueOutput, nil),
-					PutSecretValueFn: fakesm.NewPutSecretValueFn(putSecretOutput, nil),
-					DescribeSecretFn: fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
-					TagResourceFn:    fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn:  fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					GetSecretValueFn:       fakesm.NewGetSecretValueFn(secretValueOutput, nil),
 					PutSecretValueFn:       fakesm.NewPutSecretValueFn(putSecretOutput, nil),
 					DescribeSecretFn:       fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithMetadata,
 			},
@@ -699,20 +665,12 @@ func TestSetSecret(t *testing.T) {
 			args: args{
 				store: makeValidSecretStore().Spec.Provider.AWS,
 				client: fakesm.Client{
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					GetSecretValueFn: fakesm.NewGetSecretValueFn(secretValueOutput, nil),
-					PutSecretValueFn: fakesm.NewPutSecretValueFn(putSecretOutput, nil),
-					DescribeSecretFn: fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
-					TagResourceFn:    fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn:  fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					GetSecretValueFn:       fakesm.NewGetSecretValueFn(secretValueOutput, nil),
 					PutSecretValueFn:       fakesm.NewPutSecretValueFn(putSecretOutput, nil),
 					DescribeSecretFn:       fakesm.NewDescribeSecretFn(tagSecretOutput, nil),
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: fake.PushSecretData{SecretKey: secretKey, RemoteKey: fakeKey, Property: "", Metadata: &apiextensionsv1.JSON{
 					Raw: []byte(`{
@@ -732,14 +690,9 @@ func TestSetSecret(t *testing.T) {
 			args: args{
 				store: makeValidSecretStore().Spec.Provider.AWS,
 				client: fakesm.Client{
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					DescribeSecretFn: fakesm.NewDescribeSecretFn(blankDescribeSecretOutput, &getSecretCorrectErr),
-					CreateSecretFn:   fakesm.NewCreateSecretFn(secretOutput, nil),
-=======
 					DescribeSecretFn:    fakesm.NewDescribeSecretFn(blankDescribeSecretOutput, &getSecretCorrectErr),
 					CreateSecretFn:      fakesm.NewCreateSecretFn(secretOutput, nil),
 					PutResourcePolicyFn: fakesm.NewPutResourcePolicyFn(&awssm.PutResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithoutProperty,
 			},
@@ -823,14 +776,9 @@ func TestSetSecret(t *testing.T) {
 						SecretBinary: []byte((`fake-value`)),
 						Version:      &unparsableVersion,
 					}),
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager_test.go
-					TagResourceFn:   fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
-					UntagResourceFn: fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
-=======
 					TagResourceFn:          fakesm.NewTagResourceFn(&awssm.TagResourceOutput{}, nil),
 					UntagResourceFn:        fakesm.NewUntagResourceFn(&awssm.UntagResourceOutput{}, nil),
 					DeleteResourcePolicyFn: fakesm.NewDeleteResourcePolicyFn(&awssm.DeleteResourcePolicyOutput{}, nil),
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager_test.go
 				},
 				pushSecretData: pushSecretDataWithoutProperty,
 			},

@@ -2,6 +2,7 @@
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package hashivault implements Hashicorp Vault listener.
 package hashivault
 
 import (
@@ -28,7 +29,7 @@ type HashicorpVault struct {
 	client    client.Client
 	eventChan chan events.SecretRotationEvent
 	logger    logr.Logger
-	tcpSocket *tcp.TCPSocket
+	tcpSocket *tcp.Socket
 }
 
 func (h *HashicorpVault) processFn(message []byte) {
@@ -52,7 +53,7 @@ func (h *HashicorpVault) processFn(message []byte) {
 		event := events.SecretRotationEvent{
 			SecretIdentifier:  path,
 			RotationTimestamp: time.Now().Format("2006-01-02-15-04-05.000"),
-			TriggerSource:     schema.HASHICORP_VAULT,
+			TriggerSource:     schema.HashicorpVault,
 		}
 		h.eventChan <- event
 		h.logger.V(1).Info("Published event to eventChan", "Event", event)

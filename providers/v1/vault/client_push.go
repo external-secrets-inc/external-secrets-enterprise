@@ -141,12 +141,6 @@ func (c *client) PushSecret(ctx context.Context, secret *corev1.Secret, data esv
 				"cas": casVersion,
 			}
 		}
-<<<<<<< HEAD:pkg/provider/vault/client_push.go
-	}
-	if err != nil {
-		return fmt.Errorf("failed to convert value to a valid JSON: %w", err)
-=======
->>>>>>> upstream/main:providers/v1/vault/client_push.go
 	}
 	// Secret metadata should be pushed separately only for KV2
 	if c.store.Version == esv1.VaultKVStoreV2 {

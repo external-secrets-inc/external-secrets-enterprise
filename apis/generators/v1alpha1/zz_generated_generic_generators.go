@@ -42,6 +42,36 @@ func (g *ACRAccessToken) Copy() GenericGenerator {
 	return g.DeepCopy()
 }
 
+var _ GenericGenerator = &CloudsmithAccessToken{}
+
+func (g *CloudsmithAccessToken) GetObjectMeta() *metav1.ObjectMeta {
+	return &g.ObjectMeta
+}
+
+func (g *CloudsmithAccessToken) GetTypeMeta() *metav1.TypeMeta {
+	return &g.TypeMeta
+}
+
+func (g *CloudsmithAccessToken) GetKind() string {
+	return reflect.TypeOf(CloudsmithAccessToken{}).Name()
+}
+
+func (g *CloudsmithAccessToken) SetOutputs(expectedOutput map[string]string) error {
+	bytes, err := json.Marshal(expectedOutput)
+	if err != nil {
+		return err
+	}
+
+	g.Status.Output = &apiextensions.JSON{
+		Raw: bytes,
+	}
+	return nil
+}
+
+func (g *CloudsmithAccessToken) Copy() GenericGenerator {
+	return g.DeepCopy()
+}
+
 var _ GenericGenerator = &ClusterGenerator{}
 
 func (g *ClusterGenerator) GetObjectMeta() *metav1.ObjectMeta {

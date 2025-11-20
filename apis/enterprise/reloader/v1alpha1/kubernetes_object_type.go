@@ -1,9 +1,11 @@
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
 // Copyright External Secrets Inc. 2025
-// All Rights Reserved
+// All rights reserved
 package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+// KubernetesObjectConfig contains configuration for Kubernetes objects.
 type KubernetesObjectConfig struct {
 	// Server URL
 	// +required
@@ -17,6 +19,7 @@ type KubernetesObjectConfig struct {
 	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
+// KubernetesAuth contains authentication methods for Kubernetes objects.
 type KubernetesAuth struct {
 	//+optional
 	KubeConfigRef *KubeConfigRef `json:"kubeConfigRef,omitempty"`
@@ -29,10 +32,12 @@ type KubernetesAuth struct {
 	ServiceAccountRef *ServiceAccountSelector `json:"serviceAccountRef,omitempty"`
 }
 
+// KubeConfigRef contains a reference to a Kubernetes config.
 type KubeConfigRef struct {
 	SecretRef SecretKeySelector `json:"secretRef"`
 }
 
+// TokenRef contains a reference to a token.
 type TokenRef struct {
 	SecretRef SecretKeySelector `json:"secretRef"`
 }

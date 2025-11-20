@@ -1,7 +1,6 @@
-// 2025
+// Package provider implements the federation provider.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
-
 package provider
 
 import (
@@ -18,27 +17,27 @@ import (
 
 func TestNewOktaProvider(t *testing.T) {
 	tests := []struct {
-		name              string
-		domain            string
-		authServerID      string
+		name               string
+		domain             string
+		authServerID       string
 		expectedAuthServer string
 	}{
 		{
-			name:              "with custom auth server",
-			domain:            "https://dev-12345.okta.com",
-			authServerID:      "custom",
+			name:               "with custom auth server",
+			domain:             "https://dev-12345.okta.com",
+			authServerID:       "custom",
 			expectedAuthServer: "custom",
 		},
 		{
-			name:              "with empty auth server defaults to default",
-			domain:            "https://dev-12345.okta.com",
-			authServerID:      "",
+			name:               "with empty auth server defaults to default",
+			domain:             "https://dev-12345.okta.com",
+			authServerID:       "",
 			expectedAuthServer: "default",
 		},
 		{
-			name:              "with default auth server",
-			domain:            "https://dev-12345.okta.com",
-			authServerID:      "default",
+			name:               "with default auth server",
+			domain:             "https://dev-12345.okta.com",
+			authServerID:       "default",
 			expectedAuthServer: "default",
 		},
 	}

@@ -1,7 +1,6 @@
-/*
-Copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
 import (

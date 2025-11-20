@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package kubernetes implements Kubernetes cluster targets
 package kubernetes
 
 import (
@@ -32,12 +34,13 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
-	"github.com/external-secrets/external-secrets/pkg/utils"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 )
 
 var mu sync.Mutex
 
+// Provider implements the Kubernetes target provider.
 type Provider struct{}
 
 // ScanTarget wraps everything needed by scan/push logic for a Kubernetes cluster.
@@ -61,6 +64,7 @@ const (
 	errPropertyMandatory = "property is mandatory"
 )
 
+// NewClient creates a new Kubernetes scan target client.
 func (p *Provider) NewClient(
 	ctx context.Context,
 	mgrClient crclient.Client,
@@ -83,17 +87,21 @@ func (p *Provider) NewClient(
 	return newClient(ctx, converted, mgrClient, clientset.CoreV1())
 }
 
+// SecretStoreProvider implements the Kubernetes secret store provider.
 type SecretStoreProvider struct {
 }
 
+// Capabilities returns the capabilities of the Kubernetes secret store provider.
 func (p *SecretStoreProvider) Capabilities() esv1.SecretStoreCapabilities {
 	return esv1.SecretStoreWriteOnly
 }
 
+// ValidateStore validates the Kubernetes secret store.
 func (p *SecretStoreProvider) ValidateStore(_ esv1.GenericStore) (admission.Warnings, error) {
 	return nil, nil
 }
 
+// NewClient creates a new Kubernetes secrets client.
 func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericStore, mgrClient crclient.Client, _ string) (esv1.SecretsClient, error) {
 	converted, ok := store.(*tgtv1alpha1.KubernetesCluster)
 	if !ok {
@@ -112,14 +120,17 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	return newClient(ctx, converted, mgrClient, clientset.CoreV1())
 }
 
+// Lock locks the scan target.
 func (s *ScanTarget) Lock() {
 	mu.Lock()
 }
 
+// Unlock unlocks the scan target.
 func (s *ScanTarget) Unlock() {
 	mu.Unlock()
 }
 
+// ScanForSecrets scans for secrets in the Kubernetes cluster.
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]scanv1alpha1.SecretInStoreRef, error) {
 	referencedSecrets, err := s.collectReferencedSecrets(ctx)
 	if err != nil {
@@ -170,6 +181,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 	return results, nil
 }
 
+// ScanForConsumers scans for consumers of a secret in the Kubernetes cluster.
 func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	// Parse "<namespace>/<secret>"
 	secretNamespace, secretName, err := parseNamespaceName(location.RemoteRef.Key)
@@ -604,7 +616,7 @@ func buildRestConfig(
 		Host: server.URL,
 	}
 
-	ca, err := utils.FetchCACertFromSource(ctx, utils.CreateCertOpts{
+	ca, err := esutils.FetchCACertFromSource(ctx, esutils.CreateCertOpts{
 		CABundle:   server.CABundle,
 		CAProvider: server.CAProvider,
 		StoreKind:  resolvers.EmptyStoreKind,
@@ -721,6 +733,7 @@ func podReadyTime(pod *corev1.Pod) time.Time {
 	return metav1.Now().UTC()
 }
 
+// JobNotReadyErr indicates that a job is not ready yet.
 type JobNotReadyErr struct{}
 
 func (e JobNotReadyErr) Error() string {

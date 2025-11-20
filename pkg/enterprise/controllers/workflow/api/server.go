@@ -2,6 +2,7 @@
 // Copyright External Secrets Inc.
 // All Rights Reserved.
 
+// Package api provides workflow API server.
 package api
 
 import (
@@ -90,7 +91,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // handleHealthz handles health check requests.
-func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte("ok"))
 	if err != nil {

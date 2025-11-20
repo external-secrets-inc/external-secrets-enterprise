@@ -34,5 +34,5 @@ func (p *Provider) CreateListener(ctx context.Context, source *v1alpha1.Notifica
 }
 
 func init() {
-	schema.RegisterProvider(schema.MOCK, &Provider{})
+	schema.RegisterProvider(schema.Mock, &Provider{})
 }

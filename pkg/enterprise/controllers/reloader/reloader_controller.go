@@ -1,5 +1,6 @@
 // controller/reloader_controller.go
 
+// Package controller implements the reloader controller.
 package controller
 
 import (
@@ -21,12 +22,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// EventAction represents the type of event action.
 type EventAction string
 
 const (
+	// EventActionCreated indicates a resource was created.
 	EventActionCreated  EventAction = "Created"
+	// EventActionUpdated indicates a resource was updated.
 	EventActionUpdated  EventAction = "Updated"
+	// EventActionDeleted indicates a resource was deleted.
 	EventActionDeleted  EventAction = "Deleted"
+	// ProcessedAnnotation is the annotation key for marking processed resources.
 	ProcessedAnnotation string      = "reloader/processed"
 	reloaderFinalizer               = "reloader.external-secrets.io/finalizer"
 )

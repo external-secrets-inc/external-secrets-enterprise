@@ -38,6 +38,7 @@ type GenericGenerator interface {
 	Copy() GenericGenerator
 }
 
+// GeneratorStatus represents the status of a generator.
 type GeneratorStatus struct {
 	Output *apiextensions.JSON `json:"output,omitempty"`
 }

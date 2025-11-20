@@ -24,6 +24,7 @@ var (
 	genericLock    sync.RWMutex
 )
 
+// RegisterGeneric registers a generic generator by kind.
 func RegisterGeneric(kind string, genericGenerator GenericGenerator) {
 	genericLock.Lock()
 	defer genericLock.Unlock()
@@ -34,7 +35,7 @@ func RegisterGeneric(kind string, genericGenerator GenericGenerator) {
 	genericBuilder[kind] = genericGenerator
 }
 
-// ForceRegister adds to the schema, overwriting a generator if
+// ForceRegisterGeneric adds to the schema, overwriting a generator if
 // already registered. Should only be used for testing.
 func ForceRegisterGeneric(kind string, genericGenerator GenericGenerator) {
 	genericLock.Lock()
@@ -42,6 +43,7 @@ func ForceRegisterGeneric(kind string, genericGenerator GenericGenerator) {
 	genericLock.Unlock()
 }
 
+// GetGenericByKind retrieves a generic generator by its kind.
 func GetGenericByKind(kind string) (GenericGenerator, bool) {
 	genericLock.RLock()
 	genericGenerator, ok := genericBuilder[kind]
@@ -49,6 +51,7 @@ func GetGenericByKind(kind string) (GenericGenerator, bool) {
 	return genericGenerator, ok
 }
 
+// GetAllGeneric returns all registered generic generators.
 func GetAllGeneric() map[string]GenericGenerator {
 	return genericBuilder
 }

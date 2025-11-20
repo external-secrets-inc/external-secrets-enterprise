@@ -1,16 +1,18 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package aws defines AWS-related models.
 package aws
 
-// AWSSQSConfig contains configuration for AWS SDK.
-type AWSSQSConfig struct {
+// SQSConfig contains configuration for AWS SDK.
+type SQSConfig struct {
 	// QueueURL is the URL of the AWS SDK queue.
 	// +required
 	QueueURL string `json:"queueURL"`
 
 	// Authentication methods for AWS.
 	// +required
-	Auth AWSSDKAuth `json:"auth"`
+	Auth SDKAuth `json:"auth"`
 
 	// MaxNumberOfMessages specifies the maximum number of messages to retrieve from the SDK queue in a single request.
 	// +optional
@@ -28,22 +30,24 @@ type AWSSQSConfig struct {
 	VisibilityTimeout int32 `json:"visibilityTimeout"`
 }
 
-// AWSSDKAuth contains authentication methods for AWS SDK.
-type AWSSDKAuth struct {
+// SDKAuth contains authentication methods for AWS SDK.
+type SDKAuth struct {
 	AuthMethod string `json:"authMethod"`
 
 	Region string `json:"region"`
 
 	ServiceAccount *ServiceAccountSelector `json:"serviceAccountRef,omitempty"`
 
-	SecretRef *AWSSDKSecretRef `json:"secretRef,omitempty"`
+	SecretRef *SDKSecretRef `json:"secretRef,omitempty"`
 }
 
-type AWSSDKSecretRef struct {
-	AccessKeyId     SecretKeySelector `json:"accessKeyIdSecretRef"`
+// SDKSecretRef contains AWS SDK secret reference configuration.
+type SDKSecretRef struct {
+	AccessKeyID     SecretKeySelector `json:"accessKeyIdSecretRef"`
 	SecretAccessKey SecretKeySelector `json:"secretAccessKeySecretRef"`
 }
 
+// ServiceAccountSelector represents a Kubernetes service account selector.
 type ServiceAccountSelector struct {
 
 	// Name specifies the name of the service account to be selected.

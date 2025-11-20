@@ -1,9 +1,9 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
+// ServiceAccountSelector represents a Kubernetes service account with a name and namespace for selection purposes.
 type ServiceAccountSelector struct {
 
 	// Name specifies the name of the service account to be selected.

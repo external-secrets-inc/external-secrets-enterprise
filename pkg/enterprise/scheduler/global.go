@@ -12,6 +12,7 @@
 // limitations under the License.
 // */
 
+// Package scheduler provides a global scheduler for running periodic tasks.
 package scheduler
 
 import (
@@ -23,6 +24,7 @@ var (
 	once   sync.Once
 )
 
+// SetGlobal sets the global scheduler instance.
 func SetGlobal(s Scheduler) {
 	if s == nil {
 		panic("scheduler: SetGlobal called with nil")
@@ -35,6 +37,7 @@ func SetGlobal(s Scheduler) {
 	}
 }
 
+// Global returns the global scheduler instance.
 func Global() Scheduler {
 	if global == nil {
 		panic("scheduler: Global called before SetGlobal")

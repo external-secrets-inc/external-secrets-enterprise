@@ -213,18 +213,15 @@ type SecretStoreProvider struct {
 	// +optional
 	CloudruSM *CloudruSMProvider `json:"cloudrusm,omitempty"`
 
-<<<<<<< HEAD
 	// ExternalSecrets configures this store to sync secrets using the ExternalSecrets provider
 	// +optional
 	ExternalSecrets *enterprise.ExternalSecretsProvider `json:"externalsecrets,omitempty"`
-=======
 	// Volcengine configures this store to sync secrets using the Volcengine provider
 	// +optional
 	Volcengine *VolcengineProvider `json:"volcengine,omitempty"`
 	// Ngrok configures this store to sync secrets using the ngrok provider.
 	// +optional
 	Ngrok *NgrokProvider `json:"ngrok,omitempty"`
->>>>>>> upstream/main
 }
 
 // CAProviderType defines the type of provider for certificate authority.

@@ -2,6 +2,7 @@
 // Copyright External Secrets Inc.
 // All Rights Reserved.
 
+// Package jobs provides workflow job executors.
 package jobs
 
 import (

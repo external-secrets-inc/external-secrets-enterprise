@@ -1,6 +1,8 @@
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package workflow implements workflow controllers.
 package workflow
 
 import (

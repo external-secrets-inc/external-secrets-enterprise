@@ -1,3 +1,4 @@
+// Package v1alpha1 implements target schema types
 // Copyright External Secrets Inc. 2025
 // All rights reserved
 package v1alpha1

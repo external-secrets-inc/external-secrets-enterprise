@@ -1,8 +1,7 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
-package util
+// Package util implements resource watch.
+// Copyright External Secrets Inc. 2025
+// All Rights Reserved
+package util //nolint:revive,nolintlint
 
 import (
 	"context"
@@ -16,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// TokenRetriever is a struct that retrieves tokens for a service account.
 type TokenRetriever struct {
 	k8sClient               client.Client
 	serviceAccountName      string
@@ -24,6 +24,7 @@ type TokenRetriever struct {
 	logger                  logr.Logger
 }
 
+// NewTokenRetriever creates a new TokenRetriever.
 func NewTokenRetriever(k8sClient client.Client, logger logr.Logger, serviceAccountName, serviceAccountNamespace string) *TokenRetriever {
 	return &TokenRetriever{
 		k8sClient:               k8sClient,
@@ -34,6 +35,7 @@ func NewTokenRetriever(k8sClient client.Client, logger logr.Logger, serviceAccou
 	}
 }
 
+// GetServiceAccountToken retrieves the service account token.
 func (tr *TokenRetriever) GetServiceAccountToken() ([]byte, error) {
 	tr.logger.Info("Attempting to retrieve service account token",
 		"ServiceAccount", tr.serviceAccountName,
@@ -71,6 +73,7 @@ func (tr *TokenRetriever) GetServiceAccountToken() ([]byte, error) {
 	return []byte(tokenRequest.Status.Token), nil
 }
 
+// GetIdentityToken retrieves the identity token for the service account.
 func (tr *TokenRetriever) GetIdentityToken() ([]byte, error) {
 	tr.logger.Info("Attempting to retrieve identity token")
 

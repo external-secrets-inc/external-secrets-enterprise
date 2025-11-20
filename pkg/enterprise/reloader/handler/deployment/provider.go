@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package deployment implements deployment handler.
 package deployment
 
 import (
@@ -10,8 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the deployment handler provider.
 type Provider struct{}
 
+// NewHandler creates a new deployment handler.
 func (p *Provider) NewHandler(ctx context.Context, client client.Client, cache v1alpha1.DestinationToWatch) schema.Handler {
 	h := &Handler{
 		ctx:              ctx,
@@ -25,5 +29,5 @@ func (p *Provider) NewHandler(ctx context.Context, client client.Client, cache v
 }
 
 func init() {
-	schema.RegisterProvider(schema.DEPLOYMENT, &Provider{})
+	schema.RegisterProvider(schema.Deployment, &Provider{})
 }

@@ -11,6 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// Package v1alpha1 contains API Schema definitions for the workflows v1alpha1 API group
 package v1alpha1
 
 import (
@@ -27,6 +29,7 @@ type WorkflowRunTemplateSpec struct {
 	RevisionHistoryLimit int `json:"revisionHistoryLimit,omitempty"`
 }
 
+// RunPolicy defines the policy for running workflow runs.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type RunPolicy struct {
@@ -35,12 +38,15 @@ type RunPolicy struct {
 	OnChange  *RunPolicyOnChange  `json:"onChange,omitempty"`
 }
 
+// RunPolicyOnce specifies that the workflow should run only once.
 type RunPolicyOnce struct {
 }
 
+// RunPolicyOnChange specifies that the workflow should run when changes are detected.
 type RunPolicyOnChange struct {
 }
 
+// RunPolicyScheduled defines a scheduled policy for running workflow runs.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type RunPolicyScheduled struct {
@@ -48,7 +54,7 @@ type RunPolicyScheduled struct {
 	Cron  *string          `json:"cron,omitempty"`
 }
 
-// WorkflowRunStatus defines the observed state of WorkflowRun.
+// WorkflowRunTemplateStatus defines the observed state of WorkflowRunTemplate.
 type WorkflowRunTemplateStatus struct {
 	//+optional
 	LastRunTime *metav1.Time `json:"lastRunTime,omitempty"`
@@ -61,6 +67,7 @@ type WorkflowRunTemplateStatus struct {
 	SyncedResourceVersion string `json:"syncedResourceVersion,omitempty"`
 }
 
+// NamedWorkflowRunStatus represents a named workflow run status.
 type NamedWorkflowRunStatus struct {
 	RunName           string `json:"runName"`
 	WorkflowRunStatus `json:"status"`

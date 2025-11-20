@@ -20,10 +20,6 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
-<<<<<<< HEAD
-// +kubebuilder:validation:MinProperties=1
-// +kubebuilder:validation:MaxProperties=1
-=======
 // SecretVersionSelectionPolicy defines the policy for selecting secret versions in GCP Secret Manager.
 type SecretVersionSelectionPolicy string
 
@@ -36,7 +32,8 @@ const (
 )
 
 // GCPSMAuth defines the authentication methods for Google Cloud Platform Secret Manager.
->>>>>>> upstream/main
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=1
 type GCPSMAuth struct {
 	// +optional
 	SecretRef *GCPSMAuthSecretRef `json:"secretRef,omitempty"`

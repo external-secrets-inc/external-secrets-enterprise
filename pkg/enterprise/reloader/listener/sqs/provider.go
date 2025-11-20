@@ -19,15 +19,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the AWS SQS listener provider.
 type Provider struct{}
 
-// NewAWSSQSListener creates a new AWSSQSListener.
+// CreateListener creates a new AWSSQSListener.
 func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.NotificationSource, client client.Client, eventChan chan events.SecretRotationEvent, logger logr.Logger) (schema.Listener, error) {
 	if config == nil || config.AwsSqs == nil {
 		return nil, errors.New("aws sqs config is nil")
 	}
 	// Create authenticated SQS Listener
-	parsedConfig, err := mapper.TransformConfig[modelAWS.AWSSQSConfig](config.AwsSqs)
+	parsedConfig, err := mapper.TransformConfig[modelAWS.SQSConfig](config.AwsSqs)
 	if err != nil {
 		logger.Error(err, "Failed to parse config")
 		return nil, fmt.Errorf("failed to parse config: %w", err)
@@ -47,5 +48,5 @@ func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.Notifica
 }
 
 func init() {
-	schema.RegisterProvider(schema.AWS_SQS, &Provider{})
+	schema.RegisterProvider(schema.AWSSQS, &Provider{})
 }

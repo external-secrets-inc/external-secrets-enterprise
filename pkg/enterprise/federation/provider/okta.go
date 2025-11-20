@@ -1,7 +1,6 @@
-// 2025
+// Package provider implements the federation provider.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
-
 package provider
 
 import (
@@ -20,6 +19,7 @@ const (
 	defaultServerID     = "default"
 )
 
+// OktaProvider implements the Okta provider.
 type OktaProvider struct {
 	Domain                string
 	AuthorizationServerID string
@@ -31,6 +31,7 @@ type OktaProvider struct {
 	cacheTTL              time.Duration
 }
 
+// NewOktaProvider creates a new Okta provider.
 func NewOktaProvider(domain, authServerID string) *OktaProvider {
 	if authServerID == "" {
 		authServerID = defaultServerID
@@ -50,7 +51,7 @@ func NewOktaProvider(domain, authServerID string) *OktaProvider {
 // GetJWKS fetches the JSON Web Key Set from Okta's public endpoint.
 // The token, issuer, and caCrt parameters are not used for Okta since the
 // JWKS endpoint is publicly accessible over standard HTTPS.
-func (o *OktaProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
+func (o *OktaProvider) GetJWKS(ctx context.Context, _, _ string, _ []byte) (map[string]map[string]string, error) {
 	o.cacheMutex.RLock()
 	// Check if cache is still valid
 	if time.Since(o.lastFetch) < o.cacheTTL && len(o.jwksCache) > 0 {

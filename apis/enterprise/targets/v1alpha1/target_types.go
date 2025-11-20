@@ -1,6 +1,6 @@
+// Package v1alpha1 contains API Schema definitions for the targets v1alpha1 API group
 // Copyright External Secrets Inc. 2025
 // All rights reserved
-
 package v1alpha1
 
 import (
@@ -11,12 +11,15 @@ import (
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 )
 
+// TargetConditionType defines the possible conditions a Target can have.
 type TargetConditionType string
 
 const (
+	// TargetReady defines a Target that is ready to be used.
 	TargetReady TargetConditionType = "Ready"
 )
 
+// TargetStatusCondition defines the status of a Target.
 type TargetStatusCondition struct {
 	Type   TargetConditionType    `json:"type"`
 	Status corev1.ConditionStatus `json:"status"`
@@ -35,8 +38,11 @@ type TargetStatusCondition struct {
 type TargetCapabilities string
 
 const (
-	TargetReadOnly  TargetCapabilities = "ReadOnly"
+	// TargetReadOnly defines a Target that can only read secrets.
+	TargetReadOnly TargetCapabilities = "ReadOnly"
+	// TargetWriteOnly defines a Target that can only write secrets.
 	TargetWriteOnly TargetCapabilities = "WriteOnly"
+	// TargetReadWrite defines a Target that can read and write secrets.
 	TargetReadWrite TargetCapabilities = "ReadWrite"
 )
 

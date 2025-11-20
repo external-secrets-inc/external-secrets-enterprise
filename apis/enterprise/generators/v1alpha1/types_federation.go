@@ -11,6 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// Package v1alpha1 contains enterprise generator API types.
 package v1alpha1
 
 import (
@@ -60,6 +62,7 @@ type FederationAuthKubernetes struct {
 	CACertSecretRef *esmeta.SecretKeySelector `json:"caCertSecretRef,omitempty"`
 }
 
+// Federation represents a federation generator configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:storageversion
@@ -74,6 +77,8 @@ type Federation struct {
 }
 
 // +kubebuilder:object:root=true
+
+// FederationList contains a list of Federation resources.
 type FederationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

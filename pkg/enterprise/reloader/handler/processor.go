@@ -2,6 +2,7 @@
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package handler provides event handling for secret rotation.
 package handler
 
 import (
@@ -17,6 +18,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/reloader/handler/schema"
 )
 
+// EventHandler handles secret rotation events.
 type EventHandler struct {
 	ctx    context.Context
 	client client.Client
@@ -24,6 +26,7 @@ type EventHandler struct {
 	mu     sync.RWMutex
 }
 
+// NewEventHandler creates a new event handler.
 func NewEventHandler(client client.Client) *EventHandler {
 	ctx := context.Background()
 	return &EventHandler{
@@ -32,12 +35,14 @@ func NewEventHandler(client client.Client) *EventHandler {
 	}
 }
 
+// UpdateDestinationsToWatch updates the destinations to watch.
 func (h *EventHandler) UpdateDestinationsToWatch(watch []esov1alpha1.DestinationToWatch) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.cache = watch
 }
 
+// HandleEvent handles a secret rotation event.
 func (h *EventHandler) HandleEvent(ctx context.Context, event events.SecretRotationEvent) error {
 	logger := log.FromContext(ctx)
 	h.mu.RLock()

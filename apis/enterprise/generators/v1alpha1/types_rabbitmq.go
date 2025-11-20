@@ -34,7 +34,7 @@ type RabbitMQSpec struct {
 	Config RabbitMQConfig `json:"config"`
 }
 
-// Server defines the RabbitMQ Server Parameters to connect to.
+// RabbitMQServer defines the RabbitMQ Server Parameters to connect to.
 type RabbitMQServer struct {
 	// Host is the hostname of the RabbitMQ server.
 	//+required
@@ -80,7 +80,7 @@ type RabbitMQConfig struct {
 	PasswordPolicy RabbitMQPasswordPolicy `json:"passwordPolicy"`
 }
 
-// PasswordPolicy contains the password policy to apply.
+// RabbitMQPasswordPolicy contains the password policy to apply.
 //
 //kubebuilder:validation:MinProperties=1
 //kubebuilder:validation:MaxProperties=1
@@ -93,12 +93,13 @@ type RabbitMQPasswordPolicy struct {
 	SecretRef *esmeta.SecretKeySelector `json:"secretRef"`
 }
 
+// RabbitMQPasswordGeneratorRef is a reference to a password generator.
 type RabbitMQPasswordGeneratorRef struct {
 	Name string `json:"name"`
 	Kind string `json:"kind"`
 }
 
-// Password generates a random password based on the.
+// RabbitMQ generates a random password based on the.
 // configuration parameters in spec.
 // You can specify the length, characterset and other attributes.
 // +kubebuilder:object:root=true

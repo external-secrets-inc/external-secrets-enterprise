@@ -19,10 +19,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// SSHKeyType defines the type of SSH key to be generated.
 // +kubebuilder:validation:Enum=RSA
 type SSHKeyType string
 
 const (
+	// SSHKeyTypeRSA defines the type of SSH key to be generated.
 	SSHKeyTypeRSA SSHKeyType = "RSA"
 )
 

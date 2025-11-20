@@ -1,6 +1,8 @@
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package steps provides workflow step executors.
 package steps
 
 import (
@@ -34,7 +36,7 @@ func NewJavaScriptExecutor(step *workflows.JavaScriptStep, logger logr.Logger) *
 }
 
 // Execute runs the JavaScript code with the provided input data and returns the outputs.
-func (e *JavaScriptExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
+func (e *JavaScriptExecutor) Execute(_ context.Context, _ client.Client, _ *workflows.Workflow, inputData map[string]interface{}, _ string) (map[string]interface{}, error) {
 	// Reset outputs for each new execution.
 	e.outputs = make(map[string]interface{})
 

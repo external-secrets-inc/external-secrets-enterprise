@@ -1,7 +1,6 @@
-// 2025
+// Package provider implements the federation provider.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
-
 package provider
 
 import (
@@ -20,10 +19,12 @@ import (
 	"time"
 )
 
+// KubernetesProvider defines a Kubernetes Identity Provider.
 type KubernetesProvider struct {
 	URL string
 }
 
+// NewProvider returns a Kubernetes Provider.
 func NewProvider(url string) *KubernetesProvider {
 	return &KubernetesProvider{
 		URL: url,
@@ -33,13 +34,14 @@ func NewProvider(url string) *KubernetesProvider {
 // CheckIdentityExists checks if a Kubernetes service account still exists.
 // For Kubernetes federation, identity lifecycle is managed through WorkloadBinding,
 // so this always returns true (identity check happens via pod/SA checks in AuthorizedIdentity controller).
-func (k *KubernetesProvider) CheckIdentityExists(ctx context.Context, subject string) (bool, error) {
+func (k *KubernetesProvider) CheckIdentityExists(_ context.Context, _ string) (bool, error) {
 	// Kubernetes federation uses WorkloadBinding for lifecycle management
 	// This method is not used for K8s identities
 	return true, nil
 }
 
-func (k *KubernetesProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
+// GetJWKS fetches the JSON Web Key Set from Kubernetes's public endpoint.
+func (k *KubernetesProvider) GetJWKS(ctx context.Context, token, _ string, caCrt []byte) (map[string]map[string]string, error) {
 	// make url call to kubernetes endpoint using specified caCrt to validate tls
 	// Parse
 	b64dec, err := base64.StdEncoding.DecodeString(string(caCrt))

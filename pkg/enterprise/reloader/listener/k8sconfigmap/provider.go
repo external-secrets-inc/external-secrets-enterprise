@@ -1,6 +1,8 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
-package k8ssecret
+
+// Package k8sconfigmap implements Kubernetes ConfigMap listener.
+package k8sconfigmap
 
 import (
 	"context"
@@ -16,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the Kubernetes ConfigMap listener provider.
 type Provider struct{}
 
 // CreateListener creates a Kubernetes ConfigMap Listener.
@@ -44,5 +47,5 @@ func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.Notifica
 }
 
 func init() {
-	schema.RegisterProvider(schema.KUBERNETES_CONFIG_MAP, &Provider{})
+	schema.RegisterProvider(schema.KubernetesConfigMap, &Provider{})
 }

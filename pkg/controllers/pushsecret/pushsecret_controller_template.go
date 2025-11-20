@@ -29,13 +29,10 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/template"
 
-<<<<<<< HEAD
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register" // Loading registered providers.
-
+	// Load registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-=======
-	_ "github.com/external-secrets/external-secrets/pkg/register" // Loading registered providers.
->>>>>>> upstream/main
+	// Load registered providers.
+	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 
 const (

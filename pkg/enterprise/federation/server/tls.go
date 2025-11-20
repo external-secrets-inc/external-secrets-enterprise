@@ -1,17 +1,6 @@
-// /*
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// */
-
+// Package server implements the federation server.
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package server
 
 import (
@@ -27,18 +16,21 @@ var (
 	allowedIDs = map[string]struct{}{}
 )
 
+// AddTLSAllowedID adds a new allowed ID to the TLS store.
 func AddTLSAllowedID(id string) {
 	allowedMu.Lock()
 	defer allowedMu.Unlock()
 	allowedIDs[id] = struct{}{}
 }
 
+// RemoveTLSAllowedID removes an allowed ID from the TLS store.
 func RemoveTLSAllowedID(id string) {
 	allowedMu.Lock()
 	defer allowedMu.Unlock()
 	delete(allowedIDs, id)
 }
 
+// isAllowed checks if the given ID is allowed.
 func isAllowed(id string) bool {
 	allowedMu.RLock()
 	defer allowedMu.RUnlock()
@@ -46,6 +38,7 @@ func isAllowed(id string) bool {
 	return ok
 }
 
+// verifyConnection verifies the connection state.
 func verifyConnection(cs tls.ConnectionState) error {
 	if len(cs.PeerCertificates) == 0 {
 		return fmt.Errorf("no certificates found")

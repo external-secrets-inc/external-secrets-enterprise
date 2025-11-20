@@ -2,6 +2,7 @@
 // Copyright External Secrets Inc.
 // All Rights Reserved.
 
+// Package common provides common workflow utilities.
 package common
 
 import (

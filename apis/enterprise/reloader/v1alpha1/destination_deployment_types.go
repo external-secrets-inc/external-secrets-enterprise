@@ -1,12 +1,11 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// Defines a DeploymentDestination. Behavior is a pod templates annotations patch.
+// DeploymentDestination defines a DeploymentDestination. Behavior is a pod templates annotations patch.
 // Default UpdateStrategy is pod template annotations patch to trigger a new rollout.
 // Default MatchStrategy is matching secret-key with any of:
 // * Equality against `spec.template.spec.containers[*].env[*].valueFrom.secretKeyRef.name`

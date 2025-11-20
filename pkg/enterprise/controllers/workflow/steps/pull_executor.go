@@ -1,6 +1,8 @@
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package steps provides workflow step executors.
 package steps
 
 import (
@@ -18,7 +20,7 @@ import (
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
-	"github.com/external-secrets/external-secrets/pkg/utils"
+	utils "github.com/external-secrets/external-secrets/runtime/esutils"
 )
 
 // PullStepExecutor pulls secret values from external providers and applies post‐processing.
@@ -44,7 +46,7 @@ func NewPullStepExecutor(step *workflows.PullStep, c client.Client, manager secr
 // Execute retrieves secret values from both spec.data and spec.dataFrom entries,
 // applies rewriting, conversion, validation, and decoding steps, and returns a map
 // of key/value pairs.
-func (e *PullStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
+func (e *PullStepExecutor) Execute(ctx context.Context, _ client.Client, wf *workflows.Workflow, inputData map[string]interface{}, _ string) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
 
 	templates.ProcessTemplates(reflect.ValueOf(e.Step), inputData)

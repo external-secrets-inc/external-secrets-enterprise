@@ -34,17 +34,11 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/statemanager"
 
 	// Loading registered generators.
-<<<<<<< HEAD
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/register"
-	_ "github.com/external-secrets/external-secrets/pkg/generator/register"
 
 	// Loading registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
-=======
 	_ "github.com/external-secrets/external-secrets/pkg/register"
-	_ "github.com/external-secrets/external-secrets/pkg/register"
->>>>>>> upstream/main
 )
 
 // GetProviderSecretData returns the provider's secret data with the provided ExternalSecret.

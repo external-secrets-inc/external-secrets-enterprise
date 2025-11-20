@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package listener implements AWS SQS listener.
 package listener
 
 import (
@@ -17,6 +19,7 @@ import (
 	modelAWS "github.com/external-secrets/external-secrets/pkg/enterprise/reloader/pkg/models/aws"
 )
 
+// SQSClientInterface defines the interface for SQS client operations.
 type SQSClientInterface interface {
 	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error)
 	DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(*sqs.Options)) (*sqs.DeleteMessageOutput, error)
@@ -27,13 +30,13 @@ type AWSSQSListener struct {
 	context   context.Context
 	cancel    context.CancelFunc
 	client    client.Client
-	config    *modelAWS.AWSSQSConfig
+	config    *modelAWS.SQSConfig
 	sqsClient SQSClientInterface
 	logger    logr.Logger
 }
 
 // NewAWSSQSListener creates a new AWSSQSListener.
-func NewAWSSQSListener(ctx context.Context, config *modelAWS.AWSSQSConfig, client client.Client, logger logr.Logger) (*AWSSQSListener, error) {
+func NewAWSSQSListener(ctx context.Context, config *modelAWS.SQSConfig, client client.Client, logger logr.Logger) (*AWSSQSListener, error) {
 	// Load AWS config with appropriate authentication
 	awsConfig, err := authAWS.CreateAWSSDKConfig(ctx, client, config.Auth, logger)
 	if err != nil {
@@ -55,6 +58,7 @@ func NewAWSSQSListener(ctx context.Context, config *modelAWS.AWSSQSConfig, clien
 	}, nil
 }
 
+// SetSQSClient sets the SQS client for the listener.
 func (h *AWSSQSListener) SetSQSClient(sqsClient SQSClientInterface) error {
 	h.sqsClient = sqsClient
 	return nil
@@ -106,7 +110,7 @@ func (h *AWSSQSListener) Start() (<-chan []types.Message, <-chan error) {
 	return msgCh, errCh
 }
 
-// pollMessages fetches messages from the SQS queue and returns them as an array.
+// PollMessages fetches messages from the SQS queue and returns them as an array.
 func (h *AWSSQSListener) PollMessages() ([]types.Message, error) {
 	h.logger.Info("Polling messages from SQS", "QueueURL", h.config.QueueURL)
 

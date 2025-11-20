@@ -390,14 +390,14 @@ func validateKubernetesResource(ctx context.Context, param *Parameter, value int
 			return err
 		}
 
-		splittedApiVersion := strings.Split(resource.APIVersion, "/")
-		if len(splittedApiVersion) != 2 {
+		splittedAPIVersion := strings.Split(resource.APIVersion, "/")
+		if len(splittedAPIVersion) != 2 {
 			return fmt.Errorf("invalid apiVersion for secretlocation: %s", resource.APIVersion)
 		}
 
 		gvk = schema.GroupVersionKind{
-			Group:   splittedApiVersion[0],
-			Version: splittedApiVersion[1],
+			Group:   splittedAPIVersion[0],
+			Version: splittedAPIVersion[1],
 			Kind:    resource.Kind,
 		}
 	case ParameterTypeFinding, ParameterTypeFindingArray:

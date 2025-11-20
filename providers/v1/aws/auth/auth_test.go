@@ -102,11 +102,7 @@ func TestNewSession(t *testing.T) {
 		},
 		{
 			name: "configure aws using environment variables + assume role",
-<<<<<<< HEAD:pkg/provider/aws/auth/auth_test.go
-			stsProvider: func(cfg *aws.Config) STSprovider {
-=======
 			stsProvider: func(_ *aws.Config) STSprovider {
->>>>>>> upstream/main:providers/v1/aws/auth/auth_test.go
 				return &fakesess.AssumeRoler{
 					AssumeRoleFunc: func(input *sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error) {
 						assert.Equal(t, *input.RoleArn, "foo-bar-baz")
@@ -422,11 +418,7 @@ func TestNewSession(t *testing.T) {
 		},
 		{
 			name: "configure aws using environment variables + assume role + check external id",
-<<<<<<< HEAD:pkg/provider/aws/auth/auth_test.go
-			stsProvider: func(cfg *aws.Config) STSprovider {
-=======
 			stsProvider: func(_ *aws.Config) STSprovider {
->>>>>>> upstream/main:providers/v1/aws/auth/auth_test.go
 				return &fakesess.AssumeRoler{
 					AssumeRoleFunc: func(input *sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error) {
 						assert.Equal(t, *input.ExternalId, "12345678")

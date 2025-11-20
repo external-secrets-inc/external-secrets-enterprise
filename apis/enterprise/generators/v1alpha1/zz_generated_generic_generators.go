@@ -193,21 +193,21 @@ func (g *OpenAI) Copy() genv1alpha1.GenericGenerator {
 	return g.DeepCopy()
 }
 
-var _ genv1alpha1.GenericGenerator = &PostgreSql{}
+var _ genv1alpha1.GenericGenerator = &PostgreSQL{}
 
-func (g *PostgreSql) GetObjectMeta() *metav1.ObjectMeta {
+func (g *PostgreSQL) GetObjectMeta() *metav1.ObjectMeta {
 	return &g.ObjectMeta
 }
 
-func (g *PostgreSql) GetTypeMeta() *metav1.TypeMeta {
+func (g *PostgreSQL) GetTypeMeta() *metav1.TypeMeta {
 	return &g.TypeMeta
 }
 
-func (g *PostgreSql) GetKind() string {
-	return reflect.TypeOf(PostgreSql{}).Name()
+func (g *PostgreSQL) GetKind() string {
+	return reflect.TypeOf(PostgreSQL{}).Name()
 }
 
-func (g *PostgreSql) SetOutputs(expectedOutput map[string]string) error {
+func (g *PostgreSQL) SetOutputs(expectedOutput map[string]string) error {
 	bytes, err := json.Marshal(expectedOutput)
 	if err != nil {
 		return err
@@ -219,7 +219,7 @@ func (g *PostgreSql) SetOutputs(expectedOutput map[string]string) error {
 	return nil
 }
 
-func (g *PostgreSql) Copy() genv1alpha1.GenericGenerator {
+func (g *PostgreSQL) Copy() genv1alpha1.GenericGenerator {
 	return g.DeepCopy()
 }
 

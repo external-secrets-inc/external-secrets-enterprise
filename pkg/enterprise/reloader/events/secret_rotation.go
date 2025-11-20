@@ -1,7 +1,6 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package events provides event types for secret rotation.
+// Copyright External Secrets Inc. 2025
+// All Rights Reserved.
 package events
 
 // SecretRotationEvent represents an event triggered during the secret rotation process.

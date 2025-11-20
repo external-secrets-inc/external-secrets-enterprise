@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+// Package federation implements federation controllers.
 package federation
 
 import (
@@ -31,12 +33,14 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
 
+// PingIdentityFederationController reconciles PingIdentityFederation resources.
 type PingIdentityFederationController struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
+// Reconcile reconciles a PingIdentityFederation resource.
 func (c *PingIdentityFederationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	pingidentity := &idfedv1alpha1.PingIdentityFederation{}
 	if err := c.Get(ctx, req.NamespacedName, pingidentity); err != nil {

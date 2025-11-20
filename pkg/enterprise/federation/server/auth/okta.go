@@ -1,17 +1,6 @@
-// /*
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// */
-
+// Package auth implements the federation server authorization.
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package auth
 
 import (
@@ -44,11 +33,13 @@ type OktaClaims struct {
 	TokenType string   `json:"token_type,omitempty"`
 }
 
+// OktaAuthenticator implements Authenticator.
 type OktaAuthenticator struct {
 	mu              sync.RWMutex
 	clockSkewLeeway time.Duration
 }
 
+// NewOktaAuthenticator creates a new OktaAuthenticator.
 func NewOktaAuthenticator() *OktaAuthenticator {
 	return &OktaAuthenticator{
 		mu:              sync.RWMutex{},
@@ -56,7 +47,8 @@ func NewOktaAuthenticator() *OktaAuthenticator {
 	}
 }
 
-func (a *OktaAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
+// Authenticate implements Authenticator.
+func (a *OktaAuthenticator) Authenticate(r *http.Request) (*Info, error) {
 	// Extract Bearer token from Authorization header
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
@@ -127,8 +119,8 @@ func (a *OktaAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 		return nil, errors.New("token missing subject claim")
 	}
 
-	// Build AuthInfo
-	authInfo := &AuthInfo{
+	// Build Info
+	authInfo := &Info{
 		Method:   "okta",
 		Provider: issuer,
 		Subject:  subject,

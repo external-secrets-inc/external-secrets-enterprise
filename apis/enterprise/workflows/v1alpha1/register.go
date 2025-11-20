@@ -33,23 +33,36 @@ var (
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 var (
-	WorkflowKind             = reflect.TypeOf(Workflow{}).Name()
-	WorkflowGroupKind        = schema.GroupKind{Group: Group, Kind: WorkflowKind}.String()
-	WorkflowKindAPIVersion   = WorkflowKind + "." + SchemeGroupVersion.String()
+	// WorkflowKind is the kind name for Workflow resources.
+	WorkflowKind = reflect.TypeOf(Workflow{}).Name()
+	// WorkflowGroupKind is the group kind for Workflow resources.
+	WorkflowGroupKind = schema.GroupKind{Group: Group, Kind: WorkflowKind}.String()
+	// WorkflowKindAPIVersion is the API version for Workflow resources.
+	WorkflowKindAPIVersion = WorkflowKind + "." + SchemeGroupVersion.String()
+	// WorkflowGroupVersionKind is the group version kind for Workflow resources.
 	WorkflowGroupVersionKind = SchemeGroupVersion.WithKind(WorkflowKind)
 
-	WorkflowTemplateKind             = reflect.TypeOf(WorkflowTemplate{}).Name()
-	WorkflowTemplateGroupKind        = schema.GroupKind{Group: Group, Kind: WorkflowTemplateKind}.String()
-	WorkflowTemplateKindAPIVersion   = WorkflowTemplateKind + "." + SchemeGroupVersion.String()
+	// WorkflowTemplateKind is the kind name for WorkflowTemplate resources.
+	WorkflowTemplateKind = reflect.TypeOf(WorkflowTemplate{}).Name()
+	// WorkflowTemplateGroupKind is the group kind for WorkflowTemplate resources.
+	WorkflowTemplateGroupKind = schema.GroupKind{Group: Group, Kind: WorkflowTemplateKind}.String()
+	// WorkflowTemplateKindAPIVersion is the API version for WorkflowTemplate resources.
+	WorkflowTemplateKindAPIVersion = WorkflowTemplateKind + "." + SchemeGroupVersion.String()
+	// WorkflowTemplateGroupVersionKind is the group version kind for WorkflowTemplate resources.
 	WorkflowTemplateGroupVersionKind = SchemeGroupVersion.WithKind(WorkflowTemplateKind)
 
-	WorkflowRunKind             = reflect.TypeOf(WorkflowRun{}).Name()
-	WorkflowRunGroupKind        = schema.GroupKind{Group: Group, Kind: WorkflowRunKind}.String()
-	WorkflowRunKindAPIVersion   = WorkflowRunKind + "." + SchemeGroupVersion.String()
+	// WorkflowRunKind is the kind name for WorkflowRun resources.
+	WorkflowRunKind = reflect.TypeOf(WorkflowRun{}).Name()
+	// WorkflowRunGroupKind is the group kind for WorkflowRun resources.
+	WorkflowRunGroupKind = schema.GroupKind{Group: Group, Kind: WorkflowRunKind}.String()
+	// WorkflowRunKindAPIVersion is the API version for WorkflowRun resources.
+	WorkflowRunKindAPIVersion = WorkflowRunKind + "." + SchemeGroupVersion.String()
+	// WorkflowRunGroupVersionKind is the group version kind for WorkflowRun resources.
 	WorkflowRunGroupVersionKind = SchemeGroupVersion.WithKind(WorkflowRunKind)
 )
 

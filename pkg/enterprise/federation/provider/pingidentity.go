@@ -1,7 +1,6 @@
-// 2025
+// Package provider implements the federation provider.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
-
 package provider
 
 import (
@@ -20,6 +19,7 @@ const (
 	defaultPingIdentityJWKSCacheTTL = 1 * time.Hour
 )
 
+// PingIdentityProvider implements the PingIdentity provider.
 type PingIdentityProvider struct {
 	Region                 string
 	EnvironmentID          string
@@ -40,6 +40,7 @@ type PingIdentityProvider struct {
 	managementTokenMutex  sync.RWMutex
 }
 
+// NewPingIdentityProvider creates a new PingIdentity provider.
 func NewPingIdentityProvider(region, environmentID string) *PingIdentityProvider {
 	return &PingIdentityProvider{
 		Region:        region,
@@ -55,7 +56,7 @@ func NewPingIdentityProvider(region, environmentID string) *PingIdentityProvider
 // GetJWKS fetches the JSON Web Key Set from PingOne's public endpoint.
 // The token, issuer, and caCrt parameters are not used for PingOne since the
 // JWKS endpoint is publicly accessible over standard HTTPS.
-func (p *PingIdentityProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
+func (p *PingIdentityProvider) GetJWKS(ctx context.Context, _, _ string, _ []byte) (map[string]map[string]string, error) {
 	p.cacheMutex.RLock()
 	// Check if cache is still valid
 	if time.Since(p.lastFetch) < p.cacheTTL && len(p.jwksCache) > 0 {

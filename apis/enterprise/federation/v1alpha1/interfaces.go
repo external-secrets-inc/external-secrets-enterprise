@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+// Package v1alpha1 contains federation API types.
 package v1alpha1
 
 import "context"
@@ -20,6 +22,7 @@ import "context"
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
 
+// FederationProvider defines the interface for federation providers.
 type FederationProvider interface {
 	GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error)
 	// CheckIdentityExists checks if the identity (client/app/workload) still exists in the identity provider.
@@ -32,11 +35,16 @@ type FederationProvider interface {
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
 
+// ValidationResult represents the result of a validation operation.
 type ValidationResult string
 
 const (
-	ValidationResultValid   ValidationResult = "Valid"
+	// ValidationResultValid indicates the validation was successful.
+	ValidationResultValid ValidationResult = "Valid"
+	// ValidationResultInvalid indicates the validation failed.
 	ValidationResultInvalid ValidationResult = "Invalid"
+	// ValidationResultUnknown indicates the validation result is unknown.
 	ValidationResultUnknown ValidationResult = "Unknown"
-	ValidationResultError   ValidationResult = "Error"
+	// ValidationResultError indicates the validation failed with an error.
+	ValidationResultError ValidationResult = "Error"
 )

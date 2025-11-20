@@ -36,12 +36,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
 
 	// Loading registered providers.
-<<<<<<< HEAD
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
-=======
 	_ "github.com/external-secrets/external-secrets/pkg/register"
->>>>>>> upstream/main
 )
 
 // StoreReconciler reconciles a SecretStore object.
@@ -78,11 +74,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-<<<<<<< HEAD
-	return Reconcile(ctx, req, &ss, r.Client, log, Opts{
-=======
-	return reconcile(ctx, req, &ss, r.Client, r.PushSecretEnabled, log, Opts{
->>>>>>> upstream/main
+	return Reconcile(ctx, req, &ss, r.Client, r.PushSecretEnabled, log, Opts{
 		ControllerClass: r.ControllerClass,
 		GaugeVecGetter:  ssmetrics.GetGaugeVec,
 		Recorder:        r.recorder,

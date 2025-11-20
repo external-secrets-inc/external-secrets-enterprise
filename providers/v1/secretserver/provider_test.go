@@ -169,13 +169,9 @@ func TestNewClient(t *testing.T) {
 	userNameKey := "username"
 	userNameValue := "foo"
 	passwordKey := "password"
-<<<<<<< HEAD:pkg/provider/secretserver/provider_test.go
-	passwordValue, err := utils.GenerateRandomString(10)
+	passwordValue, err := esutils.GenerateRandomString(10)
 	require.Nil(t, err)
-=======
-	passwordValue := generateRandomString()
 	domain := "domain1"
->>>>>>> upstream/main:providers/v1/secretserver/provider_test.go
 
 	clientSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"},

@@ -16,10 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the webhook listener provider.
 type Provider struct {
 }
 
-// NewWebhookListener creates a new Listener that listens for webhook notifications based on the provided configuration and event channel.
+// CreateListener creates a new Listener that listens for webhook notifications based on the provided configuration and event channel.
 func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.NotificationSource, client client.Client, eventChan chan events.SecretRotationEvent, logger logr.Logger) (schema.Listener, error) {
 	if config == nil || config.Webhook == nil {
 		return nil, errors.New("webhook config is nil")
@@ -32,7 +33,7 @@ func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.Notifica
 
 	childCtx, cancel := context.WithCancel(ctx)
 
-	listener := &WebhookListener{
+	listener := &Listener{
 		config:     config.Webhook,
 		eventChan:  eventChan,
 		ctx:        childCtx,
@@ -49,5 +50,5 @@ func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.Notifica
 }
 
 func init() {
-	schema.RegisterProvider(schema.WEBHOOK, &Provider{})
+	schema.RegisterProvider(schema.Webhook, &Provider{})
 }

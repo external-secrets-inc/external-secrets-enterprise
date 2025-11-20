@@ -1,12 +1,12 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// Defines a WorkflowRunTemplateDestination. Behavior is an annotations patch.
+// WorkflowRunTemplateDestination defines a destination for WorkflowRunTemplates.
+// Behavior is an annotations patch.
 // Default UpdateStrategy is annotations patch to trigger Workflow reconcile.
 // Default MatchStrategy is matching secret-key with any of:
 // * Equality against `spec.data.remoteRef.key`

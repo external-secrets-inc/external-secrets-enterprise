@@ -1,6 +1,8 @@
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package steps provides workflow step executors.
 package steps
 
 import (
@@ -19,9 +21,9 @@ import (
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/templates"
-	"github.com/external-secrets/external-secrets/pkg/generator/statemanager"
-	"github.com/external-secrets/external-secrets/pkg/utils"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	utils "github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/statemanager"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -39,6 +41,7 @@ type GeneratorStepExecutor struct {
 	Manager secretstore.ManagerInterface
 }
 
+// NewGeneratorStepExecutor creates a new generator step executor.
 func NewGeneratorStepExecutor(step *workflows.GeneratorStep, c client.Client, scheme *runtime.Scheme, manager secretstore.ManagerInterface) *GeneratorStepExecutor {
 	if manager == nil {
 		panic("manager cannot be nil")
@@ -54,7 +57,8 @@ func NewGeneratorStepExecutor(step *workflows.GeneratorStep, c client.Client, sc
 
 // Execute generates secret values using the configured generator,
 // applies post-processing, and returns a map of key/value pairs.
-func (e *GeneratorStepExecutor) Execute(ctx context.Context, c client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
+// Execute generates secret values using the configured generator.
+func (e *GeneratorStepExecutor) Execute(ctx context.Context, _ client.Client, wf *workflows.Workflow, inputData map[string]interface{}, jobName string) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
 	log := ctrl.Log.WithName("controllers").WithName("Workflow")
 

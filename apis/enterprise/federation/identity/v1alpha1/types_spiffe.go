@@ -18,12 +18,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// SpiffeFederationSpec defines the specification for SPIFFE federation.
 type SpiffeFederationSpec struct {
 	// SPIFFE Trust domain
 	// +required
 	TrustDomain string `json:"trustDomain"`
 }
 
+// SpiffeFederation represents a SPIFFE federation configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
@@ -37,7 +39,7 @@ type SpiffeFederation struct {
 
 // +kubebuilder:object:root=true
 
-// SpiffeFederation contains a list of SpiffeFederation resources.
+// SpiffeFederationList contains a list of SpiffeFederation resources.
 type SpiffeFederationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

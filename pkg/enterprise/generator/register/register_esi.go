@@ -12,11 +12,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package register registers enterprise generators.
 package register
 
 // packages imported here are registered to the controller schema.
 
 import (
+	// Register enterprise generators.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/aws_iam"
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/basic_auth"
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/federation"

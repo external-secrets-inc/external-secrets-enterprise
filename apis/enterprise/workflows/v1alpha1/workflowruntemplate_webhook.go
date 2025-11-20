@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+// WorkflowRunTemplateValidator validates WorkflowRunTemplate resources.
 type WorkflowRunTemplateValidator struct{}
 
 var _ admission.CustomValidator = &WorkflowRunTemplateValidator{}

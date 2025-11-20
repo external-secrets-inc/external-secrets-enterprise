@@ -2,17 +2,21 @@
 Copyright External Secrets Inc.
 All Rights Reserved.
 */
+
+// Package v1alpha1 contains federation API types.
 package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// AuthorizedIdentitySpec defines the specification for an authorized identity.
 type AuthorizedIdentitySpec struct {
 	IdentitySpec      IdentitySpec       `json:"identitySpec"`
 	IssuedCredentials []IssuedCredential `json:"issuedCredentials"`
 }
 
+// IdentitySpec defines the specification for an identity.
 type IdentitySpec struct {
 	FederationRef FederationRef `json:"federationRef"`
 

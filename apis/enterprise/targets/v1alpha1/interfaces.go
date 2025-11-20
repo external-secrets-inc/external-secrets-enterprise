@@ -1,6 +1,6 @@
+// Package v1alpha1 contains API Schema definitions for the targets v1alpha1 API group
 // Copyright External Secrets Inc. 2025
 // All rights reserved
-
 package v1alpha1
 
 import (
@@ -13,6 +13,7 @@ import (
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 )
 
+// TargetProvider is an interface for creating a ScanTarget.
 // +kubebuilder:object:root=false
 // +kubebuilder:object:generate:false
 // +k8s:deepcopy-gen:interfaces=nil
@@ -21,6 +22,7 @@ type TargetProvider interface {
 	NewClient(ctx context.Context, client client.Client, target client.Object) (ScanTarget, error)
 }
 
+// ScanTarget is an interface for scanning a Target.
 // +kubebuilder:object:root=false
 // +kubebuilder:object:generate:false
 // +k8s:deepcopy-gen:interfaces=nil
@@ -32,11 +34,11 @@ type ScanTarget interface {
 	Unlock()
 }
 
+// GenericTarget is a common interface for interacting with Targets.
 // +kubebuilder:object:root=false
 // +kubebuilder:object:generate:false
 // +k8s:deepcopy-gen:interfaces=nil
 // +k8s:deepcopy-gen=nil
-// GenericTarget is a common interface for interacting with Targets.
 type GenericTarget interface {
 	runtime.Object
 	metav1.Object

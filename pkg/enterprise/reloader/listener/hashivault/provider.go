@@ -16,9 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the Hashicorp Vault listener provider.
 type Provider struct{}
 
-// NewTCPSocketListener initializes a new TCP socket listener using the provided configuration and event channel.
+// CreateListener initializes a new TCP socket listener using the provided configuration and event channel.
 func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.NotificationSource, client client.Client, eventChan chan events.SecretRotationEvent, logger logr.Logger) (schema.Listener, error) {
 	if config == nil || config.HashicorpVault == nil {
 		return nil, errors.New("HashicorpVault config is nil")
@@ -47,5 +48,5 @@ func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.Notifica
 }
 
 func init() {
-	schema.RegisterProvider(schema.HASHICORP_VAULT, &Provider{})
+	schema.RegisterProvider(schema.HashicorpVault, &Provider{})
 }

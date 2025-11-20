@@ -399,8 +399,6 @@ type VaultUserPassAuth struct {
 	SecretRef esmeta.SecretKeySelector `json:"secretRef,omitempty"`
 }
 
-<<<<<<< HEAD
-=======
 // VaultGCPAuth authenticates with Vault using Google Cloud Platform authentication method.
 // Refer: https://developer.hashicorp.com/vault/docs/auth/gcp
 //
@@ -437,7 +435,6 @@ type VaultGCPAuth struct {
 	ServiceAccountRef *esmeta.ServiceAccountSelector `json:"serviceAccountRef,omitempty"`
 }
 
->>>>>>> upstream/main
 // VaultCheckAndSet defines the Check-And-Set (CAS) settings for Vault KV v2 PushSecret operations.
 type VaultCheckAndSet struct {
 	// Required when true, all write operations must include a check-and-set parameter.

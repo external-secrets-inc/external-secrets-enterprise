@@ -1,6 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
+// Package tmetrics provides metrics for the Target controller.
 package tmetrics
 
 import (
@@ -12,7 +13,9 @@ import (
 )
 
 const (
+	// TargetSubsystem is the Prometheus subsystem for Target metrics.
 	TargetSubsystem            = "target"
+	// TargetReconcileDurationKey is the metric key for reconcile duration.
 	TargetReconcileDurationKey = "reconcile_duration"
 )
 
@@ -41,6 +44,7 @@ func SetUpMetrics() {
 	}
 }
 
+// GetGaugeVec retrieves a GaugeVec metric by key.
 func GetGaugeVec(key string) *prometheus.GaugeVec {
 	return gaugeVecMetrics[key]
 }

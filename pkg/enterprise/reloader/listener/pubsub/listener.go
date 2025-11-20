@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package pubsub implements Google Pub/Sub listener.
 package pubsub
 
 import (
@@ -72,7 +74,7 @@ func processMessage(eventChannel chan events.SecretRotationEvent, logger logr.Lo
 			event := events.SecretRotationEvent{}
 			event.SecretIdentifier = name
 			event.RotationTimestamp = msgTime
-			event.TriggerSource = schema.GOOGLE_PUB_SUB
+			event.TriggerSource = schema.GooglePubSub
 			eventChannel <- event
 			logger.Info("Published event to eventChan", "Event", event)
 		default:

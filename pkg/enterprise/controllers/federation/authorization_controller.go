@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+// Package federation implements federation controllers.
 package federation
 
 import (
@@ -31,12 +33,14 @@ import (
 
 const authorizationFinalizer = "authorization.federation.external-secrets.io/finalizer"
 
+// AuthorizationController reconciles Authorization resources.
 type AuthorizationController struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
+// Reconcile reconciles an Authorization resource.
 func (c *AuthorizationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	// Get the Authorization.fedetarion.external-secrets.io object
 	authorization := &v1alpha1.Authorization{}

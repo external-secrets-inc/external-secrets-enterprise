@@ -15,8 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the Azure Event Grid listener provider.
 type Provider struct{}
 
+// CreateListener creates a new Azure Event Grid listener.
 func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.NotificationSource, client client.Client, eventChan chan events.SecretRotationEvent, logger logr.Logger) (schema.Listener, error) {
 	if config == nil || config.AzureEventGrid == nil {
 		return nil, errors.New("AzureEventGrid config is nil")
@@ -37,5 +39,5 @@ func (p *Provider) CreateListener(ctx context.Context, config *v1alpha1.Notifica
 }
 
 func init() {
-	schema.RegisterProvider(schema.AZURE_EVENT_GRID, &Provider{})
+	schema.RegisterProvider(schema.AzureEventGrid, &Provider{})
 }

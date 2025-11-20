@@ -20,13 +20,9 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
-<<<<<<< HEAD
-// Passbolt contains a secretRef for the passbolt credentials.
+// PassboltAuth contains a secretRef for the passbolt credentials.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
-=======
-// PassboltAuth contains a secretRef for the passbolt credentials.
->>>>>>> upstream/main
 type PassboltAuth struct {
 	PasswordSecretRef   *esmeta.SecretKeySelector `json:"passwordSecretRef"`
 	PrivateKeySecretRef *esmeta.SecretKeySelector `json:"privateKeySecretRef"`

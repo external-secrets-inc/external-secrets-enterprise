@@ -1,3 +1,4 @@
+// Package v1alpha1 contains API Schema definitions for the scan v1alpha1 API group
 // Copyright External Secrets Inc. 2025
 // All rights reserved
 package v1alpha1
@@ -19,7 +20,8 @@ var (
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// AddToScheme is used to add go types to the GroupVersionKind scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 func init() {

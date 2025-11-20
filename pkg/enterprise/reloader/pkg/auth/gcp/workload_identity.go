@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package gcp implements GCP authentication.
 package gcp
 
 import (
@@ -44,7 +46,7 @@ type workloadIdentity struct {
 	clusterProjectID     string
 }
 
-// interface to GCP IAM API.
+// IamClient is an interface to GCP IAM API.
 type IamClient interface {
 	GenerateAccessToken(ctx context.Context, req *credentialspb.GenerateAccessTokenRequest, opts ...gax.CallOption) (*credentialspb.GenerateAccessTokenResponse, error)
 	Close() error

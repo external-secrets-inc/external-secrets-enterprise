@@ -1,7 +1,6 @@
-/*
-copyright External Secrets Inc. All Rights Reserved.
-*/
-
+// Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 package v1alpha1
 
 // AWSSQSConfig contains configuration for AWS SDK.
@@ -41,7 +40,10 @@ type AWSSDKAuth struct {
 	SecretRef *AWSSDKSecretRef `json:"secretRef,omitempty"`
 }
 
+// AWSSDKSecretRef contains the AWS SDK credentials.
 type AWSSDKSecretRef struct {
-	AccessKeyId     SecretKeySelector `json:"accessKeyIdSecretRef"`
+	// AccessKeyIDSecretRef is the secret key selector for the access key ID.
+	AccessKeyID SecretKeySelector `json:"accessKeyIdSecretRef"`
+	// SecretAccessKeySecretRef is the secret key selector for the secret access key.
 	SecretAccessKey SecretKeySelector `json:"secretAccessKeySecretRef"`
 }

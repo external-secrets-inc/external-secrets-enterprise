@@ -33,8 +33,8 @@ import (
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
-	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 	"github.com/external-secrets/external-secrets/providers/v1/yandex/common/clock"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 )
 
 const maxSecretsClientLifetime = 5 * time.Minute // supposed SecretsClient lifetime is quite short
@@ -113,17 +113,11 @@ type IamToken struct {
 
 // SecretsClientInput contains the input parameters for creating a Yandex Cloud secrets client.
 type SecretsClientInput struct {
-<<<<<<< HEAD:pkg/provider/yandex/common/provider.go
-	APIEndpoint   string
-	AuthorizedKey *esmeta.SecretKeySelector
-	CACertificate *esmeta.SecretKeySelector
-=======
 	APIEndpoint     string
 	AuthorizedKey   *esmeta.SecretKeySelector
 	CACertificate   *esmeta.SecretKeySelector
 	ResourceKeyType ResourceKeyType
 	FolderID        string
->>>>>>> upstream/main:providers/v1/yandex/common/provider.go
 }
 
 // ResourceKeyType defines how the resource key should be interpreted.

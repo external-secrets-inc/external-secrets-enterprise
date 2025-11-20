@@ -1,18 +1,11 @@
 /*
-<<<<<<< HEAD
-=======
 Copyright © 2025 ESO Maintainer Team
 
->>>>>>> upstream/main
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-<<<<<<< HEAD
-    http://www.apache.org/licenses/LICENSE-2.0
-=======
     https://www.apache.org/licenses/LICENSE-2.0
->>>>>>> upstream/main
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,21 +20,13 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
-<<<<<<< HEAD
-=======
 // YandexAuth defines the authentication method for the Yandex provider.
->>>>>>> upstream/main
 type YandexAuth struct {
 	// The authorized key used for authentication
 	// +optional
 	AuthorizedKey esmeta.SecretKeySelector `json:"authorizedKeySecretRef,omitempty"`
 }
 
-<<<<<<< HEAD
-type YandexCAProvider struct {
-	Certificate esmeta.SecretKeySelector `json:"certSecretRef,omitempty"`
-}
-=======
 // YandexCAProvider defines the configuration for Yandex custom certificate authority.
 type YandexCAProvider struct {
 	Certificate esmeta.SecretKeySelector `json:"certSecretRef,omitempty"`
@@ -63,4 +48,3 @@ type FetchingPolicy struct {
 	ByID   *ByID   `json:"byID,omitempty"`
 	ByName *ByName `json:"byName,omitempty"`
 }
->>>>>>> upstream/main

@@ -350,10 +350,4 @@ spec:
           name: string
       timeout: string
       url: string
-<<<<<<< HEAD
-  kind: "ACRAccessToken" # "ACRAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "SSHKey", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana", "Federation", "MFA", "BasicAuth", "SSH", "Neo4j", "PostgreSql", "OpenAI"
-status:
-  output: 
-=======
   kind: "ACRAccessToken" # "ACRAccessToken", "CloudsmithAccessToken", "ECRAuthorizationToken", "Fake", "GCRAccessToken", "GithubAccessToken", "QuayAccessToken", "Password", "SSHKey", "STSSessionToken", "UUID", "VaultDynamicSecret", "Webhook", "Grafana"
->>>>>>> upstream/main

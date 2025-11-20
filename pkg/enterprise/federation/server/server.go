@@ -1,4 +1,4 @@
-// 2025
+// Package server implements the federation server.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
 package server
@@ -22,7 +22,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 	"github.com/go-logr/logr"
 	"github.com/labstack/echo/v4"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
@@ -37,7 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ServerHandler struct {
+// Handler handles the federation server.
+type Handler struct {
 	reconciler             *externalsecrets.Reconciler
 	mu                     sync.RWMutex
 	log                    logr.Logger
@@ -50,9 +51,10 @@ type ServerHandler struct {
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
 
-func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string, tlsEnabled bool) *ServerHandler {
+// NewHandler creates a new Handler.
+func NewHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string, tlsEnabled bool) *Handler {
 	log := ctrl.Log.WithName("federationserver")
-	s := &ServerHandler{
+	s := &Handler{
 		log:        log,
 		reconciler: reconciler,
 		mu:         sync.RWMutex{},
@@ -67,7 +69,8 @@ func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, soc
 	return s
 }
 
-func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
+// SetupEcho sets up the echo server.
+func (s *Handler) SetupEcho(ctx context.Context) *echo.Echo {
 	e := echo.New()
 	e.Server.BaseContext = func(_ net.Listener) context.Context {
 		return ctx
@@ -87,7 +90,7 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	return e
 }
 
-func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
+func (s *Handler) startHTTPServer(ctx context.Context, e *echo.Echo) {
 	srv := &http.Server{
 		Addr:              s.port,
 		Handler:           e,
@@ -105,7 +108,7 @@ func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
 	}()
 }
 
-func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
+func (s *Handler) startMTLSServer(ctx context.Context, e *echo.Echo) {
 	source, err := workloadapi.NewX509Source(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(s.spireAgentSocketPath)))
 	if err != nil {
 		s.log.Error(err, "failed to create x509 source")
@@ -131,7 +134,7 @@ func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
 	}()
 }
 
-func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (s *Handler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var lastErr error
 		for _, authenticator := range auth.Registry {
@@ -168,8 +171,8 @@ func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (s *ServerHandler) generateSecrets(c echo.Context) error {
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+func (s *Handler) generateSecrets(c echo.Context) error {
+	authInfo := c.Get("authInfo").(*auth.Info)
 	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
@@ -268,8 +271,8 @@ func contains[T fedv1alpha1.AllowedGenerator | fedv1alpha1.AllowedGeneratorState
 	return false
 }
 
-func (s *ServerHandler) postSecrets(c echo.Context) error {
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+func (s *Handler) postSecrets(c echo.Context) error {
+	authInfo := c.Get("authInfo").(*auth.Info)
 	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
@@ -297,8 +300,8 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 	return c.JSON(http.StatusNotFound, "Not Found")
 }
 
-func (s *ServerHandler) revokeSelf(c echo.Context) error {
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+func (s *Handler) revokeSelf(c echo.Context) error {
+	authInfo := c.Get("authInfo").(*auth.Info)
 	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
@@ -349,14 +352,14 @@ type deleteRequest struct {
 	Namespace string `json:"namespace"`
 }
 
-func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
+func (s *Handler) revokeCredentialsOf(c echo.Context) error {
 	var req deleteRequest
 	err := c.Bind(&req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+	authInfo := c.Get("authInfo").(*auth.Info)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
 	generatorNamespace := c.Param("generatorNamespace")
@@ -382,7 +385,7 @@ func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
 	return c.JSON(http.StatusNotFound, "Not Found")
 }
 
-func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace string, labels labels.Selector) error {
+func (s *Handler) deleteGeneratorState(ctx context.Context, namespace string, labels labels.Selector) error {
 	generators := &genv1alpha1.GeneratorStateList{}
 	err := s.reconciler.Client.List(ctx, generators, &client.ListOptions{
 		Namespace:     namespace,
@@ -400,7 +403,7 @@ func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace stri
 	return nil
 }
 
-func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) ([]byte, error) {
+func (s *Handler) getSecret(ctx context.Context, storeName, name string) ([]byte, error) {
 	storeRef := esv1.SecretStoreRef{
 		Name: storeName,
 		Kind: esv1.ClusterSecretStoreKind,
@@ -416,7 +419,7 @@ func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) (
 	return client.GetSecret(ctx, ref)
 }
 
-func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, string, string, error) {
+func (s *Handler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, string, string, error) {
 	if resource == nil {
 		return nil, "", "", errors.New("resource not found")
 	}
@@ -432,7 +435,7 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	if generator == nil {
 		return nil, "", "", errors.New("generator not found")
 	}
-	data, stateJson, err := generator.Generate(ctx, obj, s.reconciler.Client, namespace)
+	data, stateJSON, err := generator.Generate(ctx, obj, s.reconciler.Client, namespace)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -440,8 +443,8 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	if err != nil {
 		return nil, "", "", err
 	}
-	if stateJson == nil {
-		stateJson = &apiextensions.JSON{Raw: []byte("{}")}
+	if stateJSON == nil {
+		stateJSON = &apiextensions.JSON{Raw: []byte("{}")}
 	}
 	generatorState := genv1alpha1.GeneratorState{
 		ObjectMeta: metav1.ObjectMeta{
@@ -458,7 +461,7 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 		},
 		Spec: genv1alpha1.GeneratorStateSpec{
 			Resource: obj,
-			State:    stateJson,
+			State:    stateJSON,
 		},
 	}
 	// We can bind the Generator State to a GC-linked object
@@ -496,6 +499,7 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	return stringData, generatorState.Name, generatorState.Namespace, nil
 }
 
+// Resource represents a resource to be generated.
 type Resource struct {
 	Name            string            `json:"name"`
 	Owner           string            `json:"owner"`
@@ -504,7 +508,7 @@ type Resource struct {
 }
 
 // buildIdentitySpec constructs an IdentitySpec from authInfo and federationRef.
-func buildIdentitySpec(authInfo *auth.AuthInfo, federationRef *fedv1alpha1.FederationRef) fedv1alpha1.IdentitySpec {
+func buildIdentitySpec(authInfo *auth.Info, federationRef *fedv1alpha1.FederationRef) fedv1alpha1.IdentitySpec {
 	identitySpec := fedv1alpha1.IdentitySpec{
 		FederationRef: *federationRef,
 	}
@@ -601,9 +605,9 @@ func buildWorkloadBindingFromWorkloadInfo(workloadInfo *auth.WorkloadInfo) *fedv
 }
 
 // upsertIdentity creates or updates an AuthorizedIdentity object.
-func (s *ServerHandler) upsertIdentity(
+func (s *Handler) upsertIdentity(
 	ctx context.Context,
-	authInfo *auth.AuthInfo,
+	authInfo *auth.Info,
 	workloadInfo *auth.WorkloadInfo,
 	federationRef *fedv1alpha1.FederationRef,
 	resourceName string,

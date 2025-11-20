@@ -1,3 +1,4 @@
+// Package mapper implements resource watch.
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 package mapper
@@ -7,6 +8,7 @@ import (
 	"fmt"
 )
 
+// TransformConfig transforms a provider config to a target config.
 func TransformConfig[T any, D any](providerConfig D) (T, error) {
 	var config T
 	configBytes, err := json.Marshal(providerConfig)

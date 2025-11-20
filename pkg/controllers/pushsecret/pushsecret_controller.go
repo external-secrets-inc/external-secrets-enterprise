@@ -45,23 +45,17 @@ import (
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/pushsecret/psmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
-	"github.com/external-secrets/external-secrets/pkg/controllers/util"
-<<<<<<< HEAD
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/register"
-	_ "github.com/external-secrets/external-secrets/pkg/generator/register"
-	"github.com/external-secrets/external-secrets/pkg/generator/statemanager"
-	"github.com/external-secrets/external-secrets/pkg/provider/util/locks"
-	"github.com/external-secrets/external-secrets/pkg/utils"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
-=======
+	ctrlutil "github.com/external-secrets/external-secrets/pkg/controllers/util"
+
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 	"github.com/external-secrets/external-secrets/runtime/statemanager"
 	"github.com/external-secrets/external-secrets/runtime/util/locks"
 
 	// Load registered generators.
+	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/register"
+	// Load registered generators.
 	_ "github.com/external-secrets/external-secrets/pkg/register"
->>>>>>> upstream/main
 )
 
 const (

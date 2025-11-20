@@ -22,10 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager.go
-=======
 	"maps"
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager.go
 	"slices"
 	"strings"
 
@@ -44,11 +41,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	awsutil "github.com/external-secrets/external-secrets/providers/v1/aws/util"
 	"github.com/external-secrets/external-secrets/runtime/constants"
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/find"
 	"github.com/external-secrets/external-secrets/runtime/metrics"
-	"github.com/external-secrets/external-secrets/providers/v1/aws/util"
 )
 
 // PushSecretMetadataSpec contains metadata information for pushing secrets to AWS Secret Manager.
@@ -93,11 +90,8 @@ type SecretsManager struct {
 	config       *esv1.SecretsManager
 	prefix       string
 	newUUID      func() string
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager.go
-=======
 	kube         client.Client
 	namespace    string
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager.go
 }
 
 // SMInterface is a subset of the smiface api.
@@ -567,14 +561,6 @@ func (sm *SecretsManager) createSecretWithContext(ctx context.Context, secretNam
 
 	createOutput, err := sm.client.CreateSecret(ctx, input)
 	metrics.ObserveAPICall(constants.ProviderAWSSM, constants.CallAWSSMCreateSecret, err)
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager.go
-
-	return err
-}
-
-func (sm *SecretsManager) putSecretValueWithContext(ctx context.Context, secretArn string, awsSecret *awssm.GetSecretValueOutput, psd esv1.PushSecretData, value []byte, tags []types.Tag) error {
-	if awsSecret != nil && (bytes.Equal(awsSecret.SecretBinary, value) || utils.CompareStringAndByteSlices(awsSecret.SecretString, value)) {
-=======
 	if err != nil {
 		return err
 	}
@@ -606,7 +592,6 @@ func (sm *SecretsManager) putSecretValueWithContext(ctx context.Context, secretA
 
 func (sm *SecretsManager) putSecretValueWithContext(ctx context.Context, secretArn string, awsSecret *awssm.GetSecretValueOutput, psd esv1.PushSecretData, value []byte, tags []types.Tag) error {
 	if awsSecret != nil && (bytes.Equal(awsSecret.SecretBinary, value) || esutils.CompareStringAndByteSlices(awsSecret.SecretString, value)) {
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager.go
 		return nil
 	}
 
@@ -642,16 +627,12 @@ func (sm *SecretsManager) putSecretValueWithContext(ctx context.Context, secretA
 	for _, tag := range tags {
 		currentTags[*tag.Key] = *tag.Value
 	}
-<<<<<<< HEAD:pkg/provider/aws/secretsmanager/secretsmanager.go
-	return sm.patchTags(ctx, psd.GetMetadata(), &secretArn, currentTags)
-=======
 	if err := sm.patchTags(ctx, psd.GetMetadata(), &secretArn, currentTags); err != nil {
 		return err
 	}
 
 	// Manage resource policy if specified in metadata
 	return sm.manageResourcePolicy(ctx, psd.GetMetadata(), &secretArn)
->>>>>>> upstream/main:providers/v1/aws/secretsmanager/secretsmanager.go
 }
 
 func (sm *SecretsManager) patchTags(ctx context.Context, metadata *apiextensionsv1.JSON, secretID *string, tags map[string]string) error {

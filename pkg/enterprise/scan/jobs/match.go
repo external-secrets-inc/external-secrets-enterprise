@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Candidate represents a candidate match for a finding.
 type Candidate struct {
 	ID          string
 	Name        string
@@ -31,6 +32,7 @@ type JaccardParams struct {
 	MinIntersection int     // minimum number of common elements required for fallback rule
 }
 
+// Jaccard computes the Jaccard similarity between two sets.
 func Jaccard(newSet, currentSet map[string]struct{}) (intersection, union int, j float64) {
 	// Ensure we iterate over the larger set for efficiency
 	if len(newSet) < len(currentSet) {
@@ -49,6 +51,7 @@ func Jaccard(newSet, currentSet map[string]struct{}) (intersection, union int, j
 	return intersection, union, float64(intersection) / float64(union)
 }
 
+// LocationsToStringSet converts a slice of locations to a set of strings.
 func LocationsToStringSet(locations []scanv1alpha1.SecretInStoreRef) map[string]struct{} {
 	locationsSet := make(map[string]struct{}, len(locations))
 	for _, location := range locations {
@@ -57,6 +60,7 @@ func LocationsToStringSet(locations []scanv1alpha1.SecretInStoreRef) map[string]
 	return locationsSet
 }
 
+// AssignIDs assigns IDs to new findings based on similarity to current findings.
 func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardParams) []v1alpha1.Finding {
 	for i := range newFindings {
 		newLocationsSet := LocationsToStringSet(newFindings[i].Status.Locations)

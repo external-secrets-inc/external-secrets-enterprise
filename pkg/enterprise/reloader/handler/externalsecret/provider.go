@@ -12,8 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Provider implements the ExternalSecret handler provider.
 type Provider struct{}
 
+// NewHandler creates a new ExternalSecret handler.
 func (p *Provider) NewHandler(ctx context.Context, client client.Client, cache v1alpha1.DestinationToWatch) schema.Handler {
 	h := &Handler{
 		ctx:              ctx,
@@ -27,5 +29,5 @@ func (p *Provider) NewHandler(ctx context.Context, client client.Client, cache v
 }
 
 func init() {
-	schema.RegisterProvider(schema.EXTERNAL_SECRET, &Provider{})
+	schema.RegisterProvider(schema.ExternalSecret, &Provider{})
 }

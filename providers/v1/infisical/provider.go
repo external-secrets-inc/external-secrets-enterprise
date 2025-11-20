@@ -21,8 +21,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/external-secrets/external-secrets/runtime/metrics"
 	"github.com/external-secrets/external-secrets/providers/v1/infisical/constants"
+	"github.com/external-secrets/external-secrets/runtime/metrics"
 	infisicalSdk "github.com/infisical/go-sdk"
 	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -53,11 +53,7 @@ const errSecretDataFormat = "failed to get secret data identityId %w"
 type Provider struct {
 	cancelSdkClient context.CancelFunc
 	sdkClient       infisicalSdk.InfisicalClientInterface
-<<<<<<< HEAD:pkg/provider/infisical/provider.go
-	apiScope        *InfisicalClientScope
-=======
 	apiScope        *ClientScope
->>>>>>> upstream/main:providers/v1/infisical/provider.go
 	authMethod      string
 }
 
@@ -359,15 +355,9 @@ func (p *Provider) NewClient(ctx context.Context, store esv1.GenericStore, kube 
 	case infisicalSpec.Auth.AzureAuthCredentials != nil:
 		loginFn = performAzureAuthLogin
 		authMethod = machineIdentityLoginViaAzureAuth
-<<<<<<< HEAD:pkg/provider/infisical/provider.go
-	case infisicalSpec.Auth.GcpIdTokenAuthCredentials != nil:
-		loginFn = performGcpIdTokenAuthLogin
-		authMethod = machineIdentityLoginViaGcpIdTokenAuth
-=======
 	case infisicalSpec.Auth.GcpIDTokenAuthCredentials != nil:
 		loginFn = performGcpIDTokenAuthLogin
 		authMethod = machineIdentityLoginViaGCPIDTokenAuth
->>>>>>> upstream/main:providers/v1/infisical/provider.go
 	case infisicalSpec.Auth.GcpIamAuthCredentials != nil:
 		loginFn = performGcpIamAuthLogin
 		authMethod = machineIdentityLoginViaGcpServiceAccountAuth

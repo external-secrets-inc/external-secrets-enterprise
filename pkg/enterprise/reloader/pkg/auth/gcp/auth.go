@@ -1,5 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package gcp implements GCP authentication.
 package gcp
 
 import (
@@ -16,9 +18,11 @@ import (
 )
 
 const (
+	// CloudPlatformRole is the GCP cloud platform role scope.
 	CloudPlatformRole = "https://www.googleapis.com/auth/cloud-platform"
 )
 
+// NewTokenSource creates a new OAuth2 token source for GCP.
 func NewTokenSource(ctx context.Context, auth *v1alpha1.GooglePubSubAuth, projectID string, kube kclient.Client) (oauth2.TokenSource, error) {
 	if auth == nil {
 		return google.DefaultTokenSource(ctx, CloudPlatformRole)

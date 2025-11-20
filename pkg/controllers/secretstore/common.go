@@ -41,21 +41,12 @@ import (
 )
 
 const (
-<<<<<<< HEAD
-	errStoreClient         = "could not get provider client: %w"
-	errValidationFailed    = "could not validate provider: %w"
-	errValidationUnknown   = "could not determine validation status: %s"
-	errPatchStatus         = "unable to patch status: %w"
-	errUnableCreateClient  = "unable to create client"
-	errUnableValidateStore = "unable to validate store: %s"
-=======
 	errStoreClient          = "could not get provider client: %w"
 	errValidationFailed     = "could not validate provider: %w"
 	errValidationUnknownMsg = "could not determine validation status"
 	errPatchStatus          = "unable to patch status: %w"
 	errUnableCreateClient   = "unable to create client"
 	errUnableValidateStore  = "unable to validate store"
->>>>>>> upstream/main
 
 	msgStoreValidated     = "store validated"
 	msgStoreNotMaintained = "store isn't currently maintained. Please plan and prepare accordingly."
@@ -64,14 +55,9 @@ const (
 	secretStoreFinalizer = "secretstore.externalsecrets.io/finalizer"
 )
 
-<<<<<<< HEAD
-var validationUnknownError = errors.New("could not determine validation status")
-
-=======
 var errValidationUnknown = errors.New(errValidationUnknownMsg)
 
 // Opts holds the options for the reconcile function.
->>>>>>> upstream/main
 type Opts struct {
 	ControllerClass string
 	GaugeVecGetter  metrics.GaugeVevGetter
@@ -79,11 +65,8 @@ type Opts struct {
 	RequeueInterval time.Duration
 }
 
-<<<<<<< HEAD
-func Reconcile(ctx context.Context, req ctrl.Request, ss esapi.GenericStore, cl client.Client, log logr.Logger, opts Opts) (ctrl.Result, error) {
-=======
-func reconcile(ctx context.Context, req ctrl.Request, ss esapi.GenericStore, cl client.Client, isPushSecretEnabled bool, log logr.Logger, opts Opts) (ctrl.Result, error) {
->>>>>>> upstream/main
+// Reconcile reconciles a SecretStore object.
+func Reconcile(ctx context.Context, req ctrl.Request, ss esapi.GenericStore, cl client.Client, isPushSecretEnabled bool, log logr.Logger, opts Opts) (ctrl.Result, error) {
 	if !ShouldProcessStore(ss, opts.ControllerClass) {
 		log.V(1).Info("skip store")
 		return ctrl.Result{}, nil
@@ -127,11 +110,7 @@ func reconcile(ctx context.Context, req ctrl.Request, ss esapi.GenericStore, cl 
 		log.Error(err, "unable to validate store")
 		// in case of validation status unknown, validateStore will mark
 		// the store as ready but we should show ReasonValidationUnknown
-<<<<<<< HEAD
-		if errors.Is(err, validationUnknownError) {
-=======
 		if errors.Is(err, errValidationUnknown) {
->>>>>>> upstream/main
 			return ctrl.Result{RequeueAfter: requeueInterval}, nil
 		}
 		return ctrl.Result{}, err
@@ -185,21 +164,12 @@ func validateStore(ctx context.Context, namespace, controllerClass string, store
 	validationResult, err := cl.Validate()
 	if err != nil {
 		if validationResult == esapi.ValidationResultUnknown {
-<<<<<<< HEAD
-			cond := NewSecretStoreCondition(esapi.SecretStoreReady, v1.ConditionTrue, esapi.ReasonValidationUnknown, fmt.Sprintf(errValidationUnknown, err))
-			SetExternalSecretCondition(store, *cond, gaugeVecGetter)
-			recorder.Event(store, v1.EventTypeWarning, esapi.ReasonValidationUnknown, err.Error())
-			return validationUnknownError
-		}
-		cond := NewSecretStoreCondition(esapi.SecretStoreReady, v1.ConditionFalse, esapi.ReasonInvalidProviderConfig, fmt.Sprintf(errUnableValidateStore, err))
-=======
 			cond := NewSecretStoreCondition(esapi.SecretStoreReady, v1.ConditionTrue, esapi.ReasonValidationUnknown, errValidationUnknownMsg)
 			SetExternalSecretCondition(store, *cond, gaugeVecGetter)
 			recorder.Event(store, v1.EventTypeWarning, esapi.ReasonValidationUnknown, err.Error())
 			return errValidationUnknown
 		}
 		cond := NewSecretStoreCondition(esapi.SecretStoreReady, v1.ConditionFalse, esapi.ReasonInvalidProviderConfig, errUnableValidateStore)
->>>>>>> upstream/main
 		SetExternalSecretCondition(store, *cond, gaugeVecGetter)
 		recorder.Event(store, v1.EventTypeWarning, esapi.ReasonInvalidProviderConfig, err.Error())
 		return fmt.Errorf(errValidationFailed, err)

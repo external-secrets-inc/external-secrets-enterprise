@@ -16,14 +16,11 @@ limitations under the License.
 
 package v1alpha1
 
-<<<<<<< HEAD
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-=======
 // ControllerClassResource defines a resource that can be assigned to a specific controller class.
->>>>>>> upstream/main
 type ControllerClassResource struct {
 	Spec struct {
 		ControllerClass string `json:"controller"`
@@ -31,10 +28,13 @@ type ControllerClassResource struct {
 }
 
 const (
+	// IdleCleanupPolicy indicates that secrets should be cleaned up when idle.
 	IdleCleanupPolicy  = "idle"
+	// RetainLatestPolicy indicates that only the latest secret should be retained.
 	RetainLatestPolicy = "retainLatest"
 )
 
+// CleanupPolicy defines the cleanup policy for generated secrets.
 type CleanupPolicy struct {
 	// Type of the cleanup policy. Supported values: "idle", "retainLatest".
 	// idle: delete the secret if it has not been used for a while

@@ -1,6 +1,8 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
-package util
+
+// Package util provides utility functions for secret and token retrieval.
+package util //nolint:revive,nolintlint
 
 import (
 	"context"
@@ -12,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// getSecret retrieves a Kubernetes Secret.
+// GetSecret retrieves a Kubernetes Secret.
 func GetSecret(ctx context.Context, k8sClient client.Client, name, namespace string, logger logr.Logger) (*corev1.Secret, error) {
 	logger.Info("Retrieving Kubernetes Secret", "SecretName", name, "Namespace", namespace)
 	secret := &corev1.Secret{}

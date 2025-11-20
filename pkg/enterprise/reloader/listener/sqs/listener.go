@@ -2,6 +2,7 @@
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package sqs implements AWS SQS listener.
 package sqs
 
 import (
@@ -23,17 +24,20 @@ const (
 	AuthMethodIRSA   = "irsa"
 )
 
+// SecretMessage represents an AWS Secrets Manager event message.
 type SecretMessage struct {
 	Detail SecretMessageDetail `json:"detail"`
 }
 
+// SecretMessageDetail contains the details of a secret event.
 type SecretMessageDetail struct {
 	EventTime         string            `json:"eventTime"`
 	RequestParameters RequestParameters `json:"requestParameters"`
 }
 
+// RequestParameters contains the request parameters from the event.
 type RequestParameters struct {
-	SecretId string `json:"secretId"`
+	SecretID string `json:"secretId"`
 }
 
 // AWSSQSListener handles AWS SQS notifications.
@@ -112,9 +116,9 @@ func parseEvent(jsonData []byte) (*events.SecretRotationEvent, error) {
 	}
 
 	secretEvent := &events.SecretRotationEvent{
-		SecretIdentifier:  event.Detail.RequestParameters.SecretId,
+		SecretIdentifier:  event.Detail.RequestParameters.SecretID,
 		RotationTimestamp: event.Detail.EventTime,
-		TriggerSource:     schema.AWS_SQS,
+		TriggerSource:     schema.AWSSQS,
 	}
 
 	return secretEvent, nil

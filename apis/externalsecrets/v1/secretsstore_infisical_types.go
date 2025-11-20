@@ -106,12 +106,9 @@ type TokenAuthCredentials struct {
 	AccessToken esmeta.SecretKeySelector `json:"accessToken"`
 }
 
-<<<<<<< HEAD
+// InfisicalAuth defines authentication methods for Infisical.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
-=======
-// InfisicalAuth specifies the authentication configuration for Infisical.
->>>>>>> upstream/main
 type InfisicalAuth struct {
 	// +optional
 	UniversalAuthCredentials *UniversalAuthCredentials `json:"universalAuthCredentials,omitempty"`

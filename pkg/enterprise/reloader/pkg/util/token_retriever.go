@@ -1,6 +1,8 @@
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
-package util
+
+// Package util provides utility functions for secret and token retrieval.
+package util //nolint:revive,nolintlint
 
 import (
 	"context"
@@ -14,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// TokenRetriever retrieves service account tokens.
 type TokenRetriever struct {
 	k8sClient               client.Client
 	serviceAccountName      string
@@ -22,6 +25,7 @@ type TokenRetriever struct {
 	logger                  logr.Logger
 }
 
+// NewTokenRetriever creates a new TokenRetriever.
 func NewTokenRetriever(k8sClient client.Client, logger logr.Logger, serviceAccountName, serviceAccountNamespace string) *TokenRetriever {
 	return &TokenRetriever{
 		k8sClient:               k8sClient,
@@ -32,6 +36,7 @@ func NewTokenRetriever(k8sClient client.Client, logger logr.Logger, serviceAccou
 	}
 }
 
+// GetServiceAccountToken retrieves a service account token.
 func (tr *TokenRetriever) GetServiceAccountToken() ([]byte, error) {
 	tr.logger.Info("Attempting to retrieve service account token",
 		"ServiceAccount", tr.serviceAccountName,
@@ -69,6 +74,7 @@ func (tr *TokenRetriever) GetServiceAccountToken() ([]byte, error) {
 	return []byte(tokenRequest.Status.Token), nil
 }
 
+// GetIdentityToken retrieves an identity token.
 func (tr *TokenRetriever) GetIdentityToken() ([]byte, error) {
 	tr.logger.Info("Attempting to retrieve identity token")
 

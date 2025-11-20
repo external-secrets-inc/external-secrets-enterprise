@@ -12,6 +12,7 @@
 // limitations under the License.
 // */
 
+// Package main generates generic generator implementations.
 package main
 
 import (

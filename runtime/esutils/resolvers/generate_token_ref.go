@@ -26,6 +26,7 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
+// GenerateToken generates a token for the given service account.
 func GenerateToken(
 	ctx context.Context,
 	corev1Client typedcorev1.CoreV1Interface,

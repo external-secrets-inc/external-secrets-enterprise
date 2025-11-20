@@ -36,12 +36,8 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 
 	// Loading registered providers.
-<<<<<<< HEAD
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
-=======
 	_ "github.com/external-secrets/external-secrets/pkg/register"
->>>>>>> upstream/main
 )
 
 // ClusterStoreReconciler reconciles a SecretStore object.
@@ -78,11 +74,7 @@ func (r *ClusterStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-<<<<<<< HEAD
-	return Reconcile(ctx, req, &css, r.Client, log, Opts{
-=======
-	return reconcile(ctx, req, &css, r.Client, r.PushSecretEnabled, log, Opts{
->>>>>>> upstream/main
+	return Reconcile(ctx, req, &css, r.Client, r.PushSecretEnabled, log, Opts{
 		ControllerClass: r.ControllerClass,
 		GaugeVecGetter:  cssmetrics.GetGaugeVec,
 		Recorder:        r.recorder,

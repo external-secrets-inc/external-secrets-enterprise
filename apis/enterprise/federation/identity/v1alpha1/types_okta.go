@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// OktaFederationSpec defines the specification for Okta federation.
 type OktaFederationSpec struct {
 	// Domain is the Okta organization domain (e.g., "https://dev-12345.okta.com" or custom domain)
 	// +required
@@ -57,6 +58,7 @@ type SecretKeySelector struct {
 	Key string `json:"key"`
 }
 
+// OktaFederation represents an Okta federation configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status

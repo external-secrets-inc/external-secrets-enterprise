@@ -47,14 +47,17 @@ func (g *Generator) Cleanup(_ context.Context, _ *apiextensions.JSON, _ genv1alp
 	return nil
 }
 
-func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
+// GetCleanupPolicy returns the cleanup policy for the generator.
+func (g *Generator) GetCleanupPolicy(_ *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
 	return nil, nil
 }
 
-func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
+// LastActivityTime returns the last activity time for the generator.
+func (g *Generator) LastActivityTime(_ context.Context, _ *apiextensions.JSON, _ genv1alpha1.GeneratorProviderState, _ client.Client, _ string) (time.Time, bool, error) {
 	return time.Time{}, false, nil
 }
 
+// GetKeys returns the keys for the generator.
 func (g *Generator) GetKeys() map[string]string {
 	return map[string]string{
 		"uuid": "Generated UUID (Universally Unique Identifier) in string format",
@@ -76,12 +79,6 @@ func generateUUID() (string, error) {
 	return uuid.String(), nil
 }
 
-<<<<<<< HEAD:pkg/generator/uuid/uuid.go
-func init() {
-	genv1alpha1.Register(genv1alpha1.UUIDKind, &Generator{})
-	genv1alpha1.RegisterGeneric(genv1alpha1.UUIDKind, &genv1alpha1.UUID{})
-=======
-
 // NewGenerator creates a new Generator instance.
 func NewGenerator() genv1alpha1.Generator {
 	return &Generator{}
@@ -90,5 +87,4 @@ func NewGenerator() genv1alpha1.Generator {
 // Kind returns the generator kind.
 func Kind() string {
 	return string(genv1alpha1.GeneratorKindUUID)
->>>>>>> upstream/main:generators/v1/uuid/uuid.go
 }

@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+// Package federation implements federation controllers.
 package federation
 
 import (
@@ -31,12 +33,14 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
 
+// OktaFederationController reconciles OktaFederation resources.
 type OktaFederationController struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
+// Reconcile reconciles an OktaFederation resource.
 func (c *OktaFederationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	okta := &idfedv1alpha1.OktaFederation{}
 	if err := c.Get(ctx, req.NamespacedName, okta); err != nil {

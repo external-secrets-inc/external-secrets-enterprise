@@ -146,12 +146,6 @@ build-%: generate ## Build binary for the specified arch
 		go build -tags $(PROVIDER) -o '$(OUTPUT_DIR)/external-secrets-linux-$*' main.go
 	@$(OK) go build $*
 
-<<<<<<< HEAD
-lint: golangci-lint ## Run golangci-lint
-	@if ! $(GOLANGCI_LINT) run --timeout=15m; then \
-		echo -e "\033[0;33mgolangci-lint failed: some checks can be fixed with \`\033[0;32mmake fmt\033[0m\033[0;33m\`\033[0m"; \
-		exit 1; \
-=======
 lint: golangci-lint ## Run golangci-lint (set LINT_TARGET to run on specific module)
 	@if [ -n "$(LINT_TARGET)" ]; then \
 		$(INFO) Running golangci-lint on $(LINT_TARGET); \
@@ -170,7 +164,6 @@ lint: golangci-lint ## Run golangci-lint (set LINT_TARGET to run on specific mod
 			exit 1; \
 		fi; \
 		$(OK) Finished linting; \
->>>>>>> upstream/main
 	fi
 
 fmt: golangci-lint ## Ensure consistent code style (set LINT_TARGET to run on specific module)
@@ -243,26 +236,6 @@ helm.build: helm.generate ## Build helm chart
 	@mv $(OUTPUT_DIR)/chart/external-secrets-$(HELM_VERSION).tgz $(OUTPUT_DIR)/chart/external-secrets.tgz
 	@$(OK) helm package
 
-<<<<<<< HEAD
-HELM_SCHEMA_NAME := schema
-HELM_SCHEMA_VER  := 2.2.1
-HELM_SCHEMA_URL  := https://github.com/losisin/helm-values-schema-json.git
-
-helm.schema.plugin:
-	@v=$$(helm plugin list | awk '$$1=="$(HELM_SCHEMA_NAME)"{print $$2}'); \
-	if [ -z "$$v" ]; then \
-		$(INFO) "Installing $(HELM_SCHEMA_NAME) v$(HELM_SCHEMA_VER)"; \
-		helm plugin install --version $(HELM_SCHEMA_VER) $(HELM_SCHEMA_URL); \
-		$(OK) "Installed $(HELM_SCHEMA_NAME) v$(HELM_SCHEMA_VER)"; \
-	elif [ "$$v" != "$(HELM_SCHEMA_VER)" ]; then \
-		$(INFO) "Found $(HELM_SCHEMA_NAME) $$v. Reinstalling v$(HELM_SCHEMA_VER)"; \
-		helm plugin remove $(HELM_SCHEMA_NAME); \
-		helm plugin install --version $(HELM_SCHEMA_VER) $(HELM_SCHEMA_URL); \
-		$(OK) "Reinstalled $(HELM_SCHEMA_NAME) v$(HELM_SCHEMA_VER)"; \
-	else \
-		$(OK) "$(HELM_SCHEMA_NAME) already at v$(HELM_SCHEMA_VER)"; \
-	fi
-=======
 # install_helm_plugin is for installing the provided plugin, if it doesn't exist
 # $1 - plugin name
 # $2 - plugin version
@@ -294,7 +267,6 @@ HELM_UNITTEST_PLUGIN_VER := 1.0.0
 HELM_UNITTEST_PLUGIN_URL := https://github.com/helm-unittest/helm-unittest.git
 helm.unittest.plugin:
 	$(call install_helm_plugin,$(HELM_UNITTEST_PLUGIN_NAME),$(HELM_UNITTEST_PLUGIN_VER), $(HELM_UNITTEST_PLUGIN_URL))
->>>>>>> upstream/main
 
 helm.schema.update: helm.schema.plugin
 	@$(INFO) Generating values.schema.json
@@ -470,13 +442,8 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 LINT_TARGET ?= ""
 ## Tool Versions
-<<<<<<< HEAD
-GOLANGCI_VERSION := 2.5.0
-KUBERNETES_VERSION := 1.30.x
-=======
 GOLANGCI_VERSION := 2.4.0
 KUBERNETES_VERSION := 1.33.x
->>>>>>> upstream/main
 TILT_VERSION := 0.33.21
 CTY_VERSION := 1.1.3
 

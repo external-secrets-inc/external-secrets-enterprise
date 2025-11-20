@@ -30,7 +30,7 @@ const (
 	errConfigMapKeyFmt  = "cannot find configmap data for key: %q"
 )
 
-// SecretKeyRef resolves a metav1.SecretKeySelector and returns the value of the secret it points to.
+// ConfigMapKeyRef resolves a metav1.SecretKeySelector and returns the value of the secret it points to.
 // A user must pass the namespace of the originating ExternalSecret, as this may differ
 // from the namespace defined in the SecretKeySelector.
 // This func ensures that only a ClusterSecretStore is able to request secrets across namespaces.

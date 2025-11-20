@@ -1,6 +1,7 @@
 // Copyright External Secrets Inc. 2025
 // All rights reserved
 
+// Package targets provides helper functions for target providers.
 package targets
 
 import (
@@ -21,6 +22,7 @@ import (
 
 const maxHistoryPerLocation = 20
 
+// UpdateTargetPushIndex updates the push index for a target.
 func UpdateTargetPushIndex(
 	ctx context.Context,
 	objKind string,
@@ -82,6 +84,7 @@ func UpdateTargetPushIndex(
 	})
 }
 
+// Hash computes the SHA-512 hash of a value.
 func Hash(value []byte) string {
 	hash := sha512.Sum512(value)
 	return hex.EncodeToString(hash[:])

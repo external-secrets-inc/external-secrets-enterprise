@@ -86,6 +86,7 @@ func New(ctx context.Context, client client.Client, scheme *runtime.Scheme, name
 	}
 }
 
+// GetDefaultCleanupPolicy returns the default cleanup policy for the state manager.
 func GetDefaultCleanupPolicy() *genapi.CleanupPolicy {
 	return &genapi.CleanupPolicy{
 		Type: genapi.RetainLatestPolicy,
@@ -95,6 +96,7 @@ func GetDefaultCleanupPolicy() *genapi.CleanupPolicy {
 	}
 }
 
+// SetCleanupPolicy sets the cleanup policy for the state manager.
 func (m *Manager) SetCleanupPolicy(cleanupPolicy *genapi.CleanupPolicy) {
 	if cleanupPolicy == nil {
 		cleanupPolicy = GetDefaultCleanupPolicy()
@@ -141,6 +143,7 @@ func (m *Manager) EnqueueFlagLatestStateForGC(stateKey string) {
 	})
 }
 
+// EnqueueCreateState enqueues a new state to be created.
 func (m *Manager) EnqueueCreateState(stateKey, namespace string, resource *apiextensions.JSON, gen genapi.Generator, state genapi.GeneratorProviderState) {
 	if state == nil {
 		return
@@ -235,7 +238,6 @@ func (m *Manager) disposeState(key string, gcGracePeriod time.Duration) error {
 	return errors.Join(errs...)
 }
 
-<<<<<<< HEAD:pkg/generator/statemanager/statemanager.go
 func (m *Manager) getGCGracePeriod() time.Duration {
 	if m.cleanupPolicy == nil {
 		return defaultGCGracePeriod
@@ -244,10 +246,7 @@ func (m *Manager) getGCGracePeriod() time.Duration {
 	return m.cleanupPolicy.GracePeriod.Duration
 }
 
-// GetLatest returns the latest state for the given key.
-=======
 // GetAllStates retrieves all the stored states for the given key.
->>>>>>> upstream/main:runtime/statemanager/statemanager.go
 func (m *Manager) GetAllStates(key string) ([]genapi.GeneratorState, error) {
 	var stateList genapi.GeneratorStateList
 	if err := m.client.List(m.ctx, &stateList, &client.MatchingLabels{

@@ -29,12 +29,8 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/template"
 
-<<<<<<< HEAD
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register" // Loading registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
-=======
-	_ "github.com/external-secrets/external-secrets/pkg/register" // Loading registered providers.
->>>>>>> upstream/main
+	_ "github.com/external-secrets/external-secrets/pkg/register"                     // Loading registered providers.
 )
 
 // ApplyTemplate merges templates in the following order:
@@ -148,13 +144,8 @@ func setMetadata(secret *v1.Secret, es *esv1.ExternalSecret) error {
 	}
 
 	// copy labels and annotations from the template
-<<<<<<< HEAD
-	utils.MergeStringMap(secret.ObjectMeta.Labels, es.Spec.Target.Template.Metadata.Labels)
-	utils.MergeStringMap(secret.ObjectMeta.Annotations, es.Spec.Target.Template.Metadata.Annotations)
-=======
 	esutils.MergeStringMap(secret.ObjectMeta.Labels, es.Spec.Target.Template.Metadata.Labels)
 	esutils.MergeStringMap(secret.ObjectMeta.Annotations, es.Spec.Target.Template.Metadata.Annotations)
->>>>>>> upstream/main
 
 	// add finalizers from the template
 	if secret.ObjectMeta.DeletionTimestamp.IsZero() {

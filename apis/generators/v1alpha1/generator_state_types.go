@@ -63,15 +63,14 @@ type GeneratorStateSpec struct {
 type GeneratorStateConditionType string
 
 const (
-<<<<<<< HEAD
-	GeneratorStateReady             GeneratorStateConditionType = "Ready"
-	GeneratorStateDeletionScheduled GeneratorStateConditionType = "Deletion Scheduled"
-	GeneratorStatePendingDeletion   GeneratorStateConditionType = "Pending Deletion"
-	GeneratorStateTerminating       GeneratorStateConditionType = "Terminating"
-=======
 	// GeneratorStateReady indicates the generator state is ready and available.
 	GeneratorStateReady GeneratorStateConditionType = "Ready"
->>>>>>> upstream/main
+	// GeneratorStateDeletionScheduled indicates the generator state is scheduled for deletion.
+	GeneratorStateDeletionScheduled GeneratorStateConditionType = "Deletion Scheduled"
+	// GeneratorStatePendingDeletion indicates the generator state is pending deletion.
+	GeneratorStatePendingDeletion GeneratorStateConditionType = "Pending Deletion"
+	// GeneratorStateTerminating indicates the generator state is terminating.
+	GeneratorStateTerminating GeneratorStateConditionType = "Terminating"
 )
 
 // GeneratorStateStatusCondition represents the observed condition of a generator state.
@@ -90,18 +89,16 @@ type GeneratorStateStatusCondition struct {
 }
 
 const (
-<<<<<<< HEAD
-	ConditionReasonCreated                 = "Created"
-	ConditionReasonError                   = "Error"
-	ConditionReasonStillActive             = "Still Active"
-	ConditionReasonGarbageCollectionSetted = "Garbage Collection Setted"
-	ConditionReasonDeadlineReached         = "Garbage Collection deadline reached"
-=======
 	// ConditionReasonCreated indicates the generator state was successfully created.
 	ConditionReasonCreated = "Created"
 	// ConditionReasonError indicates an error occurred with the generator state.
 	ConditionReasonError = "Error"
->>>>>>> upstream/main
+	// ConditionReasonStillActive indicates the generator state is still active.
+	ConditionReasonStillActive = "Still Active"
+	// ConditionReasonGarbageCollectionSetted indicates the generator state is scheduled for garbage collection.
+	ConditionReasonGarbageCollectionSetted = "Garbage Collection Setted"
+	// ConditionReasonDeadlineReached indicates the generator state's garbage collection deadline was reached.
+	ConditionReasonDeadlineReached = "Garbage Collection deadline reached"
 )
 
 // GeneratorStateStatus defines the observed state of a generator state resource.

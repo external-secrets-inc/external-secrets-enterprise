@@ -18,6 +18,7 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
+// ExternalSecretsProvider configures the External Secrets Enterprise provider.
 type ExternalSecretsProvider struct {
 	// URL For the External Secrets Enterprise Server.
 	// +required
@@ -30,6 +31,7 @@ type ExternalSecretsProvider struct {
 	Target ExternalSecretsTarget `json:"target"`
 }
 
+// ExternalSecretsTarget specifies the target for External Secrets Enterprise operations.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type ExternalSecretsTarget struct {
@@ -37,6 +39,7 @@ type ExternalSecretsTarget struct {
 	ClusterSecretStoreName *string `json:"clusterSecretStoreName,omitempty"`
 }
 
+// ExternalSecretsServer defines the server configuration for External Secrets Enterprise.
 type ExternalSecretsServer struct {
 	// +optional
 	CaRef *ExternalSecretsCARef `json:"caRef,omitempty"`
@@ -44,17 +47,20 @@ type ExternalSecretsServer struct {
 	URL string `json:"url,omitempty"`
 }
 
+// ExternalSecretsAuth defines authentication methods for External Secrets Enterprise.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type ExternalSecretsAuth struct {
 	Kubernetes *ExternalSecretsKubernetesAuth `json:"kubernetes,omitempty"`
 }
 
+// ExternalSecretsKubernetesAuth defines Kubernetes-based authentication for External Secrets Enterprise.
 type ExternalSecretsKubernetesAuth struct {
 	ServiceAccountRef esmeta.ServiceAccountSelector `json:"serviceAccountRef,omitempty"`
 	CaCertRef         ExternalSecretsCARef          `json:"caCertRef,omitempty"`
 }
 
+// ExternalSecretsCARef defines a reference to a CA certificate.
 type ExternalSecretsCARef struct {
 	Bundle       []byte                    `json:"bundle,omitempty"`
 	SecretRef    *esmeta.SecretKeySelector `json:"secretRef,omitempty"`

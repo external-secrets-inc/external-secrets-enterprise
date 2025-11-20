@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ConsumerKey uniquely identifies a consumer.
 type ConsumerKey struct {
 	TargetNS string
 	Target   string
@@ -32,12 +33,14 @@ type ConsumerMemorySet struct {
 	accums map[ConsumerKey]*consumerAccum
 }
 
+// NewConsumerMemorySet creates a new consumer memory set.
 func NewConsumerMemorySet() *ConsumerMemorySet {
 	return &ConsumerMemorySet{
 		accums: make(map[ConsumerKey]*consumerAccum),
 	}
 }
 
+// Add adds a consumer finding to the memory set.
 func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f scanv1alpha1.ConsumerFinding) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
@@ -86,6 +89,7 @@ func (cs *ConsumerMemorySet) Add(target v1alpha1.TargetReference, f scanv1alpha1
 	}
 }
 
+// List returns all consumers in the memory set.
 func (cs *ConsumerMemorySet) List() []v1alpha1.Consumer {
 	cs.mu.RLock()
 	defer cs.mu.RUnlock()

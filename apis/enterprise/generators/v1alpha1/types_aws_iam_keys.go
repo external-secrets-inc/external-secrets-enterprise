@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// IAMKeysSpec defines the specification for IAM key generation.
 type IAMKeysSpec struct {
 	// Region specifies the region to operate in.
 	Region string `json:"region"`
@@ -23,12 +24,13 @@ type IAMKeysSpec struct {
 	IAMRef IAMRef `json:"iamRef"`
 }
 
+// IAMRef defines a reference to an IAM user.
 type IAMRef struct {
 	Username string `json:"username"`
 	MaxKeys  int    `json:"maxKeys"`
 }
 
-// IAMKeys uses the CreateAccessKey API to retrieve an
+// AWSIAMKey uses the CreateAccessKey API to retrieve an
 // access key. It also rotates the key by making sure only X keys exist on a given user.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
@@ -45,7 +47,7 @@ type AWSIAMKey struct {
 
 // +kubebuilder:object:root=true
 
-// IAMKeyList contains a list of IAMKeys resources.
+// AWSIAMKeyList contains a list of AWSIAMKey resources.
 type AWSIAMKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

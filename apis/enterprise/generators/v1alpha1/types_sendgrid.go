@@ -21,6 +21,7 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
+// SendgridTokenSpec contains the specification for the Sendgrid API token.
 type SendgridTokenSpec struct {
 	// +kubebuilder:default=global
 	DataResidency string       `json:"dataResidency,omitempty"`
@@ -28,10 +29,12 @@ type SendgridTokenSpec struct {
 	Auth          SendgridAuth `json:"auth,omitempty"`
 }
 
+// SendgridAuth contains the authentication information for the Sendgrid API.
 type SendgridAuth struct {
 	SecretRef *SendgridAuthSecretRef `json:"secretRef,omitempty"`
 }
 
+// SendgridAuthSecretRef contains a reference to a secret key selector.
 type SendgridAuthSecretRef struct {
 	APIKey esmeta.SecretKeySelector `json:"apiKeySecretRef,omitempty"`
 }
@@ -50,6 +53,7 @@ type SendgridAuthorizationToken struct {
 	Status genv1alpha1.GeneratorStatus `json:"status,omitempty"`
 }
 
+// SendgridAuthorizationTokenList contains a list of SendgridAuthorizationToken resources.
 // +kubebuilder:object:root=true
 type SendgridAuthorizationTokenList struct {
 	metav1.TypeMeta `json:",inline"`

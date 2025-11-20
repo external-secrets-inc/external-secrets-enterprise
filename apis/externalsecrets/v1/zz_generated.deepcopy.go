@@ -3411,11 +3411,11 @@ func (in *SecretStoreProvider) DeepCopyInto(out *SecretStoreProvider) {
 		*out = new(CloudruSMProvider)
 		(*in).DeepCopyInto(*out)
 	}
-<<<<<<< HEAD
 	if in.ExternalSecrets != nil {
 		in, out := &in.ExternalSecrets, &out.ExternalSecrets
 		*out = new(externalsecretsv1.ExternalSecretsProvider)
-=======
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Volcengine != nil {
 		in, out := &in.Volcengine, &out.Volcengine
 		*out = new(VolcengineProvider)
@@ -3424,7 +3424,6 @@ func (in *SecretStoreProvider) DeepCopyInto(out *SecretStoreProvider) {
 	if in.Ngrok != nil {
 		in, out := &in.Ngrok, &out.Ngrok
 		*out = new(NgrokProvider)
->>>>>>> upstream/main
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -4403,14 +4402,11 @@ func (in *YandexCertificateManagerProvider) DeepCopyInto(out *YandexCertificateM
 	if in.CAProvider != nil {
 		in, out := &in.CAProvider, &out.CAProvider
 		*out = new(YandexCAProvider)
-<<<<<<< HEAD
-=======
 		(*in).DeepCopyInto(*out)
 	}
 	if in.FetchingPolicy != nil {
 		in, out := &in.FetchingPolicy, &out.FetchingPolicy
 		*out = new(FetchingPolicy)
->>>>>>> upstream/main
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -4432,14 +4428,11 @@ func (in *YandexLockboxProvider) DeepCopyInto(out *YandexLockboxProvider) {
 	if in.CAProvider != nil {
 		in, out := &in.CAProvider, &out.CAProvider
 		*out = new(YandexCAProvider)
-<<<<<<< HEAD
-=======
 		(*in).DeepCopyInto(*out)
 	}
 	if in.FetchingPolicy != nil {
 		in, out := &in.FetchingPolicy, &out.FetchingPolicy
 		*out = new(FetchingPolicy)
->>>>>>> upstream/main
 		(*in).DeepCopyInto(*out)
 	}
 }

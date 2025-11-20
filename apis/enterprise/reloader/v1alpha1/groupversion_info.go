@@ -1,8 +1,6 @@
-// Copyright External Secrets Inc. 2025
-// All Rights Reserved
-
 // Package v1alpha1 contains API Schema definitions for the reloader v1alpha1 API group
-
+// Copyright External Secrets Inc. 2025
+// All rights reserved
 // +kubebuilder:object:generate=true
 // +groupName=reloader.enterprise.external-secrets.io
 package v1alpha1

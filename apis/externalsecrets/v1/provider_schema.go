@@ -30,6 +30,7 @@ func init() {
 	builder = make(map[string]Provider)
 }
 
+// RegisterByKind registers a provider by kind with its maintenance status.
 func RegisterByKind(s Provider, kind string, maintenanceStatus MaintenanceStatus) {
 	RegisterMaintenanceStatusByKind(maintenanceStatus, kind)
 	buildlock.Lock()

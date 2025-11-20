@@ -1,6 +1,8 @@
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package workflow implements workflow controllers.
 package workflow
 
 import (
@@ -25,8 +27,8 @@ import (
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
 )
 
-// WorkflowRunReconciler reconciles a WorkflowRun object.
-type WorkflowRunReconciler struct {
+// RunReconciler reconciles a WorkflowRun object.
+type RunReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
@@ -39,7 +41,7 @@ type WorkflowRunReconciler struct {
 //+kubebuilder:rbac:groups=workflows.external-secrets.io,resources=workflows,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile handles WorkflowRun resources.
-func (r *WorkflowRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *RunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("workflowrun", req.NamespacedName)
 
 	// Fetch the WorkflowRun instance
@@ -147,7 +149,7 @@ func (r *WorkflowRunReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 // checkWorkflowStatus checks the status of the created workflow and updates the WorkflowRun status accordingly.
-func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *workflows.WorkflowRun) (ctrl.Result, error) {
+func (r *RunReconciler) checkWorkflowStatus(ctx context.Context, run *workflows.WorkflowRun) (ctrl.Result, error) {
 	log := r.Log.WithValues("workflowrun", types.NamespacedName{Name: run.Name, Namespace: run.Namespace})
 
 	// Fetch the workflow
@@ -305,7 +307,7 @@ func (r *WorkflowRunReconciler) checkWorkflowStatus(ctx context.Context, run *wo
 }
 
 // resolveWorkflowFromTemplate creates a new Workflow from a WorkflowTemplate and WorkflowRun.
-func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(ctx context.Context, template *workflows.WorkflowTemplate, run *workflows.WorkflowRun) (*workflows.Workflow, error) {
+func (r *RunReconciler) resolveWorkflowFromTemplate(ctx context.Context, template *workflows.WorkflowTemplate, run *workflows.WorkflowRun) (*workflows.Workflow, error) {
 	// Create a new workflow
 	workflow := &workflows.Workflow{
 		ObjectMeta: metav1.ObjectMeta{
@@ -376,7 +378,7 @@ func (r *WorkflowRunReconciler) resolveWorkflowFromTemplate(ctx context.Context,
 	return workflow, nil
 }
 
-func (r *WorkflowRunReconciler) parseCustomTypes(ctx context.Context, namespace string, param workflows.Parameter, value interface{}) (interface{}, error) {
+func (r *RunReconciler) parseCustomTypes(ctx context.Context, namespace string, param workflows.Parameter, value interface{}) (interface{}, error) {
 	if param.Type == workflows.ParameterTypeFinding {
 		findingValue, err := param.ToFindingParameterType(value)
 		if err != nil {
@@ -439,7 +441,7 @@ func (r *WorkflowRunReconciler) parseCustomTypes(ctx context.Context, namespace 
 	return value, nil
 }
 
-func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Context, resourceNamespace string, param workflows.Parameter, findingValue *workflows.FindingParameterType) ([]scanv1alpha1.SecretInStoreRef, error) {
+func (r *RunReconciler) getLocationsArrayFromFindingParam(ctx context.Context, resourceNamespace string, param workflows.Parameter, findingValue *workflows.FindingParameterType) ([]scanv1alpha1.SecretInStoreRef, error) {
 	if param.ResourceConstraints != nil && param.ResourceConstraints.Namespace != "" {
 		resourceNamespace = param.ResourceConstraints.Namespace
 	}
@@ -458,7 +460,7 @@ func (r *WorkflowRunReconciler) getLocationsArrayFromFindingParam(ctx context.Co
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *WorkflowRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&workflows.WorkflowRun{}).
 		Owns(&workflows.Workflow{}).
