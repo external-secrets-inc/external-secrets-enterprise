@@ -20,8 +20,8 @@
 package job
 
 import (
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

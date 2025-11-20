@@ -46,7 +46,6 @@ var (
 )
 
 func init() {
-	SchemeBuilder.Register(&VirtualMachine{}, &VirtualMachineList{})
 	SchemeBuilder.Register(&GithubRepository{}, &GithubRepositoryList{})
 	SchemeBuilder.Register(&KubernetesCluster{}, &KubernetesClusterList{})
 }

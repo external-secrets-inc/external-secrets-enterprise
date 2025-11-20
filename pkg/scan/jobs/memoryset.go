@@ -27,17 +27,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	"github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 )
 
 const (
 	// Threshold is the default threshold for secret detection.
-	Threshold    = 9
+	Threshold = 9
 	// GoodRegexes is the number of good regexes to generate.
 	GoodRegexes = 10
 	// BadRegexes is the number of bad regexes to generate.
-	BadRegexes  = 5
+	BadRegexes   = 5
 	charsPerRune = 7
 )
 

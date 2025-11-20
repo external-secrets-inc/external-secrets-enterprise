@@ -35,7 +35,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 	workflows "github.com/external-secrets/external-secrets/apis/workflows/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"

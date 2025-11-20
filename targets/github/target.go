@@ -42,10 +42,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 )
 
@@ -603,9 +603,4 @@ type JobNotReadyErr struct{}
 
 func (e JobNotReadyErr) Error() string {
 	return "job not ready"
-}
-
-func init() {
-	tgtv1alpha1.Register(tgtv1alpha1.GithubTargetKind, &Provider{})
-	esv1.RegisterByKind(&SecretStoreProvider{}, tgtv1alpha1.GithubTargetKind, esv1.MaintenanceStatusMaintained)
 }

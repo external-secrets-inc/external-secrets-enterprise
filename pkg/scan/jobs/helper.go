@@ -24,7 +24,7 @@ import (
 	"slices"
 	"strings"
 
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
 )
 
 // Sanitize converts a secret reference to a sanitized string.

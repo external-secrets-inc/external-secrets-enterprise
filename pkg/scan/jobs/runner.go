@@ -25,9 +25,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
+	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/scan/v1alpha1"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
 	store "github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -123,14 +123,8 @@ func (j *Runner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha
 
 	usedTargets := make([]tgtv1alpha1.GenericTarget, 0)
 	// Check All duplicates on all created targets
-	j.Logger.V(1).Info("Getting Virtual Machine Targets")
-	usedTargets, err := j.scanVirtualMachineTargets(ctx, usedTargets)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
 	j.Logger.V(1).Info("Getting Github Repository Targets")
-	usedTargets, err = j.scanGithubRepositoryTargets(ctx, secretValues, usedTargets)
+	usedTargets, err := j.scanGithubRepositoryTargets(ctx, secretValues, usedTargets)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -152,41 +146,6 @@ func (j *Runner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha
 
 	j.Logger.V(1).Info("Run Complete")
 	return findings, consumers, usedStores, usedTargets, nil
-}
-
-func (j Runner) scanVirtualMachineTargets(ctx context.Context, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
-	vmTargets := &tgtv1alpha1.VirtualMachineList{}
-	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
-		return nil, err
-	}
-	for i, target := range vmTargets.Items {
-		j.Logger.V(1).Info("Scanning target", "target", target.GetName())
-		usedTargets = append(usedTargets, &vmTargets.Items[i])
-		prov, ok := tgtv1alpha1.GetTargetByName(target.GroupVersionKind().Kind)
-		if !ok {
-			err := fmt.Errorf("target kind %q not supported", target.GetObjectKind().GroupVersionKind().Kind)
-			j.Logger.Error(err, "failed to create new client for target", "target", target.GetName())
-			continue
-		}
-		client, err := prov.NewClient(ctx, j.Client, &target)
-		if err != nil {
-			j.Logger.Error(err, "failed create new client for target", "target", target.GetName())
-			continue
-		}
-		regexMap := j.locationMemset.Regexes()
-		for key, regexes := range regexMap {
-			// TODO Fix Threshold
-			locations, err := client.ScanForSecrets(ctx, regexes, j.locationMemset.GetThreshold())
-			if err != nil {
-				j.Logger.Error(err, "failed scan target regexes", "regexes", regexes)
-				continue
-			}
-			for _, location := range locations {
-				j.locationMemset.AddByRegex(key, location)
-			}
-		}
-	}
-	return usedTargets, nil
 }
 
 func (j Runner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
@@ -249,18 +208,6 @@ func (j *Runner) attributeConsumers(ctx context.Context, findings []scanv1alpha1
 	for _, finding := range findings {
 		for _, location := range finding.Status.Locations {
 			locationsPerKindMap[location.Kind] = append(locationsPerKindMap[location.Kind], location)
-		}
-	}
-
-	// VM targets
-	vmTargets := &tgtv1alpha1.VirtualMachineList{}
-	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
-		return err
-	}
-	for _, target := range vmTargets.Items {
-		kind := target.GroupVersionKind().Kind
-		if err := j.attributeTargetConsumers(ctx, kind, target.GetName(), &target, locationsPerKindMap[kind]); err != nil {
-			j.Logger.Error(err, "failed to attribute consumers on VM target", "target", target.GetName())
 		}
 	}
 

@@ -31,9 +31,9 @@ import (
 	"strings"
 	"time"
 
-	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
-	"github.com/external-secrets/external-secrets/pkg/enterprise/targets"
+	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/targets/v1alpha1"
+	"github.com/external-secrets/external-secrets/targets"
 	"github.com/google/go-github/v74/github"
 	corev1 "k8s.io/api/core/v1"
 )
