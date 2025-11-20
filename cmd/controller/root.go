@@ -44,6 +44,7 @@ import (
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esv1alpha1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1alpha1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
+	"github.com/external-secrets/external-secrets/generators/v1/postgresql"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterexternalsecret"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterexternalsecret/cesmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/clusterpushsecret"
@@ -69,9 +70,8 @@ import (
 	workflowapi "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/api"
 	workflowcommon "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/common"
 	federationserver "github.com/external-secrets/external-secrets/pkg/enterprise/federation/server"
-	"github.com/external-secrets/external-secrets/pkg/enterprise/generator/postgresql"
-	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/runtime/feature"
+	"github.com/external-secrets/external-secrets/runtime/scheduler"
 
 	// To allow using gcp auth.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

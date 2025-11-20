@@ -53,8 +53,6 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/util/locks"
 
 	// Load registered generators.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/register"
-	// Load registered generators.
 	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 
