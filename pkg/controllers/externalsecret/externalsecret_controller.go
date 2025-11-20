@@ -59,7 +59,6 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 
 	// Loading registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
 	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 

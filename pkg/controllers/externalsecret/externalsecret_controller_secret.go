@@ -34,7 +34,6 @@ import (
 	"github.com/external-secrets/external-secrets/runtime/statemanager"
 
 	// Loading registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
 	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 

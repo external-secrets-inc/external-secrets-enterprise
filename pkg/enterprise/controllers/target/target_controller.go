@@ -41,7 +41,6 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/target/tmetrics"
 
 	// Loading registered providers.
-	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
 	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 

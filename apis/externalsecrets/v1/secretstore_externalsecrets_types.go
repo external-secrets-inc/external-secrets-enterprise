@@ -17,7 +17,7 @@
 // Copyright External Secrets Inc. 2025
 // All rights reserved.
 
-package enterprise
+package v1
 
 import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"

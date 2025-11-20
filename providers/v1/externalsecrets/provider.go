@@ -46,7 +46,6 @@ import (
 	ctrlcfg "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	esv1enterprise "github.com/external-secrets/external-secrets/apis/enterprise/externalsecrets/v1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	utils "github.com/external-secrets/external-secrets/runtime/esutils"
 	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
@@ -117,7 +116,7 @@ func (p *Provider) NewClient(ctx context.Context, store esv1.GenericStore, kube 
 
 	return ans, nil
 }
-func getCertificateBytes(ctx context.Context, kube kclient.Client, ref *esv1enterprise.ExternalSecretsCARef, storeKind, namespace string) ([]byte, error) {
+func getCertificateBytes(ctx context.Context, kube kclient.Client, ref *esv1.ExternalSecretsCARef, storeKind, namespace string) ([]byte, error) {
 	if ref.Bundle != nil {
 		return ref.Bundle, nil
 	}
@@ -138,7 +137,7 @@ func getCertificateBytes(ctx context.Context, kube kclient.Client, ref *esv1ente
 	return nil, errors.New("no cert ref found")
 }
 
-func getCertificate(ctx context.Context, kube kclient.Client, ref *esv1enterprise.ExternalSecretsCARef, storeKind, namespace string) (*x509.CertPool, error) {
+func getCertificate(ctx context.Context, kube kclient.Client, ref *esv1.ExternalSecretsCARef, storeKind, namespace string) (*x509.CertPool, error) {
 	certBytes, err := getCertificateBytes(ctx, kube, ref, storeKind, namespace)
 	if err != nil {
 		return nil, err
@@ -177,6 +176,6 @@ func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, e
 
 func init() {
 	esv1.Register(&Provider{}, &esv1.SecretStoreProvider{
-		ExternalSecrets: &esv1enterprise.ExternalSecretsProvider{},
+		ExternalSecrets: &esv1.ExternalSecretsProvider{},
 	}, esv1.MaintenanceStatusMaintained)
 }

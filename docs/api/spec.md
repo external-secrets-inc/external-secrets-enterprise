@@ -4968,6 +4968,264 @@ map[string]string
 <p>
 <p>ExternalSecretValidator implements a validating webhook for ExternalSecrets.</p>
 </p>
+<h3 id="external-secrets.io/v1.ExternalSecretsAuth">ExternalSecretsAuth
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#external-secrets.io/v1.ExternalSecretsProvider">ExternalSecretsProvider</a>)
+</p>
+<p>
+<p>ExternalSecretsAuth defines authentication methods for External Secrets Enterprise.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>kubernetes</code></br>
+<em>
+<a href="#external-secrets.io/v1.ExternalSecretsKubernetesAuth">
+ExternalSecretsKubernetesAuth
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="external-secrets.io/v1.ExternalSecretsCARef">ExternalSecretsCARef
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#external-secrets.io/v1.ExternalSecretsKubernetesAuth">ExternalSecretsKubernetesAuth</a>, 
+<a href="#external-secrets.io/v1.ExternalSecretsServer">ExternalSecretsServer</a>)
+</p>
+<p>
+<p>ExternalSecretsCARef defines a reference to a CA certificate.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>bundle</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="https://pkg.go.dev/github.com/external-secrets/external-secrets/apis/meta/v1#SecretKeySelector">
+External Secrets meta/v1.SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>configMapRef</code></br>
+<em>
+<a href="https://pkg.go.dev/github.com/external-secrets/external-secrets/apis/meta/v1#SecretKeySelector">
+External Secrets meta/v1.SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="external-secrets.io/v1.ExternalSecretsKubernetesAuth">ExternalSecretsKubernetesAuth
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#external-secrets.io/v1.ExternalSecretsAuth">ExternalSecretsAuth</a>)
+</p>
+<p>
+<p>ExternalSecretsKubernetesAuth defines Kubernetes-based authentication for External Secrets Enterprise.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>serviceAccountRef</code></br>
+<em>
+<a href="https://pkg.go.dev/github.com/external-secrets/external-secrets/apis/meta/v1#ServiceAccountSelector">
+External Secrets meta/v1.ServiceAccountSelector
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>caCertRef</code></br>
+<em>
+<a href="#external-secrets.io/v1.ExternalSecretsCARef">
+ExternalSecretsCARef
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="external-secrets.io/v1.ExternalSecretsProvider">ExternalSecretsProvider
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#external-secrets.io/v1.SecretStoreProvider">SecretStoreProvider</a>)
+</p>
+<p>
+<p>ExternalSecretsProvider configures the External Secrets Enterprise provider.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>server</code></br>
+<em>
+<a href="#external-secrets.io/v1.ExternalSecretsServer">
+ExternalSecretsServer
+</a>
+</em>
+</td>
+<td>
+<p>URL For the External Secrets Enterprise Server.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>auth</code></br>
+<em>
+<a href="#external-secrets.io/v1.ExternalSecretsAuth">
+ExternalSecretsAuth
+</a>
+</em>
+</td>
+<td>
+<p>Authentication parameters for External Secrets Enterprise</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>target</code></br>
+<em>
+<a href="#external-secrets.io/v1.ExternalSecretsTarget">
+ExternalSecretsTarget
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="external-secrets.io/v1.ExternalSecretsServer">ExternalSecretsServer
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#external-secrets.io/v1.ExternalSecretsProvider">ExternalSecretsProvider</a>)
+</p>
+<p>
+<p>ExternalSecretsServer defines the server configuration for External Secrets Enterprise.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>caRef</code></br>
+<em>
+<a href="#external-secrets.io/v1.ExternalSecretsCARef">
+ExternalSecretsCARef
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>url</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>URL For the External Secrets Enterprise Server.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="external-secrets.io/v1.ExternalSecretsTarget">ExternalSecretsTarget
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#external-secrets.io/v1.ExternalSecretsProvider">ExternalSecretsProvider</a>)
+</p>
+<p>
+<p>ExternalSecretsTarget specifies the target for External Secrets Enterprise operations.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>clusterSecretStoreName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Remote clusterSecretStore to connect. Eventually, support more fields</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="external-secrets.io/v1.FakeProvider">FakeProvider
 </h3>
 <p>
@@ -9247,7 +9505,9 @@ CloudruSMProvider
 <td>
 <code>externalsecrets</code></br>
 <em>
-External Secrets enterprise/externalsecrets/v1.ExternalSecretsProvider
+<a href="#external-secrets.io/v1.ExternalSecretsProvider">
+ExternalSecretsProvider
+</a>
 </em>
 </td>
 <td>
