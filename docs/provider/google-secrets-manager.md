@@ -81,15 +81,12 @@ Finally, you can create an `ExternalSecret` for the `demo-secret` that reference
 {% include 'gcpsm-wif-externalsecret.yaml' %}
 ```
 
-<<<<<<< HEAD
-=======
 _Note the above secretStore example uses GCP native Workload Identity. The implementation for WorkloadIdentityFederation is defined in the [WorkloadIdentityFederation API spec](https://external-secrets.io/latest/api/spec/#external-secrets.io/v1.GCPWorkloadIdentityFederation). SecretStore example for a bare metal (on-premise) cluster:_
 
 ```yaml
 {% include 'gcpsm-wif-non-native-iam-secret-store.yaml' %}
 ```
 
->>>>>>> upstream/main
 #### Linking a Kubernetes service account to a GCP service account
 
 The `SecretStore` (or `ClusterSecretStore`) references a Kubernetes service account, which is linked to a GCP service account that is authorized to access Secret Manager secrets.

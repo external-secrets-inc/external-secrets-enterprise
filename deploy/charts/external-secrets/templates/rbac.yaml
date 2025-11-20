@@ -623,8 +623,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ include "external-secrets.serviceAccountName" . }}
     namespace: {{ template "external-secrets.namespace" . }}
-<<<<<<< HEAD
 {{- end }}
-=======
-{{- end }}
->>>>>>> upstream/main

@@ -39,13 +39,6 @@ Otherwise the `latest` documentation will point to the older version. Also avoid
 
 ## Release Helm Chart
 
-<<<<<<< HEAD
-1. Update `version` and/or `appVersion` in `Chart.yaml` and run `make helm.docs helm.update.appversion helm.test.update helm.test`
-1. push to branch and open pr
-1. run `/ok-to-test-managed` commands for all cloud providers
-1. merge PR if everything is green
-1. CI picks up the new chart version and creates a new GitHub Release for it
-=======
 1. Update `version` and/or `appVersion` in `Chart.yaml` and run `make helm.docs helm.update.appversion helm.test.update docs.update test.crds.update`
 2. push to branch and open pr
 3. run `/ok-to-test-managed` commands for all cloud providers
@@ -65,4 +58,3 @@ This means that if there is anything that needs to be fixed, a new branch will n
 Also, keep an eye on `main` so nothing is merged while the chart branch is running the e2e tests. If that happens,
 the chart PR CANNOT be merged because we don't allow not up-to-date pull requests to be merged. And you can't update
 because the branch is immutable.
->>>>>>> upstream/main

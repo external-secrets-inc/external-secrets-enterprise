@@ -308,18 +308,8 @@
         "dnsPolicy": {
             "type": "string"
         },
-<<<<<<< HEAD
-        "esi-pod-webhook": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                }
-            }
-=======
         "enableHTTP2": {
             "type": "boolean"
->>>>>>> upstream/main
         },
         "extendedMetricLabels": {
             "type": "boolean"

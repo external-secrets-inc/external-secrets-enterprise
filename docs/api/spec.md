@@ -9245,24 +9245,15 @@ CloudruSMProvider
 </tr>
 <tr>
 <td>
-<<<<<<< HEAD
-<code>externalsecrets</code></br>
-<em>
-External Secrets enterprise/externalsecrets/v1.ExternalSecretsProvider
-=======
 <code>volcengine</code></br>
 <em>
 <a href="#external-secrets.io/v1.VolcengineProvider">
 VolcengineProvider
 </a>
->>>>>>> upstream/main
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<<<<<<< HEAD
-<p>ExternalSecrets configures this store to sync secrets using the ExternalSecrets provider</p>
-=======
 <p>Volcengine configures this store to sync secrets using the Volcengine provider</p>
 </td>
 </tr>
@@ -9278,7 +9269,6 @@ NgrokProvider
 <td>
 <em>(Optional)</em>
 <p>Ngrok configures this store to sync secrets using the ngrok provider.</p>
->>>>>>> upstream/main
 </td>
 </tr>
 </tbody>
@@ -10269,10 +10259,7 @@ External Secrets meta/v1.SecretKeySelector
 <a href="#external-secrets.io/v1.FakeProvider">FakeProvider</a>)
 </p>
 <p>
-<<<<<<< HEAD
-=======
 <p>ValidationResult is defined type for the number of validation results.</p>
->>>>>>> upstream/main
 </p>
 <table>
 <thead>
@@ -12189,8 +12176,6 @@ YandexCAProvider
 <p>The provider for the CA bundle to use to validate Yandex.Cloud server certificate.</p>
 </td>
 </tr>
-<<<<<<< HEAD
-=======
 <tr>
 <td>
 <code>fetching</code></br>
@@ -12205,7 +12190,6 @@ FetchingPolicy
 <p>FetchingPolicy configures the provider to interpret the <code>data.secretKey.remoteRef.key</code> field in ExternalSecret as certificate ID or certificate name</p>
 </td>
 </tr>
->>>>>>> upstream/main
 </tbody>
 </table>
 <h3 id="external-secrets.io/v1.YandexLockboxProvider">YandexLockboxProvider
