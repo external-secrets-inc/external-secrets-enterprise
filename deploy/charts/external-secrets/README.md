@@ -202,9 +202,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | serviceMonitor.relabelings | list | `[]` | Relabel configs to apply to samples before ingestion. [Relabeling](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) |
 | serviceMonitor.renderMode | string | `"skipIfMissing"` | How should we react to missing CRD "`monitoring.coreos.com/v1/ServiceMonitor`" Possible values: - `skipIfMissing`: Only render ServiceMonitor resources if CRD is present, skip if missing. - `failIfMissing`: Fail Helm install if CRD is not present. - `alwaysRender` : Always render ServiceMonitor resources, do not check for CRD. @schema enum: - skipIfMissing - failIfMissing - alwaysRender @schema |
 | serviceMonitor.scrapeTimeout | string | `"25s"` | Timeout if metrics can't be retrieved in given time interval |
-| spire-crds.enabled | bool | `false` |  |
-| spire.enabled | bool | `false` |  |
-| spire.spire-server.controllerManager.enabled | bool | `false` |  |
 | strategy | object | `{}` | Set deployment strategy |
 | systemAuthDelegator | bool | `false` | If true the system:auth-delegator ClusterRole will be added to RBAC |
 | tolerations | list | `[]` |  |
@@ -248,6 +245,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | webhook.podSecurityContext.enabled | bool | `true` |  |
 | webhook.port | int | `10250` | The port the webhook will listen to |
 | webhook.priorityClassName | string | `""` | Pod priority class name. |
+| webhook.rbac | object | `{"create":true}` | specifies rbac for webhook |
 | webhook.readinessProbe.address | string | `""` | Address for readiness probe |
 | webhook.readinessProbe.port | int | `8081` | ReadinessProbe port for kubelet |
 | webhook.replicaCount | int | `1` |  |

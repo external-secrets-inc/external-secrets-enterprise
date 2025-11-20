@@ -760,35 +760,6 @@
                 }
             }
         },
-        "spire": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "spire-server": {
-                    "type": "object",
-                    "properties": {
-                        "controllerManager": {
-                            "type": "object",
-                            "properties": {
-                                "enabled": {
-                                    "type": "boolean"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "spire-crds": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                }
-            }
-        },
         "strategy": {
             "type": "object"
         },
@@ -988,6 +959,14 @@
                 },
                 "priorityClassName": {
                     "type": "string"
+                },
+                "rbac": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "type": "boolean"
+                        }
+                    }
                 },
                 "readinessProbe": {
                     "type": "object",
