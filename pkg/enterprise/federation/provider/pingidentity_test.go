@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -169,7 +168,7 @@ func TestPingIdentityProvider_GetJWKS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock servers
 			var jwksURL string
-			jwksServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			jwksServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.mockJWKSStatus)
 				if str, ok := tt.mockJWKSResponse.(string); ok {
 					_, _ = w.Write([]byte(str))
@@ -180,7 +179,7 @@ func TestPingIdentityProvider_GetJWKS(t *testing.T) {
 			defer jwksServer.Close()
 			jwksURL = jwksServer.URL
 
-			discoveryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			discoveryServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify discovery path
 				assert.Equal(t, "/.well-known/openid-configuration", r.URL.Path)
 
@@ -226,7 +225,7 @@ func TestPingIdentityProvider_GetJWKS_Caching(t *testing.T) {
 	discoveryRequestCount := 0
 	jwksRequestCount := 0
 
-	jwksServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	jwksServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		jwksRequestCount++
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -242,7 +241,7 @@ func TestPingIdentityProvider_GetJWKS_Caching(t *testing.T) {
 	}))
 	defer jwksServer.Close()
 
-	discoveryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	discoveryServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		discoveryRequestCount++
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -283,7 +282,7 @@ func TestPingIdentityProvider_GetJWKS_Caching(t *testing.T) {
 }
 
 func TestPingIdentityProvider_GetJWKS_ContextCancellation(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate slow response
 		time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
@@ -317,7 +316,7 @@ func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
 
 	t.Run("app exists and is enabled", func(t *testing.T) {
 		// Mock token server
-		tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"access_token": "mock-access-token",
@@ -327,7 +326,7 @@ func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
 		defer tokenServer.Close()
 
 		// Mock management API server
-		managementServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		managementServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "/v1/environments/test-env-id/applications/test-app-id", r.URL.Path)
 			assert.Equal(t, "Bearer mock-access-token", r.Header.Get("Authorization"))
 
@@ -360,7 +359,7 @@ func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
 	})
 
 	t.Run("app exists but is disabled", func(t *testing.T) {
-		tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"access_token": "mock-access-token",
@@ -369,7 +368,7 @@ func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
 		}))
 		defer tokenServer.Close()
 
-		managementServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		managementServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"id":      "test-app-id",
@@ -398,7 +397,7 @@ func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
 	})
 
 	t.Run("app not found", func(t *testing.T) {
-		tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"access_token": "mock-access-token",
@@ -407,7 +406,7 @@ func TestPingIdentityProvider_CheckIdentityExists(t *testing.T) {
 		}))
 		defer tokenServer.Close()
 
-		managementServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		managementServer := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{

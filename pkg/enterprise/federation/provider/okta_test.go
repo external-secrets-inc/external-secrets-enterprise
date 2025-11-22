@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -18,27 +17,27 @@ import (
 
 func TestNewOktaProvider(t *testing.T) {
 	tests := []struct {
-		name              string
-		domain            string
-		authServerID      string
+		name               string
+		domain             string
+		authServerID       string
 		expectedAuthServer string
 	}{
 		{
-			name:              "with custom auth server",
-			domain:            "https://dev-12345.okta.com",
-			authServerID:      "custom",
+			name:               "with custom auth server",
+			domain:             "https://dev-12345.okta.com",
+			authServerID:       "custom",
 			expectedAuthServer: "custom",
 		},
 		{
-			name:              "with empty auth server defaults to default",
-			domain:            "https://dev-12345.okta.com",
-			authServerID:      "",
+			name:               "with empty auth server defaults to default",
+			domain:             "https://dev-12345.okta.com",
+			authServerID:       "",
 			expectedAuthServer: "default",
 		},
 		{
-			name:              "with default auth server",
-			domain:            "https://dev-12345.okta.com",
-			authServerID:      "default",
+			name:               "with default auth server",
+			domain:             "https://dev-12345.okta.com",
+			authServerID:       "default",
 			expectedAuthServer: "default",
 		},
 	}
@@ -151,7 +150,7 @@ func TestOktaProvider_GetJWKS(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// For "default" auth server, Okta uses org authorization server endpoint without auth server ID
 				expectedPath := "/oauth2/v1/keys"
 				if tt.authServerID != "" && tt.authServerID != "default" {
@@ -190,7 +189,7 @@ func TestOktaProvider_GetJWKS(t *testing.T) {
 func TestOktaProvider_GetJWKS_Caching(t *testing.T) {
 	requestCount := 0
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestCount++
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -234,7 +233,7 @@ func TestOktaProvider_GetJWKS_Caching(t *testing.T) {
 }
 
 func TestOktaProvider_GetJWKS_ContextCancellation(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newIPv4Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate slow response
 		time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)

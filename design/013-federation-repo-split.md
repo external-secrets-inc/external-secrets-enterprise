@@ -76,6 +76,7 @@ The enterprise distribution currently bundles the federation controllers and the
 * Added `deps.ExternalSecretAccessor` and switched the federation server to depend on it (no concrete controller imports).
 * Added federation dependency seams: `SecretStoreManagerFactory` and `GeneratorResolver` in `pkg/enterprise/federation/deps` plus `server.WithDependencies` to inject alternatives during the split.
 * Introduced `--enable-federation` flag (defaulted via `disable_federation` build tag) to disable wiring in `cmd/controller/root.go`; `make test.no-federation` runs `go test` with the tag for CI coverage.
+* CI: added `unit-tests-no-federation` job in `esi-ci.yml` to exercise the disabled build/tag path alongside normal unit tests.
 * Decision: keep the federation generator registered in core for now so ExternalSecret consumers can still call the external federation service without depending on the new repo. Re-evaluate post-bootstrap when a cross-repo generator registration hook exists.
 
 ##### Federation Dependency Inventory (owners + abstraction plan)
