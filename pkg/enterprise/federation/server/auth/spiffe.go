@@ -1,9 +1,11 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,6 +14,9 @@
 // limitations under the License.
 // */
 
+// Package auth implements the federation server authorization.
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package auth
 
 import (
@@ -24,17 +29,20 @@ import (
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 )
 
+// SpiffeAuthenticator implements Authenticator.
 type SpiffeAuthenticator struct {
 	mu sync.RWMutex
 }
 
+// NewSpiffeAuthenticator creates a new SpiffeAuthenticator.
 func NewSpiffeAuthenticator() *SpiffeAuthenticator {
 	return &SpiffeAuthenticator{
 		mu: sync.RWMutex{},
 	}
 }
 
-func (a *SpiffeAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
+// Authenticate implements Authenticator.
+func (a *SpiffeAuthenticator) Authenticate(r *http.Request) (*Info, error) {
 	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 		return nil, fmt.Errorf("no certificates in request")
 	}
@@ -49,7 +57,7 @@ func (a *SpiffeAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 		return nil, err
 	}
 
-	authInfo := &AuthInfo{
+	authInfo := &Info{
 		Method:         "spiffe",
 		Provider:       id.TrustDomain().Name(),
 		Subject:        id.String(),

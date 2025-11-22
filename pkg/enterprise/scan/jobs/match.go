@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
@@ -10,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Candidate represents a candidate match for a finding.
 type Candidate struct {
 	ID          string
 	Name        string
@@ -31,6 +48,7 @@ type JaccardParams struct {
 	MinIntersection int     // minimum number of common elements required for fallback rule
 }
 
+// Jaccard computes the Jaccard similarity between two sets.
 func Jaccard(newSet, currentSet map[string]struct{}) (intersection, union int, j float64) {
 	// Ensure we iterate over the larger set for efficiency
 	if len(newSet) < len(currentSet) {
@@ -49,6 +67,7 @@ func Jaccard(newSet, currentSet map[string]struct{}) (intersection, union int, j
 	return intersection, union, float64(intersection) / float64(union)
 }
 
+// LocationsToStringSet converts a slice of locations to a set of strings.
 func LocationsToStringSet(locations []scanv1alpha1.SecretInStoreRef) map[string]struct{} {
 	locationsSet := make(map[string]struct{}, len(locations))
 	for _, location := range locations {
@@ -57,6 +76,7 @@ func LocationsToStringSet(locations []scanv1alpha1.SecretInStoreRef) map[string]
 	return locationsSet
 }
 
+// AssignIDs assigns IDs to new findings based on similarity to current findings.
 func AssignIDs(currentFindings, newFindings []v1alpha1.Finding, params JaccardParams) []v1alpha1.Finding {
 	for i := range newFindings {
 		newLocationsSet := LocationsToStringSet(newFindings[i].Status.Locations)

@@ -1,6 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
+// Package github implements GitHub repository targets
 package github
 
 import (
@@ -29,12 +46,15 @@ import (
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 )
 
 var mu sync.Mutex
 
+// Provider implements the GitHub target provider.
 type Provider struct{}
+
+// ScanTarget wraps everything needed by scan/push logic for a GitHub repository.
 type ScanTarget struct {
 	Name          string
 	Namespace     string
@@ -55,6 +75,7 @@ const (
 	errPropertyMandatory = "property is mandatory"
 )
 
+// NewClient creates a new GitHub scan target client.
 func (p *Provider) NewClient(ctx context.Context, client client.Client, target client.Object) (tgtv1alpha1.ScanTarget, error) {
 	converted, ok := target.(*tgtv1alpha1.GithubRepository)
 	if !ok {
@@ -93,17 +114,21 @@ func (p *Provider) NewClient(ctx context.Context, client client.Client, target c
 	}, nil
 }
 
+// SecretStoreProvider implements the GitHub secret store provider.
 type SecretStoreProvider struct {
 }
 
+// Capabilities returns the capabilities of the GitHub secret store provider.
 func (p *SecretStoreProvider) Capabilities() esv1.SecretStoreCapabilities {
 	return esv1.SecretStoreWriteOnly
 }
 
+// ValidateStore validates the GitHub secret store.
 func (p *SecretStoreProvider) ValidateStore(_ esv1.GenericStore) (admission.Warnings, error) {
 	return nil, nil
 }
 
+// NewClient creates a new GitHub secrets client.
 func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericStore, client client.Client, _ string) (esv1.SecretsClient, error) {
 	converted, ok := store.(*tgtv1alpha1.GithubRepository)
 	if !ok {
@@ -142,14 +167,17 @@ func (p *SecretStoreProvider) NewClient(ctx context.Context, store esv1.GenericS
 	}, nil
 }
 
+// Lock locks the scan target.
 func (s *ScanTarget) Lock() {
 	mu.Lock()
 }
 
+// Unlock unlocks the scan target.
 func (s *ScanTarget) Unlock() {
 	mu.Unlock()
 }
 
+// ScanForSecrets scans for secrets in the GitHub repository.
 func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int) ([]scanv1alpha1.SecretInStoreRef, error) {
 	owner, repo, baseBranch := s.Owner, s.Repo, s.Branch
 
@@ -223,6 +251,7 @@ func (s *ScanTarget) ScanForSecrets(ctx context.Context, secrets []string, _ int
 	return results, nil
 }
 
+// ScanForConsumers scans for consumers of a secret in the GitHub repository.
 // Refactor to get actor based on github audit log so we can get everyone who cloned the repo as well.
 func (s *ScanTarget) ScanForConsumers(ctx context.Context, location scanv1alpha1.SecretInStoreRef, hash string) ([]scanv1alpha1.ConsumerFinding, error) {
 	owner, repo, branch := s.Owner, s.Repo, s.Branch
@@ -569,6 +598,7 @@ func firstNonEmpty(a, b string) string {
 	return b
 }
 
+// JobNotReadyErr indicates that a job is not ready yet.
 type JobNotReadyErr struct{}
 
 func (e JobNotReadyErr) Error() string {

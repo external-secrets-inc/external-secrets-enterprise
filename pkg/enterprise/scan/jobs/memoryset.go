@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
@@ -16,12 +32,16 @@ import (
 )
 
 const (
-	THRESHOLD    = 9
-	GOOD_REGEXES = 10
-	BAD_REGEXES  = 5
+	// Threshold is the default threshold for secret detection.
+	Threshold    = 9
+	// GoodRegexes is the number of good regexes to generate.
+	GoodRegexes = 10
+	// BadRegexes is the number of bad regexes to generate.
+	BadRegexes  = 5
 	charsPerRune = 7
 )
 
+// LocationMemorySet stores secret locations and their hashes.
 type LocationMemorySet struct {
 	mu          sync.RWMutex
 	entries     map[scanv1alpha1.SecretInStoreRef]string
@@ -30,6 +50,7 @@ type LocationMemorySet struct {
 	threshold   int
 }
 
+// NewLocationMemorySet creates a new location memory set.
 func NewLocationMemorySet() *LocationMemorySet {
 	return &LocationMemorySet{
 		entries:     make(map[scanv1alpha1.SecretInStoreRef]string),
@@ -37,18 +58,18 @@ func NewLocationMemorySet() *LocationMemorySet {
 		mu:          sync.RWMutex{},
 		regexMap:    make(map[string][]string),
 		// Todo flexibilize this
-		threshold: THRESHOLD,
+		threshold: Threshold,
 	}
 }
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generateRegexes(val []byte) []string {
-	regexes := make([]string, 0, GOOD_REGEXES+BAD_REGEXES)
+	regexes := make([]string, 0, GoodRegexes+BadRegexes)
 	var sb strings.Builder
 
 	// Generate regexes that are designed to match the input value
-	for i := 0; i < GOOD_REGEXES; i++ {
+	for i := 0; i < GoodRegexes; i++ {
 		sb.Reset()
 		for _, char := range val {
 			sb.WriteString("[")
@@ -84,7 +105,7 @@ func generateRegexes(val []byte) []string {
 	}
 
 	// Generate regexes that are designed to not match the input value
-	for i := 0; i < BAD_REGEXES; i++ {
+	for i := 0; i < BadRegexes; i++ {
 		sb.Reset()
 		for _, char := range val {
 			sb.WriteString("[")
@@ -114,20 +135,24 @@ func generateRegexes(val []byte) []string {
 	return regexes
 }
 
+// Regexes returns the regex map.
 func (ms *LocationMemorySet) Regexes() map[string][]string {
 	return ms.regexMap
 }
 
+// GetThreshold returns the threshold.
 func (ms *LocationMemorySet) GetThreshold() int {
 	return ms.threshold
 }
 
+// AddByRegex adds a location by its hash.
 func (ms *LocationMemorySet) AddByRegex(hash string, location scanv1alpha1.SecretInStoreRef) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.valueToKeys[hash] = append(ms.valueToKeys[hash], location)
 }
 
+// Add adds a secret location and its value.
 func (ms *LocationMemorySet) Add(secret scanv1alpha1.SecretInStoreRef, value []byte) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
@@ -148,6 +173,7 @@ func hash(value []byte) string {
 
 // GetDuplicates now just scans the valueToKeys map to find values with more than one Entry.
 
+// GetDuplicates returns all findings with duplicate secrets.
 func (ms *LocationMemorySet) GetDuplicates() []v1alpha1.Finding {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()

@@ -1,7 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package kubernetes implements Kubernetes resource listener.
 package kubernetes
 
 import (
@@ -81,7 +98,7 @@ func (h *Handler[T]) Start() error {
 	err = ctrl.
 		NewControllerManagedBy(manager).
 		Named("k8s"+h.Name).
-		Watches(h.Obj, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, s client.Object) []ctrl.Request {
+		Watches(h.Obj, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, s client.Object) []ctrl.Request {
 			secret, ok := s.(T)
 			if !ok {
 				log.Error(err, "while processing secret")
@@ -108,11 +125,11 @@ func (h *Handler[T]) Start() error {
 				SecretIdentifier:  secret.GetName(),
 				Namespace:         secret.GetNamespace(),
 				RotationTimestamp: time.Now().Format(time.RFC3339),
-				TriggerSource:     fmt.Sprintf("%s/%s", schema.KUBERNETES_SECRET, secret.GetName()),
+				TriggerSource:     fmt.Sprintf("%s/%s", schema.KubernetesSecret, secret.GetName()),
 			}
 			return nil
 		}), opts...).
-		Complete(reconcile.Func(func(ctx context.Context, r reconcile.Request) (reconcile.Result, error) {
+		Complete(reconcile.Func(func(_ context.Context, _ reconcile.Request) (reconcile.Result, error) {
 			// We dont need to reconcile anything, as we are sending this over another controller
 			return reconcile.Result{}, nil
 		}))

@@ -1,9 +1,11 @@
 /*
+Copyright © 2025 ESO Maintainer Team
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +23,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
+// StatefulResource represents a Kubernetes resource that has state which can be tracked.
 // +kubebuilder:object:root=false
 // +kubebuilder:object:generate:false
 // +k8s:deepcopy-gen:interfaces=nil
@@ -31,12 +34,13 @@ type StatefulResource interface {
 }
 
 const (
-	// The owner key points to the resource which created the generator state.
+	// GeneratorStateLabelOwnerKey points to the resource which created the generator state.
 	// It is used in the garbage collection process to identify all states
 	// that belong to a specific resource.
 	GeneratorStateLabelOwnerKey = "generators.external-secrets.io/owner-key"
 )
 
+// GeneratorStateSpec defines the desired state of a generator state resource.
 type GeneratorStateSpec struct {
 	// GarbageCollectionDeadline is the time after which the generator state
 	// will be deleted.
@@ -55,15 +59,21 @@ type GeneratorStateSpec struct {
 	State *apiextensions.JSON `json:"state"`
 }
 
+// GeneratorStateConditionType represents the type of condition for a generator state.
 type GeneratorStateConditionType string
 
 const (
-	GeneratorStateReady             GeneratorStateConditionType = "Ready"
+	// GeneratorStateReady indicates the generator state is ready and available.
+	GeneratorStateReady GeneratorStateConditionType = "Ready"
+	// GeneratorStateDeletionScheduled indicates the generator state is scheduled for deletion.
 	GeneratorStateDeletionScheduled GeneratorStateConditionType = "Deletion Scheduled"
-	GeneratorStatePendingDeletion   GeneratorStateConditionType = "Pending Deletion"
-	GeneratorStateTerminating       GeneratorStateConditionType = "Terminating"
+	// GeneratorStatePendingDeletion indicates the generator state is pending deletion.
+	GeneratorStatePendingDeletion GeneratorStateConditionType = "Pending Deletion"
+	// GeneratorStateTerminating indicates the generator state is terminating.
+	GeneratorStateTerminating GeneratorStateConditionType = "Terminating"
 )
 
+// GeneratorStateStatusCondition represents the observed condition of a generator state.
 type GeneratorStateStatusCondition struct {
 	Type   GeneratorStateConditionType `json:"type"`
 	Status corev1.ConditionStatus      `json:"status"`
@@ -79,13 +89,19 @@ type GeneratorStateStatusCondition struct {
 }
 
 const (
-	ConditionReasonCreated                 = "Created"
-	ConditionReasonError                   = "Error"
-	ConditionReasonStillActive             = "Still Active"
+	// ConditionReasonCreated indicates the generator state was successfully created.
+	ConditionReasonCreated = "Created"
+	// ConditionReasonError indicates an error occurred with the generator state.
+	ConditionReasonError = "Error"
+	// ConditionReasonStillActive indicates the generator state is still active.
+	ConditionReasonStillActive = "Still Active"
+	// ConditionReasonGarbageCollectionSetted indicates the generator state is scheduled for garbage collection.
 	ConditionReasonGarbageCollectionSetted = "Garbage Collection Setted"
-	ConditionReasonDeadlineReached         = "Garbage Collection deadline reached"
+	// ConditionReasonDeadlineReached indicates the generator state's garbage collection deadline was reached.
+	ConditionReasonDeadlineReached = "Garbage Collection deadline reached"
 )
 
+// GeneratorStateStatus defines the observed state of a generator state resource.
 type GeneratorStateStatus struct {
 	LastType    GeneratorStateConditionType     `json:"lastType,omitempty"`
 	LastReason  string                          `json:"lastReason,omitempty"`
@@ -93,6 +109,7 @@ type GeneratorStateStatus struct {
 	Conditions  []GeneratorStateStatusCondition `json:"conditions,omitempty"`
 }
 
+// GeneratorState represents the state created and managed by a generator resource.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status

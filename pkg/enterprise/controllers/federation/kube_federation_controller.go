@@ -1,4 +1,20 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// /*
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,6 +27,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+// Package federation implements federation controllers.
 package federation
 
 import (
@@ -28,6 +46,7 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
 
+// KubernetesFederationController reconciles KubernetesFederation resources.
 // TODO - make this operate over all *.federation.external-secrets.io resources.
 type KubernetesFederationController struct {
 	client.Client
@@ -35,6 +54,7 @@ type KubernetesFederationController struct {
 	Scheme *runtime.Scheme
 }
 
+// Reconcile reconciles a KubernetesFederation resource.
 func (c *KubernetesFederationController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	// Get the Authorization.fedetarion.external-secrets.io object
 	authorization := &idfedv1alpha1.KubernetesFederation{}
@@ -52,7 +72,8 @@ func (c *KubernetesFederationController) Reconcile(ctx context.Context, req ctrl
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
-func (c *KubernetesFederationController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
+// SetupWithManager returns a new controller builder that will be started by the provided Manager.
+func (c *KubernetesFederationController) SetupWithManager(mgr ctrl.Manager, _ controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&idfedv1alpha1.KubernetesFederation{}).
 		Complete(c)

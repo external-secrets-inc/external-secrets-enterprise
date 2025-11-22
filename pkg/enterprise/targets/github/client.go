@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
@@ -138,31 +154,38 @@ func (s *ScanTarget) PushSecret(ctx context.Context, secret *corev1.Secret, remo
 	return nil
 }
 
-func (s *ScanTarget) DeleteSecret(ctx context.Context, remoteRef esv1.PushSecretRemoteRef) error {
+// DeleteSecret deletes a secret from the GitHub repository.
+func (s *ScanTarget) DeleteSecret(_ context.Context, _ esv1.PushSecretRemoteRef) error {
 	return errors.New(errNotImplemented)
 }
 
-func (s *ScanTarget) SecretExists(ctx context.Context, ref esv1.PushSecretRemoteRef) (bool, error) {
+// SecretExists checks if a secret exists in the GitHub repository.
+func (s *ScanTarget) SecretExists(_ context.Context, _ esv1.PushSecretRemoteRef) (bool, error) {
 	return false, errors.New(errNotImplemented)
 }
 
-func (s *ScanTarget) GetAllSecrets(ctx context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
+// GetAllSecrets gets all secrets from the GitHub repository.
+func (s *ScanTarget) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (map[string][]byte, error) {
 	return nil, fmt.Errorf("not implemented - this provider supports write-only operations")
 }
 
-func (s *ScanTarget) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
+// GetSecret gets a secret from the GitHub repository.
+func (s *ScanTarget) GetSecret(_ context.Context, _ esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
 	return nil, fmt.Errorf("not implemented - this provider supports write-only operations")
 }
 
-func (s *ScanTarget) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
+// GetSecretMap gets a map of secrets from the GitHub repository.
+func (s *ScanTarget) GetSecretMap(_ context.Context, _ esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
 	return nil, fmt.Errorf("not implemented - this provider supports write-only operations")
 }
 
+// Close closes the GitHub client.
 func (s *ScanTarget) Close(ctx context.Context) error {
 	ctx.Done()
 	return nil
 }
 
+// Validate validates the GitHub client.
 func (s *ScanTarget) Validate() (esv1.ValidationResult, error) {
 	if strings.TrimSpace(s.AuthToken) == "" {
 		return esv1.ValidationResultError, fmt.Errorf("missing auth token")

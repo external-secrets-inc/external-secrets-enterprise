@@ -1,5 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package listener manages event listeners for secret rotation.
 package listener
 
 import (
@@ -28,6 +46,7 @@ type Manager struct {
 	logger    logr.Logger
 }
 
+// NewListenerManager creates a new listener manager.
 func NewListenerManager(ctx context.Context, eventChan chan events.SecretRotationEvent, client client.Client, logger logr.Logger) *Manager {
 	return &Manager{
 		context:   ctx,
@@ -126,21 +145,21 @@ func generateListenerKey(source esov1alpha1.NotificationSource) (string, error) 
 	// Marshal the specific configuration based on the Type
 	var config any
 	switch source.Type {
-	case schema.AWS_SQS:
+	case schema.AWSSQS:
 		config = source.AwsSqs
-	case schema.AZURE_EVENT_GRID:
+	case schema.AzureEventGrid:
 		config = source.AzureEventGrid
-	case schema.GOOGLE_PUB_SUB:
+	case schema.GooglePubSub:
 		config = source.GooglePubSub
-	case schema.WEBHOOK:
+	case schema.Webhook:
 		config = source.Webhook
-	case schema.HASHICORP_VAULT:
+	case schema.HashicorpVault:
 		config = source.HashicorpVault
-	case schema.TCP_SOCKET:
+	case schema.TCPSocket:
 		config = source.TCPSocket
-	case schema.MOCK:
+	case schema.Mock:
 		config = source.Mock
-	case schema.KUBERNETES_SECRET:
+	case schema.KubernetesSecret:
 		config = source.KubernetesSecret
 	default:
 		return "", fmt.Errorf("unsupported notification source type: %s", source.Type)

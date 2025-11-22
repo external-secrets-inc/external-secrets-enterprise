@@ -1,4 +1,20 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// /*
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,6 +27,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+// Package v1alpha1 contains federation API types.
 package v1alpha1
 
 import (
@@ -20,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// AuthorizationSpec defines the specification for authorization.
 // +kubebuilder:validation:XValidation:rule="(has(self.subject.spiffe) && !has(self.subject.oidc)) || (!has(self.subject.spiffe) && has(self.subject.oidc))",message="spiffe or subject must be set"
 type AuthorizationSpec struct {
 	FederationRef FederationRef `json:"federationRef"`
@@ -35,6 +54,7 @@ type AuthorizationSpec struct {
 	AllowedGeneratorStates []AllowedGeneratorState `json:"allowedGeneratorStates"`
 }
 
+// RequiresTLS returns whether TLS is required for this authorization.
 func (a *AuthorizationSpec) RequiresTLS() bool {
 	switch {
 	case a.Subject.Spiffe != nil:
@@ -46,6 +66,7 @@ func (a *AuthorizationSpec) RequiresTLS() bool {
 	}
 }
 
+// Principal returns the principal for this authorization.
 func (a *AuthorizationSpec) Principal() (string, error) {
 	switch {
 	case a.Subject.Spiffe != nil:
@@ -57,6 +78,7 @@ func (a *AuthorizationSpec) Principal() (string, error) {
 	}
 }
 
+// Authority returns the authority for this authorization.
 func (a *AuthorizationSpec) Authority() (string, error) {
 	switch {
 	case a.Subject.Spiffe != nil:
@@ -72,21 +94,27 @@ func (a *AuthorizationSpec) Authority() (string, error) {
 	}
 }
 
+// AllowedGeneratorState defines which generator states are allowed.
 type AllowedGeneratorState struct {
 	Namespace string `json:"namespace"`
 }
+
+// AllowedGenerator defines which generators are allowed.
 type AllowedGenerator struct {
 	Name      string `json:"name"`
 	Kind      string `json:"kind"`
 	Namespace string `json:"namespace"`
 	// +kubebuilder:default="generators.external-secrets.io/v1alpha1"
-	ApiVersion string `json:"apiVersion"`
+	APIVersion string `json:"apiVersion"`
 }
+
+// FederationRef defines a reference to a federation.
 type FederationRef struct {
 	Kind string `json:"kind"`
 	Name string `json:"name"`
 }
 
+// FederationSubject defines the subject for federation.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type FederationSubject struct {
@@ -96,11 +124,13 @@ type FederationSubject struct {
 	OIDC *FederationOIDC `json:"oidc"`
 }
 
+// FederationOIDC defines OIDC-based federation.
 type FederationOIDC struct {
 	Issuer  string `json:"issuer"`
 	Subject string `json:"subject"`
 }
 
+// FederationSpiffe defines SPIFFE-based federation.
 type FederationSpiffe struct {
 	SpiffeID string `json:"spiffeID"`
 }

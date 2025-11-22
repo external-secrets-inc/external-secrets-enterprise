@@ -1,9 +1,11 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,6 +14,9 @@
 // limitations under the License.
 // */
 
+// Package auth implements the federation server authorization.
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package auth
 
 import (
@@ -33,6 +38,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// KubernetesIOInner represents the inner structure of the Kubernetes.io claim.
 type KubernetesIOInner struct {
 	Namespace      string `json:"namespace"`
 	ServiceAccount struct {
@@ -44,16 +50,20 @@ type KubernetesIOInner struct {
 		UID  string `json:"uid"`
 	} `json:"pod,omitempty"`
 }
+
+// KubernetesClaims represents the claims in an OIDC token.
 type KubernetesClaims struct {
 	jwt.RegisteredClaims
 	KubernetesIOInner `json:"kubernetes.io"`
 }
 
+// OIDCAuthenticator defines authenticator structures for OIDC compatible ASs.
 type OIDCAuthenticator struct {
 	mu      sync.RWMutex
 	specMap map[string][]*fedv1alpha1.AuthorizationSpec
 }
 
+// NewOIDCAuthenticator creates a new OIDCAuthenticator.
 func NewOIDCAuthenticator() *OIDCAuthenticator {
 	return &OIDCAuthenticator{
 		mu:      sync.RWMutex{},
@@ -61,7 +71,8 @@ func NewOIDCAuthenticator() *OIDCAuthenticator {
 	}
 }
 
-func (a *OIDCAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
+// Authenticate implements Authenticator.
+func (a *OIDCAuthenticator) Authenticate(r *http.Request) (*Info, error) {
 	token := r.Header.Get("Authorization")
 	onlyToken := strings.TrimPrefix(token, "Bearer ")
 	caCert, err := readCaCrt(r)
@@ -77,7 +88,7 @@ func (a *OIDCAuthenticator) Authenticate(r *http.Request) (*AuthInfo, error) {
 	if !ok {
 		return nil, errors.New("failed to parse token")
 	}
-	authInfo := &AuthInfo{
+	authInfo := &Info{
 		Method:   "oidc",
 		Provider: claim.Issuer,
 		Subject:  claim.Subject,

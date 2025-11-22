@@ -17,9 +17,9 @@ yq e -Ns "\"${HELM_DIR}/templates/crds/\" + .spec.names.singular" ${BUNDLE_DIR}/
 
 # Add helm if statement for controlling the install of CRDs
 for i in "${HELM_DIR}"/templates/crds/*.yml; do
-  export CRDS_FLAG_NAME="create$(yq e '.spec.names.kind' $i)"
+  export CRDS_FLAG_NAME="create$(yq e '.spec.names.kind' "${i}")"
   cp "$i" "$i.bkp"
-  if [[ "$CRDS_FLAG_NAME" == *"ExternalSecret"* || "$CRDS_FLAG_NAME" == *"SecretStore"* ]]; then
+  if [[ "${CRDS_FLAG_NAME}" == *"ExternalSecret"* || "${CRDS_FLAG_NAME}" == *"SecretStore"* ]]; then
     yq e '(.spec.versions[] | select(.name == "v1alpha1")) |= ("{{- if .Values.crds.conversion.enabled }}\n \(.)\n {{- end }}")' -i "$i.bkp" || true
     $SEDPRG -i '/- |-/d' "$i.bkp"
     # Indent the remaining additionalPrinterColumn property right
@@ -28,7 +28,7 @@ for i in "${HELM_DIR}"/templates/crds/*.yml; do
 
   if [[ "$CRDS_FLAG_NAME" == *"Cluster"* && "$CRDS_FLAG_NAME" != *"KubernetesCluster"* ]]; then
     echo "{{- if and (.Values.installCRDs) (.Values.crds.$CRDS_FLAG_NAME) }}" > "$i"
-  elif [[ "$CRDS_FLAG_NAME" == *"PushSecret"* ]]; then
+  elif [[ "${CRDS_FLAG_NAME}" == *"PushSecret"* ]]; then
 			echo "{{- if and (.Values.installCRDs) (.Values.crds.$CRDS_FLAG_NAME) }}" > "$i"
   else
     echo "{{- if .Values.installCRDs }}" > "$i"

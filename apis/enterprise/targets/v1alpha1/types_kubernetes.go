@@ -1,3 +1,20 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// Package v1alpha1 implements KubernetesCluster targets
 // Copyright External Secrets Inc. 2025
 // All rights reserved
 package v1alpha1
@@ -10,8 +27,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// KubernetesTargetKind is the kind name for KubernetesCluster resources.
 var KubernetesTargetKind = "KubernetesCluster"
 
+// KubernetesClusterSpec contains the KubernetesCluster spec.
 type KubernetesClusterSpec struct {
 	// configures the Kubernetes server Address.
 	// +optional
@@ -41,6 +60,7 @@ type KubernetesClusterSpec struct {
 	Scan *KubernetesScanOptions `json:"scan,omitempty"`
 }
 
+// KubernetesServer contains the Kubernetes server spec.
 type KubernetesServer struct {
 
 	// configures the Kubernetes server Address.
@@ -57,6 +77,7 @@ type KubernetesServer struct {
 	CAProvider *esv1.CAProvider `json:"caProvider,omitempty"`
 }
 
+// KubernetesAuth contains the Kubernetes auth spec.
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=1
 type KubernetesAuth struct {
@@ -73,11 +94,13 @@ type KubernetesAuth struct {
 	ServiceAccount *esmeta.ServiceAccountSelector `json:"serviceAccount,omitempty"`
 }
 
+// CertAuth contains the client certificate and key for certificate authentication.
 type CertAuth struct {
 	ClientCert esmeta.SecretKeySelector `json:"clientCert,omitempty"`
 	ClientKey  esmeta.SecretKeySelector `json:"clientKey,omitempty"`
 }
 
+// TokenAuth contains the bearer token for token authentication.
 type TokenAuth struct {
 	BearerToken esmeta.SecretKeySelector `json:"bearerToken,omitempty"`
 }
@@ -131,6 +154,7 @@ type KubernetesCluster struct {
 	Status            TargetStatus          `json:"status,omitempty"`
 }
 
+// KubernetesClusterList contains a list of KubernetesCluster resources.
 // +kubebuilder:object:root=true
 type KubernetesClusterList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -138,48 +162,59 @@ type KubernetesClusterList struct {
 	Items           []KubernetesCluster `json:"items"`
 }
 
+// GetObjectMeta returns the object meta.
 func (c *KubernetesCluster) GetObjectMeta() *metav1.ObjectMeta {
 	return &c.ObjectMeta
 }
 
+// GetTypeMeta returns the type meta.
 func (c *KubernetesCluster) GetTypeMeta() *metav1.TypeMeta {
 	return &c.TypeMeta
 }
 
+// GetSpec returns the spec of the object.
 func (c *KubernetesCluster) GetSpec() *esv1.SecretStoreSpec {
 	return &esv1.SecretStoreSpec{}
 }
 
+// GetStatus returns the status of the object.
 func (c *KubernetesCluster) GetStatus() esv1.SecretStoreStatus {
 	return *TargetToSecretStoreStatus(&c.Status)
 }
 
+// SetStatus sets the status of the object.
 func (c *KubernetesCluster) SetStatus(status esv1.SecretStoreStatus) {
 	convertedStatus := SecretStoreToTargetStatus(&status)
 	c.Status.Capabilities = convertedStatus.Capabilities
 	c.Status.Conditions = convertedStatus.Conditions
 }
 
+// GetNamespacedName returns the namespaced name of the object.
 func (c *KubernetesCluster) GetNamespacedName() string {
 	return fmt.Sprintf("%s/%s", c.Namespace, c.Name)
 }
 
+// GetKind returns the kind of the object.
 func (c *KubernetesCluster) GetKind() string {
 	return KubernetesTargetKind
 }
 
+// Copy returns a copy of the object.
 func (c *KubernetesCluster) Copy() esv1.GenericStore {
 	return c.DeepCopy()
 }
 
+// GetTargetStatus returns the target status.
 func (c *KubernetesCluster) GetTargetStatus() TargetStatus {
 	return c.Status
 }
 
+// SetTargetStatus sets the target status.
 func (c *KubernetesCluster) SetTargetStatus(status TargetStatus) {
 	c.Status = status
 }
 
+// CopyTarget returns a copy of the target.
 func (c *KubernetesCluster) CopyTarget() GenericTarget {
 	return c.DeepCopy()
 }

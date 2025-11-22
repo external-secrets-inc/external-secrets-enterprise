@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +36,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type PostgreSqlCleanupPolicy struct {
+// PostgreSQLCleanupPolicy controls the cleanup policy for the postgreSQL generator.
+type PostgreSQLCleanupPolicy struct {
 	genv1alpha1.CleanupPolicy `json:",inline"`
 
 	// ActivityTrackingInterval is the cron expression to run the user activity tracking
@@ -29,8 +46,8 @@ type PostgreSqlCleanupPolicy struct {
 	ActivityTrackingInterval metav1.Duration `json:"activityTrackingInterval,omitempty"`
 }
 
-// PostgreSqlSpec controls the behavior of the postgreSQL generator.
-type PostgreSqlSpec struct {
+// PostgreSQLSpec controls the behavior of the postgreSQL generator.
+type PostgreSQLSpec struct {
 	// Database is the name of the database to connect to.
 	// If not specified, the "postgres" database will be used.
 	// +kubebuilder:default=postgres
@@ -43,35 +60,47 @@ type PostgreSqlSpec struct {
 	// +kubebuilder:default="5432"
 	Port string `json:"port"`
 	// Auth contains the credentials or auth configuration
-	Auth PostgreSqlAuth `json:"auth"`
+	Auth PostgreSQLAuth `json:"auth"`
 	// User is the data of the user to be created.
-	User *PostgreSqlUser `json:"user,omitempty"`
+	User *PostgreSQLUser `json:"user,omitempty"`
 
-	CleanupPolicy *PostgreSqlCleanupPolicy `json:"cleanupPolicy,omitempty"`
+	CleanupPolicy *PostgreSQLCleanupPolicy `json:"cleanupPolicy,omitempty"`
 }
 
-type PostgreSqlAuth struct {
-	// A basic auth username used to authenticate against the PostgreSql instance.
+// PostgreSQLAuth defines PostgreSQL authentication configuration.
+type PostgreSQLAuth struct {
+	// A basic auth username used to authenticate against the PostgreSQL instance.
 	Username string `json:"username"`
-	// A basic auth password used to authenticate against the PostgreSql instance.
+	// A basic auth password used to authenticate against the PostgreSQL instance.
 	Password esmeta.SecretKeySelector `json:"password"`
 }
 
-type PostgreSqlUserAttributesEnum string
+// PostgreSQLUserAttributesEnum represents PostgreSQL user attributes.
+type PostgreSQLUserAttributesEnum string
 
 const (
-	PostgreSqlUserSuperUser       PostgreSqlUserAttributesEnum = "SUPERUSER"
-	PostgreSqlUserCreateDb        PostgreSqlUserAttributesEnum = "CREATEDB"
-	PostgreSqlUserCreateRole      PostgreSqlUserAttributesEnum = "CREATEROLE"
-	PostgreSqlUserReplication     PostgreSqlUserAttributesEnum = "REPLICATION"
-	PostgreSqlUserNoInherit       PostgreSqlUserAttributesEnum = "NOINHERIT"
-	PostgreSqlUserByPassRls       PostgreSqlUserAttributesEnum = "BYPASSRLS"
-	PostgreSqlUserConnectionLimit PostgreSqlUserAttributesEnum = "CONNECTION LIMIT"
-	PostgreSqlUserLogin           PostgreSqlUserAttributesEnum = "LOGIN"
-	PostgreSqlUserPassword        PostgreSqlUserAttributesEnum = "PASSWORD"
+	// PostgreSQLUserSuperUser grants superuser privileges.
+	PostgreSQLUserSuperUser PostgreSQLUserAttributesEnum = "SUPERUSER"
+	// PostgreSQLUserCreateDb grants the ability to create databases.
+	PostgreSQLUserCreateDb PostgreSQLUserAttributesEnum = "CREATEDB"
+	// PostgreSQLUserCreateRole grants the ability to create roles.
+	PostgreSQLUserCreateRole PostgreSQLUserAttributesEnum = "CREATEROLE"
+	// PostgreSQLUserReplication grants the ability to replicate data.
+	PostgreSQLUserReplication PostgreSQLUserAttributesEnum = "REPLICATION"
+	// PostgreSQLUserNoInherit grants the ability to inherit privileges.
+	PostgreSQLUserNoInherit PostgreSQLUserAttributesEnum = "NOINHERIT"
+	// PostgreSQLUserByPassRls grants the ability to bypass row-level security.
+	PostgreSQLUserByPassRls PostgreSQLUserAttributesEnum = "BYPASSRLS"
+	// PostgreSQLUserConnectionLimit grants the ability to limit the number of connections.
+	PostgreSQLUserConnectionLimit PostgreSQLUserAttributesEnum = "CONNECTION LIMIT"
+	// PostgreSQLUserLogin grants the ability to login.
+	PostgreSQLUserLogin PostgreSQLUserAttributesEnum = "LOGIN"
+	// PostgreSQLUserPassword grants the ability to set a password.
+	PostgreSQLUserPassword PostgreSQLUserAttributesEnum = "PASSWORD"
 )
 
-type PostgreSqlUser struct {
+// PostgreSQLUser defines a PostgreSQL user.
+type PostgreSQLUser struct {
 	// The username of the user to be created.
 	Username string `json:"username"`
 	// SuffixSize define the size of the random suffix added after the defined username.
@@ -81,7 +110,7 @@ type PostgreSqlUser struct {
 	// +kubebuilder:default=8
 	SuffixSize *int `json:"suffixSize,omitempty"`
 	// Attributes is the list of PostgreSQL role attributes assigned to this user.
-	Attributes []PostgreSqlUserAttribute `json:"attributes,omitempty"`
+	Attributes []PostgreSQLUserAttribute `json:"attributes,omitempty"`
 	// Roles is the list of existing roles that will be granted to this user.
 	// If a role does not exist, it will be created without any attributes.
 	Roles []string `json:"roles,omitempty"`
@@ -98,7 +127,8 @@ type PostgreSqlUser struct {
 	ReassignTo *string `json:"reassignTo,omitempty"`
 }
 
-type PostgreSqlUserAttribute struct {
+// PostgreSQLUserAttribute defines a PostgreSQL user attribute.
+type PostgreSQLUserAttribute struct {
 	// Attribute is the name of the PostgreSQL role attribute to be set for the user.
 	// Valid values: SUPERUSER, CREATEDB, CREATEROLE, REPLICATION, NOINHERIT, BYPASSRLS, CONNECTION_LIMIT.
 	// +kubebuilder:validation:Enum=SUPERUSER;CREATEDB;CREATEROLE;REPLICATION;NOINHERIT;BYPASSRLS;CONNECTION_LIMIT
@@ -107,31 +137,30 @@ type PostgreSqlUserAttribute struct {
 	Value *string `json:"value,omitempty"`
 }
 
-type PostgreSqlUserState struct {
+// PostgreSQLUserState represents the state of a PostgreSQL user.
+type PostgreSQLUserState struct {
 	Username string `json:"username,omitempty"`
 }
 
-// PostgreSql generates a random postgreSQL based on the
-// configuration parameters in spec.
-// You can specify the length, characterset and other attributes.
+// PostgreSQL generates a PostgreSQL user based on the configuration parameters in spec.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:resource:scope=Namespaced,categories={external-secrets, external-secrets-generators}
-type PostgreSql struct {
+type PostgreSQL struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PostgreSqlSpec              `json:"spec,omitempty"`
+	Spec   PostgreSQLSpec              `json:"spec,omitempty"`
 	Status genv1alpha1.GeneratorStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// PostgreSqlList contains a list of ExternalSecret resources.
-type PostgreSqlList struct {
+// PostgreSQLList contains a list of PostgreSQL resources.
+type PostgreSQLList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []PostgreSql `json:"items"`
+	Items           []PostgreSQL `json:"items"`
 }

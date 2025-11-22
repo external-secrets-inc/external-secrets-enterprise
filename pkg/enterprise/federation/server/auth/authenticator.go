@@ -1,9 +1,11 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,6 +14,9 @@
 // limitations under the License.
 // */
 
+// Package auth implements the federation server authorization.
+// Copyright External Secrets Inc.
+// All Rights Reserved.
 package auth
 
 import (
@@ -22,8 +27,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// AuthInfo contains information about the authenticated user.
-type AuthInfo struct {
+// Info contains information about the authenticated user.
+type Info struct {
 	// Method is the authentication method used, either "oidc" or "spiffe".
 	Method string `json:"method"`
 	// Provider is the provider of the authentication, either an OIDC issuer URL or a SPIFFE trust domain.
@@ -44,6 +49,7 @@ type KubeAttributes struct {
 	Pod *PodInfo `json:"pod,omitempty"`
 }
 
+// ServiceAccount contains information about the user's service account.
 type ServiceAccount struct {
 	// Name is the name of the service account.
 	Name string `json:"name"`
@@ -51,6 +57,7 @@ type ServiceAccount struct {
 	UID string `json:"uid"`
 }
 
+// PodInfo contains information about the user's pod.
 type PodInfo struct {
 	// Name is the name of the pod.
 	Name string `json:"name"`
@@ -71,10 +78,10 @@ type WorkloadInfo struct {
 // Authenticator is the interface that an authentication implementation must
 // implement.
 type Authenticator interface {
-	// Authenticate authenticates the given request and returns an AuthInfo
-	// if the authentication is successful. The returned AuthInfo contains
+	// Authenticate authenticates the given request and returns an Info
+	// if the authentication is successful. The returned Info contains
 	// information about the authenticated user.
-	Authenticate(r *http.Request) (*AuthInfo, error)
+	Authenticate(r *http.Request) (*Info, error)
 }
 
 // Registry is the registry of authenticators, mapping names to

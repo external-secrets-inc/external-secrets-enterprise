@@ -1,6 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package workflow implements workflow controllers.
 package workflow
 
 import (
@@ -22,13 +40,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	workflows "github.com/external-secrets/external-secrets/apis/enterprise/workflows/v1alpha1"
-	"github.com/external-secrets/external-secrets/pkg/controllers/util"
+	ctrlutil "github.com/external-secrets/external-secrets/pkg/controllers/util"
 )
 
 var mu = sync.Mutex{}
 
-// WorkflowRunReconciler reconciles a WorkflowRun object.
-type WorkflowRunTemplateReconciler struct {
+// RunTemplateReconciler reconciles a WorkflowRunTemplate object.
+type RunTemplateReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
@@ -36,7 +54,7 @@ type WorkflowRunTemplateReconciler struct {
 }
 
 // Reconcile handles WorkflowRun resources.
-func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *RunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("workflowruntemplate", req.NamespacedName)
 	log.Info("reconciling WorkflowRunTemplate")
 
@@ -118,7 +136,7 @@ func (r *WorkflowRunTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 	return r.requeueAfter(run)
 }
 
-func (r *WorkflowRunTemplateReconciler) needsStatusUpdate(run *workflows.WorkflowRunTemplate, workflowRuns []workflows.WorkflowRun) bool {
+func (r *RunTemplateReconciler) needsStatusUpdate(run *workflows.WorkflowRunTemplate, workflowRuns []workflows.WorkflowRun) bool {
 	newStatus := []workflows.WorkflowRunStatus{}
 	for _, run := range workflowRuns {
 		newStatus = append(newStatus, run.Status)
@@ -128,7 +146,7 @@ func (r *WorkflowRunTemplateReconciler) needsStatusUpdate(run *workflows.Workflo
 	})
 }
 
-func (r *WorkflowRunTemplateReconciler) getChildrenFor(ctx context.Context, run *workflows.WorkflowRunTemplate) ([]workflows.WorkflowRun, error) {
+func (r *RunTemplateReconciler) getChildrenFor(ctx context.Context, run *workflows.WorkflowRunTemplate) ([]workflows.WorkflowRun, error) {
 	workflowRunList := &workflows.WorkflowRunList{}
 	if err := r.List(ctx, workflowRunList, client.InNamespace(run.Namespace), client.MatchingLabels{"workflowruntemplate.external-secrets.io/owner": run.Name}); err != nil {
 		return nil, err
@@ -136,7 +154,7 @@ func (r *WorkflowRunTemplateReconciler) getChildrenFor(ctx context.Context, run 
 	return workflowRunList.Items, nil
 }
 
-func (r *WorkflowRunTemplateReconciler) cleanup(ctx context.Context, workflowRuns []workflows.WorkflowRun, limit int) ([]workflows.WorkflowRun, error) {
+func (r *RunTemplateReconciler) cleanup(ctx context.Context, workflowRuns []workflows.WorkflowRun, limit int) ([]workflows.WorkflowRun, error) {
 	if len(workflowRuns) < limit {
 		return workflowRuns, nil
 	}
@@ -183,7 +201,7 @@ func sortWorkflowsByRevision(workflowRuns []workflows.WorkflowRun, totalToDelete
 	return remaining, del, nil
 }
 
-func (r *WorkflowRunTemplateReconciler) generateRevision(workflowRuns []workflows.WorkflowRun) (string, error) {
+func (r *RunTemplateReconciler) generateRevision(workflowRuns []workflows.WorkflowRun) (string, error) {
 	currentRevision := 0
 	for _, run := range workflowRuns {
 		revString, ok := run.Annotations["workflowruntemplate.external-secrets.io/revision"]
@@ -201,7 +219,7 @@ func (r *WorkflowRunTemplateReconciler) generateRevision(workflowRuns []workflow
 	return strconv.Itoa(currentRevision + 1), nil
 }
 
-func (r *WorkflowRunTemplateReconciler) createWorkflowRun(ctx context.Context, run *workflows.WorkflowRunTemplate, revision string) (*workflows.WorkflowRun, error) {
+func (r *RunTemplateReconciler) createWorkflowRun(ctx context.Context, run *workflows.WorkflowRunTemplate, revision string) (*workflows.WorkflowRun, error) {
 	workflowRun := &workflows.WorkflowRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: run.Name + "-",
@@ -225,7 +243,7 @@ func (r *WorkflowRunTemplateReconciler) createWorkflowRun(ctx context.Context, r
 	return workflowRun, nil
 }
 
-func (r *WorkflowRunTemplateReconciler) updateWorkflowRunTemplate(ctx context.Context, run *workflows.WorkflowRunTemplate, workflowRuns []workflows.WorkflowRun, runTime time.Time) error {
+func (r *RunTemplateReconciler) updateWorkflowRunTemplate(ctx context.Context, run *workflows.WorkflowRunTemplate, workflowRuns []workflows.WorkflowRun, runTime time.Time) error {
 	stats := []workflows.NamedWorkflowRunStatus{}
 	for _, run := range workflowRuns {
 		namedStat := workflows.NamedWorkflowRunStatus{
@@ -235,12 +253,12 @@ func (r *WorkflowRunTemplateReconciler) updateWorkflowRunTemplate(ctx context.Co
 		stats = append(stats, namedStat)
 	}
 	run.Status.RunStatuses = stats
-	run.Status.SyncedResourceVersion = util.GetResourceVersion(run.ObjectMeta)
+	run.Status.SyncedResourceVersion = ctrlutil.GetResourceVersion(run.ObjectMeta)
 	run.Status.LastRunTime = &metav1.Time{Time: runTime}
 	return r.Status().Update(ctx, run)
 }
 
-func (r *WorkflowRunTemplateReconciler) requeueAfter(run *workflows.WorkflowRunTemplate) (ctrl.Result, error) {
+func (r *RunTemplateReconciler) requeueAfter(run *workflows.WorkflowRunTemplate) (ctrl.Result, error) {
 	if run.Spec.RunPolicy.Once != nil || run.Spec.RunPolicy.OnChange != nil {
 		// Never Requeue these
 		return ctrl.Result{}, nil
@@ -291,16 +309,16 @@ func (r *WorkflowRunTemplateReconciler) requeueAfter(run *workflows.WorkflowRunT
 	return ctrl.Result{}, nil
 }
 
-func (r *WorkflowRunTemplateReconciler) shouldReconcile(run *workflows.WorkflowRunTemplate) bool {
+func (r *RunTemplateReconciler) shouldReconcile(run *workflows.WorkflowRunTemplate) bool {
 	if run.Spec.RunPolicy.Once != nil {
 		return run.Status.SyncedResourceVersion == ""
 	}
 	if run.Spec.RunPolicy.OnChange != nil {
-		return run.Status.SyncedResourceVersion == "" || run.Status.SyncedResourceVersion != util.GetResourceVersion(run.ObjectMeta)
+		return run.Status.SyncedResourceVersion == "" || run.Status.SyncedResourceVersion != ctrlutil.GetResourceVersion(run.ObjectMeta)
 	}
 	if run.Spec.RunPolicy.Scheduled != nil {
 		// Change on object should force a reconcile here Regardless of time interval.
-		if run.Status.SyncedResourceVersion == "" || run.Status.SyncedResourceVersion != util.GetResourceVersion(run.ObjectMeta) {
+		if run.Status.SyncedResourceVersion == "" || run.Status.SyncedResourceVersion != ctrlutil.GetResourceVersion(run.ObjectMeta) {
 			return true
 		}
 		if run.Status.LastRunTime == nil {
@@ -326,7 +344,7 @@ func (r *WorkflowRunTemplateReconciler) shouldReconcile(run *workflows.WorkflowR
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *WorkflowRunTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RunTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&workflows.WorkflowRunTemplate{}).
 		Owns(&workflows.WorkflowRun{}).

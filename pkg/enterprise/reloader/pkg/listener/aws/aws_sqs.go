@@ -1,5 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package listener implements AWS SQS listener.
 package listener
 
 import (
@@ -17,6 +35,7 @@ import (
 	modelAWS "github.com/external-secrets/external-secrets/pkg/enterprise/reloader/pkg/models/aws"
 )
 
+// SQSClientInterface defines the interface for SQS client operations.
 type SQSClientInterface interface {
 	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error)
 	DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(*sqs.Options)) (*sqs.DeleteMessageOutput, error)
@@ -27,13 +46,13 @@ type AWSSQSListener struct {
 	context   context.Context
 	cancel    context.CancelFunc
 	client    client.Client
-	config    *modelAWS.AWSSQSConfig
+	config    *modelAWS.SQSConfig
 	sqsClient SQSClientInterface
 	logger    logr.Logger
 }
 
 // NewAWSSQSListener creates a new AWSSQSListener.
-func NewAWSSQSListener(ctx context.Context, config *modelAWS.AWSSQSConfig, client client.Client, logger logr.Logger) (*AWSSQSListener, error) {
+func NewAWSSQSListener(ctx context.Context, config *modelAWS.SQSConfig, client client.Client, logger logr.Logger) (*AWSSQSListener, error) {
 	// Load AWS config with appropriate authentication
 	awsConfig, err := authAWS.CreateAWSSDKConfig(ctx, client, config.Auth, logger)
 	if err != nil {
@@ -55,6 +74,7 @@ func NewAWSSQSListener(ctx context.Context, config *modelAWS.AWSSQSConfig, clien
 	}, nil
 }
 
+// SetSQSClient sets the SQS client for the listener.
 func (h *AWSSQSListener) SetSQSClient(sqsClient SQSClientInterface) error {
 	h.sqsClient = sqsClient
 	return nil
@@ -106,7 +126,7 @@ func (h *AWSSQSListener) Start() (<-chan []types.Message, <-chan error) {
 	return msgCh, errCh
 }
 
-// pollMessages fetches messages from the SQS queue and returns them as an array.
+// PollMessages fetches messages from the SQS queue and returns them as an array.
 func (h *AWSSQSListener) PollMessages() ([]types.Message, error) {
 	h.logger.Info("Polling messages from SQS", "QueueURL", h.config.QueueURL)
 

@@ -13,6 +13,7 @@ resources:
   - generators.external-secrets.io_acraccesstokens.yaml
   - generators.external-secrets.io_awsiamkeys.yaml
   - generators.external-secrets.io_basicauths.yaml
+  - generators.external-secrets.io_cloudsmithaccesstokens.yaml
   - generators.external-secrets.io_clustergenerators.yaml
   - generators.external-secrets.io_ecrauthorizationtokens.yaml
   - generators.external-secrets.io_fakes.yaml

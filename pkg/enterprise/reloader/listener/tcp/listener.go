@@ -1,7 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package tcp implements TCP socket listener.
 package tcp
 
 import (
@@ -19,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TCPSocket represents a TCP socket listener. It utilizes a stop channel to manage its lifecycle.
-type TCPSocket struct {
+// Socket represents a TCP socket listener. It utilizes a stop channel to manage its lifecycle.
+type Socket struct {
 	config    *v1alpha1.TCPSocketConfig
 	context   context.Context
 	cancel    context.CancelFunc
@@ -31,12 +48,13 @@ type TCPSocket struct {
 	listener  net.Listener
 }
 
-func (h *TCPSocket) SetProcessFn(p ProcessFn) {
+// SetProcessFn sets the process function for the TCP socket.
+func (h *Socket) SetProcessFn(p ProcessFn) {
 	h.processFn = p
 }
 
-// Start initiates the TCPSocket service, making it ready to accept incoming connections.
-func (h *TCPSocket) Start() error {
+// Start initiates the Socket service, making it ready to accept incoming connections.
+func (h *Socket) Start() error {
 	if h.config == nil {
 		return fmt.Errorf("config is nil")
 	}
@@ -52,7 +70,7 @@ func (h *TCPSocket) Start() error {
 	return nil
 }
 
-func (h *TCPSocket) handleConnection(listener net.Listener) {
+func (h *Socket) handleConnection(listener net.Listener) {
 	for {
 		if h.context.Err() != nil {
 			return
@@ -65,9 +83,10 @@ func (h *TCPSocket) handleConnection(listener net.Listener) {
 	}
 }
 
+// ProcessFn is a function type for processing TCP messages.
 type ProcessFn func(message []byte)
 
-func (h *TCPSocket) defaultProcess(message []byte) {
+func (h *Socket) defaultProcess(message []byte) {
 	msgString := string(message)
 	h.logger.V(1).Info("Processing Message", "Message", msgString)
 	if !gjson.Valid(msgString) {
@@ -85,7 +104,7 @@ func (h *TCPSocket) defaultProcess(message []byte) {
 		event := events.SecretRotationEvent{
 			SecretIdentifier:  v,
 			RotationTimestamp: time.Now().Format("2006-01-02-15-04-05.000"),
-			TriggerSource:     schema.TCP_SOCKET,
+			TriggerSource:     schema.TCPSocket,
 		}
 		h.eventChan <- event
 		h.logger.V(1).Info("Published event to eventChan", "Event", event)
@@ -93,7 +112,7 @@ func (h *TCPSocket) defaultProcess(message []byte) {
 		h.logger.Error(fmt.Errorf("secretIdentifier must be type string"), "Identifier", v)
 	}
 }
-func (h *TCPSocket) readMessage(conn net.Conn) {
+func (h *Socket) readMessage(conn net.Conn) {
 	buf := make([]byte, 4096)
 	for {
 		if h.context.Err() != nil {
@@ -124,7 +143,7 @@ func (h *TCPSocket) readMessage(conn net.Conn) {
 }
 
 // Stop stops the TCP socket by closing the stop channel.
-func (h *TCPSocket) Stop() error {
+func (h *Socket) Stop() error {
 	h.cancel()
 	return h.listener.Close()
 }

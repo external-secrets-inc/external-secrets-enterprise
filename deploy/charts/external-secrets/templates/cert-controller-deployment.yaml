@@ -73,6 +73,9 @@ spec:
           {{- if .Values.installCRDs }}
           - --enable-partial-cache=true
           {{- end }}
+          {{- if .Values.enableHTTP2 }}
+          - --enable-http2=true
+          {{- end }}
           {{- range $key, $value := .Values.certController.extraArgs }}
             {{- if $value }}
           - --{{ $key }}={{ $value }}
@@ -90,6 +93,18 @@ spec:
               path: /readyz
             initialDelaySeconds: 20
             periodSeconds: 5
+          {{- if .Values.certController.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              {{- if .Values.certController.startupProbe.useReadinessProbePort }}
+              port: {{ .Values.certController.readinessProbe.port }}
+              {{- else }}
+              port: {{ .Values.certController.startupProbe.port }}
+              {{- end }}
+              path: /readyz
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          {{- end }}
           {{- with .Values.certController.extraEnv }}
           env:
             {{- toYaml . | nindent 12 }}

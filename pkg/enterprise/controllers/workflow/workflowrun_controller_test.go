@@ -1,4 +1,20 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// /*
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -35,14 +51,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type WorkflowRunReconcilerTestSuite struct {
+type RunReconcilerTestSuite struct {
 	suite.Suite
 	scheme   *runtime.Scheme
 	recorder record.EventRecorder
 	builder  *fake.ClientBuilder
 }
 
-func (s *WorkflowRunReconcilerTestSuite) SetupTest() {
+func (s *RunReconcilerTestSuite) SetupTest() {
 	s.scheme = runtime.NewScheme()
 	workflows.AddToScheme(s.scheme)
 	scanv1alpha1.AddToScheme(s.scheme)
@@ -52,11 +68,11 @@ func (s *WorkflowRunReconcilerTestSuite) SetupTest() {
 	s.builder = fake.NewClientBuilder().WithScheme(s.scheme)
 }
 
-func TestWorkflowRunReconcilerTestSuite(t *testing.T) {
-	suite.Run(t, new(WorkflowRunReconcilerTestSuite))
+func TestRunReconcilerTestSuite(t *testing.T) {
+	suite.Run(t, new(RunReconcilerTestSuite))
 }
 
-func (s *WorkflowRunReconcilerTestSuite) TestReconcileWorkflowCreated() {
+func (s *RunReconcilerTestSuite) TestReconcileWorkflowCreated() {
 	template := &workflows.WorkflowTemplate{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "WorkflowTemplate",
@@ -104,7 +120,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestReconcileWorkflowCreated() {
 	}
 
 	cl := s.builder.WithObjects(template, run).WithStatusSubresource(template, run).Build()
-	reconciler := &WorkflowRunReconciler{
+	reconciler := &RunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
@@ -125,7 +141,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestReconcileWorkflowCreated() {
 	assert.Equal(s.T(), metav1.ConditionTrue, updatedRun.Status.Conditions[0].Status)
 }
 
-func (s *WorkflowRunReconcilerTestSuite) TestReconcileTemplateNotFound() {
+func (s *RunReconcilerTestSuite) TestReconcileTemplateNotFound() {
 	run := &workflows.WorkflowRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "testrun",
@@ -144,7 +160,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestReconcileTemplateNotFound() {
 	}
 
 	cl := s.builder.WithObjects(run).WithStatusSubresource(run).Build()
-	reconciler := &WorkflowRunReconciler{
+	reconciler := &RunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
@@ -165,7 +181,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestReconcileTemplateNotFound() {
 	assert.Equal(s.T(), metav1.ConditionFalse, updatedRun.Status.Conditions[0].Status)
 }
 
-func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding() {
+func (s *RunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding() {
 	// Simulate a Finding resource that returns a location
 	finding := &scanv1alpha1.Finding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -250,7 +266,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding(
 	}
 
 	cl := s.builder.WithObjects(finding, secondFinding).Build()
-	reconciler := &WorkflowRunReconciler{
+	reconciler := &RunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,
@@ -264,7 +280,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateFinding(
 	assert.Contains(s.T(), string(workflow.Spec.Variables.Raw), "second-secret-store")
 }
 
-func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomObject() {
+func (s *RunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomObject() {
 	// Simulate a Finding resource that returns a location
 	finding := &scanv1alpha1.Finding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -353,7 +369,7 @@ func (s *WorkflowRunReconcilerTestSuite) TestResolveWorkflowFromTemplateCustomOb
 	}
 
 	cl := s.builder.WithObjects(finding, secondFinding).Build()
-	reconciler := &WorkflowRunReconciler{
+	reconciler := &RunReconciler{
 		Client:   cl,
 		Log:      logr.Discard(),
 		Scheme:   s.scheme,

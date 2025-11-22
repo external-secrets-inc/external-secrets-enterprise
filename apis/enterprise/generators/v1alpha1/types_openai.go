@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,8 +38,8 @@ import (
 
 // OpenAISpec controls the behavior of the openAI generator.
 type OpenAISpec struct {
-	// ProjectId is the id of the project the account will related to.
-	ProjectId string `json:"projectId"`
+	// ProjectID is the id of the project the account will related to.
+	ProjectID string `json:"projectId"`
 	// Host is the server where the openAI api is hosted.
 	// Default: "https://api.openai.com/v1"
 	// +kubebuilder:default="https://api.openai.com/v1"
@@ -43,6 +59,7 @@ type OpenAISpec struct {
 	CleanupPolicy *genv1alpha1.CleanupPolicy `json:"cleanupPolicy,omitempty"`
 }
 
+// OpenAiServiceAccount represents an OpenAI service account.
 type OpenAiServiceAccount struct {
 	// Object defines the type of this OpenAI resource.
 	// Example: "organization.project.service_account"
@@ -56,10 +73,11 @@ type OpenAiServiceAccount struct {
 	// CreatedAt is the Unix timestamp representing creation time.
 	CreatedAt int64 `json:"created_at"`
 	// APIKey contains the API key associated with this service account.
-	APIKey OpenAiApiKey `json:"api_key"`
+	APIKey OpenAiAPIKey `json:"api_key"`
 }
 
-type OpenAiApiKey struct {
+// OpenAiAPIKey represents an OpenAI API key.
+type OpenAiAPIKey struct {
 	// Object defines the type of this OpenAI API key resource.
 	// Example: "organization.project.service_account.api_key"
 	Object string `json:"object"`
@@ -75,14 +93,13 @@ type OpenAiApiKey struct {
 	ID string `json:"id"`
 }
 
+// OpenAiServiceAccountState represents the state of an OpenAI service account.
 type OpenAiServiceAccountState struct {
-	ServiceAccountId string `json:"serviceAccountId,omitempty"`
-	ApiKeyId         string `json:"apiKeyId,omitempty"`
+	ServiceAccountID string `json:"serviceAccountId,omitempty"`
+	APIKeyID         string `json:"apiKeyId,omitempty"`
 }
 
-// OpenAI generates a random openAI based on the
-// configuration parameters in spec.
-// You can specify the length, characterset and other attributes.
+// OpenAI generates an OpenAI service account based on the configuration parameters in spec.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
@@ -98,7 +115,7 @@ type OpenAI struct {
 
 // +kubebuilder:object:root=true
 
-// OpenAIList contains a list of ExternalSecret resources.
+// OpenAIList contains a list of OpenAI resources.
 type OpenAIList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

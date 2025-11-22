@@ -1,9 +1,11 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -11,6 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package v1alpha1 contains API Schema definitions for the workflows v1alpha1 API group
 package v1alpha1
 
 import (
@@ -22,6 +40,7 @@ import (
 	generatorsv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 )
 
+// Workflow is the Schema for the workflows API.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=wf
@@ -29,7 +48,6 @@ import (
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Completed",type="date",JSONPath=".status.completionTime"
 // +kubebuilder:resource:scope=Namespaced,categories={workflows}
-
 type Workflow struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -38,6 +56,7 @@ type Workflow struct {
 	Status WorkflowStatus `json:"status,omitempty"`
 }
 
+// WorkflowSpec defines the desired state of Workflow.
 type WorkflowSpec struct {
 	// +kubebuilder:validation:Required
 	Version string `json:"version"`
@@ -52,32 +71,45 @@ type WorkflowSpec struct {
 type Phase string
 
 const (
-	PhasePending   Phase = "Pending"
-	PhaseRunning   Phase = "Running"
+	// PhasePending indicates the workflow is pending execution.
+	PhasePending Phase = "Pending"
+	// PhaseRunning indicates the workflow is running.
+	PhaseRunning Phase = "Running"
+	// PhaseSucceeded indicates the workflow has succeeded.
 	PhaseSucceeded Phase = "Succeeded"
-	PhaseFailed    Phase = "Failed"
+	// PhaseFailed indicates the workflow has failed.
+	PhaseFailed Phase = "Failed"
 )
 
 // JobPhase types for job state machine.
 type JobPhase string
 
 const (
-	JobPhasePending   JobPhase = "Pending"
-	JobPhaseRunning   JobPhase = "Running"
+	// JobPhasePending indicates the job is pending execution.
+	JobPhasePending JobPhase = "Pending"
+	// JobPhaseRunning indicates the job is running.
+	JobPhaseRunning JobPhase = "Running"
+	// JobPhaseSucceeded indicates the job has succeeded.
 	JobPhaseSucceeded JobPhase = "Succeeded"
-	JobPhaseFailed    JobPhase = "Failed"
+	// JobPhaseFailed indicates the job has failed.
+	JobPhaseFailed JobPhase = "Failed"
 )
 
 // StepPhase types for step state machine.
 type StepPhase string
 
 const (
-	StepPhasePending   StepPhase = "Pending"
-	StepPhaseRunning   StepPhase = "Running"
+	// StepPhasePending indicates the step is pending execution.
+	StepPhasePending StepPhase = "Pending"
+	// StepPhaseRunning indicates the step is running.
+	StepPhaseRunning StepPhase = "Running"
+	// StepPhaseSucceeded indicates the step has succeeded.
 	StepPhaseSucceeded StepPhase = "Succeeded"
-	StepPhaseFailed    StepPhase = "Failed"
+	// StepPhaseFailed indicates the step has failed.
+	StepPhaseFailed StepPhase = "Failed"
 )
 
+// WorkflowStatus defines the observed state of Workflow.
 type WorkflowStatus struct {
 	// +kubebuilder:validation:Optional
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
@@ -93,6 +125,7 @@ type WorkflowStatus struct {
 	ExecutionTimeNanos *int64       `json:"executionTimeNanos,omitempty"`
 }
 
+// Job defines a unit of work in a workflow.
 type Job struct {
 	DependsOn []string          `json:"dependsOn,omitempty"`
 	Variables map[string]string `json:"variables,omitempty"`
@@ -197,6 +230,7 @@ type OutputDefinition struct {
 	Sensitive bool `json:"sensitive,omitempty"`
 }
 
+// Step defines a single step in a workflow job.
 type Step struct {
 
 	// +kubebuilder:validation:Required
@@ -253,6 +287,7 @@ type GeneratorStep struct {
 	AutoCleanup bool `json:"autoCleanup,omitempty"`
 }
 
+// PullStep defines a step that pulls secrets from a secret store.
 type PullStep struct {
 	// Source allows you to fetch secrets from a SecretStore.
 	Source v1.StoreSourceRef `json:"source"`
@@ -266,6 +301,7 @@ type PullStep struct {
 	DataFrom []v1.ExternalSecretDataFromRemoteRef `json:"dataFrom,omitempty"`
 }
 
+// PushStep defines a step that pushes secrets to a destination.
 type PushStep struct {
 	// SecretSource defines the source map in the workflow context,
 	// indicating where to retrieve the secret values
@@ -276,6 +312,7 @@ type PushStep struct {
 	Data []v1alpha1.PushSecretData `json:"data,omitempty"`
 }
 
+// TransformStep defines a step that transforms data.
 type TransformStep struct {
 	// Transform is a map of key-value pairs, where the value is a template string
 	// that will be dynamically resolved at runtime against the workflow data.
@@ -292,11 +329,13 @@ type DestinationRef struct {
 	SecretStoreRef v1.SecretStoreRef `json:"storeRef,omitempty"`
 }
 
+// DebugStep defines a step that outputs debug information.
 type DebugStep struct {
 	// +kubebuilder:validation:Required
 	Message string `json:"message"`
 }
 
+// JobStatus defines the observed state of a Job.
 type JobStatus struct {
 	// +kubebuilder:validation:Enum=Pending;Waiting;Running;Succeeded;Failed
 	Phase JobPhase `json:"phase,omitempty"`
@@ -307,6 +346,7 @@ type JobStatus struct {
 	ExecutionTimeNanos *int64                `json:"executionTimeNanos,omitempty"`
 }
 
+// StepStatus defines the observed state of a Step.
 type StepStatus struct {
 	// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed
 	Phase StepPhase `json:"phase,omitempty"`
@@ -318,9 +358,9 @@ type StepStatus struct {
 	ExecutionTimeNanos *int64            `json:"executionTimeNanos,omitempty"`
 }
 
+// WorkflowList contains a list of Workflow.
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
-
 type WorkflowList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

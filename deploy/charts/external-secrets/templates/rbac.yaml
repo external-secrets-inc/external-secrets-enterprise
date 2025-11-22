@@ -239,6 +239,7 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "acraccesstokens"
+    - "cloudsmithaccesstokens"
     {{- if .Values.processClusterGenerator }}
     - "clustergenerators"
     {{- end }}
@@ -282,6 +283,15 @@ rules:
     - "get"
     - "list"
     - "watch"
+  {{- if .Values.processClusterExternalSecret }}
+  - apiGroups:
+    - ""
+    resources:
+    - "namespaces"
+    verbs:
+    - "update"
+    - "patch"
+  {{- end }}
   - apiGroups:
     - ""
     resources:
@@ -302,6 +312,31 @@ rules:
     - "update"
     - "delete"
     - "patch"
+  {{- if .Values.genericTargets.enabled }}
+  # Generic target permissions (ConfigMaps)
+  - apiGroups:
+    - ""
+    resources:
+    - "configmaps"
+    verbs:
+    - "create"
+    - "update"
+    - "delete"
+    - "patch"
+  {{- range .Values.genericTargets.resources }}
+  # Custom resource permissions for non-Secret targets
+  - apiGroups:
+    - {{ .apiGroup | quote }}
+    resources:
+    {{- range .resources }}
+    - {{ . | quote }}
+    {{- end }}
+    verbs:
+    {{- range .verbs }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
   - apiGroups:
     - ""
     resources:
@@ -377,6 +412,7 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "acraccesstokens"
+    - "cloudsmithaccesstokens"
     {{- if .Values.processClusterGenerator }}
     - "clustergenerators"
     {{- end }}
@@ -449,6 +485,7 @@ rules:
     - "generators.external-secrets.io"
     resources:
     - "acraccesstokens"
+    - "cloudsmithaccesstokens"
     {{- if .Values.processClusterGenerator }}
     - "clustergenerators"
     {{- end }}

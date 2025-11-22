@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
@@ -30,7 +46,7 @@ import (
 const testState = "test-state"
 
 // setAuthContext sets both authInfo and workloadInfo in the echo context (simulating middleware behavior).
-func setAuthContext(c echo.Context, authInfo *auth.AuthInfo) {
+func setAuthContext(c echo.Context, authInfo *auth.Info) {
 	c.Set("authInfo", authInfo)
 	if authInfo.KubeAttributes != nil {
 		workloadInfo := &auth.WorkloadInfo{
@@ -44,7 +60,7 @@ func setAuthContext(c echo.Context, authInfo *auth.AuthInfo) {
 
 type GenerateSecretsTestSuite struct {
 	suite.Suite
-	server *ServerHandler
+	server *Handler
 	specs  []*fedv1alpha1.AuthorizationSpec
 }
 
@@ -78,7 +94,7 @@ func (t *testExternalSecretAccessor) FloodGateEnabled() bool {
 
 func (s *GenerateSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(&testExternalSecretAccessor{}, ":8080", ":8081", "unix:///spire.sock", true)
+	s.server = NewHandler(&testExternalSecretAccessor{}, ":8080", ":8081", "unix:///spire.sock", true)
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -98,7 +114,7 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 
 	tests := []struct {
 		name              string
-		authInfo          *auth.AuthInfo
+		authInfo          *auth.Info
 		expectedOwner     string
 		expectPodUID      bool
 		expectedPodUID    string
@@ -109,7 +125,7 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 	}{
 		{
 			name: "with pod information in claims",
-			authInfo: &auth.AuthInfo{
+			authInfo: &auth.Info{
 				Method:   "oidc",
 				Provider: "https://kubernetes.default.svc.cluster.local",
 				Subject:  "system:serviceaccount:kube-system:replicator",
@@ -135,7 +151,7 @@ func (s *GenerateSecretsTestSuite) TestResourcePopulationFromClaims() {
 		},
 		{
 			name: "without pod information in claims",
-			authInfo: &auth.AuthInfo{
+			authInfo: &auth.Info{
 				Method:   "oidc",
 				Provider: "https://kubernetes.default.svc.cluster.local",
 				Subject:  "system:serviceaccount:kube-system:replicator",
@@ -243,7 +259,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 	tc := []struct {
 		name                  string
 		setupAuthSpecs        func()
-		authInfo              *auth.AuthInfo
+		authInfo              *auth.Info
 		expectedStatus        int
 		expectDeleteCall      bool
 		deleteParamsValidator func(ns string, lbls labels.Selector)
@@ -266,7 +282,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 				store.Add(testIssuer, authSpec)
 				s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
 			},
-			authInfo: &auth.AuthInfo{
+			authInfo: &auth.Info{
 				Method:   "oidc",
 				Provider: testIssuer,
 				Subject:  testSubject,
@@ -309,7 +325,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 				store.Add(testIssuer, authSpec)
 				s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
 			},
-			authInfo: &auth.AuthInfo{
+			authInfo: &auth.Info{
 				Method:   "oidc",
 				Provider: testIssuer,
 				Subject:  testSubject,
@@ -343,7 +359,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelf() {
 				store.Add(testIssuer, authSpec)
 				s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
 			},
-			authInfo: &auth.AuthInfo{
+			authInfo: &auth.Info{
 				Method:   "oidc",
 				Provider: testIssuer,
 				Subject:  testSubject,
@@ -419,7 +435,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeSelfHappyPath() {
 		testSAName        = "test-sa-revoke-happy"
 		testCaCertData    = "test-ca-cert-data-for-revoke-self-happy-path"
 	)
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: testIssuer,
 		Subject:  testSubject,
@@ -504,7 +520,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 		testNamespace = "test-namespace"
 	)
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: testIssuer,
 		Subject:  testSubject,
@@ -697,13 +713,13 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 				c.SetParamNames("generatorName", "generatorKind", "generatorNamespace")
 				c.SetParamValues("test-generator", "test-kind", testNamespace)
 
-				customAuthInfo := &auth.AuthInfo{
+				customInfo := &auth.Info{
 					Method:   "oidc",
 					Provider: testIssuer,
 					Subject:  testSubject,
 					// No KubeAttributes - OAuth2 auth
 				}
-				setAuthContext(c, customAuthInfo)
+				setAuthContext(c, customInfo)
 
 				// Setup the server for this test
 				spec := &fedv1alpha1.AuthorizationSpec{
@@ -762,7 +778,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 				c.SetParamNames("generatorName", "generatorKind", "generatorNamespace")
 				c.SetParamValues("test-generator", "test-kind", testNamespace)
 
-				customAuthInfo := &auth.AuthInfo{
+				customInfo := &auth.Info{
 					Method:   "oidc",
 					Provider: testIssuer,
 					Subject:  testSubject,
@@ -770,7 +786,7 @@ func (s *GenerateSecretsTestSuite) TestGenerateSecrets() {
 						Namespace: testNamespace,
 					},
 				}
-				setAuthContext(c, customAuthInfo)
+				setAuthContext(c, customInfo)
 
 				// Setup the server for this test
 				spec := &fedv1alpha1.AuthorizationSpec{
@@ -868,7 +884,7 @@ func (s *GenerateSecretsTestSuite) TestRevokeCredentialsOfHappyPath() {
 		s.T().Cleanup(func() { store.Remove(testIssuer, authSpec) })
 
 		// 2. Setup auth info
-		authInfo := &auth.AuthInfo{
+		authInfo := &auth.Info{
 			Method:   "oidc",
 			Provider: testIssuer,
 			Subject:  testSubject,
@@ -935,13 +951,13 @@ func TestGenerateSecretsTestSuite(t *testing.T) {
 
 type PostSecretsTestSuite struct {
 	suite.Suite
-	server *ServerHandler
+	server *Handler
 	specs  []*fedv1alpha1.AuthorizationSpec
 }
 
 func (s *PostSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(&testExternalSecretAccessor{}, ":8080", ":8081", "unix:///spire.sock", true)
+	s.server = NewHandler(&testExternalSecretAccessor{}, ":8080", ":8081", "unix:///spire.sock", true)
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -960,7 +976,7 @@ func (s *PostSecretsTestSuite) TestPostSecrets() {
 		testSubject = "test-subject"
 	)
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: testIssuer,
 		Subject:  testSubject,
@@ -1146,22 +1162,22 @@ func TestPostSecretsTestSuite(t *testing.T) {
 }
 
 type fakeAuthProvider struct {
-	info *auth.AuthInfo
+	info *auth.Info
 	err  error
 }
 
-func (f *fakeAuthProvider) Authenticate(req *http.Request) (*auth.AuthInfo, error) {
+func (f *fakeAuthProvider) Authenticate(req *http.Request) (*auth.Info, error) {
 	return f.info, f.err
 }
 
 type AuthMiddlewareSuite struct {
 	suite.Suite
-	server       *ServerHandler
+	server       *Handler
 	origRegistry map[string]auth.Authenticator
 }
 
 func (s *AuthMiddlewareSuite) SetupTest() {
-	s.server = &ServerHandler{}
+	s.server = &Handler{}
 
 	s.origRegistry = auth.Registry
 }
@@ -1171,7 +1187,7 @@ func (s *AuthMiddlewareSuite) TearDownTest() {
 }
 
 func (s *AuthMiddlewareSuite) Test_FirstProviderSucceeds() {
-	expected := &auth.AuthInfo{Method: "oidc", Provider: "test", Subject: "xyz"}
+	expected := &auth.Info{Method: "oidc", Provider: "test", Subject: "xyz"}
 	auth.Registry = map[string]auth.Authenticator{
 		"test": &fakeAuthProvider{info: expected, err: nil},
 	}
@@ -1197,7 +1213,7 @@ func (s *AuthMiddlewareSuite) Test_FirstProviderSucceeds() {
 }
 
 func (s *AuthMiddlewareSuite) Test_SecondProviderSucceeds() {
-	expected := &auth.AuthInfo{Method: "oidc", Provider: "test", Subject: "xyz"}
+	expected := &auth.Info{Method: "oidc", Provider: "test", Subject: "xyz"}
 	auth.Registry = map[string]auth.Authenticator{
 		"first":  &fakeAuthProvider{info: nil, err: errors.New("err1")},
 		"second": &fakeAuthProvider{info: expected, err: nil},
@@ -1351,12 +1367,12 @@ func TestUpsertIdentityConnectionError(t *testing.T) {
 	mockClient := &mockClient{getErr: connectionErr}
 
 	// Create the server handler with the mock client
-	server := &ServerHandler{
+	server := &Handler{
 		client: mockClient,
 	}
 
 	// Create test auth info
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",
@@ -1407,11 +1423,11 @@ func TestUpsertIdentityCreateNew(t *testing.T) {
 	notFoundErr := apierrors.NewNotFound(schema.GroupResource{Group: "federation.external-secrets.io", Resource: "authorizedidentities"}, "test-identity")
 	mockClient := &mockClient{getErr: notFoundErr}
 
-	server := &ServerHandler{
+	server := &Handler{
 		client: mockClient,
 	}
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",
@@ -1495,11 +1511,11 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 		storedIdentity: existingIdentity,
 	}
 
-	server := &ServerHandler{
+	server := &Handler{
 		client: mockClient,
 	}
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",
@@ -1606,12 +1622,12 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 		storedIdentity: existingIdentity,
 	}
 
-	server := &ServerHandler{
+	server := &Handler{
 		client: mockClient,
 	}
 
 	// Same pod re-requesting
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",
@@ -1686,11 +1702,11 @@ func TestUpsertIdentityCreateError(t *testing.T) {
 		createErr: createErr,
 	}
 
-	server := &ServerHandler{
+	server := &Handler{
 		client: mockClient,
 	}
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",
@@ -1747,11 +1763,11 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 		updateErr:      updateErr,
 	}
 
-	server := &ServerHandler{
+	server := &Handler{
 		client: mockClient,
 	}
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",
@@ -1796,9 +1812,9 @@ func TestUpsertIdentityNilReconciler(t *testing.T) {
 	// Test that upsertIdentity handles missing dependencies gracefully
 	ctx := context.Background()
 
-	server := &ServerHandler{}
+	server := &Handler{}
 
-	authInfo := &auth.AuthInfo{
+	authInfo := &auth.Info{
 		Method:   "oidc",
 		Provider: "test-provider",
 		Subject:  "test-subject",

@@ -1,7 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package schema defines the handler schema and provider registry.
 package schema
 
 import (
@@ -14,17 +31,26 @@ import (
 )
 
 const (
-	EXTERNAL_SECRET = "ExternalSecret"
-	PUSH_SECRET     = "PushSecret"
-	DEPLOYMENT      = "Deployment"
-	WORKFLOW        = "WorkflowRunTemplate"
+	// ExternalSecret is the ExternalSecret handler type.
+	ExternalSecret = "ExternalSecret"
+	// PushSecret is the PushSecret handler type.
+	PushSecret = "PushSecret"
+	// Deployment is the Deployment handler type.
+	Deployment = "Deployment"
+	// Workflow is the WorkflowRunTemplate handler type.
+	Workflow = "WorkflowRunTemplate"
 )
 
+// ApplyFn is a function type for applying changes to an object.
 type ApplyFn func(obj client.Object, event events.SecretRotationEvent) error
+
+// ReferenceFn is a function type for checking if an object references a secret.
 type ReferenceFn func(obj client.Object, secretName string) (bool, error)
 
+// WaitForFn is a function type for waiting for an object to be ready.
 type WaitForFn func(obj client.Object) error
 
+// Handler defines the interface for handling secret rotation events.
 type Handler interface {
 	// Method to implement References
 	// In the future, `matchStrategy` will just replace the References Method
@@ -46,6 +72,7 @@ type Handler interface {
 	WithWaitFor(fn WaitForFn) Handler
 }
 
+// Provider is an interface for creating handlers.
 type Provider interface {
 	NewHandler(ctx context.Context, client client.Client, destination v1alpha1.DestinationToWatch) Handler
 }
@@ -58,10 +85,12 @@ func init() {
 	providerMap = sync.Map{}
 }
 
+// ForceRegister forcefully registers a provider, overwriting any existing provider.
 func ForceRegister(name string, prov Provider) {
 	providerMap.Store(name, prov)
 }
 
+// RegisterProvider registers a provider if it doesn't already exist.
 func RegisterProvider(name string, prov Provider) bool {
 	actual, loaded := providerMap.LoadOrStore(name, prov)
 	if actual != nil {
@@ -69,6 +98,7 @@ func RegisterProvider(name string, prov Provider) bool {
 	}
 	return loaded
 }
+// GetProvider retrieves a registered provider by name.
 func GetProvider(name string) Provider {
 	content, exists := providerMap.Load(name)
 	if !exists {

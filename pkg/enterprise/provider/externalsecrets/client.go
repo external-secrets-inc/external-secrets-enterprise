@@ -1,9 +1,11 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -11,6 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package externalsecrets provides an ExternalSecrets provider implementation.
 package externalsecrets
 
 import (
@@ -33,6 +51,7 @@ const (
 	errNotImplemented = "not implemented"
 )
 
+// Client is the ExternalSecrets provider client.
 type Client struct {
 	httpClient      *http.Client
 	kclient         kclient.Client
@@ -42,32 +61,33 @@ type Client struct {
 	secretStoreName string
 }
 
-// TODO - implement client side and server side.
+// DeleteSecret deletes a secret (not implemented).
 func (g *Client) DeleteSecret(_ context.Context, _ esv1.PushSecretRemoteRef) error {
 	return errors.New(errNotImplemented)
 }
 
-// TODO - implement client side and server side.
+// SecretExists checks if a secret exists (not implemented).
 func (g *Client) SecretExists(_ context.Context, _ esv1.PushSecretRemoteRef) (bool, error) {
 	return false, errors.New(errNotImplemented)
 }
 
-// TODO - implement client side and server side.
+// PushSecret pushes a secret (not implemented).
 func (g *Client) PushSecret(_ context.Context, _ *corev1.Secret, _ esv1.PushSecretData) error {
 	return errors.New(errNotImplemented)
 }
 
-// TODO - implement client side and server side.
-func (g *Client) GetAllSecrets(_ context.Context, ref esv1.ExternalSecretFind) (map[string][]byte, error) {
+// GetAllSecrets retrieves all secrets (not implemented).
+func (g *Client) GetAllSecrets(_ context.Context, _ esv1.ExternalSecretFind) (map[string][]byte, error) {
 	return nil, errors.New(errNotImplemented)
 }
 
-// TODO - implement client side and server side.
-func (g *Client) GetSecretMap(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
+// GetSecretMap retrieves a secret map (not implemented).
+func (g *Client) GetSecretMap(_ context.Context, _ esv1.ExternalSecretDataRemoteRef) (map[string][]byte, error) {
 	return nil, errors.New(errNotImplemented)
 }
 
-func (g *Client) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
+// GetSecret retrieves a secret from the ExternalSecrets server.
+func (g *Client) GetSecret(_ context.Context, ref esv1.ExternalSecretDataRemoteRef) ([]byte, error) {
 	realURL := fmt.Sprintf("%s/secretstore/%s/secrets/%s", g.serverURL, g.secretStoreName, ref.Key)
 	serverURL, err := url.Parse(realURL)
 	if err != nil {
@@ -103,10 +123,12 @@ func (g *Client) GetSecret(ctx context.Context, ref esv1.ExternalSecretDataRemot
 	return resBody, nil
 }
 
+// Close closes the client.
 func (g *Client) Close(_ context.Context) error {
 	return nil
 }
 
+// Validate validates the client configuration.
 func (g *Client) Validate() (esv1.ValidationResult, error) {
 	return esv1.ValidationResultReady, nil
 }

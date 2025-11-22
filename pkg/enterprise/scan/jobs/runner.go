@@ -1,5 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package job provides job runner functionality for scanning secrets.
 package job
 
 import (
@@ -15,7 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type JobRunner struct {
+// Runner runs scan jobs to find secrets and consumers.
+type Runner struct {
 	client.Client
 	logr.Logger
 	Constraints    *scanv1alpha1.JobConstraints
@@ -25,9 +44,10 @@ type JobRunner struct {
 	consumerMemset *ConsumerMemorySet
 }
 
-func NewJobRunner(client client.Client, logger logr.Logger, namespace string, constraints *scanv1alpha1.JobConstraints) *JobRunner {
+// NewRunner creates a new job runner.
+func NewRunner(client client.Client, logger logr.Logger, namespace string, constraints *scanv1alpha1.JobConstraints) *Runner {
 	mgr := store.NewManager(client, "", false)
-	return &JobRunner{
+	return &Runner{
 		Client:         client,
 		Logger:         logger,
 		Constraints:    constraints,
@@ -38,11 +58,13 @@ func NewJobRunner(client client.Client, logger logr.Logger, namespace string, co
 	}
 }
 
-func (j *JobRunner) Close(ctx context.Context) error {
+// Close closes the job runner.
+func (j *Runner) Close(ctx context.Context) error {
 	return j.mgr.Close(ctx)
 }
 
-func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha1.Consumer, []esv1.SecretStore, []tgtv1alpha1.GenericTarget, error) {
+// Run executes the scan job.
+func (j *Runner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1alpha1.Consumer, []esv1.SecretStore, []tgtv1alpha1.GenericTarget, error) {
 	// List Secret Stores
 	// TODO - apply constraints
 	j.Logger.V(1).Info("Listing Secret Stores")
@@ -132,7 +154,7 @@ func (j *JobRunner) Run(ctx context.Context) ([]scanv1alpha1.Finding, []scanv1al
 	return findings, consumers, usedStores, usedTargets, nil
 }
 
-func (j JobRunner) scanVirtualMachineTargets(ctx context.Context, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
+func (j Runner) scanVirtualMachineTargets(ctx context.Context, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
 	vmTargets := &tgtv1alpha1.VirtualMachineList{}
 	if err := j.Client.List(ctx, vmTargets, client.InNamespace(j.Namespace)); err != nil {
 		return nil, err
@@ -167,7 +189,7 @@ func (j JobRunner) scanVirtualMachineTargets(ctx context.Context, usedTargets []
 	return usedTargets, nil
 }
 
-func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
+func (j Runner) scanGithubRepositoryTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
 	list := &tgtv1alpha1.GithubRepositoryList{}
 	return usedTargets, j.scanTargets(ctx, list, func() []client.Object {
 		objs := make([]client.Object, len(list.Items))
@@ -179,7 +201,7 @@ func (j JobRunner) scanGithubRepositoryTargets(ctx context.Context, secretValues
 	}, secretValues)
 }
 
-func (j JobRunner) scanKubernetesClusterTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
+func (j Runner) scanKubernetesClusterTargets(ctx context.Context, secretValues map[string]struct{}, usedTargets []tgtv1alpha1.GenericTarget) ([]tgtv1alpha1.GenericTarget, error) {
 	list := &tgtv1alpha1.KubernetesClusterList{}
 	return usedTargets, j.scanTargets(ctx, list, func() []client.Object {
 		objs := make([]client.Object, len(list.Items))
@@ -191,7 +213,7 @@ func (j JobRunner) scanKubernetesClusterTargets(ctx context.Context, secretValue
 	}, secretValues)
 }
 
-func (j JobRunner) scanTargets(ctx context.Context, list client.ObjectList, getObjs func() []client.Object, secretValues map[string]struct{}) error {
+func (j Runner) scanTargets(ctx context.Context, list client.ObjectList, getObjs func() []client.Object, secretValues map[string]struct{}) error {
 	if err := j.Client.List(ctx, list, client.InNamespace(j.Namespace)); err != nil {
 		return err
 	}
@@ -222,7 +244,7 @@ func (j JobRunner) scanTargets(ctx context.Context, list client.ObjectList, getO
 	return nil
 }
 
-func (j *JobRunner) attributeConsumers(ctx context.Context, findings []scanv1alpha1.Finding) error {
+func (j *Runner) attributeConsumers(ctx context.Context, findings []scanv1alpha1.Finding) error {
 	locationsPerKindMap := make(map[string][]scanv1alpha1.SecretInStoreRef, 0)
 	for _, finding := range findings {
 		for _, location := range finding.Status.Locations {
@@ -267,7 +289,7 @@ func (j *JobRunner) attributeConsumers(ctx context.Context, findings []scanv1alp
 	return nil
 }
 
-func (j *JobRunner) attributeTargetConsumers(ctx context.Context, kind, name string, obj client.Object, locations []scanv1alpha1.SecretInStoreRef) error {
+func (j *Runner) attributeTargetConsumers(ctx context.Context, kind, name string, obj client.Object, locations []scanv1alpha1.SecretInStoreRef) error {
 	prov, ok := tgtv1alpha1.GetTargetByName(kind)
 	if !ok {
 		return fmt.Errorf("target kind %q not supported", kind)

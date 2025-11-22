@@ -1,6 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
+// Package jobs implements the Job controller.
 package jobs
 
 import (
@@ -32,9 +49,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	// Register enterprise targets.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/targets/register"
 )
 
+// JobController reconciles Job resources.
 type JobController struct {
 	client.Client
 	Log     logr.Logger
@@ -42,6 +61,7 @@ type JobController struct {
 	running sync.Map
 }
 
+// Reconcile reconciles a Job resource.
 func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	jobSpec := &v1alpha1.Job{}
 	if err := c.Get(ctx, req.NamespacedName, jobSpec); err != nil {
@@ -125,7 +145,7 @@ func (c *JobController) Reconcile(ctx context.Context, req ctrl.Request) (result
 	}
 
 	// Synchronize
-	j := utils.NewJobRunner(c.Client, c.Log, jobSpec.Namespace, jobSpec.Spec.Constraints)
+	j := utils.NewRunner(c.Client, c.Log, jobSpec.Namespace, jobSpec.Spec.Constraints)
 
 	jobSpec.Status = v1alpha1.JobStatus{
 		LastRunTime: metav1.Now(),
@@ -340,7 +360,7 @@ func calculateTargetsDigest(targets []targetv1alpha1.GenericTarget) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *utils.JobRunner) error {
+func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *utils.Runner) error {
 	defer func() {
 		err := j.Close(context.Background())
 		if err != nil {
@@ -388,6 +408,7 @@ func (c *JobController) runJob(ctx context.Context, jobSpec *v1alpha1.Job, j *ut
 	return nil
 }
 
+// UpdateFindings updates the findings for a job.
 func (c *JobController) UpdateFindings(ctx context.Context, findings []v1alpha1.Finding, namespace string) (v1alpha1.JobRunStatus, metav1.Time, error) {
 	c.Log.V(1).Info("Found findings for job", "total findings", len(findings))
 	// for each finding, see if it already exists and update it if it does;
@@ -469,6 +490,7 @@ func (c *JobController) UpdateFindings(ctx context.Context, findings []v1alpha1.
 	return v1alpha1.JobRunStatusRunning, metav1.Now(), nil
 }
 
+// UpdateConsumers updates the consumers for a job.
 func (c *JobController) UpdateConsumers(
 	ctx context.Context,
 	consumers []v1alpha1.Consumer,

@@ -1,6 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
+// Package target implements the Target controller.
 package target
 
 import (
@@ -25,11 +42,11 @@ import (
 
 	// Loading registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
+	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 
-// TargetReconciler reconciles a Target object.
-type TargetReconciler struct {
+// Reconciler reconciles a Target object.
+type Reconciler struct {
 	client.Client
 	Log             logr.Logger
 	Scheme          *runtime.Scheme
@@ -40,7 +57,8 @@ type TargetReconciler struct {
 	Kind string
 }
 
-func (r *TargetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// Reconcile reconciles a Target resource.
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("target", req.NamespacedName)
 
 	resourceLabels := ctrlmetrics.RefineNonConditionMetricLabels(map[string]string{"name": req.Name, "namespace": req.Namespace})
@@ -63,7 +81,7 @@ func (r *TargetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	return secretstore.Reconcile(ctx, req, genericStore, r.Client, log, secretstore.Opts{
+	return secretstore.Reconcile(ctx, req, genericStore, r.Client, true, log, secretstore.Opts{
 		ControllerClass: r.ControllerClass,
 		GaugeVecGetter:  tmetrics.GetGaugeVec,
 		Recorder:        r.recorder,
@@ -72,7 +90,7 @@ func (r *TargetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
-func (r *TargetReconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts controller.Options) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts controller.Options) error {
 	r.recorder = mgr.GetEventRecorderFor("target")
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(opts).
@@ -80,6 +98,7 @@ func (r *TargetReconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object,
 		Complete(r)
 }
 
+// BuildTargetObject builds a Target object from the scheme and kind.
 func BuildTargetObject(scheme *runtime.Scheme, kind string) (esv1.GenericStore, error) {
 	gvk := schema.GroupVersionKind{Group: tgtv1alpha1.Group, Version: tgtv1alpha1.Version, Kind: kind}
 	obj, err := scheme.New(gvk)

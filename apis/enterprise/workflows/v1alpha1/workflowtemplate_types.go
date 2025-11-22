@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,6 +27,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// Package v1alpha1 contains API Schema definitions for the workflows v1alpha1 API group
 package v1alpha1
 
 import (
@@ -59,38 +77,53 @@ type ParameterGroup struct {
 type ParameterType string
 
 const (
-	// ParameterTypeString Primitive types.
-	ParameterTypeString       ParameterType = "string"
-	ParameterTypeNumber       ParameterType = "number"
-	ParameterTypeBool         ParameterType = "bool"
-	ParameterTypeObject       ParameterType = "object"
-	ParameterTypeSecret       ParameterType = "secret"
-	ParameterTypeTime         ParameterType = "time"
+	// ParameterTypeString represents a string parameter type.
+	ParameterTypeString ParameterType = "string"
+	// ParameterTypeNumber represents a number parameter type.
+	ParameterTypeNumber ParameterType = "number"
+	// ParameterTypeBool represents a boolean parameter type.
+	ParameterTypeBool ParameterType = "bool"
+	// ParameterTypeObject represents an object parameter type.
+	ParameterTypeObject ParameterType = "object"
+	// ParameterTypeSecret represents a secret parameter type.
+	ParameterTypeSecret ParameterType = "secret"
+	// ParameterTypeTime represents a time parameter type.
+	ParameterTypeTime ParameterType = "time"
+	// ParameterTypeCustomObject represents a custom object parameter type.
 	ParameterTypeCustomObject ParameterType = `^object\[([a-zA-Z0-9_-]+)\](namespace|secretstore|externalsecret|clustersecretstore|secretlocation|finding|generator\[[a-zA-Z0-9_-]+\]|array\[(?:secretstore|secretlocation|finding|generator\[[a-zA-Z0-9_-]+\])\])$`
 
 	// ParameterTypeNamespace Kubernetes resource types.
-	ParameterTypeNamespace          ParameterType = "namespace"
-	ParameterTypeSecretStore        ParameterType = "secretstore"
-	ParameterTypeExternalSecret     ParameterType = "externalsecret"
+	ParameterTypeNamespace ParameterType = "namespace"
+	// ParameterTypeSecretStore represents a secret store parameter type.
+	ParameterTypeSecretStore ParameterType = "secretstore"
+	// ParameterTypeExternalSecret represents an external secret parameter type.
+	ParameterTypeExternalSecret ParameterType = "externalsecret"
+	// ParameterTypeClusterSecretStore represents a cluster secret store parameter type.
 	ParameterTypeClusterSecretStore ParameterType = "clustersecretstore"
-	ParameterTypeGenerator          ParameterType = `^generator\[([a-zA-Z0-9_-]+)\]$`
-	ParameterTypeSecretLocation     ParameterType = "secretlocation"
-	ParameterTypeFinding            ParameterType = "finding"
+	// ParameterTypeGenerator represents a generator parameter type.
+	ParameterTypeGenerator ParameterType = `^generator\[([a-zA-Z0-9_-]+)\]$`
+	// ParameterTypeSecretLocation represents a secret location parameter type.
+	ParameterTypeSecretLocation ParameterType = "secretlocation"
+	// ParameterTypeFinding represents a finding parameter type.
+	ParameterTypeFinding ParameterType = "finding"
 
-	// Array Types (add as needed).
-	ParameterTypeSecretStoreArray    ParameterType = "array[secretstore]"
-	ParameterTypeGeneratorArray      ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
+	// ParameterTypeSecretStoreArray represents an array of secret stores.
+	ParameterTypeSecretStoreArray ParameterType = "array[secretstore]"
+	// ParameterTypeGeneratorArray represents an array of generators.
+	ParameterTypeGeneratorArray ParameterType = `^array\[generator\[([a-zA-Z0-9_-]+)\]\]$`
+	// ParameterTypeSecretLocationArray represents an array of secret locations.
 	ParameterTypeSecretLocationArray ParameterType = "array[secretlocation]"
-	ParameterTypeFindingArray        ParameterType = "array[finding]"
+	// ParameterTypeFindingArray represents an array of findings.
+	ParameterTypeFindingArray ParameterType = "array[finding]"
 )
 
-// SecretStoreParameter defines a parameter to be passed to a secret store type.
+// SecretStoreParameterType defines a parameter to be passed to a secret store type.
 type SecretStoreParameterType struct {
 	// Name is the name of the secretstore.
 	Name string `json:"name"`
 }
 
-// GeneratorParameter defines a parameter to be passed to a generator type.
+// GeneratorParameterType defines a parameter to be passed to a generator type.
 type GeneratorParameterType struct {
 	// Name is the name of the generator.
 	Name *string `json:"name,omitempty"`
@@ -99,10 +132,10 @@ type GeneratorParameterType struct {
 	Kind *string `json:"kind,omitempty"`
 }
 
-// SecretLocationParameter defines a parameter to be passed to a secret location type.
+// SecretLocationParameterType defines a parameter to be passed to a secret location type.
 type SecretLocationParameterType = scanv1alpha1.SecretInStoreRef
 
-// FindingParameter defines a parameter to be passed to a secret store type.
+// FindingParameterType defines a parameter to be passed to a finding type.
 type FindingParameterType struct {
 	// Name is the name of the secretstore.
 	Name string `json:"name"`

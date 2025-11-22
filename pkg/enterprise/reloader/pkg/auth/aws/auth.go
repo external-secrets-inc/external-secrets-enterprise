@@ -1,3 +1,20 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// Package aws implements AWS authentication.
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 package aws
@@ -21,12 +38,14 @@ import (
 )
 
 const (
+	// AuthMethodStatic is the static authentication method.
 	AuthMethodStatic = "static"
-	AuthMethodIRSA   = "irsa"
+	// AuthMethodIRSA is the IRSA authentication method.
+	AuthMethodIRSA = "irsa"
 )
 
-// createAWSSDKConfig creates an AWS config based on the provided authentication method.
-func CreateAWSSDKConfig(ctx context.Context, k8sClient client.Client, config modelAWS.AWSSDKAuth, logger logr.Logger) (aws.Config, error) {
+// CreateAWSSDKConfig creates an AWS config based on the provided authentication method.
+func CreateAWSSDKConfig(ctx context.Context, k8sClient client.Client, config modelAWS.SDKAuth, logger logr.Logger) (aws.Config, error) {
 	logger.Info("Creating AWS SDK Config", "AuthMethod", config.AuthMethod)
 	switch config.AuthMethod {
 	case AuthMethodStatic:
@@ -41,18 +60,18 @@ func CreateAWSSDKConfig(ctx context.Context, k8sClient client.Client, config mod
 }
 
 // loadConfigWithSecret loads AWS configuration using static credentials from a Kubernetes Secret.
-func loadConfigWithSecret(ctx context.Context, k8sClient client.Client, authConfig modelAWS.AWSSDKAuth, logger logr.Logger) (aws.Config, error) {
+func loadConfigWithSecret(ctx context.Context, k8sClient client.Client, authConfig modelAWS.SDKAuth, logger logr.Logger) (aws.Config, error) {
 	logger.Info("Loading AWS Config with static credentials from secret", "SecretName", authConfig.SecretRef.SecretAccessKey.Name, "Namespace", authConfig.SecretRef.SecretAccessKey.Namespace)
-	logger.Info("Loading AWS Config with static credentials from secret", "SecretName", authConfig.SecretRef.AccessKeyId.Name, "Namespace", authConfig.SecretRef.AccessKeyId.Namespace)
-	keyIdSecret, err := util.GetSecret(ctx, k8sClient, authConfig.SecretRef.AccessKeyId.Name, authConfig.SecretRef.AccessKeyId.Namespace, logger)
+	logger.Info("Loading AWS Config with static credentials from secret", "SecretName", authConfig.SecretRef.AccessKeyID.Name, "Namespace", authConfig.SecretRef.AccessKeyID.Namespace)
+	keyIDSecret, err := util.GetSecret(ctx, k8sClient, authConfig.SecretRef.AccessKeyID.Name, authConfig.SecretRef.AccessKeyID.Namespace, logger)
 	if err != nil {
-		logger.Error(err, "Failed to retrieve secret", "SecretName", authConfig.SecretRef.AccessKeyId.Name, "Namespace", authConfig.SecretRef.AccessKeyId.Namespace)
+		logger.Error(err, "Failed to retrieve secret", "SecretName", authConfig.SecretRef.AccessKeyID.Name, "Namespace", authConfig.SecretRef.AccessKeyID.Namespace)
 		return aws.Config{}, err
 	}
-	accessKeyIDBytes, ok := keyIdSecret.Data[authConfig.SecretRef.AccessKeyId.Key]
+	accessKeyIDBytes, ok := keyIDSecret.Data[authConfig.SecretRef.AccessKeyID.Key]
 	if !ok {
-		err := fmt.Errorf("key not found in secret %s", authConfig.SecretRef.AccessKeyId.Name)
-		logger.Error(err, "key not found in secret", "SecretName", authConfig.SecretRef.AccessKeyId.Name)
+		err := fmt.Errorf("key not found in secret %s", authConfig.SecretRef.AccessKeyID.Name)
+		logger.Error(err, "key not found in secret", "SecretName", authConfig.SecretRef.AccessKeyID.Name)
 		return aws.Config{}, err
 	}
 	accessKeySecret, err := util.GetSecret(ctx, k8sClient, authConfig.SecretRef.SecretAccessKey.Name, authConfig.SecretRef.SecretAccessKey.Namespace, logger)
@@ -79,7 +98,7 @@ func loadConfigWithSecret(ctx context.Context, k8sClient client.Client, authConf
 }
 
 // loadConfigWithServiceAccount loads AWS configuration using IRSA and service account impersonation.
-func loadConfigWithServiceAccount(ctx context.Context, k8sClient client.Client, authConfig modelAWS.AWSSDKAuth, logger logr.Logger) (aws.Config, error) {
+func loadConfigWithServiceAccount(ctx context.Context, k8sClient client.Client, authConfig modelAWS.SDKAuth, logger logr.Logger) (aws.Config, error) {
 	logger.Info("Loading AWS Config using IRSA and service account impersonation", "ServiceAccount", authConfig.ServiceAccount.Name, "Namespace", authConfig.ServiceAccount.Namespace)
 	// Get service account token
 	tokenRetriever := util.NewTokenRetriever(k8sClient, logger, authConfig.ServiceAccount.Name, authConfig.ServiceAccount.Namespace)

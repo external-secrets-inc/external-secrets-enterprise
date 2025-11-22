@@ -1,6 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package templates provides template processing for workflows.
 package templates
 
 import (
@@ -13,7 +31,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
-	estemplate "github.com/external-secrets/external-secrets/pkg/template/v2"
+	estemplate "github.com/external-secrets/external-secrets/runtime/template/v2"
 )
 
 var esFuncs template.FuncMap
@@ -44,6 +62,7 @@ func init() {
 	esFuncs["loopRangeKeys"] = loopRangeKeys
 }
 
+// Functions returns the template function map.
 func Functions() template.FuncMap {
 	return esFuncs
 }
@@ -159,6 +178,7 @@ func ResolveTemplate(templateStr string, data map[string]interface{}) (string, e
 	return buf.String(), nil
 }
 
+// ProcessTemplates processes templates in a value recursively.
 func ProcessTemplates(v reflect.Value, data map[string]interface{}) {
 	// If v is a pointer, dereference it (if non-nil)
 	if v.Kind() == reflect.Ptr {

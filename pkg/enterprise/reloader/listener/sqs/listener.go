@@ -1,7 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package sqs implements AWS SQS listener.
 package sqs
 
 import (
@@ -23,17 +40,20 @@ const (
 	AuthMethodIRSA   = "irsa"
 )
 
+// SecretMessage represents an AWS Secrets Manager event message.
 type SecretMessage struct {
 	Detail SecretMessageDetail `json:"detail"`
 }
 
+// SecretMessageDetail contains the details of a secret event.
 type SecretMessageDetail struct {
 	EventTime         string            `json:"eventTime"`
 	RequestParameters RequestParameters `json:"requestParameters"`
 }
 
+// RequestParameters contains the request parameters from the event.
 type RequestParameters struct {
-	SecretId string `json:"secretId"`
+	SecretID string `json:"secretId"`
 }
 
 // AWSSQSListener handles AWS SQS notifications.
@@ -112,9 +132,9 @@ func parseEvent(jsonData []byte) (*events.SecretRotationEvent, error) {
 	}
 
 	secretEvent := &events.SecretRotationEvent{
-		SecretIdentifier:  event.Detail.RequestParameters.SecretId,
+		SecretIdentifier:  event.Detail.RequestParameters.SecretID,
 		RotationTimestamp: event.Detail.EventTime,
-		TriggerSource:     schema.AWS_SQS,
+		TriggerSource:     schema.AWSSQS,
 	}
 
 	return secretEvent, nil

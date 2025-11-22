@@ -1,9 +1,11 @@
 /*
+Copyright © 2025 ESO Maintainer Team
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,4 +28,8 @@ type YandexLockboxProvider struct {
 	// The provider for the CA bundle to use to validate Yandex.Cloud server certificate.
 	// +optional
 	CAProvider *YandexCAProvider `json:"caProvider,omitempty"`
+
+	// FetchingPolicy configures the provider to interpret the `data.secretKey.remoteRef.key` field in ExternalSecret as secret ID or secret name
+	// +optional
+	FetchingPolicy *FetchingPolicy `json:"fetching,omitempty"`
 }

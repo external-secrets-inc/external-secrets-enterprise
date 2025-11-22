@@ -18,17 +18,7 @@ bitwarden-sdk-server:
   enabled: false
   namespaceOverride: ""
 
-spire-crds:
-  enabled: false
 
-spire:
-  enabled: false
-  spire-server:
-    controllerManager:
-      enabled: false
-
-esi-pod-webhook:
-  enabled: false
 # -- Specifies the amount of historic ReplicaSets k8s should keep (see https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#clean-up-policy)
 revisionHistoryLimit: 10
 
@@ -104,6 +94,8 @@ openshiftFinalizers: true
 systemAuthDelegator: false
 
 # -- if true, the operator will process cluster external secret. Else, it will ignore them.
+# When enabled, this adds update/patch permissions on namespaces to handle finalizers for proper
+# cleanup during namespace deletion, preventing race conditions with ExternalSecrets.
 processClusterExternalSecret: true
 
 # -- if true, the operator will process cluster push secret. Else, it will ignore them.
@@ -118,8 +110,27 @@ processClusterGenerator: true
 # -- if true, the operator will process push secret. Else, it will ignore them.
 processPushSecret: true
 
+# -- Enable support for generic targets (ConfigMaps, Custom Resources).
+# Warning: Using generic target. Make sure access policies and encryption are properly configured.
+# When enabled, this grants the controller permissions to create/update/delete
+# ConfigMaps and optionally other resource types specified in generic.resources.
+genericTargets:
+  # -- Enable generic target support
+  enabled: false
+  # -- List of additional resource types to grant permissions for.
+  # Each entry should specify apiGroup, resources, and verbs.
+  # Example:
+  # resources:
+  #   - apiGroup: "argoproj.io"
+  #     resources: ["applications"]
+  #     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  resources: []
+
 # -- Specifies whether an external secret operator deployment be created.
 createOperator: true
+
+# -- if true, HTTP2 will be enabled for the services created by all controllers, curently metrics and webhook.
+enableHTTP2: false
 
 # -- Specifies the number of concurrent ExternalSecret Reconciles external-secret executes at
 # a time.
@@ -311,23 +322,27 @@ grafanaDashboard:
 livenessProbe:
   # -- Enabled determines if the liveness probe should be used or not. By default it's disabled.
   enabled: false
-  # -- Address for liveness probe.
-  address: ""
-  # -- Specify the maximum amount of time to wait for a probe to respond before considering it fails.
-  timeoutSeconds: 5
-  # -- Number of consecutive probe failures that should occur before considering the probe as failed.
-  failureThreshold: 5
-  # -- Period in seconds for K8s to start performing probes.
-  periodSeconds: 10
-  # -- Number of successful probes to mark probe successful.
-  successThreshold: 1
-  # -- Delay in seconds for the container to start before performing the initial probe.
-  initialDelaySeconds: 10
-  # -- Handler for liveness probe.
-  httpGet:
-    # -- Set this value to 8082 to active liveness probes.
-    port: "8082"
-    path: /healthz
+  # -- The body of the liveness probe settings.
+  spec:
+    # -- Address for liveness probe.
+    address: ""
+    # -- Specify the maximum amount of time to wait for a probe to respond before considering it fails.
+    timeoutSeconds: 5
+    # -- Number of consecutive probe failures that should occur before considering the probe as failed.
+    failureThreshold: 5
+    # -- Period in seconds for K8s to start performing probes.
+    periodSeconds: 10
+    # -- Number of successful probes to mark probe successful.
+    successThreshold: 1
+    # -- Delay in seconds for the container to start before performing the initial probe.
+    initialDelaySeconds: 10
+    # -- Handler for liveness probe.
+    httpGet:
+      # -- Set this value to 8082 to active liveness probes.
+      # @schema type: [string, integer]
+      port: 8082
+      # -- Path for liveness probe.
+      path: /healthz
 
 nodeSelector: {}
 
@@ -360,6 +375,9 @@ webhook:
   # -- Specifies the lookaheadInterval for certificate validity
   lookaheadInterval: ""
   replicaCount: 1
+  # -- specifies rbac for webhook
+  rbac:
+    create: true
   # -- Specifies Log Params to the Webhook
   log:
     level: info
@@ -380,13 +398,8 @@ webhook:
     # -- The flavour of tag you want to use
     flavour: ""
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
   # -- The port the webhook will listen to
   port: 10250
-  rbac:
-  # -- Specifies whether role and rolebinding resources should be created.
-    create: true
   serviceAccount:
     # -- Specifies whether a service account should be created.
     create: true
@@ -425,7 +438,7 @@ webhook:
       # -- Set the requested duration (i.e. lifetime) of the Certificate. See
       # https://cert-manager.io/docs/reference/api-docs/#cert-manager.io/v1.CertificateSpec
       # One year by default.
-      duration: "8760h"
+      duration: "8760h0m0s"
       # -- Set the revisionHistoryLimit on the Certificate. See
       # https://cert-manager.io/docs/reference/api-docs/#cert-manager.io/v1.CertificateSpec
       # Defaults to 0 (ignored).
@@ -561,8 +574,6 @@ certController:
     tag: ""
     flavour: ""
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
   rbac:
   # -- Specifies whether role and rolebinding resources should be created.
     create: true
@@ -622,6 +633,14 @@ certController:
     address: ""
     # -- ReadinessProbe port for kubelet
     port: 8081
+
+  startupProbe:
+    # -- Enabled determines if the startup probe should be used or not. By default it's enabled
+    enabled: false
+    # -- whether to use the readiness probe port for startup probe.
+    useReadinessProbePort: true
+    # -- Port for startup probe.
+    port: ""
 
     ## -- Extra environment variables to add to container.
   extraEnv: []

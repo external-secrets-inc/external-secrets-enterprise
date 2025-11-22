@@ -1,7 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package pushsecret implements PushSecret handler.
 package pushsecret
 
 import (
@@ -20,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// Handler handles PushSecret secret rotation.
 type Handler struct {
 	ctx              context.Context
 	client           client.Client
@@ -29,7 +47,8 @@ type Handler struct {
 	waitForFn        schema.WaitForFn
 }
 
-func (h *Handler) Filter(destination *v1alpha1.DestinationToWatch, event events.SecretRotationEvent) ([]client.Object, error) {
+// Filter filters PushSecrets based on the destination configuration.
+func (h *Handler) Filter(destination *v1alpha1.DestinationToWatch, _ events.SecretRotationEvent) ([]client.Object, error) {
 	objs := []client.Object{}
 	if destination.PushSecret == nil {
 		return nil, errors.New("destination isn't type PushSecret")
@@ -52,6 +71,7 @@ func (h *Handler) Filter(destination *v1alpha1.DestinationToWatch, event events.
 	return objs, nil
 }
 
+// Apply applies the secret rotation to a PushSecret.
 func (h *Handler) Apply(obj client.Object, event events.SecretRotationEvent) error {
 	return h.applyFn(obj, event)
 }
@@ -125,15 +145,17 @@ func (h *Handler) isResourceWatched(secret esv1alpha1.PushSecret, w v1alpha1.Des
 	return false, nil
 }
 
+// WaitFor waits for the PushSecret to be ready.
 func (h *Handler) WaitFor(obj client.Object) error {
 	return h.waitForFn(obj)
 }
 
 // _waitFor is a noop for PushSecrets.
-func (h *Handler) _waitFor(obj client.Object) error {
+func (h *Handler) _waitFor(_ client.Object) error {
 	// PushSecrets handler does not need to wait for anything.
 	return nil
 }
+// References checks if the PushSecret references the given secret.
 func (h *Handler) References(obj client.Object, secretIdentifier string) (bool, error) {
 	return h.referenceFn(obj, secretIdentifier)
 }
@@ -157,16 +179,19 @@ func (h *Handler) _references(obj client.Object, secretIdentifier string) (bool,
 	return false, nil
 }
 
+// WithApply sets a custom apply function.
 func (h *Handler) WithApply(apply schema.ApplyFn) schema.Handler {
 	h.applyFn = apply
 	return h
 }
 
+// WithReference sets a custom reference function.
 func (h *Handler) WithReference(ref schema.ReferenceFn) schema.Handler {
 	h.referenceFn = ref
 	return h
 }
 
+// WithWaitFor sets a custom wait function.
 func (h *Handler) WithWaitFor(waitFor schema.WaitForFn) schema.Handler {
 	h.waitForFn = waitFor
 	return h

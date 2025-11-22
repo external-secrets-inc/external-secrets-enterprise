@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,6 +28,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package generator implements the controller for Generator resources.
 package generator
 
 import (
@@ -31,10 +48,13 @@ import (
 )
 
 const (
-	GeneratorGroup   = "generators.external-secrets.io"
+	// GeneratorGroup is the group name for the generator API.
+	GeneratorGroup = "generators.external-secrets.io"
+	// GeneratorVersion is the version name for the generator API.
 	GeneratorVersion = "v1alpha1"
 )
 
+// Reconciler is the controller for Generator resources.
 type Reconciler struct {
 	client.Client
 
@@ -46,6 +66,7 @@ type Reconciler struct {
 	Kind string
 }
 
+// Reconcile updates a given generator outputs.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	genericGenerator, err := BuildGeneratorObject(r.Scheme, r.Kind)
 	if err != nil {
@@ -84,6 +105,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, obj client.Object, opts 
 		Complete(r)
 }
 
+// BuildGeneratorObject builds a new GenericGenerator object.
 func BuildGeneratorObject(scheme *runtime.Scheme, kind string) (genv1alpha1.GenericGenerator, error) {
 	gvk := schema.GroupVersionKind{Group: GeneratorGroup, Version: GeneratorVersion, Kind: kind}
 	obj, err := scheme.New(gvk)

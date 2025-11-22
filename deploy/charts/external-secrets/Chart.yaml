@@ -2,8 +2,8 @@ apiVersion: v2
 name: external-secrets
 description: External secrets management for Kubernetes
 type: application
-version: 1.24.0
-appVersion: v1.24.0
+version: "1.0.0"
+appVersion: "v1.0.0"
 kubeVersion: ">= 1.19.0-0"
 keywords:
   - kubernetes-external-secrets
@@ -14,18 +14,6 @@ maintainers:
   - name: mcavoyk
     email: kellinmcavoy@gmail.com
 dependencies:
-  - name: spire-crds
-    version: 0.5.0
-    repository: https://spiffe.github.io/helm-charts-hardened
-    condition: spire-crds.enabled
-  - name: spire
-    version: 0.25.0
-    repository: https://spiffe.github.io/helm-charts-hardened
-    condition: spire.enabled
-  - name: esi-pod-webhook
-    version: 0.4.2
-    repository: oci://us-central1-docker.pkg.dev/external-secrets-inc-registry/public/charts
-    condition: esi-pod-webhook.enabled
   - name: bitwarden-sdk-server
     version: v0.5.1
     repository: oci://ghcr.io/external-secrets/charts

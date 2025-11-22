@@ -1,5 +1,22 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // controller/reloader_controller.go
 
+// Package controller implements the reloader controller.
 package controller
 
 import (
@@ -21,12 +38,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// EventAction represents the type of event action.
 type EventAction string
 
 const (
+	// EventActionCreated indicates a resource was created.
 	EventActionCreated  EventAction = "Created"
+	// EventActionUpdated indicates a resource was updated.
 	EventActionUpdated  EventAction = "Updated"
+	// EventActionDeleted indicates a resource was deleted.
 	EventActionDeleted  EventAction = "Deleted"
+	// ProcessedAnnotation is the annotation key for marking processed resources.
 	ProcessedAnnotation string      = "reloader/processed"
 	reloaderFinalizer               = "reloader.external-secrets.io/finalizer"
 )

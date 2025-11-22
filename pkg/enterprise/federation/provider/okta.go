@@ -1,7 +1,22 @@
-// 2025
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// Package provider implements the federation provider.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
-
 package provider
 
 import (
@@ -20,6 +35,7 @@ const (
 	defaultServerID     = "default"
 )
 
+// OktaProvider implements the Okta provider.
 type OktaProvider struct {
 	Domain                string
 	AuthorizationServerID string
@@ -31,6 +47,7 @@ type OktaProvider struct {
 	cacheTTL              time.Duration
 }
 
+// NewOktaProvider creates a new Okta provider.
 func NewOktaProvider(domain, authServerID string) *OktaProvider {
 	if authServerID == "" {
 		authServerID = defaultServerID
@@ -50,7 +67,7 @@ func NewOktaProvider(domain, authServerID string) *OktaProvider {
 // GetJWKS fetches the JSON Web Key Set from Okta's public endpoint.
 // The token, issuer, and caCrt parameters are not used for Okta since the
 // JWKS endpoint is publicly accessible over standard HTTPS.
-func (o *OktaProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
+func (o *OktaProvider) GetJWKS(ctx context.Context, _, _ string, _ []byte) (map[string]map[string]string, error) {
 	o.cacheMutex.RLock()
 	// Check if cache is still valid
 	if time.Since(o.lastFetch) < o.cacheTTL && len(o.jwksCache) > 0 {

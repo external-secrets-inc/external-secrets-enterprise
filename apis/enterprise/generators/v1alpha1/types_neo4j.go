@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,6 +51,7 @@ type Neo4jSpec struct {
 	Enterprise bool `json:"enterprise,omitempty"`
 }
 
+// Neo4jAuth defines Neo4j authentication configuration.
 type Neo4jAuth struct {
 	// URI is the connection URI for the Neo4j database.
 	// Example: bolt://neo4j.default.svc.cluster.local:7687
@@ -47,6 +64,7 @@ type Neo4jAuth struct {
 	Bearer *Neo4jBearerAuth `json:"bearer,omitempty"`
 }
 
+// Neo4jBasicAuth defines basic authentication for Neo4j.
 type Neo4jBasicAuth struct {
 	// A basic auth username used to authenticate against the Neo4j instance.
 	Username string `json:"username"`
@@ -54,17 +72,21 @@ type Neo4jBasicAuth struct {
 	Password esmeta.SecretKeySelector `json:"password"`
 }
 
+// Neo4jBearerAuth defines bearer token authentication for Neo4j.
 type Neo4jBearerAuth struct {
 	// A bearer auth token used to authenticate against the Neo4j instance.
 	Token esmeta.SecretKeySelector `json:"token"`
 }
 
+// Neo4jAuthProvider represents the authentication provider type.
 type Neo4jAuthProvider string
 
 const (
+	// Neo4jAuthProviderNative represents native Neo4j authentication.
 	Neo4jAuthProviderNative Neo4jAuthProvider = "native"
 )
 
+// Neo4jUser defines a Neo4j user configuration.
 type Neo4jUser struct {
 	// The name of the user to be created.
 	// Must not contain a dash ("-") character.
@@ -92,13 +114,12 @@ type Neo4jUser struct {
 	Provider Neo4jAuthProvider `json:"provider"`
 }
 
+// Neo4jUserState represents the state of a Neo4j user.
 type Neo4jUserState struct {
 	User string `json:"user"`
 }
 
-// Neo4j generates a random neo4j based on the
-// configuration parameters in spec.
-// You can specify the length, characterset and other attributes.
+// Neo4j generates a Neo4j user based on the configuration parameters in spec.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
@@ -114,7 +135,7 @@ type Neo4j struct {
 
 // +kubebuilder:object:root=true
 
-// Neo4jList contains a list of ExternalSecret resources.
+// Neo4jList contains a list of Neo4j resources.
 type Neo4jList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

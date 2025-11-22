@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,6 +47,7 @@ type MongoDBSpec struct {
 	User MongoDBUser `json:"user"`
 }
 
+// MongoDBDatabase defines the MongoDB database configuration.
 type MongoDBDatabase struct {
 	// AdminDB is the name of the admin database
 	// +kubebuilder:default="admin"
@@ -43,6 +60,7 @@ type MongoDBDatabase struct {
 	Port int `json:"port"`
 }
 
+// MongoDBRole defines a MongoDB role configuration.
 type MongoDBRole struct {
 	// Name is the name of the role linked to the service account.
 	Name string `json:"name"`
@@ -50,6 +68,7 @@ type MongoDBRole struct {
 	DB string `json:"db"`
 }
 
+// MongoDBUser defines a MongoDB user configuration.
 type MongoDBUser struct {
 	// Name is the name of the service account.
 	// If not provided, the generator will create one.
@@ -59,6 +78,7 @@ type MongoDBUser struct {
 	Roles []MongoDBRole `json:"roles"`
 }
 
+// MongoDBAuth defines MongoDB authentication configuration.
 type MongoDBAuth struct {
 	// Basic auth credentials used to authenticate against the MongoDB instance.
 	// Note: you need a token which has elevated permissions to create service accounts.
@@ -66,16 +86,19 @@ type MongoDBAuth struct {
 	SCRAM *MongoDBSCRAMAuth `json:"scram,omitempty"`
 }
 
+// MongoDBSCRAMAuth defines SCRAM authentication for MongoDB.
 type MongoDBSCRAMAuth struct {
 	Username  *string               `json:"username,omitempty"`
 	SecretRef *MongoDBAuthSecretRef `json:"secretRef,omitempty"`
 }
 
+// MongoDBAuthSecretRef defines secret references for MongoDB authentication.
 type MongoDBAuthSecretRef struct {
 	Password esmeta.SecretKeySelector  `json:"passwordSecretRef,omitempty"`
 	Username *esmeta.SecretKeySelector `json:"usernameSecretRef,omitempty"`
 }
 
+// MongoDB represents a MongoDB generator configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
@@ -90,13 +113,15 @@ type MongoDB struct {
 }
 
 // +kubebuilder:object:root=true
-// ExternalList contains a list of MongoDB Generator resources.
+
+// MongoDBList contains a list of MongoDB Generator resources.
 type MongoDBList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []MongoDB `json:"items"`
 }
 
+// MongoDBUserState represents the state of a MongoDB user.
 type MongoDBUserState struct {
 	User string `json:"user"`
 }

@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,6 +27,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// Package v1alpha1 contains API Schema definitions for the workflows v1alpha1 API group
 package v1alpha1
 
 import (
@@ -376,6 +394,7 @@ func (p *Parameter) ValidateValue(value interface{}) error {
 	return nil
 }
 
+// ParseCustomObject parses a custom object from a value.
 func (p Parameter) ParseCustomObject(value interface{}) (map[string]interface{}, error) {
 	var customObject map[string]interface{}
 	valueBytes, err := json.Marshal(value)
@@ -390,6 +409,7 @@ func (p Parameter) ParseCustomObject(value interface{}) (map[string]interface{},
 	return customObject, nil
 }
 
+// ToSecretStoreParameterType converts a value to a SecretStoreParameterType.
 func (p Parameter) ToSecretStoreParameterType(value interface{}) (*SecretStoreParameterType, error) {
 	var resource SecretStoreParameterType
 	valueBytes, err := json.Marshal(value)
@@ -404,6 +424,7 @@ func (p Parameter) ToSecretStoreParameterType(value interface{}) (*SecretStorePa
 	return &resource, nil
 }
 
+// ToGeneratorParameterType converts a value to a GeneratorParameterType.
 func (p Parameter) ToGeneratorParameterType(value interface{}) (*GeneratorParameterType, error) {
 	var resource GeneratorParameterType
 	valueBytes, err := json.Marshal(value)
@@ -423,6 +444,7 @@ func (p Parameter) ToGeneratorParameterType(value interface{}) (*GeneratorParame
 	return &resource, nil
 }
 
+// ToSecretLocationParameterType converts a value to a SecretLocationParameterType.
 func (p Parameter) ToSecretLocationParameterType(value interface{}) (*SecretLocationParameterType, error) {
 	var resource SecretLocationParameterType
 	valueBytes, err := json.Marshal(value)
@@ -451,6 +473,7 @@ func (p Parameter) ToSecretLocationParameterType(value interface{}) (*SecretLoca
 	return &resource, nil
 }
 
+// ToFindingParameterType converts a value to a FindingParameterType.
 func (p Parameter) ToFindingParameterType(value interface{}) (*FindingParameterType, error) {
 	var resource FindingParameterType
 	valueBytes, err := json.Marshal(value)
@@ -465,6 +488,7 @@ func (p Parameter) ToFindingParameterType(value interface{}) (*FindingParameterT
 	return &resource, nil
 }
 
+// ToSecretStoreParameterTypeArray converts a value to a slice of SecretStoreParameterType.
 func (p Parameter) ToSecretStoreParameterTypeArray(value interface{}) ([]SecretStoreParameterType, error) {
 	var resource []SecretStoreParameterType
 	valueBytes, err := json.Marshal(value)
@@ -479,6 +503,7 @@ func (p Parameter) ToSecretStoreParameterTypeArray(value interface{}) ([]SecretS
 	return resource, nil
 }
 
+// ToGeneratorParameterTypeArray converts a value to a slice of GeneratorParameterType.
 func (p Parameter) ToGeneratorParameterTypeArray(value interface{}) ([]GeneratorParameterType, error) {
 	var resource []GeneratorParameterType
 	valueBytes, err := json.Marshal(value)
@@ -493,6 +518,7 @@ func (p Parameter) ToGeneratorParameterTypeArray(value interface{}) ([]Generator
 	return resource, nil
 }
 
+// ToSecretLocationParameterTypeArray converts a value to a slice of SecretLocationParameterType.
 func (p Parameter) ToSecretLocationParameterTypeArray(value interface{}) ([]SecretLocationParameterType, error) {
 	var resource []SecretLocationParameterType
 	valueBytes, err := json.Marshal(value)
@@ -510,6 +536,7 @@ func (p Parameter) ToSecretLocationParameterTypeArray(value interface{}) ([]Secr
 	return resource, nil
 }
 
+// ToFindingParameterTypeArray converts a value to a slice of FindingParameterType.
 func (p Parameter) ToFindingParameterTypeArray(value interface{}) ([]FindingParameterType, error) {
 	var resource []FindingParameterType
 	valueBytes, err := json.Marshal(value)
@@ -524,22 +551,28 @@ func (p Parameter) ToFindingParameterTypeArray(value interface{}) ([]FindingPara
 	return resource, nil
 }
 
-type converterFunc func(value interface{}) (any, error)
+// ConverterFunc is a function that converts a value to a specific type.
+// +kubebuilder:object:root=false
+// +kubebuilder:object:generate:false
+// +k8s:deepcopy-gen:interfaces=nil
+// +k8s:deepcopy-gen=nil
+type ConverterFunc func(value interface{}) (any, error)
 
-func wrapConverter[T any](fn func(value interface{}) (*T, error)) converterFunc {
+func wrapConverter[T any](fn func(value interface{}) (*T, error)) ConverterFunc {
 	return func(value interface{}) (any, error) {
 		return fn(value)
 	}
 }
 
-func wrapConverterArray[T any](fn func(value interface{}) ([]T, error)) converterFunc {
+func wrapConverterArray[T any](fn func(value interface{}) ([]T, error)) ConverterFunc {
 	return func(value interface{}) (any, error) {
 		return fn(value)
 	}
 }
 
-func (p Parameter) GetConverters() map[ParameterType]converterFunc {
-	return map[ParameterType]converterFunc{
+// GetConverters returns a map of ParameterType to ConverterFunc.
+func (p Parameter) GetConverters() map[ParameterType]ConverterFunc {
+	return map[ParameterType]ConverterFunc{
 		ParameterTypeSecretStore:         wrapConverter(p.ToSecretStoreParameterType),
 		ParameterTypeClusterSecretStore:  wrapConverter(p.ToSecretStoreParameterType),
 		ParameterTypeSecretStoreArray:    wrapConverterArray(p.ToSecretStoreParameterTypeArray),

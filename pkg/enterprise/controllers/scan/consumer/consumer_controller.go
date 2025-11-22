@@ -1,6 +1,23 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
 
+// Package consumer implements the Consumer controller.
 package consumer
 
 import (
@@ -27,19 +44,22 @@ import (
 	"github.com/go-logr/logr"
 )
 
-type ConsumerController struct {
+// Controller reconciles Consumer resources.
+type Controller struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
+// Health represents the health status of a consumer.
 type Health struct {
 	Healthy bool
-	Reason  string
+	Reason  scanv1alpha1.ConsumerConditionType
 	Message string
 }
 
-func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
+// Reconcile reconciles a Consumer resource.
+func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	consumer := &scanv1alpha1.Consumer{}
 	if err := c.Get(ctx, req.NamespacedName, consumer); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -69,14 +89,15 @@ func (c *ConsumerController) Reconcile(ctx context.Context, req ctrl.Request) (r
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
-func (c *ConsumerController) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
+func (c *Controller) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(opts).
 		For(&v1alpha1.Consumer{}).
 		Complete(c)
 }
 
-func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]scanv1alpha1.SecretUpdateRecord) (ctrl.Result, error) {
+// CheckConsumerStatus checks the status of a consumer.
+func (c *Controller) CheckConsumerStatus(ctx context.Context, consumer *scanv1alpha1.Consumer, pushSecretIndex map[string][]scanv1alpha1.SecretUpdateRecord) (ctrl.Result, error) {
 	consumerStatusCondition := metav1.ConditionTrue
 	consumerStatusReason := scanv1alpha1.ConsumerLocationsUpToDate
 	consumerStatusMessage := "All observed locations are up to date"
@@ -127,7 +148,7 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 	changed := meta.SetStatusCondition(&consumer.Status.Conditions, metav1.Condition{
 		Type:    string(scanv1alpha1.ConsumerLatestVersion),
 		Status:  consumerStatusCondition,
-		Reason:  consumerStatusReason,
+		Reason:  string(consumerStatusReason),
 		Message: consumerStatusMessage,
 	})
 	if changed {
@@ -144,6 +165,7 @@ func (c *ConsumerController) CheckConsumerStatus(ctx context.Context, consumer *
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
+// CheckWorkloadHealth checks the health of a Kubernetes workload.
 func CheckWorkloadHealth(ctx context.Context, client client.Client, wl *scanv1alpha1.K8sWorkloadSpec) (Health, error) {
 	switch wl.WorkloadKind {
 	case "Deployment":

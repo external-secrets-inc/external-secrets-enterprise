@@ -1,4 +1,20 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// /*
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -24,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Scheduler is an interface for scheduling periodic tasks.
 type Scheduler interface {
 	// ScheduleInterval schedules a function to run every d time.
 	ScheduleInterval(key string, interval, timeout time.Duration, fn func(context.Context, logr.Logger))
@@ -39,7 +56,8 @@ type job struct {
 	interval time.Duration
 }
 
-type SchedulerImpl struct {
+// Impl implements the Scheduler interface.
+type Impl struct {
 	log    logr.Logger
 	ctx    context.Context
 	mu     sync.Mutex
@@ -48,15 +66,17 @@ type SchedulerImpl struct {
 	client client.Client
 }
 
+// New creates a new scheduler.
 func New(client client.Client, log logr.Logger) Scheduler {
-	return &SchedulerImpl{
+	return &Impl{
 		jobs:   map[string]job{},
 		client: client,
 		log:    log,
 	}
 }
 
-func (s *SchedulerImpl) ScheduleInterval(key string, interval, timeout time.Duration, fn func(context.Context, logr.Logger)) {
+// ScheduleInterval schedules a function to run at regular intervals.
+func (s *Impl) ScheduleInterval(key string, interval, timeout time.Duration, fn func(context.Context, logr.Logger)) {
 	s.mu.Lock()
 
 	if currentJob, ok := s.jobs[key]; ok {
@@ -91,7 +111,8 @@ func (s *SchedulerImpl) ScheduleInterval(key string, interval, timeout time.Dura
 	s.jobs[key] = job{stop: cancel, interval: interval}
 }
 
-func (s *SchedulerImpl) Cancel(key string) {
+// Cancel cancels a scheduled job.
+func (s *Impl) Cancel(key string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if e, ok := s.jobs[key]; ok {
@@ -101,9 +122,11 @@ func (s *SchedulerImpl) Cancel(key string) {
 	s.log.Info("Canceled job", "key", key)
 }
 
-func (s *SchedulerImpl) NeedLeaderElection() bool { return true }
+// NeedLeaderElection returns whether the scheduler needs leader election.
+func (s *Impl) NeedLeaderElection() bool { return true }
 
-func (s *SchedulerImpl) Start(ctx context.Context) error {
+// Start starts the scheduler.
+func (s *Impl) Start(ctx context.Context) error {
 	s.log.Info("Starting scheduler")
 	s.leader.Store(true)
 
@@ -124,9 +147,10 @@ func (s *SchedulerImpl) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s *SchedulerImpl) IsLeader() bool { return s.leader.Load() }
+// IsLeader returns whether the scheduler is the leader.
+func (s *Impl) IsLeader() bool { return s.leader.Load() }
 
-func (s *SchedulerImpl) runWithTimeout(fn func(ctx context.Context, log logr.Logger), maxDuration time.Duration) {
+func (s *Impl) runWithTimeout(fn func(ctx context.Context, log logr.Logger), maxDuration time.Duration) {
 	parent := s.ctx
 	if parent == nil {
 		parent = context.Background()

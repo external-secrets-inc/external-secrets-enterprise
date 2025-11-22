@@ -1,9 +1,11 @@
 // /*
+// Copyright © 2025 ESO Maintainer Team
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -11,6 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // */
+
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package externalsecrets provides an ExternalSecrets provider implementation.
 package externalsecrets
 
 import (
@@ -30,8 +48,8 @@ import (
 
 	esv1enterprise "github.com/external-secrets/external-secrets/apis/enterprise/externalsecrets/v1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
-	"github.com/external-secrets/external-secrets/pkg/utils"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	utils "github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 )
 
 // Provider satisfies the provider interface.
@@ -42,7 +60,7 @@ func (p *Provider) Capabilities() esv1.SecretStoreCapabilities {
 	return esv1.SecretStoreReadOnly
 }
 
-// Method on ExternalSecrets Provider to instantiate new client.
+// NewClient instantiates a new ExternalSecrets client.
 func (p *Provider) NewClient(ctx context.Context, store esv1.GenericStore, kube kclient.Client, namespace string) (esv1.SecretsClient, error) {
 	storeSpec := store.GetSpec()
 	storeKind := store.GetObjectKind().GroupVersionKind().Kind
@@ -144,6 +162,7 @@ func convertCertificate(certBytes []byte) (*x509.CertPool, error) {
 	return pool, nil
 }
 
+// ValidateStore validates the store configuration.
 func (p *Provider) ValidateStore(store esv1.GenericStore) (admission.Warnings, error) {
 	storeSpec := store.GetSpec()
 	spec := storeSpec.Provider.ExternalSecrets

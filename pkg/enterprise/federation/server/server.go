@@ -1,4 +1,20 @@
-// 2025
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// Package server implements the federation server.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
 package server
@@ -36,7 +52,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ServerHandler struct {
+// Handler implements the federation server.
+type Handler struct {
 	client                 client.Client
 	scheme                 *runtime.Scheme
 	controllerClass        string
@@ -53,13 +70,13 @@ type ServerHandler struct {
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
 
-type Option func(*ServerHandler)
+type Option func(*Handler)
 
 // WithDependencies allows overriding the in-tree federation dependencies such
 // as the secretstore manager factory and the generator resolver. This enables
 // fakes in tests and custom implementations during the repo split.
 func WithDependencies(dep deps.Dependencies) Option {
-	return func(s *ServerHandler) {
+	return func(s *Handler) {
 		if dep.SecretStoreFactory == nil || dep.GeneratorResolver == nil {
 			defaults := deps.DefaultDependencies()
 			if dep.SecretStoreFactory == nil {
@@ -73,20 +90,20 @@ func WithDependencies(dep deps.Dependencies) Option {
 	}
 }
 
-func NewServerHandler(accessor deps.ExternalSecretAccessor, port, tlsPort, socketPath string, tlsEnabled bool, options ...Option) *ServerHandler {
+// NewHandler creates a new Handler.
+func NewHandler(accessor deps.ExternalSecretAccessor, port, tlsPort, socketPath string, tlsEnabled bool, options ...Option) *Handler {
 	log := ctrl.Log.WithName("federationserver")
-	s := &ServerHandler{
+	s := &Handler{
 		client:           accessor.RuntimeClient(),
 		scheme:           accessor.RuntimeScheme(),
 		controllerClass:  accessor.ControllerClassName(),
 		floodGateEnabled: accessor.FloodGateEnabled(),
 		dependencies:     deps.DefaultDependencies(),
-
-		log:        log,
-		mu:         sync.RWMutex{},
-		port:       port,
-		tlsPort:    tlsPort,
-		tlsEnabled: tlsEnabled,
+		log:              log,
+		mu:               sync.RWMutex{},
+		port:             port,
+		tlsPort:          tlsPort,
+		tlsEnabled:       tlsEnabled,
 	}
 	s.spireAgentSocketPath = socketPath
 	s.generateSecretFn = s.generateSecret
@@ -98,7 +115,8 @@ func NewServerHandler(accessor deps.ExternalSecretAccessor, port, tlsPort, socke
 	return s
 }
 
-func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
+// SetupEcho sets up the echo server.
+func (s *Handler) SetupEcho(ctx context.Context) *echo.Echo {
 	e := echo.New()
 	e.Server.BaseContext = func(_ net.Listener) context.Context {
 		return ctx
@@ -118,7 +136,7 @@ func (s *ServerHandler) SetupEcho(ctx context.Context) *echo.Echo {
 	return e
 }
 
-func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
+func (s *Handler) startHTTPServer(ctx context.Context, e *echo.Echo) {
 	srv := &http.Server{
 		Addr:              s.port,
 		Handler:           e,
@@ -136,7 +154,7 @@ func (s *ServerHandler) startHTTPServer(ctx context.Context, e *echo.Echo) {
 	}()
 }
 
-func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
+func (s *Handler) startMTLSServer(ctx context.Context, e *echo.Echo) {
 	source, err := workloadapi.NewX509Source(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(s.spireAgentSocketPath)))
 	if err != nil {
 		s.log.Error(err, "failed to create x509 source")
@@ -162,7 +180,7 @@ func (s *ServerHandler) startMTLSServer(ctx context.Context, e *echo.Echo) {
 	}()
 }
 
-func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (s *Handler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var lastErr error
 		for _, authenticator := range auth.Registry {
@@ -199,8 +217,8 @@ func (s *ServerHandler) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (s *ServerHandler) generateSecrets(c echo.Context) error {
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+func (s *Handler) generateSecrets(c echo.Context) error {
+	authInfo := c.Get("authInfo").(*auth.Info)
 	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
@@ -299,8 +317,8 @@ func contains[T fedv1alpha1.AllowedGenerator | fedv1alpha1.AllowedGeneratorState
 	return false
 }
 
-func (s *ServerHandler) postSecrets(c echo.Context) error {
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+func (s *Handler) postSecrets(c echo.Context) error {
+	authInfo := c.Get("authInfo").(*auth.Info)
 	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
@@ -328,8 +346,8 @@ func (s *ServerHandler) postSecrets(c echo.Context) error {
 	return c.JSON(http.StatusNotFound, "Not Found")
 }
 
-func (s *ServerHandler) revokeSelf(c echo.Context) error {
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+func (s *Handler) revokeSelf(c echo.Context) error {
+	authInfo := c.Get("authInfo").(*auth.Info)
 	workloadInfo, _ := c.Get("workloadInfo").(*auth.WorkloadInfo)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
@@ -380,14 +398,14 @@ type deleteRequest struct {
 	Namespace string `json:"namespace"`
 }
 
-func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
+func (s *Handler) revokeCredentialsOf(c echo.Context) error {
 	var req deleteRequest
 	err := c.Bind(&req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	authInfo := c.Get("authInfo").(*auth.AuthInfo)
+	authInfo := c.Get("authInfo").(*auth.Info)
 
 	AuthorizationSpecs := store.Get(authInfo.Provider)
 	generatorNamespace := c.Param("generatorNamespace")
@@ -413,7 +431,7 @@ func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
 	return c.JSON(http.StatusNotFound, "Not Found")
 }
 
-func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace string, labels labels.Selector) error {
+func (s *Handler) deleteGeneratorState(ctx context.Context, namespace string, labels labels.Selector) error {
 	generators := &genv1alpha1.GeneratorStateList{}
 	err := s.client.List(ctx, generators, &client.ListOptions{
 		Namespace:     namespace,
@@ -431,7 +449,7 @@ func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace stri
 	return nil
 }
 
-func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) ([]byte, error) {
+func (s *Handler) getSecret(ctx context.Context, storeName, name string) ([]byte, error) {
 	storeRef := esv1.SecretStoreRef{
 		Name: storeName,
 		Kind: esv1.ClusterSecretStoreKind,
@@ -447,7 +465,7 @@ func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) (
 	return client.GetSecret(ctx, ref)
 }
 
-func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, string, string, error) {
+func (s *Handler) generateSecret(ctx context.Context, generatorName, generatorKind, namespace string, resource *Resource) (map[string]string, string, string, error) {
 	if resource == nil {
 		return nil, "", "", errors.New("resource not found")
 	}
@@ -463,7 +481,7 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	if generator == nil {
 		return nil, "", "", errors.New("generator not found")
 	}
-	data, stateJson, err := generator.Generate(ctx, obj, s.client, namespace)
+	data, stateJSON, err := generator.Generate(ctx, obj, s.client, namespace)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -471,8 +489,8 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	if err != nil {
 		return nil, "", "", err
 	}
-	if stateJson == nil {
-		stateJson = &apiextensions.JSON{Raw: []byte("{}")}
+	if stateJSON == nil {
+		stateJSON = &apiextensions.JSON{Raw: []byte("{}")}
 	}
 	generatorState := genv1alpha1.GeneratorState{
 		ObjectMeta: metav1.ObjectMeta{
@@ -489,7 +507,7 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 		},
 		Spec: genv1alpha1.GeneratorStateSpec{
 			Resource: obj,
-			State:    stateJson,
+			State:    stateJSON,
 		},
 	}
 	// We can bind the Generator State to a GC-linked object
@@ -527,6 +545,7 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 	return stringData, generatorState.Name, generatorState.Namespace, nil
 }
 
+// Resource represents a resource to be generated.
 type Resource struct {
 	Name            string            `json:"name"`
 	Owner           string            `json:"owner"`
@@ -535,7 +554,7 @@ type Resource struct {
 }
 
 // buildIdentitySpec constructs an IdentitySpec from authInfo and federationRef.
-func buildIdentitySpec(authInfo *auth.AuthInfo, federationRef *fedv1alpha1.FederationRef) fedv1alpha1.IdentitySpec {
+func buildIdentitySpec(authInfo *auth.Info, federationRef *fedv1alpha1.FederationRef) fedv1alpha1.IdentitySpec {
 	identitySpec := fedv1alpha1.IdentitySpec{
 		FederationRef: *federationRef,
 	}
@@ -632,9 +651,9 @@ func buildWorkloadBindingFromWorkloadInfo(workloadInfo *auth.WorkloadInfo) *fedv
 }
 
 // upsertIdentity creates or updates an AuthorizedIdentity object.
-func (s *ServerHandler) upsertIdentity(
+func (s *Handler) upsertIdentity(
 	ctx context.Context,
-	authInfo *auth.AuthInfo,
+	authInfo *auth.Info,
 	workloadInfo *auth.WorkloadInfo,
 	federationRef *fedv1alpha1.FederationRef,
 	resourceName string,

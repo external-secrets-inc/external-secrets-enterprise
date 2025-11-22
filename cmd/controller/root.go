@@ -1,11 +1,11 @@
 /*
-Copyright © 2022 ESO Maintainer Team
+Copyright © 2025 ESO Maintainer Team
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"crypto/tls"
 	"os"
 	"time"
 
@@ -70,7 +71,7 @@ import (
 	federationserver "github.com/external-secrets/external-secrets/pkg/enterprise/federation/server"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/generator/postgresql"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
-	"github.com/external-secrets/external-secrets/pkg/feature"
+	"github.com/external-secrets/external-secrets/runtime/feature"
 
 	// To allow using gcp auth.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -125,6 +126,8 @@ var (
 	tlsMinVersion                         string
 	sensitivePatterns                     []string
 	spireAgentSocketPath                  string
+	enableHTTP2                           bool
+	allowGenericTargets                   bool
 )
 
 const (
@@ -154,7 +157,7 @@ var rootCmd = &cobra.Command{
 	Use:   "external-secrets",
 	Short: "operator that reconciles ExternalSecrets and SecretStores",
 	Long:  `For more information visit https://external-secrets.io`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		setupLogger()
 
 		// Configure workflow sensitive patterns
@@ -189,6 +192,11 @@ var rootCmd = &cobra.Command{
 			metricsOpts.CertDir = metricsCertDir
 			metricsOpts.CertName = metricsCertName
 			metricsOpts.KeyName = metricsKeyName
+		}
+
+		// Disable HTTP/2 if not explicitly enabled
+		if !enableHTTP2 {
+			metricsOpts.TLSOpts = []func(*tls.Config){disableHTTP2}
 		}
 		mgrOpts := ctrl.Options{
 			Scheme:                 scheme,
@@ -231,11 +239,12 @@ var rootCmd = &cobra.Command{
 
 		ssmetrics.SetUpMetrics()
 		if err = (&secretstore.StoreReconciler{
-			Client:          mgr.GetClient(),
-			Log:             ctrl.Log.WithName("controllers").WithName("SecretStore"),
-			Scheme:          mgr.GetScheme(),
-			ControllerClass: controllerClass,
-			RequeueInterval: storeRequeueInterval,
+			Client:            mgr.GetClient(),
+			Log:               ctrl.Log.WithName("controllers").WithName("SecretStore"),
+			Scheme:            mgr.GetScheme(),
+			ControllerClass:   controllerClass,
+			RequeueInterval:   storeRequeueInterval,
+			PushSecretEnabled: enablePushSecretReconciler,
 		}).SetupWithManager(mgr, controller.Options{
 			MaxConcurrentReconciles: concurrent,
 			RateLimiter:             ctrlcommon.BuildRateLimiter(),
@@ -246,11 +255,12 @@ var rootCmd = &cobra.Command{
 		if enableClusterStoreReconciler {
 			cssmetrics.SetUpMetrics()
 			if err = (&secretstore.ClusterStoreReconciler{
-				Client:          mgr.GetClient(),
-				Log:             ctrl.Log.WithName("controllers").WithName("ClusterSecretStore"),
-				Scheme:          mgr.GetScheme(),
-				ControllerClass: controllerClass,
-				RequeueInterval: storeRequeueInterval,
+				Client:            mgr.GetClient(),
+				Log:               ctrl.Log.WithName("controllers").WithName("ClusterSecretStore"),
+				Scheme:            mgr.GetScheme(),
+				ControllerClass:   controllerClass,
+				RequeueInterval:   storeRequeueInterval,
+				PushSecretEnabled: enablePushSecretReconciler,
 			}).SetupWithManager(mgr, controller.Options{
 				MaxConcurrentReconciles: concurrent,
 				RateLimiter:             ctrlcommon.BuildRateLimiter(),
@@ -262,7 +272,7 @@ var rootCmd = &cobra.Command{
 		tmetrics.SetUpMetrics()
 		allTargets := tgtv1alpha1.GetAllTargets()
 		for kind, genericStore := range allTargets {
-			if err = (&target.TargetReconciler{
+			if err = (&target.Reconciler{
 				Client:          mgr.GetClient(),
 				Log:             ctrl.Log.WithName("controllers").WithName("Target"),
 				Scheme:          mgr.GetScheme(),
@@ -318,8 +328,9 @@ var rootCmd = &cobra.Command{
 			ClusterSecretStoreEnabled: enableClusterStoreReconciler,
 			EnableFloodGate:           enableFloodGate,
 			EnableGeneratorState:      enableGeneratorState,
+			AllowGenericTargets:       allowGenericTargets,
 		}
-		if err = externalSecretReconciler.SetupWithManager(mgr, controller.Options{
+		if err = externalSecretReconciler.SetupWithManager(cmd.Context(), mgr, controller.Options{
 			MaxConcurrentReconciles: concurrent,
 			RateLimiter:             ctrlcommon.BuildRateLimiter(),
 		}); err != nil {
@@ -335,7 +346,7 @@ var rootCmd = &cobra.Command{
 				ControllerClass: controllerClass,
 				RestConfig:      mgr.GetConfig(),
 				RequeueInterval: time.Hour,
-			}).SetupWithManager(mgr, controller.Options{
+			}).SetupWithManager(cmd.Context(), mgr, controller.Options{
 				MaxConcurrentReconciles: concurrent,
 				RateLimiter:             ctrlcommon.BuildRateLimiter(),
 			}); err != nil {
@@ -353,7 +364,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err = (&workflow.WorkflowTemplateReconciler{
+		if err = (&workflow.TemplateReconciler{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowTemplate"),
 			Scheme:   mgr.GetScheme(),
@@ -363,7 +374,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err = (&workflow.WorkflowRunReconciler{
+		if err = (&workflow.RunReconciler{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowRun"),
 			Scheme:   mgr.GetScheme(),
@@ -380,7 +391,7 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "Job")
 			os.Exit(1)
 		}
-		if err = (&scanconsumer.ConsumerController{
+		if err = (&scanconsumer.Controller{
 			Client: mgr.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("Consumer"),
 			Scheme: mgr.GetScheme(),
@@ -388,7 +399,7 @@ var rootCmd = &cobra.Command{
 			setupLog.Error(err, errCreateController, "controller", "Consumer")
 			os.Exit(1)
 		}
-		if err = (&workflow.WorkflowRunTemplateReconciler{
+		if err = (&workflow.RunTemplateReconciler{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("WorkflowRunTemplate"),
 			Scheme:   mgr.GetScheme(),
@@ -439,7 +450,6 @@ var rootCmd = &cobra.Command{
 				setupLog.Error(err, errCreateController, "controller", "OktaFederation")
 				os.Exit(1)
 			}
-
 			if err = (&federation.PingIdentityFederationController{
 				Client: mgr.GetClient(),
 				Log:    ctrl.Log.WithName("controllers").WithName("PingIdentityFederation"),
@@ -464,7 +474,7 @@ var rootCmd = &cobra.Command{
 				setupLog.Error(err, errCreateController, "controller", "AuthorizedIdentity")
 				os.Exit(1)
 			}
-			handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
+			handler := federationserver.NewHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
 			go handler.SetupEcho(cmd.Context())
 		} else {
 			setupLog.Info("federation controllers and server disabled", "enableFederation", enableFederation)
@@ -477,7 +487,7 @@ var rootCmd = &cobra.Command{
 		}
 		scheduler.SetGlobal(sched)
 
-		pgBootstrap := postgresql.NewPostgreSQLBootstrap(mgr.GetClient(), mgr)
+		pgBootstrap := postgresql.NewBootstrap(mgr.GetClient(), mgr)
 		if err := mgr.Add(pgBootstrap); err != nil {
 			setupLog.Error(err, "unable to add postgresql bootstrap")
 			os.Exit(1)
@@ -537,6 +547,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Execute starts the command execution process.
 func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }
@@ -578,8 +589,16 @@ func init() {
 	rootCmd.Flags().BoolVar(&enableFederationTLS, "enable-federation-tls", false, "Enable federation server TLS")
 	rootCmd.Flags().BoolVar(&enableFederation, "enable-federation", defaultEnableFederation, "Enable federation controllers and server (default toggled by disable_federation build tag)")
 
+	rootCmd.Flags().BoolVar(&enableHTTP2, "enable-http2", false,
+		"If set, HTTP/2 will be enabled for the metrics server")
+	rootCmd.Flags().BoolVar(&allowGenericTargets, "unsafe-allow-generic-targets", false, "Enable support for creating generic resources (ConfigMaps, Custom Resources). WARNING: Using generic resources, please sure all policies are correctly configured.")
 	fs := feature.Features()
 	for _, f := range fs {
 		rootCmd.Flags().AddFlagSet(f.Flags)
 	}
+}
+
+// disableHTTP2 is a TLS configuration function that disables HTTP/2.
+func disableHTTP2(cfg *tls.Config) {
+	cfg.NextProtos = []string{"http/1.1"}
 }

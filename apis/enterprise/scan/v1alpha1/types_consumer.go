@@ -1,3 +1,20 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// Package v1alpha1 contains API Schema definitions for the scan v1alpha1 API group
 // Copyright External Secrets Inc. 2025
 // All rights reserved
 package v1alpha1
@@ -6,20 +23,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ConsumerConditionType defines the type of a Consumer condition.
 type ConsumerConditionType string
 
 const (
+	// ConsumerLatestVersion indicates that the consumer is using the latest version of the external-secrets-enterprise.
 	ConsumerLatestVersion ConsumerConditionType = "UsingLatestVersion"
 )
 
 const (
-	ConsumerLocationsUpToDate  = "LocationsUpToDate"
-	ConsumerLocationsOutOfDate = "LocationsOutOfDate"
-	ConsumerWorkloadReady      = "WorkloadReady"
-	ConsumerWorkloadNotReady   = "WorkloadNotReady"
-	ConsumerNotReady           = "ConsumerNotReady"
+	// ConsumerLocationsUpToDate indicates that the consumer is using the latest version of the external-secrets-enterprise.
+	ConsumerLocationsUpToDate ConsumerConditionType = "LocationsUpToDate"
+	// ConsumerLocationsOutOfDate indicates that the consumer is using the latest version of the external-secrets-enterprise.
+	ConsumerLocationsOutOfDate ConsumerConditionType = "LocationsOutOfDate"
+	// ConsumerWorkloadReady indicates that the consumer is using the latest version of the external-secrets-enterprise.
+	ConsumerWorkloadReady ConsumerConditionType = "WorkloadReady"
+	// ConsumerWorkloadNotReady indicates that the consumer is using the latest version of the external-secrets-enterprise.
+	ConsumerWorkloadNotReady ConsumerConditionType = "WorkloadNotReady"
+	// ConsumerNotReady indicates that the consumer is using the latest version of the external-secrets-enterprise.
+	ConsumerNotReady ConsumerConditionType = "ConsumerNotReady"
 )
 
+// ConsumerSpec defines the desired state of Consumer.
 type ConsumerSpec struct {
 	Target TargetReference `json:"target"`
 
@@ -39,29 +64,44 @@ type ConsumerSpec struct {
 	Attributes ConsumerAttrs `json:"attributes"`
 }
 
+// ConsumerAttrs defines the attributes of a Consumer.
 type ConsumerAttrs struct {
-	VMProcess   *VMProcessSpec   `json:"vmProcess,omitempty"`
+	// VMProcess defines the attributes of a VM process.
+	VMProcess *VMProcessSpec `json:"vmProcess,omitempty"`
+	// GitHubActor defines the attributes of a GitHub actor.
 	GitHubActor *GitHubActorSpec `json:"gitHubActor,omitempty"`
+	// K8sWorkload defines the attributes of a Kubernetes workload.
 	K8sWorkload *K8sWorkloadSpec `json:"k8sWorkload,omitempty"`
 }
 
+// ConsumerStatus defines the observed state of Consumer.
 type ConsumerStatus struct {
+	// ObservedIndex is a map of secret names to SecretUpdateRecord.
 	ObservedIndex map[string]SecretUpdateRecord `json:"observedIndex,omitempty"`
-	Locations     []SecretInStoreRef            `json:"locations,omitempty"`
-	Conditions    []metav1.Condition            `json:"conditions,omitempty"`
+	// Locations is a list of SecretInStoreRef.
+	Locations []SecretInStoreRef `json:"locations,omitempty"`
+	// Conditions is a list of metav1.Condition.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
+// TargetReference defines a reference to a target.
 type TargetReference struct {
-	Name      string `json:"name"`
+	// Name is the name of the target.
+	Name string `json:"name"`
+	// Namespace is the namespace of the target.
 	Namespace string `json:"namespace"`
 }
 
 // VMProcessSpec describes a process on a VM/host.
 type VMProcessSpec struct {
-	RUID       int64  `json:"ruid"`
-	EUID       int64  `json:"euid"`
+	// RUID is the real user ID.
+	RUID int64 `json:"ruid"`
+	// EUID is the effective user ID.
+	EUID int64 `json:"euid"`
+	// Executable is the path to the executable.
 	Executable string `json:"executable,omitempty"`
-	Cmdline    string `json:"cmdline,omitempty"`
+	// Cmdline is the command line arguments.
+	Cmdline string `json:"cmdline,omitempty"`
 }
 
 // GitHubActorSpec describes who/what is interacting with a repo.
@@ -70,9 +110,11 @@ type GitHubActorSpec struct {
 	Repository string `json:"repository"`
 	// ActorType: "User" | "App" | "Bot" (GitHub notions)
 	// +kubebuilder:validation:Enum=User;App;Bot
-	ActorType  string `json:"actorType"`
+	ActorType string `json:"actorType"`
+	// ActorLogin is the login of the actor.
 	ActorLogin string `json:"actorLogin,omitempty"` // "octocat"
-	ActorID    string `json:"actorID,omitempty"`    // stable numeric id if known
+	// ActorID is the stable numeric id of the actor if known.
+	ActorID string `json:"actorID,omitempty"` // stable numeric id if known
 	// Optional context that led to detection (push/clone/workflow).
 	Event string `json:"event,omitempty"` // "clone","workflow","push"
 	// Optional: workflow/job id when usage came from Actions
@@ -81,29 +123,42 @@ type GitHubActorSpec struct {
 
 // K8sWorkloadSpec describes the workload that is interacting with a kubernetes target.
 type K8sWorkloadSpec struct {
+	// ClusterName is the name of the cluster.
 	ClusterName string `json:"clusterName,omitempty"`
 
+	// Namespace is the namespace of the workload.
 	Namespace string `json:"namespace"`
 
 	// Workload identity (top controller or naked Pod as fallback)
 	// e.g., Kind="Deployment", Group="apps", Version="v1", Name="api"
-	WorkloadKind    string `json:"workloadKind"`
-	WorkloadGroup   string `json:"workloadGroup,omitempty"`
+	WorkloadKind string `json:"workloadKind"`
+	// WorkloadGroup is the group of the workload.
+	WorkloadGroup string `json:"workloadGroup,omitempty"`
+	// WorkloadVersion is the version of the workload.
 	WorkloadVersion string `json:"workloadVersion,omitempty"`
-	WorkloadName    string `json:"workloadName"`
-	WorkloadUID     string `json:"workloadUID,omitempty"`
+	// WorkloadName is the name of the workload.
+	WorkloadName string `json:"workloadName"`
+	// WorkloadUID is the UID of the workload.
+	WorkloadUID string `json:"workloadUID,omitempty"`
 
 	// Convenience string for UIs: "deployment.apps/api"
 	Controller string `json:"controller,omitempty"`
 }
 
+// ConsumerFinding defines a finding from a consumer.
 type ConsumerFinding struct {
+	// ObservedIndex is a map of secret names to SecretUpdateRecord.
 	ObservedIndex SecretUpdateRecord `json:"observedIndex"`
-	Location      SecretInStoreRef   `json:"location"`
-	Type          string             `json:"type"`
-	ID            string             `json:"externalID"`
-	DisplayName   string             `json:"displayName,omitempty"`
-	Attributes    ConsumerAttrs      `json:"attributes"`
+	// Location is a SecretInStoreRef.
+	Location SecretInStoreRef `json:"location"`
+	// Type is the type of the finding.
+	Type string `json:"type"`
+	// ID is the external ID of the finding.
+	ID string `json:"externalID"`
+	// DisplayName is the display name of the finding.
+	DisplayName string `json:"displayName,omitempty"`
+	// Attributes are the attributes of the finding.
+	Attributes ConsumerAttrs `json:"attributes"`
 }
 
 // Consumer is the schema to store duplicate findings from a job
@@ -119,7 +174,7 @@ type Consumer struct {
 	Status            ConsumerStatus `json:"status,omitempty"`
 }
 
-// JobList contains a list of Job resources.
+// ConsumerList contains a list of Consumer resources.
 // +kubebuilder:object:root=true
 type ConsumerList struct {
 	metav1.TypeMeta `json:",inline"`

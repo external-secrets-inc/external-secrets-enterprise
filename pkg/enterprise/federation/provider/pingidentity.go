@@ -1,7 +1,22 @@
-// 2025
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
+// Package provider implements the federation provider.
 // Copyright External Secrets Inc.
 // All Rights Reserved.
-
 package provider
 
 import (
@@ -20,6 +35,7 @@ const (
 	defaultPingIdentityJWKSCacheTTL = 1 * time.Hour
 )
 
+// PingIdentityProvider implements the PingIdentity provider.
 type PingIdentityProvider struct {
 	Region                 string
 	EnvironmentID          string
@@ -40,6 +56,7 @@ type PingIdentityProvider struct {
 	managementTokenMutex  sync.RWMutex
 }
 
+// NewPingIdentityProvider creates a new PingIdentity provider.
 func NewPingIdentityProvider(region, environmentID string) *PingIdentityProvider {
 	return &PingIdentityProvider{
 		Region:        region,
@@ -55,7 +72,7 @@ func NewPingIdentityProvider(region, environmentID string) *PingIdentityProvider
 // GetJWKS fetches the JSON Web Key Set from PingOne's public endpoint.
 // The token, issuer, and caCrt parameters are not used for PingOne since the
 // JWKS endpoint is publicly accessible over standard HTTPS.
-func (p *PingIdentityProvider) GetJWKS(ctx context.Context, token, issuer string, caCrt []byte) (map[string]map[string]string, error) {
+func (p *PingIdentityProvider) GetJWKS(ctx context.Context, _, _ string, _ []byte) (map[string]map[string]string, error) {
 	p.cacheMutex.RLock()
 	// Check if cache is still valid
 	if time.Since(p.lastFetch) < p.cacheTTL && len(p.jwksCache) > 0 {

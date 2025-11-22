@@ -1,7 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 copyright External Secrets Inc. All Rights Reserved.
 */
 
+// Package webhook implements webhook listener.
 package webhook
 
 import (
@@ -31,14 +48,15 @@ const defaultPath = "/webhook"
 const maxPortNumber = 65535
 const defaultMaxRetries = 10
 
+// RetryMessage represents a message to be retried.
 type RetryMessage struct {
 	event      events.SecretRotationEvent
 	currentRun int
 	retryAt    time.Time
 }
 
-// WebhookListener listens for webhook notifications to handle secret rotation events.
-type WebhookListener struct {
+// Listener listens for webhook notifications to handle secret rotation events.
+type Listener struct {
 	ctx        context.Context
 	cancel     context.CancelFunc
 	config     *v1alpha1.WebhookConfig
@@ -49,8 +67,8 @@ type WebhookListener struct {
 	retryQueue chan *RetryMessage
 }
 
-// Start initiates the WebhookListener to begin listening for incoming webhook requests.
-func (h *WebhookListener) Start() error {
+// Start initiates the Listener to begin listening for incoming webhook requests.
+func (h *Listener) Start() error {
 	h.logger.Info("Starting Webhook Listener...")
 
 	// Only handle errors if policy is configured
@@ -69,8 +87,8 @@ func (h *WebhookListener) Start() error {
 	return nil
 }
 
-// Stop gracefully shuts down the WebhookListener by closing the stopChan channel which triggers the termination process.
-func (h *WebhookListener) Stop() error {
+// Stop gracefully shuts down the Listener by closing the stopChan channel which triggers the termination process.
+func (h *Listener) Stop() error {
 	close(h.retryQueue)
 	h.stopRetryQueue()
 	h.cancel()
@@ -79,7 +97,7 @@ func (h *WebhookListener) Stop() error {
 	return h.server.Shutdown(ctx)
 }
 
-func (h *WebhookListener) webhookHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Listener) webhookHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	err = h.authenticate(r.Header)
 	if err != nil {
@@ -134,7 +152,7 @@ func (h *WebhookListener) webhookHandler(w http.ResponseWriter, r *http.Request)
 	_, _ = fmt.Fprintln(w, "")
 }
 
-func (h *WebhookListener) authenticate(header http.Header) error {
+func (h *Listener) authenticate(header http.Header) error {
 	if h.config == nil || h.config.Auth == nil {
 		return nil
 	}
@@ -158,7 +176,7 @@ func (h *WebhookListener) authenticate(header http.Header) error {
 	return authenticateWithBearer(h.ctx, h.client, authHeader[1], bearer, h.logger)
 }
 
-func (h *WebhookListener) createHandler() {
+func (h *Listener) createHandler() {
 	path := defaultPath
 	if h.config != nil && h.config.Path != "" {
 		path = h.config.Path
@@ -171,7 +189,7 @@ func (h *WebhookListener) createHandler() {
 	h.server.Handler = mux
 }
 
-func (h *WebhookListener) getIdentifierPath() string {
+func (h *Listener) getIdentifierPath() string {
 	identifierPath := defautlIdentifierPath
 	if h.config != nil && h.config.SecretIdentifierOnPayload != "" {
 		identifierPath = h.config.SecretIdentifierOnPayload
@@ -180,7 +198,7 @@ func (h *WebhookListener) getIdentifierPath() string {
 	return identifierPath
 }
 
-func (h *WebhookListener) handleErrors() {
+func (h *Listener) handleErrors() {
 	maxRetries := min(h.config.RetryPolicy.MaxRetries, defaultMaxRetries)
 	for message := range h.retryQueue {
 		beforeOrNow := message.retryAt.Compare(time.Now()) <= 0
@@ -215,7 +233,7 @@ func (h *WebhookListener) handleErrors() {
 	}
 }
 
-func (h *WebhookListener) stopRetryQueue() {
+func (h *Listener) stopRetryQueue() {
 	h.logger.Info("Processing all messages left for retry ignoring algorithm")
 	for message := range h.retryQueue {
 		err := h.processEvent(message.event)
@@ -260,16 +278,16 @@ func getSecretIdentifierFromPayload(payload, identifierPath string) (string, err
 	return secretIdentifier.String(), nil
 }
 
-func (h *WebhookListener) processSecret(secretIdentifier string) (events.SecretRotationEvent, error) {
+func (h *Listener) processSecret(secretIdentifier string) (events.SecretRotationEvent, error) {
 	event := events.SecretRotationEvent{
 		SecretIdentifier:  secretIdentifier,
 		RotationTimestamp: time.Now().Format("2006-01-02-15-04-05.000"),
-		TriggerSource:     schema.WEBHOOK,
+		TriggerSource:     schema.Webhook,
 	}
 	return event, h.processEvent(event)
 }
 
-func (h *WebhookListener) processEvent(event events.SecretRotationEvent) error {
+func (h *Listener) processEvent(event events.SecretRotationEvent) error {
 	select {
 	case h.eventChan <- event:
 		h.logger.Info("Published event to eventChan", "Event", event)

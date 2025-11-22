@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,6 +27,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// Package v1alpha1 contains enterprise generator API types.
 package v1alpha1
 
 import (
@@ -60,6 +78,7 @@ type FederationAuthKubernetes struct {
 	CACertSecretRef *esmeta.SecretKeySelector `json:"caCertSecretRef,omitempty"`
 }
 
+// Federation represents a federation generator configuration.
 // +kubebuilder:object:root=true
 // +kubebuilder:metadata:labels="external-secrets.io/component=controller"
 // +kubebuilder:storageversion
@@ -74,6 +93,8 @@ type Federation struct {
 }
 
 // +kubebuilder:object:root=true
+
+// FederationList contains a list of Federation resources.
 type FederationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

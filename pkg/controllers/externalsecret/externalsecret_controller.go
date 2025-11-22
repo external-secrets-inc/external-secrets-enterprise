@@ -1,9 +1,11 @@
 /*
+Copyright © 2025 ESO Maintainer Team
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package externalsecret implements the controller for managing ExternalSecret resources
 package externalsecret
 
 import (
@@ -51,22 +54,24 @@ import (
 	// Metrics.
 	"github.com/external-secrets/external-secrets/pkg/controllers/externalsecret/esmetrics"
 	ctrlmetrics "github.com/external-secrets/external-secrets/pkg/controllers/metrics"
-	"github.com/external-secrets/external-secrets/pkg/controllers/util"
-	"github.com/external-secrets/external-secrets/pkg/utils"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	ctrlutil "github.com/external-secrets/external-secrets/pkg/controllers/util"
+	"github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 
 	// Loading registered generators.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/generator/register"
-	_ "github.com/external-secrets/external-secrets/pkg/generator/register"
 
 	// Loading registered providers.
 	_ "github.com/external-secrets/external-secrets/pkg/enterprise/provider/register"
-	_ "github.com/external-secrets/external-secrets/pkg/provider/register"
+	_ "github.com/external-secrets/external-secrets/pkg/register"
 )
 
 const (
 	fieldOwnerTemplate    = "externalsecrets.external-secrets.io/%v"
 	fieldOwnerTemplateSha = "externalsecrets.external-secrets.io/sha3/%x"
+
+	// ExternalSecretFinalizer is the finalizer for ExternalSecret resources.
+	ExternalSecretFinalizer = "externalsecrets.external-secrets.io/externalsecret-cleanup"
 
 	// condition messages for "SecretSynced" reason.
 	msgSynced       = "secret synced"
@@ -127,7 +132,10 @@ var (
 	ErrSecretRemoveCtrlRef = fmt.Errorf("could not remove controller reference on secret")
 )
 
-const indexESTargetSecretNameField = ".metadata.targetSecretName"
+const (
+	indexESTargetSecretNameField = ".metadata.targetSecretName"
+	indexESTargetResourceField   = ".spec.target.resource"
+)
 
 // Reconciler reconciles a ExternalSecret object.
 type Reconciler struct {
@@ -141,7 +149,11 @@ type Reconciler struct {
 	ClusterSecretStoreEnabled bool
 	EnableFloodGate           bool
 	EnableGeneratorState      bool
+	AllowGenericTargets       bool
 	recorder                  record.EventRecorder
+
+	// informerManager manages dynamic informers for generic targets
+	informerManager InformerManager
 }
 
 // Reconcile implements the main reconciliation loop
@@ -184,10 +196,40 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		return ctrl.Result{}, err
 	}
 
-	// skip reconciliation if deletion timestamp is set on external secret
+	// Handle deletion with finalizer
 	if !externalSecret.GetDeletionTimestamp().IsZero() {
-		log.V(1).Info("skipping ExternalSecret, it is marked for deletion")
+		// Always attempt cleanup to handle edge case where finalizer might be removed externally
+		if err := r.cleanupManagedSecrets(ctx, log, externalSecret); err != nil {
+			log.Error(err, "failed to cleanup managed secrets")
+			return ctrl.Result{}, err
+		}
+
+		// Release informer for generic targets
+		if isGenericTarget(externalSecret) && r.informerManager != nil {
+			gvk := getTargetGVK(externalSecret)
+			esName := types.NamespacedName{Name: externalSecret.Name, Namespace: externalSecret.Namespace}
+			if err := r.informerManager.ReleaseInformer(ctx, gvk, esName); err != nil {
+				log.Error(err, "failed to release informer for generic target",
+					"group", gvk.Group,
+					"version", gvk.Version,
+					"kind", gvk.Kind)
+			}
+		}
+
+		// Remove finalizer if it exists
+		if updated := controllerutil.RemoveFinalizer(externalSecret, ExternalSecretFinalizer); updated {
+			if err := r.Update(ctx, externalSecret); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 		return ctrl.Result{}, nil
+	}
+
+	// Add finalizer if it doesn't exist
+	if updated := controllerutil.AddFinalizer(externalSecret, ExternalSecretFinalizer); updated {
+		if err := r.Update(ctx, externalSecret); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// if extended metrics is enabled, refine the time series vector
@@ -209,6 +251,30 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	if skip {
 		log.V(1).Info("skipping ExternalSecret, uses unmanaged SecretStore")
 		return ctrl.Result{}, nil
+	}
+
+	// if this is a generic target, use a different reconciliation path
+	if isGenericTarget(externalSecret) {
+		// update the status of the ExternalSecret when this function returns, if needed
+		currentStatus := *externalSecret.Status.DeepCopy()
+		defer func() {
+			if equality.Semantic.DeepEqual(currentStatus, externalSecret.Status) {
+				return
+			}
+
+			updateErr := r.Status().Update(ctx, externalSecret)
+			if updateErr != nil && !apierrors.IsConflict(updateErr) {
+				log.Error(updateErr, logErrorUpdateESStatus)
+			}
+		}()
+
+		// validate generic target configuration early
+		if err := r.validateGenericTarget(log, externalSecret); err != nil {
+			r.markAsFailed("invalid generic target", err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
+			return ctrl.Result{}, nil // don't requeue as this is a configuration error that is not recoverable
+		}
+
+		return r.reconcileGenericTarget(ctx, externalSecret, log, start, resourceLabels, syncCallsError)
 	}
 
 	// the target secret name defaults to the ExternalSecret name, if not explicitly set
@@ -331,7 +397,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	// retrieve the provider secret data.
 	dataMap, err := r.GetProviderSecretData(ctx, externalSecret)
 	if err != nil {
-		r.markAsFailed(msgErrorGetSecretData, err, externalSecret, syncCallsError.With(resourceLabels))
+		r.markAsFailed(msgErrorGetSecretData, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 		return ctrl.Result{}, err
 	}
 
@@ -346,7 +412,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			creationPolicy := externalSecret.Spec.Target.CreationPolicy
 			if creationPolicy != esv1.CreatePolicyOwner {
 				err = fmt.Errorf(errDeleteCreatePolicy, secretName, creationPolicy)
-				r.markAsFailed(msgErrorDeleteSecret, err, externalSecret, syncCallsError.With(resourceLabels))
+				r.markAsFailed(msgErrorDeleteSecret, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 				return ctrl.Result{}, nil
 			}
 
@@ -354,7 +420,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			if existingSecret.UID != "" {
 				err = r.Delete(ctx, existingSecret)
 				if err != nil && !apierrors.IsNotFound(err) {
-					r.markAsFailed(msgErrorDeleteSecret, err, externalSecret, syncCallsError.With(resourceLabels))
+					r.markAsFailed(msgErrorDeleteSecret, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 					return ctrl.Result{}, err
 				}
 				r.recorder.Event(externalSecret, v1.EventTypeNormal, esv1.ReasonDeleted, eventDeleted)
@@ -452,7 +518,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		// we also use a label to keep track of the owner of the secret
 		// this lets us remove secrets that are no longer needed if the target secret name changes
 		if externalSecret.Spec.Target.CreationPolicy == esv1.CreatePolicyOwner {
-			lblValue := utils.ObjectHash(fmt.Sprintf("%v/%v", externalSecret.Namespace, externalSecret.Name))
+			lblValue := esutils.ObjectHash(fmt.Sprintf("%v/%v", externalSecret.Namespace, externalSecret.Name))
 			secret.Labels[esv1.LabelOwner] = lblValue
 		} else {
 			// the label should not be set if the creation policy is not Owner
@@ -460,7 +526,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		}
 
 		secret.Labels[esv1.LabelManaged] = esv1.LabelManagedValue
-		secret.Annotations[esv1.AnnotationDataHash] = utils.ObjectHash(secret.Data)
+		secret.Annotations[esv1.AnnotationDataHash] = esutils.ObjectHash(secret.Data)
 
 		return nil
 	}
@@ -492,7 +558,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		// for example, if the target secret name was changed
 		err = r.deleteOrphanedSecrets(ctx, externalSecret, secretName)
 		if err != nil {
-			r.markAsFailed(msgErrorDeleteOrphaned, err, externalSecret, syncCallsError.With(resourceLabels))
+			r.markAsFailed(msgErrorDeleteOrphaned, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 			return ctrl.Result{}, err
 		}
 
@@ -514,29 +580,142 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		// detect errors indicating that we failed to set ourselves as the owner of the secret
 		// NOTE: this error cant be fixed by retrying so we don't return an error (which would requeue immediately)
 		if errors.Is(err, ErrSecretSetCtrlRef) {
-			r.markAsFailed(msgErrorBecomeOwner, err, externalSecret, syncCallsError.With(resourceLabels))
+			r.markAsFailed(msgErrorBecomeOwner, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 			return ctrl.Result{}, nil
 		}
 
 		// detect errors indicating that the secret has another ExternalSecret as owner
 		// NOTE: this error cant be fixed by retrying so we don't return an error (which would requeue immediately)
 		if errors.Is(err, ErrSecretIsOwned) {
-			r.markAsFailed(msgErrorIsOwned, err, externalSecret, syncCallsError.With(resourceLabels))
+			r.markAsFailed(msgErrorIsOwned, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 			return ctrl.Result{}, nil
 		}
 
 		// detect errors indicating that the secret is immutable
 		// NOTE: this error cant be fixed by retrying so we don't return an error (which would requeue immediately)
 		if errors.Is(err, ErrSecretImmutable) {
-			r.markAsFailed(msgErrorUpdateImmutable, err, externalSecret, syncCallsError.With(resourceLabels))
+			r.markAsFailed(msgErrorUpdateImmutable, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 			return ctrl.Result{}, nil
 		}
 
-		r.markAsFailed(msgErrorUpdateSecret, err, externalSecret, syncCallsError.With(resourceLabels))
+		r.markAsFailed(msgErrorUpdateSecret, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonSecretSyncedError)
 		return ctrl.Result{}, err
 	}
 
 	r.markAsDone(externalSecret, start, log, esv1.ConditionReasonSecretSynced, msgSynced)
+	return r.getRequeueResult(externalSecret), nil
+}
+
+// reconcileGenericTarget handles reconciliation for generic targets (ConfigMaps, Custom Resources).
+func (r *Reconciler) reconcileGenericTarget(ctx context.Context, externalSecret *esv1.ExternalSecret, log logr.Logger, start time.Time, resourceLabels map[string]string, syncCallsError *prometheus.CounterVec) (ctrl.Result, error) {
+	// retrieve the provider secret data
+	dataMap, err := r.GetProviderSecretData(ctx, externalSecret)
+	if err != nil {
+		r.markAsFailed(msgErrorGetSecretData, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+		return ctrl.Result{}, err
+	}
+
+	// if no data was found, handle it according to deletion policy
+	if len(dataMap) == 0 {
+		switch externalSecret.Spec.Target.DeletionPolicy {
+		case esv1.DeletionPolicyDelete:
+			// safeguard that we only can delete resources we own
+			creationPolicy := externalSecret.Spec.Target.CreationPolicy
+			if creationPolicy != esv1.CreatePolicyOwner {
+				err = fmt.Errorf("unable to delete resource: creationPolicy=%s is not Owner", creationPolicy)
+				r.markAsFailed("could not delete resource", err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+				return ctrl.Result{}, nil
+			}
+
+			// delete the resource if it exists
+			err = r.deleteGenericResource(ctx, log, externalSecret)
+			if err != nil {
+				r.markAsFailed("could not delete resource", err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+				return ctrl.Result{}, err
+			}
+
+			r.markAsDone(externalSecret, start, log, esv1.ConditionReasonResourceDeleted, msgDeleted)
+			return r.getRequeueResult(externalSecret), nil
+
+		case esv1.DeletionPolicyRetain:
+			r.markAsDone(externalSecret, start, log, esv1.ConditionReasonResourceSynced, msgSyncedRetain)
+			return r.getRequeueResult(externalSecret), nil
+
+		case esv1.DeletionPolicyMerge:
+			// continue to process with empty data
+		}
+	}
+
+	// render the template for the manifest
+	obj, err := r.applyTemplateToManifest(ctx, externalSecret, dataMap)
+	if err != nil {
+		r.markAsFailed("could not apply template to manifest", err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+		return ctrl.Result{}, err
+	}
+
+	// handle creation policies
+	switch externalSecret.Spec.Target.CreationPolicy {
+	case esv1.CreatePolicyNone:
+		log.V(1).Info("resource creation skipped due to CreationPolicy=None")
+		err = nil
+
+	case esv1.CreatePolicyMerge:
+		// for Merge policy, only update if resource exists
+		existing, getErr := r.getGenericResource(ctx, log, externalSecret)
+		if getErr != nil && !apierrors.IsNotFound(getErr) {
+			r.markAsFailed("could not get target resource", getErr, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+			return ctrl.Result{}, getErr
+		}
+
+		if existing == nil || existing.GetUID() == "" {
+			r.markAsDone(externalSecret, start, log, esv1.ConditionReasonResourceMissing, "resource will not be created due to CreationPolicy=Merge")
+			return r.getRequeueResult(externalSecret), nil
+		}
+
+		obj.SetResourceVersion(existing.GetResourceVersion())
+		obj.SetUID(existing.GetUID())
+
+		// update the existing resource
+		err = r.updateGenericResource(ctx, log, externalSecret, obj)
+	case esv1.CreatePolicyOrphan, esv1.CreatePolicyOwner:
+		existing, getErr := r.getGenericResource(ctx, log, externalSecret)
+		if getErr != nil && !apierrors.IsNotFound(getErr) {
+			r.markAsFailed("could not get target resource", getErr, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+			return ctrl.Result{}, getErr
+		}
+
+		if existing != nil {
+			obj.SetResourceVersion(existing.GetResourceVersion())
+			obj.SetUID(existing.GetUID())
+			err = r.updateGenericResource(ctx, log, externalSecret, obj)
+		} else {
+			err = r.createGenericResource(ctx, log, externalSecret, obj)
+		}
+	}
+
+	if err != nil {
+		// if we got an update conflict, requeue immediately
+		if apierrors.IsConflict(err) {
+			log.V(1).Info("conflict while updating resource, will requeue")
+			return ctrl.Result{RequeueAfter: 1 * time.Second}, nil
+		}
+
+		r.markAsFailed(msgErrorUpdateSecret, err, externalSecret, syncCallsError.With(resourceLabels), esv1.ConditionReasonResourceSyncedError)
+		return ctrl.Result{}, err
+	}
+
+	// Ensure an informer exists for this GVK to enable drift detection (only if not already managed)
+	gvk := getTargetGVK(externalSecret)
+	esName := types.NamespacedName{Name: externalSecret.Name, Namespace: externalSecret.Namespace}
+	if _, err := r.informerManager.EnsureInformer(ctx, gvk, esName); err != nil {
+		// Log the error but don't fail reconciliation - the resource was successfully created/updated
+		log.Error(err, "failed to register informer for generic target, drift detection may not work",
+			"group", gvk.Group,
+			"version", gvk.Version,
+			"kind", gvk.Kind)
+	}
+
+	r.markAsDone(externalSecret, start, log, esv1.ConditionReasonResourceSynced, msgSynced)
 	return r.getRequeueResult(externalSecret), nil
 }
 
@@ -585,7 +764,7 @@ func (r *Reconciler) markAsDone(externalSecret *esv1.ExternalSecret, start time.
 	SetExternalSecretCondition(externalSecret, *newReadyCondition)
 
 	externalSecret.Status.RefreshTime = metav1.NewTime(start)
-	externalSecret.Status.SyncedResourceVersion = util.GetResourceVersion(externalSecret.ObjectMeta)
+	externalSecret.Status.SyncedResourceVersion = ctrlutil.GetResourceVersion(externalSecret.ObjectMeta)
 
 	// if the status or reason has changed, log at the appropriate verbosity level
 	if oldReadyCondition == nil || oldReadyCondition.Status != newReadyCondition.Status || oldReadyCondition.Reason != newReadyCondition.Reason {
@@ -599,15 +778,53 @@ func (r *Reconciler) markAsDone(externalSecret *esv1.ExternalSecret, start time.
 	}
 }
 
-func (r *Reconciler) markAsFailed(msg string, err error, externalSecret *esv1.ExternalSecret, counter prometheus.Counter) {
+func (r *Reconciler) markAsFailed(msg string, err error, externalSecret *esv1.ExternalSecret, counter prometheus.Counter, reason string) {
 	r.recorder.Event(externalSecret, v1.EventTypeWarning, esv1.ReasonUpdateFailed, err.Error())
-	conditionSynced := NewExternalSecretCondition(esv1.ExternalSecretReady, v1.ConditionFalse, esv1.ConditionReasonSecretSyncedError, msg)
+	conditionSynced := NewExternalSecretCondition(esv1.ExternalSecretReady, v1.ConditionFalse, reason, msg)
 	SetExternalSecretCondition(externalSecret, *conditionSynced)
 	counter.Inc()
 }
 
+func (r *Reconciler) cleanupManagedSecrets(ctx context.Context, log logr.Logger, externalSecret *esv1.ExternalSecret) error {
+	// Only delete resources if DeletionPolicy is Delete
+	if externalSecret.Spec.Target.DeletionPolicy != esv1.DeletionPolicyDelete {
+		log.V(1).Info("skipping resource deletion due to DeletionPolicy", "policy", externalSecret.Spec.Target.DeletionPolicy)
+		return nil
+	}
+
+	// if this is a generic target, use deleteGenericResource
+	if isGenericTarget(externalSecret) {
+		return r.deleteGenericResource(ctx, log, externalSecret)
+	}
+
+	// handle Secret deletion
+	secretName := externalSecret.Spec.Target.Name
+	if secretName == "" {
+		secretName = externalSecret.Name
+	}
+
+	var secret v1.Secret
+	err := r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: externalSecret.Namespace}, &secret)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	// Only delete if we own it
+	if metav1.IsControlledBy(&secret, externalSecret) {
+		if err := r.Delete(ctx, &secret); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+		log.V(1).Info("deleted managed secret", "secret", secretName)
+	}
+
+	return nil
+}
+
 func (r *Reconciler) deleteOrphanedSecrets(ctx context.Context, externalSecret *esv1.ExternalSecret, secretName string) error {
-	ownerLabel := utils.ObjectHash(fmt.Sprintf("%v/%v", externalSecret.Namespace, externalSecret.Name))
+	ownerLabel := esutils.ObjectHash(fmt.Sprintf("%v/%v", externalSecret.Namespace, externalSecret.Name))
 
 	// we use a PartialObjectMetadataList to avoid loading the full secret objects
 	// and because the Secrets partials are always cached due to WatchesMetadata() in SetupWithManager()
@@ -644,8 +861,10 @@ func (r *Reconciler) createSecret(ctx context.Context, mutationFunc func(secret 
 	// define and mutate the new secret
 	newSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: es.Namespace,
+			Name:        secretName,
+			Namespace:   es.Namespace,
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
 		},
 		Data: make(map[string][]byte),
 	}
@@ -878,7 +1097,7 @@ func shouldRefresh(es *esv1.ExternalSecret) bool {
 			return true
 		}
 
-		return es.Status.SyncedResourceVersion != util.GetResourceVersion(es.ObjectMeta)
+		return es.Status.SyncedResourceVersion != ctrlutil.GetResourceVersion(es.ObjectMeta)
 
 	case esv1.RefreshPolicyPeriodic:
 		return shouldRefreshPeriodic(es)
@@ -895,7 +1114,7 @@ func shouldRefreshPeriodic(es *esv1.ExternalSecret) bool {
 	}
 
 	// if the ExternalSecret has been updated, we should refresh
-	if es.Status.SyncedResourceVersion != util.GetResourceVersion(es.ObjectMeta) {
+	if es.Status.SyncedResourceVersion != ctrlutil.GetResourceVersion(es.ObjectMeta) {
 		return true
 	}
 
@@ -931,7 +1150,7 @@ func isSecretValid(existingSecret *v1.Secret, es *esv1.ExternalSecret) bool {
 
 	// if the data-hash annotation is missing or incorrect, then it's invalid
 	// this is how we know if the data has chanced since we last updated the secret
-	if existingSecret.Annotations[esv1.AnnotationDataHash] != utils.ObjectHash(existingSecret.Data) {
+	if existingSecret.Annotations[esv1.AnnotationDataHash] != esutils.ObjectHash(existingSecret.Data) {
 		return false
 	}
 
@@ -939,13 +1158,21 @@ func isSecretValid(existingSecret *v1.Secret, es *esv1.ExternalSecret) bool {
 }
 
 // SetupWithManager returns a new controller builder that will be started by the provided Manager.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
+func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, opts controller.Options) error {
 	r.recorder = mgr.GetEventRecorderFor("external-secrets")
+	// Initialize informer manager only if generic targets are allowed
+	if r.AllowGenericTargets && r.informerManager == nil {
+		r.informerManager = NewInformerManager(ctx, mgr.GetCache(), r.Client, r.Log.WithName("informer-manager"))
+	}
 
 	// index ExternalSecrets based on the target secret name,
 	// this lets us quickly find all ExternalSecrets which target a specific Secret
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &esv1.ExternalSecret{}, indexESTargetSecretNameField, func(obj client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &esv1.ExternalSecret{}, indexESTargetSecretNameField, func(obj client.Object) []string {
 		es := obj.(*esv1.ExternalSecret)
+		// Don't index generic targets here (they use indexESTargetResourceField)
+		if isGenericTarget(es) {
+			return nil
+		}
 		// if the target name is set, use that as the index
 		if es.Spec.Target.Name != "" {
 			return []string{es.Spec.Target.Name}
@@ -956,13 +1183,30 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options)
 		return err
 	}
 
+	// index ExternalSecrets based on the target resource (GVK + name)
+	// this lets us quickly find all ExternalSecrets which target a specific generic resource
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &esv1.ExternalSecret{}, indexESTargetResourceField, func(obj client.Object) []string {
+		es := obj.(*esv1.ExternalSecret)
+		if !r.AllowGenericTargets || !isGenericTarget(es) {
+			return nil
+		}
+
+		gvk := getTargetGVK(es)
+		targetName := getTargetName(es)
+		// Index format: "group/version/kind/name"
+		return []string{fmt.Sprintf("%s/%s/%s/%s", gvk.Group, gvk.Version, gvk.Kind, targetName)}
+	}); err != nil {
+		return err
+	}
+
 	// predicate function to ignore secret events unless they have the "managed" label
 	secretHasESLabel := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		value, hasLabel := object.GetLabels()[esv1.LabelManaged]
 		return hasLabel && value == esv1.LabelManagedValue
 	})
 
-	return ctrl.NewControllerManagedBy(mgr).
+	// Build the controller
+	builder := ctrl.NewControllerManagedBy(mgr).
 		WithOptions(opts).
 		For(&esv1.ExternalSecret{}).
 		// we cant use Owns(), as we don't set ownerReferences when the creationPolicy is not Owner.
@@ -971,8 +1215,15 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options)
 			&v1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.findObjectsForSecret),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}, secretHasESLabel),
-		).
-		Complete(r)
+		)
+
+	// Watch generic targets dynamically via the informer manager
+	// Only add this watch source if the feature is enabled
+	if r.AllowGenericTargets {
+		builder = builder.WatchesRawSource(r.informerManager.Source())
+	}
+
+	return builder.Complete(r)
 }
 
 func (r *Reconciler) findObjectsForSecret(ctx context.Context, secret client.Object) []reconcile.Request {

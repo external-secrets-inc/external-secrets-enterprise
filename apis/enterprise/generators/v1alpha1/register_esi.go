@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,20 +50,31 @@ var (
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// AddToScheme is used to add go types to the GroupVersionKind scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 var (
-	AWSIAMKeysKind        = reflect.TypeOf(AWSIAMKey{}).Name()
-	SendgridKind          = reflect.TypeOf(SendgridAuthorizationToken{}).Name()
+	// AWSIAMKeysKind is the type name of the AWS IAM keys generator.
+	AWSIAMKeysKind = reflect.TypeOf(AWSIAMKey{}).Name()
+	// SendgridKind is the type name of the Sendgrid generator.
+	SendgridKind = reflect.TypeOf(SendgridAuthorizationToken{}).Name()
+	// RabbitMQGeneratorKind is the type name of the RabbitMQ generator.
 	RabbitMQGeneratorKind = reflect.TypeOf(RabbitMQ{}).Name()
-	BasicAuthKind         = reflect.TypeOf(BasicAuth{}).Name()
-	FederationKind        = reflect.TypeOf(Federation{}).Name()
-	SSHKind               = reflect.TypeOf(SSH{}).Name()
-	Neo4jKind             = reflect.TypeOf(Neo4j{}).Name()
-	MongoDBKind           = reflect.TypeOf(MongoDB{}).Name()
-	PostgreSqlKind        = reflect.TypeOf(PostgreSql{}).Name()
-	OpenAIKind            = reflect.TypeOf(OpenAI{}).Name()
+	// BasicAuthKind is the type name of the Basic Auth generator.
+	BasicAuthKind = reflect.TypeOf(BasicAuth{}).Name()
+	// FederationKind is the type name of the Federation generator.
+	FederationKind = reflect.TypeOf(Federation{}).Name()
+	// SSHKind is the type name of the SSH generator.
+	SSHKind = reflect.TypeOf(SSH{}).Name()
+	// Neo4jKind is the type name of the Neo4j generator.
+	Neo4jKind = reflect.TypeOf(Neo4j{}).Name()
+	// MongoDBKind is the type name of the MongoDB generator.
+	MongoDBKind = reflect.TypeOf(MongoDB{}).Name()
+	// PostgreSQLKind is the type name of the PostgreSQL generator.
+	PostgreSQLKind = reflect.TypeOf(PostgreSQL{}).Name()
+	// OpenAIKind is the type name of the OpenAI generator.
+	OpenAIKind = reflect.TypeOf(OpenAI{}).Name()
 )
 
 func init() {
@@ -73,7 +100,7 @@ func init() {
 	genv1alpha1.SchemeBuilder.Register(&BasicAuth{}, &BasicAuthList{})
 	genv1alpha1.SchemeBuilder.Register(&SSH{}, &SSHList{})
 	genv1alpha1.SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
-	genv1alpha1.SchemeBuilder.Register(&PostgreSql{}, &PostgreSqlList{})
+	genv1alpha1.SchemeBuilder.Register(&PostgreSQL{}, &PostgreSQLList{})
 	genv1alpha1.SchemeBuilder.Register(&OpenAI{}, &OpenAIList{})
 	genv1alpha1.SchemeBuilder.Register(&Federation{}, &FederationList{})
 
@@ -85,7 +112,7 @@ func init() {
 	SchemeBuilder.Register(&BasicAuth{}, &BasicAuthList{})
 	SchemeBuilder.Register(&SSH{}, &SSHList{})
 	SchemeBuilder.Register(&Neo4j{}, &Neo4jList{})
-	SchemeBuilder.Register(&PostgreSql{}, &PostgreSqlList{})
+	SchemeBuilder.Register(&PostgreSQL{}, &PostgreSQLList{})
 	SchemeBuilder.Register(&OpenAI{}, &OpenAIList{})
 	SchemeBuilder.Register(&Federation{}, &FederationList{})
 }

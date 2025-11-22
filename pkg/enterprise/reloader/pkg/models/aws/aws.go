@@ -1,16 +1,34 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. 2025
 // All Rights Reserved
+
+// Package aws defines AWS-related models.
 package aws
 
-// AWSSQSConfig contains configuration for AWS SDK.
-type AWSSQSConfig struct {
+// SQSConfig contains configuration for AWS SDK.
+type SQSConfig struct {
 	// QueueURL is the URL of the AWS SDK queue.
 	// +required
 	QueueURL string `json:"queueURL"`
 
 	// Authentication methods for AWS.
 	// +required
-	Auth AWSSDKAuth `json:"auth"`
+	Auth SDKAuth `json:"auth"`
 
 	// MaxNumberOfMessages specifies the maximum number of messages to retrieve from the SDK queue in a single request.
 	// +optional
@@ -28,22 +46,24 @@ type AWSSQSConfig struct {
 	VisibilityTimeout int32 `json:"visibilityTimeout"`
 }
 
-// AWSSDKAuth contains authentication methods for AWS SDK.
-type AWSSDKAuth struct {
+// SDKAuth contains authentication methods for AWS SDK.
+type SDKAuth struct {
 	AuthMethod string `json:"authMethod"`
 
 	Region string `json:"region"`
 
 	ServiceAccount *ServiceAccountSelector `json:"serviceAccountRef,omitempty"`
 
-	SecretRef *AWSSDKSecretRef `json:"secretRef,omitempty"`
+	SecretRef *SDKSecretRef `json:"secretRef,omitempty"`
 }
 
-type AWSSDKSecretRef struct {
-	AccessKeyId     SecretKeySelector `json:"accessKeyIdSecretRef"`
+// SDKSecretRef contains AWS SDK secret reference configuration.
+type SDKSecretRef struct {
+	AccessKeyID     SecretKeySelector `json:"accessKeyIdSecretRef"`
 	SecretAccessKey SecretKeySelector `json:"secretAccessKeySecretRef"`
 }
 
+// ServiceAccountSelector represents a Kubernetes service account selector.
 type ServiceAccountSelector struct {
 
 	// Name specifies the name of the service account to be selected.

@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,7 +50,7 @@ type RabbitMQSpec struct {
 	Config RabbitMQConfig `json:"config"`
 }
 
-// Server defines the RabbitMQ Server Parameters to connect to.
+// RabbitMQServer defines the RabbitMQ Server Parameters to connect to.
 type RabbitMQServer struct {
 	// Host is the hostname of the RabbitMQ server.
 	//+required
@@ -80,7 +96,7 @@ type RabbitMQConfig struct {
 	PasswordPolicy RabbitMQPasswordPolicy `json:"passwordPolicy"`
 }
 
-// PasswordPolicy contains the password policy to apply.
+// RabbitMQPasswordPolicy contains the password policy to apply.
 //
 //kubebuilder:validation:MinProperties=1
 //kubebuilder:validation:MaxProperties=1
@@ -93,12 +109,13 @@ type RabbitMQPasswordPolicy struct {
 	SecretRef *esmeta.SecretKeySelector `json:"secretRef"`
 }
 
+// RabbitMQPasswordGeneratorRef is a reference to a password generator.
 type RabbitMQPasswordGeneratorRef struct {
 	Name string `json:"name"`
 	Kind string `json:"kind"`
 }
 
-// Password generates a random password based on the.
+// RabbitMQ generates a random password based on the.
 // configuration parameters in spec.
 // You can specify the length, characterset and other attributes.
 // +kubebuilder:object:root=true

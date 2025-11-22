@@ -1,3 +1,19 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
@@ -156,7 +172,7 @@ func (s *TestSuite) TestNeedStatusUpdate() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{}
+			reconciler := &RunTemplateReconciler{}
 			needsUpdate := reconciler.needsStatusUpdate(tc.args.workflowRunTemplate, tc.args.workflowRuns)
 			assert.Equal(s.T(), tc.expect.result, needsUpdate)
 		})
@@ -301,7 +317,7 @@ func (s *TestSuite) TestShouldReconcile() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{Log: logr.Discard()}
+			reconciler := &RunTemplateReconciler{Log: logr.Discard()}
 			should := reconciler.shouldReconcile(tc.args.workflowRunTemplate)
 			assert.Equal(s.T(), tc.expect.result, should)
 		})
@@ -406,7 +422,7 @@ func (s *TestSuite) TestRequeueAfter() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{Log: logr.Discard()}
+			reconciler := &RunTemplateReconciler{Log: logr.Discard()}
 			result, err := reconciler.requeueAfter(tc.args.workflowRunTemplate)
 
 			require.NoError(s.T(), err)
@@ -473,7 +489,7 @@ func (s *TestSuite) TestGenerateRevision() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			reconciler := &WorkflowRunTemplateReconciler{}
+			reconciler := &RunTemplateReconciler{}
 			revision, err := reconciler.generateRevision(tc.args.workflowRuns)
 
 			if tc.expect.err != nil {
@@ -530,7 +546,7 @@ func (s *TestSuite) TestCreateWorkflowRun() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			cl := fake.NewClientBuilder().WithScheme(s.scheme).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   cl,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,
@@ -614,7 +630,7 @@ func (s *TestSuite) TestUpdateWorkflowRunTemplate() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			cl := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).WithStatusSubresource(tc.args.objsForClient...).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   cl,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,
@@ -687,7 +703,7 @@ func (s *TestSuite) TestCleanup() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			client := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   client,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,
@@ -920,7 +936,7 @@ func (s *TestSuite) TestGetChildrenFor() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			client := fake.NewClientBuilder().WithScheme(s.scheme).WithObjects(tc.args.objsForClient...).Build()
-			reconciler := &WorkflowRunTemplateReconciler{
+			reconciler := &RunTemplateReconciler{
 				Client:   client,
 				Log:      logr.Discard(),
 				Scheme:   s.scheme,

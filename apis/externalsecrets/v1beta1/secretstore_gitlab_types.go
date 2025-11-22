@@ -1,9 +1,11 @@
 /*
+Copyright © 2025 ESO Maintainer Team
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +20,7 @@ import (
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
 )
 
-// Configures a store to sync secrets with a GitLab instance.
+// GitlabProvider configures a store to sync secrets with a GitLab instance.
 type GitlabProvider struct {
 	// URL configures the GitLab instance URL. Defaults to https://gitlab.com/.
 	URL string `json:"url,omitempty"`
@@ -48,10 +50,12 @@ type GitlabProvider struct {
 	CAProvider *CAProvider `json:"caProvider,omitempty"`
 }
 
+// GitlabAuth defines the authentication method for the GitLab provider.
 type GitlabAuth struct {
 	SecretRef GitlabSecretRef `json:"SecretRef"`
 }
 
+// GitlabSecretRef defines a reference to a secret containing credentials for the GitLab provider.
 type GitlabSecretRef struct {
 	// AccessToken is used for authentication.
 	AccessToken esmeta.SecretKeySelector `json:"accessToken,omitempty"`

@@ -1,6 +1,24 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // 2025
 // Copyright External Secrets Inc.
 // All Rights Reserved.
+
+// Package workflow implements workflow controllers.
 package workflow
 
 import (
@@ -15,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// WorkflowTemplateReconciler reconciles a WorkflowTemplate object.
-type WorkflowTemplateReconciler struct {
+// TemplateReconciler reconciles a WorkflowTemplate object.
+type TemplateReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
@@ -24,7 +42,7 @@ type WorkflowTemplateReconciler struct {
 }
 
 // Reconcile handles WorkflowTemplate resources.
-func (r *WorkflowTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *TemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("workflowtemplate", req.NamespacedName)
 	log.Info("reconciling WorkflowTemplate")
 
@@ -47,7 +65,7 @@ func (r *WorkflowTemplateReconciler) Reconcile(ctx context.Context, req ctrl.Req
 }
 
 // validateTemplate validates a WorkflowTemplate.
-func (r *WorkflowTemplateReconciler) validateTemplate(template *workflows.WorkflowTemplate) error {
+func (r *TemplateReconciler) validateTemplate(template *workflows.WorkflowTemplate) error {
 	// TODO: The same validation logic for the workflows needs to be applied here too - jobs, dependencies, etc.
 
 	if err := r.validateBasicTemplateFields(template); err != nil {
@@ -62,7 +80,7 @@ func (r *WorkflowTemplateReconciler) validateTemplate(template *workflows.Workfl
 }
 
 // validateBasicTemplateFields validates the basic required fields of a template.
-func (r *WorkflowTemplateReconciler) validateBasicTemplateFields(template *workflows.WorkflowTemplate) error {
+func (r *TemplateReconciler) validateBasicTemplateFields(template *workflows.WorkflowTemplate) error {
 	if template.Spec.Name == "" {
 		return fmt.Errorf("template must have a name")
 	}
@@ -79,7 +97,7 @@ func (r *WorkflowTemplateReconciler) validateBasicTemplateFields(template *workf
 }
 
 // validateParameterGroups validates all parameter groups and their parameters.
-func (r *WorkflowTemplateReconciler) validateParameterGroups(groups []workflows.ParameterGroup) error {
+func (r *TemplateReconciler) validateParameterGroups(groups []workflows.ParameterGroup) error {
 	paramNames := make(map[string]bool)
 	groupNames := make(map[string]bool)
 
@@ -93,7 +111,7 @@ func (r *WorkflowTemplateReconciler) validateParameterGroups(groups []workflows.
 }
 
 // validateParameterGroup validates a single parameter group.
-func (r *WorkflowTemplateReconciler) validateParameterGroup(group workflows.ParameterGroup, groupNames, paramNames map[string]bool) error {
+func (r *TemplateReconciler) validateParameterGroup(group workflows.ParameterGroup, groupNames, paramNames map[string]bool) error {
 	if group.Name == "" {
 		return fmt.Errorf("parameter group must have a name")
 	}
@@ -113,7 +131,7 @@ func (r *WorkflowTemplateReconciler) validateParameterGroup(group workflows.Para
 }
 
 // validateParameter validates a single parameter.
-func (r *WorkflowTemplateReconciler) validateParameter(param workflows.Parameter, paramNames map[string]bool) error {
+func (r *TemplateReconciler) validateParameter(param workflows.Parameter, paramNames map[string]bool) error {
 	if param.Name == "" {
 		return fmt.Errorf("parameter must have a name")
 	}
@@ -127,7 +145,7 @@ func (r *WorkflowTemplateReconciler) validateParameter(param workflows.Parameter
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *WorkflowTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *TemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&workflows.WorkflowTemplate{}).
 		Complete(r)

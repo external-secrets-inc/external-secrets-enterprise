@@ -1,5 +1,22 @@
+// /*
+// Copyright © 2025 ESO Maintainer Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// */
+
 // Copyright External Secrets Inc. All Rights Reserved
 
+// Package postgresql implements PostgreSQL user generator.
 package postgresql
 
 import (
@@ -25,12 +42,13 @@ import (
 
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
 	esmeta "github.com/external-secrets/external-secrets/apis/meta/v1"
+	"github.com/external-secrets/external-secrets/generators/v1/password"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
-	"github.com/external-secrets/external-secrets/pkg/generator/password"
-	"github.com/external-secrets/external-secrets/pkg/utils"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
+	utils "github.com/external-secrets/external-secrets/runtime/esutils"
+	"github.com/external-secrets/external-secrets/runtime/esutils/resolvers"
 )
 
+// Generator implements the PostgreSQL user generator.
 type Generator struct{}
 
 const (
@@ -38,21 +56,22 @@ const (
 	defaultUser       = "postgres"
 	defaultDbName     = "postgres"
 	defaultSuffixSize = 8
-	schedIdFmt        = "psql-session-observation-%s-%s:%s"
+	schedIDFmt        = "psql-session-observation-%s-%s:%s"
 )
 
-var mapAttributes = map[string]enterprise.PostgreSqlUserAttributesEnum{
-	string(enterprise.PostgreSqlUserSuperUser):   enterprise.PostgreSqlUserSuperUser,
-	string(enterprise.PostgreSqlUserCreateDb):    enterprise.PostgreSqlUserCreateDb,
-	string(enterprise.PostgreSqlUserCreateRole):  enterprise.PostgreSqlUserCreateRole,
-	string(enterprise.PostgreSqlUserReplication): enterprise.PostgreSqlUserReplication,
-	string(enterprise.PostgreSqlUserNoInherit):   enterprise.PostgreSqlUserNoInherit,
-	string(enterprise.PostgreSqlUserByPassRls):   enterprise.PostgreSqlUserByPassRls,
-	"CONNECTION_LIMIT":                           enterprise.PostgreSqlUserConnectionLimit,
-	string(enterprise.PostgreSqlUserLogin):       enterprise.PostgreSqlUserLogin,
-	string(enterprise.PostgreSqlUserPassword):    enterprise.PostgreSqlUserPassword,
+var mapAttributes = map[string]enterprise.PostgreSQLUserAttributesEnum{
+	string(enterprise.PostgreSQLUserSuperUser):   enterprise.PostgreSQLUserSuperUser,
+	string(enterprise.PostgreSQLUserCreateDb):    enterprise.PostgreSQLUserCreateDb,
+	string(enterprise.PostgreSQLUserCreateRole):  enterprise.PostgreSQLUserCreateRole,
+	string(enterprise.PostgreSQLUserReplication): enterprise.PostgreSQLUserReplication,
+	string(enterprise.PostgreSQLUserNoInherit):   enterprise.PostgreSQLUserNoInherit,
+	string(enterprise.PostgreSQLUserByPassRls):   enterprise.PostgreSQLUserByPassRls,
+	"CONNECTION_LIMIT":                           enterprise.PostgreSQLUserConnectionLimit,
+	string(enterprise.PostgreSQLUserLogin):       enterprise.PostgreSQLUserLogin,
+	string(enterprise.PostgreSQLUserPassword):    enterprise.PostgreSQLUserPassword,
 }
 
+// Generate creates a new user in the database.
 func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, kube client.Client, namespace string) (map[string][]byte, genv1alpha1.GeneratorProviderState, error) {
 	res, err := parseSpec(jsonSpec.Raw)
 	if err != nil {
@@ -84,8 +103,8 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to setup observation: %w", err)
 		}
-		schedId := fmt.Sprintf(schedIdFmt, res.UID, res.Spec.Host, res.Spec.Port)
-		scheduler.Global().ScheduleInterval(schedId, res.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
+		schedID := fmt.Sprintf(schedIDFmt, res.UID, res.Spec.Host, res.Spec.Port)
+		scheduler.Global().ScheduleInterval(schedID, res.Spec.CleanupPolicy.ActivityTrackingInterval.Duration, time.Minute, func(ctx context.Context, log logr.Logger) {
 			err := triggerSessionSnapshot(ctx, &res.Spec, kube, namespace)
 			if err != nil {
 				log.Error(err, "failed to trigger session observation")
@@ -104,7 +123,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 		return nil, nil, fmt.Errorf("user not found in response")
 	}
 
-	rawState, err := json.Marshal(&enterprise.PostgreSqlUserState{
+	rawState, err := json.Marshal(&enterprise.PostgreSQLUserState{
 		Username: string(username),
 	})
 	if err != nil {
@@ -114,6 +133,7 @@ func (g *Generator) Generate(ctx context.Context, jsonSpec *apiextensions.JSON, 
 	return user, &apiextensions.JSON{Raw: rawState}, nil
 }
 
+// Cleanup removes the user from the database.
 func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, previousStatus genv1alpha1.GeneratorProviderState, kclient client.Client, namespace string) error {
 	if previousStatus == nil {
 		return fmt.Errorf("missing previous status")
@@ -150,6 +170,7 @@ func (g *Generator) Cleanup(ctx context.Context, jsonSpec *apiextensions.JSON, p
 	return nil
 }
 
+// GetCleanupPolicy returns the cleanup policy of the generator.
 func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.CleanupPolicy, error) {
 	res, err := parseSpec(obj.Raw)
 	if err != nil {
@@ -167,6 +188,7 @@ func (g *Generator) GetCleanupPolicy(obj *apiextensions.JSON) (*genv1alpha1.Clea
 	return &policy, nil
 }
 
+// LastActivityTime returns the last activity time of the user.
 func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSON, state genv1alpha1.GeneratorProviderState, kube client.Client, namespace string) (time.Time, bool, error) {
 	status, err := parseStatus(state.Raw)
 	if err != nil {
@@ -199,6 +221,7 @@ func (g *Generator) LastActivityTime(ctx context.Context, obj *apiextensions.JSO
 	return lastActivity, true, nil
 }
 
+// GetKeys returns the keys that are generated by the generator.
 func (g *Generator) GetKeys() map[string]string {
 	return map[string]string{
 		"username": "PostgreSQL database username",
@@ -206,7 +229,7 @@ func (g *Generator) GetKeys() map[string]string {
 	}
 }
 
-func newConnection(ctx context.Context, spec *enterprise.PostgreSqlSpec, kclient client.Client, ns string) (*pgx.Conn, error) {
+func newConnection(ctx context.Context, spec *enterprise.PostgreSQLSpec, kclient client.Client, ns string) (*pgx.Conn, error) {
 	dbName := defaultDbName
 	if spec.Database != "" {
 		dbName = spec.Database
@@ -290,7 +313,7 @@ $$ LANGUAGE plpgsql;
 	return nil
 }
 
-func triggerSessionSnapshot(ctx context.Context, spec *enterprise.PostgreSqlSpec, client client.Client, namespace string) error {
+func triggerSessionSnapshot(ctx context.Context, spec *enterprise.PostgreSQLSpec, client client.Client, namespace string) error {
 	db, err := newConnection(ctx, spec, client, namespace)
 	if err != nil {
 		log.Error(err, "failed to create db connection")
@@ -342,7 +365,7 @@ func setupObservation(ctx context.Context, db *pgx.Conn) error {
 }
 
 func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
-	var current_rows = make([]string, 0)
+	var currentRows = make([]string, 0)
 	rows, err := db.Query(ctx, "SELECT rolname FROM pg_roles")
 	if err != nil {
 		return nil, err
@@ -354,17 +377,17 @@ func getExistingRoles(ctx context.Context, db *pgx.Conn) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		current_rows = append(current_rows, rolname)
+		currentRows = append(currentRows, rolname)
 	}
 
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
-	return current_rows, nil
+	return currentRows, nil
 }
 
-func addRolesAttributesToQueryString(query *strings.Builder, attributes []enterprise.PostgreSqlUserAttribute) {
+func addRolesAttributesToQueryString(query *strings.Builder, attributes []enterprise.PostgreSQLUserAttribute) {
 	if len(attributes) > 0 {
 		query.WriteString(" WITH ")
 		for i, attr := range attributes {
@@ -372,7 +395,7 @@ func addRolesAttributesToQueryString(query *strings.Builder, attributes []enterp
 				query.WriteString(" ")
 			}
 			if attr.Value != nil {
-				if string(mapAttributes[attr.Name]) == string(enterprise.PostgreSqlUserPassword) {
+				if string(mapAttributes[attr.Name]) == string(enterprise.PostgreSQLUserPassword) {
 					fmt.Fprintf(query, `%s '%s'`, string(mapAttributes[attr.Name]), *attr.Value)
 				} else {
 					fmt.Fprintf(query, `%s %s`, string(mapAttributes[attr.Name]), *attr.Value)
@@ -384,7 +407,7 @@ func addRolesAttributesToQueryString(query *strings.Builder, attributes []enterp
 	}
 }
 
-func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []enterprise.PostgreSqlUserAttribute) error {
+func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []enterprise.PostgreSQLUserAttribute) error {
 	var query strings.Builder
 	query.WriteString(fmt.Sprintf("CREATE ROLE %s", pgx.Identifier{roleName}.Sanitize()))
 	addRolesAttributesToQueryString(&query, attributes)
@@ -392,7 +415,7 @@ func createRole(ctx context.Context, db *pgx.Conn, roleName string, attributes [
 	return err
 }
 
-func updateRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []enterprise.PostgreSqlUserAttribute) error {
+func updateRole(ctx context.Context, db *pgx.Conn, roleName string, attributes []enterprise.PostgreSQLUserAttribute) error {
 	var query strings.Builder
 	query.WriteString(fmt.Sprintf("ALTER ROLE %s", pgx.Identifier{roleName}.Sanitize()))
 	addRolesAttributesToQueryString(&query, attributes)
@@ -444,7 +467,7 @@ func resetRole(ctx context.Context, db *pgx.Conn, roleName string) error {
 	return nil
 }
 
-func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSqlSpec) (map[string][]byte, error) {
+func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSQLSpec) (map[string][]byte, error) {
 	username := spec.User.Username
 	suffixSize := defaultSuffixSize
 	if spec.User.SuffixSize != nil {
@@ -459,7 +482,7 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSqlSp
 		username = fmt.Sprintf("%s_%s", username, suffix)
 	}
 
-	current_roles, err := getExistingRoles(ctx, db)
+	currentRoles, err := getExistingRoles(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get existing roles: %w", err)
 	}
@@ -474,15 +497,15 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSqlSp
 	}
 
 	spec.User.Attributes = append(spec.User.Attributes,
-		enterprise.PostgreSqlUserAttribute{
-			Name: string(enterprise.PostgreSqlUserLogin),
-		}, enterprise.PostgreSqlUserAttribute{
-			Name:  string(enterprise.PostgreSqlUserPassword),
+		enterprise.PostgreSQLUserAttribute{
+			Name: string(enterprise.PostgreSQLUserLogin),
+		}, enterprise.PostgreSQLUserAttribute{
+			Name:  string(enterprise.PostgreSQLUserPassword),
 			Value: ptr.To(string(pass)),
 		},
 	)
 
-	if !slices.Contains(current_roles, username) {
+	if !slices.Contains(currentRoles, username) {
 		err = createRole(ctx, db, username, spec.User.Attributes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create role %s: %w", username, err)
@@ -498,7 +521,7 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSqlSp
 		}
 	}
 
-	err = grantRolesToUser(ctx, db, username, spec.User.Roles, current_roles)
+	err = grantRolesToUser(ctx, db, username, spec.User.Roles, currentRoles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add roles to user %s: %w", username, err)
 	}
@@ -509,12 +532,12 @@ func createUser(ctx context.Context, db *pgx.Conn, spec *enterprise.PostgreSqlSp
 	}, nil
 }
 
-func grantRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, current_roles []string) error {
+func grantRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles, currentRoles []string) error {
 	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 
 	toGrant := make([]string, 0, len(roles))
 	for _, role := range roles {
-		if !slices.Contains(current_roles, role) {
+		if !slices.Contains(currentRoles, role) {
 			if err := createRole(ctx, db, role, nil); err != nil {
 				return fmt.Errorf("failed to create role %s: %w", role, err)
 			}
@@ -536,7 +559,7 @@ func grantRolesToUser(ctx context.Context, db *pgx.Conn, username string, roles,
 	return nil
 }
 
-func dropUser(ctx context.Context, db *pgx.Conn, username string, spec enterprise.PostgreSqlSpec) error {
+func dropUser(ctx context.Context, db *pgx.Conn, username string, spec enterprise.PostgreSQLSpec) error {
 	sanitizedUsername := pgx.Identifier{username}.Sanitize()
 	if !spec.User.DestructiveCleanup {
 		reassignToUser := spec.Auth.Username
@@ -544,11 +567,11 @@ func dropUser(ctx context.Context, db *pgx.Conn, username string, spec enterpris
 			reassignToUser = *spec.User.ReassignTo
 		}
 
-		current_roles, err := getExistingRoles(ctx, db)
+		currentRoles, err := getExistingRoles(ctx, db)
 		if err != nil {
 			return fmt.Errorf("failed to get existing roles: %w", err)
 		}
-		if !slices.Contains(current_roles, reassignToUser) {
+		if !slices.Contains(currentRoles, reassignToUser) {
 			err = createRole(ctx, db, reassignToUser, nil)
 			if err != nil {
 				return fmt.Errorf("failed to create role %s: %w", reassignToUser, err)
@@ -594,14 +617,14 @@ func generatePassword(
 	return pass, nil
 }
 
-func parseSpec(data []byte) (*enterprise.PostgreSql, error) {
-	var spec enterprise.PostgreSql
+func parseSpec(data []byte) (*enterprise.PostgreSQL, error) {
+	var spec enterprise.PostgreSQL
 	err := yaml.Unmarshal(data, &spec)
 	return &spec, err
 }
 
-func parseStatus(data []byte) (*enterprise.PostgreSqlUserState, error) {
-	var state enterprise.PostgreSqlUserState
+func parseStatus(data []byte) (*enterprise.PostgreSQLUserState, error) {
+	var state enterprise.PostgreSQLUserState
 	err := json.Unmarshal(data, &state)
 	if err != nil {
 		return nil, err
@@ -610,6 +633,6 @@ func parseStatus(data []byte) (*enterprise.PostgreSqlUserState, error) {
 }
 
 func init() {
-	genv1alpha1.Register(enterprise.PostgreSqlKind, &Generator{})
-	genv1alpha1.RegisterGeneric(enterprise.PostgreSqlKind, &enterprise.PostgreSql{})
+	genv1alpha1.Register(enterprise.PostgreSQLKind, &Generator{})
+	genv1alpha1.RegisterGeneric(enterprise.PostgreSQLKind, &enterprise.PostgreSQL{})
 }
