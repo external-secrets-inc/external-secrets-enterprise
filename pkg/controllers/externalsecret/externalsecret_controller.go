@@ -997,3 +997,23 @@ func (r *Reconciler) findObjectsForSecret(ctx context.Context, secret client.Obj
 	}
 	return requests
 }
+
+// RuntimeClient returns the controller-runtime client used by the reconciler.
+func (r *Reconciler) RuntimeClient() client.Client {
+	return r.Client
+}
+
+// RuntimeScheme exposes the scheme owned by the reconciler.
+func (r *Reconciler) RuntimeScheme() *runtime.Scheme {
+	return r.Scheme
+}
+
+// ControllerClassName returns the controller class filter for this reconciler.
+func (r *Reconciler) ControllerClassName() string {
+	return r.ControllerClass
+}
+
+// FloodGateEnabled indicates whether the flood gate feature is turned on.
+func (r *Reconciler) FloodGateEnabled() bool {
+	return r.EnableFloodGate
+}

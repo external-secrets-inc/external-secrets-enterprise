@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
-	externalsecrets "github.com/external-secrets/external-secrets/pkg/controllers/externalsecret"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/deps"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
 )
@@ -48,9 +48,37 @@ type GenerateSecretsTestSuite struct {
 	specs  []*fedv1alpha1.AuthorizationSpec
 }
 
+// testExternalSecretAccessor implements deps.ExternalSecretAccessor with
+// optional nil values so tests can initialize the server handler without
+// wiring a full ExternalSecret reconciler.
+type testExternalSecretAccessor struct {
+	client          client.Client
+	scheme          *runtime.Scheme
+	controllerClass string
+	floodGate       bool
+}
+
+var _ deps.ExternalSecretAccessor = (*testExternalSecretAccessor)(nil)
+
+func (t *testExternalSecretAccessor) RuntimeClient() client.Client {
+	return t.client
+}
+
+func (t *testExternalSecretAccessor) RuntimeScheme() *runtime.Scheme {
+	return t.scheme
+}
+
+func (t *testExternalSecretAccessor) ControllerClassName() string {
+	return t.controllerClass
+}
+
+func (t *testExternalSecretAccessor) FloodGateEnabled() bool {
+	return t.floodGate
+}
+
 func (s *GenerateSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock", true)
+	s.server = NewServerHandler(&testExternalSecretAccessor{}, ":8080", ":8081", "unix:///spire.sock", true)
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -913,7 +941,7 @@ type PostSecretsTestSuite struct {
 
 func (s *PostSecretsTestSuite) SetupTest() {
 	// Initialize the server handler
-	s.server = NewServerHandler(nil, ":8080", ":8081", "unix:///spire.sock", true)
+	s.server = NewServerHandler(&testExternalSecretAccessor{}, ":8080", ":8081", "unix:///spire.sock", true)
 
 	// Initialize specs slice for cleanup
 	s.specs = []*fedv1alpha1.AuthorizationSpec{}
@@ -1322,14 +1350,9 @@ func TestUpsertIdentityConnectionError(t *testing.T) {
 	connectionErr := errors.New("connection refused")
 	mockClient := &mockClient{getErr: connectionErr}
 
-	// Create a minimal reconciler with the mock client
-	reconciler := &externalsecrets.Reconciler{
-		Client: mockClient,
-	}
-
-	// Create the server handler with the mock reconciler
+	// Create the server handler with the mock client
 	server := &ServerHandler{
-		reconciler: reconciler,
+		client: mockClient,
 	}
 
 	// Create test auth info
@@ -1384,12 +1407,8 @@ func TestUpsertIdentityCreateNew(t *testing.T) {
 	notFoundErr := apierrors.NewNotFound(schema.GroupResource{Group: "federation.external-secrets.io", Resource: "authorizedidentities"}, "test-identity")
 	mockClient := &mockClient{getErr: notFoundErr}
 
-	reconciler := &externalsecrets.Reconciler{
-		Client: mockClient,
-	}
-
 	server := &ServerHandler{
-		reconciler: reconciler,
+		client: mockClient,
 	}
 
 	authInfo := &auth.AuthInfo{
@@ -1476,12 +1495,8 @@ func TestUpsertIdentityUpdateWithNewCredential(t *testing.T) {
 		storedIdentity: existingIdentity,
 	}
 
-	reconciler := &externalsecrets.Reconciler{
-		Client: mockClient,
-	}
-
 	server := &ServerHandler{
-		reconciler: reconciler,
+		client: mockClient,
 	}
 
 	authInfo := &auth.AuthInfo{
@@ -1591,12 +1606,8 @@ func TestUpsertIdentityUpdateExistingCredential(t *testing.T) {
 		storedIdentity: existingIdentity,
 	}
 
-	reconciler := &externalsecrets.Reconciler{
-		Client: mockClient,
-	}
-
 	server := &ServerHandler{
-		reconciler: reconciler,
+		client: mockClient,
 	}
 
 	// Same pod re-requesting
@@ -1675,12 +1686,8 @@ func TestUpsertIdentityCreateError(t *testing.T) {
 		createErr: createErr,
 	}
 
-	reconciler := &externalsecrets.Reconciler{
-		Client: mockClient,
-	}
-
 	server := &ServerHandler{
-		reconciler: reconciler,
+		client: mockClient,
 	}
 
 	authInfo := &auth.AuthInfo{
@@ -1740,12 +1747,8 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 		updateErr:      updateErr,
 	}
 
-	reconciler := &externalsecrets.Reconciler{
-		Client: mockClient,
-	}
-
 	server := &ServerHandler{
-		reconciler: reconciler,
+		client: mockClient,
 	}
 
 	authInfo := &auth.AuthInfo{
@@ -1790,12 +1793,10 @@ func TestUpsertIdentityUpdateError(t *testing.T) {
 }
 
 func TestUpsertIdentityNilReconciler(t *testing.T) {
-	// Test that upsertIdentity handles nil reconciler gracefully
+	// Test that upsertIdentity handles missing dependencies gracefully
 	ctx := context.Background()
 
-	server := &ServerHandler{
-		reconciler: nil, // No reconciler
-	}
+	server := &ServerHandler{}
 
 	authInfo := &auth.AuthInfo{
 		Method:   "oidc",
@@ -1830,6 +1831,6 @@ func TestUpsertIdentityNilReconciler(t *testing.T) {
 
 	// Should succeed (early return)
 	if err != nil {
-		t.Errorf("expected no error with nil reconciler, got: %v", err)
+		t.Errorf("expected no error with missing dependencies, got: %v", err)
 	}
 }
