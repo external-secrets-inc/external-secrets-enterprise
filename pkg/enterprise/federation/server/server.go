@@ -18,11 +18,9 @@ import (
 	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
 	esv1 "github.com/external-secrets/external-secrets/apis/externalsecrets/v1"
 	genv1alpha1 "github.com/external-secrets/external-secrets/apis/generators/v1alpha1"
-	externalsecrets "github.com/external-secrets/external-secrets/pkg/controllers/externalsecret"
-	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
+	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/deps"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/federation/server/auth"
 	store "github.com/external-secrets/external-secrets/pkg/enterprise/federation/store"
-	"github.com/external-secrets/external-secrets/pkg/utils/resolvers"
 	"github.com/go-logr/logr"
 	"github.com/labstack/echo/v4"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
@@ -32,13 +30,18 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type ServerHandler struct {
-	reconciler             *externalsecrets.Reconciler
+	client                 client.Client
+	scheme                 *runtime.Scheme
+	controllerClass        string
+	floodGateEnabled       bool
+	dependencies           deps.Dependencies
 	mu                     sync.RWMutex
 	log                    logr.Logger
 	port                   string
@@ -50,11 +53,36 @@ type ServerHandler struct {
 	deleteGeneratorStateFn func(ctx context.Context, namespace string, labels labels.Selector) error
 }
 
-func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, socketPath string, tlsEnabled bool) *ServerHandler {
+type Option func(*ServerHandler)
+
+// WithDependencies allows overriding the in-tree federation dependencies such
+// as the secretstore manager factory and the generator resolver. This enables
+// fakes in tests and custom implementations during the repo split.
+func WithDependencies(dep deps.Dependencies) Option {
+	return func(s *ServerHandler) {
+		if dep.SecretStoreFactory == nil || dep.GeneratorResolver == nil {
+			defaults := deps.DefaultDependencies()
+			if dep.SecretStoreFactory == nil {
+				dep.SecretStoreFactory = defaults.SecretStoreFactory
+			}
+			if dep.GeneratorResolver == nil {
+				dep.GeneratorResolver = defaults.GeneratorResolver
+			}
+		}
+		s.dependencies = dep
+	}
+}
+
+func NewServerHandler(accessor deps.ExternalSecretAccessor, port, tlsPort, socketPath string, tlsEnabled bool, options ...Option) *ServerHandler {
 	log := ctrl.Log.WithName("federationserver")
 	s := &ServerHandler{
+		client:           accessor.RuntimeClient(),
+		scheme:           accessor.RuntimeScheme(),
+		controllerClass:  accessor.ControllerClassName(),
+		floodGateEnabled: accessor.FloodGateEnabled(),
+		dependencies:     deps.DefaultDependencies(),
+
 		log:        log,
-		reconciler: reconciler,
 		mu:         sync.RWMutex{},
 		port:       port,
 		tlsPort:    tlsPort,
@@ -64,6 +92,9 @@ func NewServerHandler(reconciler *externalsecrets.Reconciler, port, tlsPort, soc
 	s.generateSecretFn = s.generateSecret
 	s.getSecretFn = s.getSecret
 	s.deleteGeneratorStateFn = s.deleteGeneratorState
+	for _, opt := range options {
+		opt(s)
+	}
 	return s
 }
 
@@ -384,7 +415,7 @@ func (s *ServerHandler) revokeCredentialsOf(c echo.Context) error {
 
 func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace string, labels labels.Selector) error {
 	generators := &genv1alpha1.GeneratorStateList{}
-	err := s.reconciler.Client.List(ctx, generators, &client.ListOptions{
+	err := s.client.List(ctx, generators, &client.ListOptions{
 		Namespace:     namespace,
 		LabelSelector: labels,
 	})
@@ -392,7 +423,7 @@ func (s *ServerHandler) deleteGeneratorState(ctx context.Context, namespace stri
 		return err
 	}
 	for _, generator := range generators.Items {
-		err := s.reconciler.Client.Delete(ctx, &generator)
+		err := s.client.Delete(ctx, &generator)
 		if err != nil {
 			return err
 		}
@@ -405,7 +436,7 @@ func (s *ServerHandler) getSecret(ctx context.Context, storeName, name string) (
 		Name: storeName,
 		Kind: esv1.ClusterSecretStoreKind,
 	}
-	mgr := secretstore.NewManager(s.reconciler.Client, s.reconciler.ControllerClass, s.reconciler.EnableFloodGate)
+	mgr := s.dependencies.SecretStoreFactory.New(s.client, s.controllerClass, s.floodGateEnabled)
 	client, err := mgr.Get(ctx, storeRef, "", nil)
 	if err != nil {
 		return nil, err
@@ -425,14 +456,14 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 		Kind:       generatorKind,
 		APIVersion: "generators.external-secrets.io/v1alpha1",
 	}
-	generator, obj, err := resolvers.GeneratorRef(ctx, s.reconciler.Client, s.reconciler.Scheme, namespace, &generatorRef)
+	generator, obj, err := s.dependencies.GeneratorResolver.Resolve(ctx, s.client, s.scheme, namespace, &generatorRef)
 	if err != nil {
 		return nil, "", "", err
 	}
 	if generator == nil {
 		return nil, "", "", errors.New("generator not found")
 	}
-	data, stateJson, err := generator.Generate(ctx, obj, s.reconciler.Client, namespace)
+	data, stateJson, err := generator.Generate(ctx, obj, s.client, namespace)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -466,26 +497,26 @@ func (s *ServerHandler) generateSecret(ctx context.Context, generatorName, gener
 		var cobj client.Object
 		if _, ok := resource.OwnerAttributes["pod-uid"]; ok {
 			pod := &v1.Pod{}
-			err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, pod)
+			err := s.client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, pod)
 			if err != nil {
 				return nil, "", "", err
 			}
 			cobj = pod
 		} else {
 			sa := &v1.ServiceAccount{}
-			err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, sa)
+			err := s.client.Get(ctx, client.ObjectKey{Name: resource.Owner, Namespace: resource.OwnerAttributes["namespace"]}, sa)
 			if err != nil {
 				return nil, "", "", err
 			}
 			cobj = sa
 		}
-		if err := controllerutil.SetOwnerReference(cobj, &generatorState, s.reconciler.Scheme); err != nil {
+		if err := controllerutil.SetOwnerReference(cobj, &generatorState, s.scheme); err != nil {
 			return nil, "", "", err
 		}
 	}
 	// Any other types, cleanup is done via the `authorized_identity` controller.
 	// TODO - bind workloads to these other type of credentials as well.
-	err = s.reconciler.Client.Create(ctx, &generatorState)
+	err = s.client.Create(ctx, &generatorState)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -612,8 +643,8 @@ func (s *ServerHandler) upsertIdentity(
 	resourceNamespace string,
 	stateRef *fedv1alpha1.StateRef,
 ) error {
-	// Skip if reconciler or client is not available (e.g., in tests)
-	if s.reconciler == nil || s.reconciler.Client == nil {
+	// Skip if dependencies are not available (e.g., in tests)
+	if s.client == nil {
 		return nil
 	}
 
@@ -649,7 +680,7 @@ func (s *ServerHandler) upsertIdentity(
 
 	// Try to get existing AuthorizedIdentity
 	identity := &fedv1alpha1.AuthorizedIdentity{}
-	err := s.reconciler.Client.Get(ctx, client.ObjectKey{Name: identityName}, identity)
+	err := s.client.Get(ctx, client.ObjectKey{Name: identityName}, identity)
 
 	if err != nil {
 		// If error is not NotFound, return early (e.g., connection errors)
@@ -667,7 +698,7 @@ func (s *ServerHandler) upsertIdentity(
 				IssuedCredentials: []fedv1alpha1.IssuedCredential{issuedCredential},
 			},
 		}
-		return s.reconciler.Client.Create(ctx, identity)
+		return s.client.Create(ctx, identity)
 	}
 
 	// Update existing AuthorizedIdentity
@@ -687,7 +718,8 @@ func (s *ServerHandler) upsertIdentity(
 		identity.Spec.IssuedCredentials = append(identity.Spec.IssuedCredentials, issuedCredential)
 	}
 	// Add an automatic retry condition for colliding updates
-	return s.reconciler.Client.Update(ctx, identity)
+	return s.client.Update(ctx, identity)
+
 }
 
 // credentialsMatch checks if two credentials reference the same source.

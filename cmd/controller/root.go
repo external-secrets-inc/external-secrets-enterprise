@@ -99,6 +99,7 @@ var (
 	enablePartialCache                    bool
 	enableWorkflowAPI                     bool
 	enableFederationTLS                   bool
+	enableFederation                      bool = defaultEnableFederation
 	concurrent                            int
 	port                                  int
 	clientQPS                             float32
@@ -413,57 +414,61 @@ var rootCmd = &cobra.Command{
 			}
 		}
 		// Federation
-		if err = (&federation.AuthorizationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("Authorization"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "Authorization")
-			os.Exit(1)
-		}
-		if err = (&federation.KubernetesFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("KubernetesFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "KubernetesFederation")
-			os.Exit(1)
-		}
-		if err = (&federation.OktaFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("OktaFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "OktaFederation")
-			os.Exit(1)
-		}
+		if enableFederation {
+			if err = (&federation.AuthorizationController{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("Authorization"),
+				Scheme: mgr.GetScheme(),
+			}).SetupWithManager(mgr, controller.Options{}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "Authorization")
+				os.Exit(1)
+			}
+			if err = (&federation.KubernetesFederationController{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("KubernetesFederation"),
+				Scheme: mgr.GetScheme(),
+			}).SetupWithManager(mgr, controller.Options{}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "KubernetesFederation")
+				os.Exit(1)
+			}
+			if err = (&federation.OktaFederationController{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("OktaFederation"),
+				Scheme: mgr.GetScheme(),
+			}).SetupWithManager(mgr, controller.Options{}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "OktaFederation")
+				os.Exit(1)
+			}
 
-		if err = (&federation.PingIdentityFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("PingIdentityFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "PingIdentityFederation")
-			os.Exit(1)
+			if err = (&federation.PingIdentityFederationController{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("PingIdentityFederation"),
+				Scheme: mgr.GetScheme(),
+			}).SetupWithManager(mgr, controller.Options{}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "PingIdentityFederation")
+				os.Exit(1)
+			}
+			if err = (&federation.SpiffeFederationController{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("SpiffeFederation"),
+				Scheme: mgr.GetScheme(),
+			}).SetupWithManager(mgr, controller.Options{}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "SpiffeFederation")
+				os.Exit(1)
+			}
+			if err = (&federation.AuthorizedIdentityReconciler{
+				Client: mgr.GetClient(),
+				Log:    ctrl.Log.WithName("controllers").WithName("AuthorizedIdentity"),
+				Scheme: mgr.GetScheme(),
+			}).SetupWithManager(mgr, controller.Options{}); err != nil {
+				setupLog.Error(err, errCreateController, "controller", "AuthorizedIdentity")
+				os.Exit(1)
+			}
+			handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
+			go handler.SetupEcho(cmd.Context())
+		} else {
+			setupLog.Info("federation controllers and server disabled", "enableFederation", enableFederation)
 		}
-		if err = (&federation.SpiffeFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("SpiffeFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "SpiffeFederation")
-			os.Exit(1)
-		}
-		if err = (&federation.AuthorizedIdentityReconciler{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("AuthorizedIdentity"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "AuthorizedIdentity")
-			os.Exit(1)
-		}
-		handler := federationserver.NewServerHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
-		go handler.SetupEcho(cmd.Context())
 
 		sched := scheduler.New(mgr.GetClient(), ctrl.Log.WithName("scheduler"))
 		if err := mgr.Add(sched); err != nil {
@@ -571,6 +576,7 @@ func init() {
 	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
 	rootCmd.Flags().StringVar(&spireAgentSocketPath, "spire-agent-socket-path", "unix:///tmp/spire-agent/public/api.sock", "Path to the Spiffe agent socket")
 	rootCmd.Flags().BoolVar(&enableFederationTLS, "enable-federation-tls", false, "Enable federation server TLS")
+	rootCmd.Flags().BoolVar(&enableFederation, "enable-federation", defaultEnableFederation, "Enable federation controllers and server (default toggled by disable_federation build tag)")
 
 	fs := feature.Features()
 	for _, f := range fs {
