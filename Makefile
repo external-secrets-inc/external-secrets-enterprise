@@ -111,12 +111,6 @@ test: generate envtest go-work ## Run tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBERNETES_VERSION) -p path --bin-dir $(LOCALBIN))" go test work -v -race -coverprofile cover.out
 	@$(OK) go test unit-tests
 
-.PHONY: test.no-federation
-test.no-federation: generate envtest ## Run tests with federation wiring disabled (build tag: disable_federation)
-	@$(INFO) "go test unit-tests (disable federation)"
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBERNETES_VERSION) -p path --bin-dir $(LOCALBIN))" go test -race -v -tags disable_federation $(shell go list ./... | grep -v e2e) -coverprofile cover.nofederation.out
-	@$(OK) "go test unit-tests (disable federation)"
-
 .PHONY: test.e2e
 test.e2e: generate ## Run e2e tests
 	@$(INFO) go test e2e-tests

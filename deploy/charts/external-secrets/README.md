@@ -110,9 +110,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | extraObjects | list | `[]` |  |
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
-| federation.listen.port | int | `8000` |  |
-| federation.service.enabled | bool | `true` |  |
-| federation.service.port | int | `8000` |  |
 | fullnameOverride | string | `""` |  |
 | genericTargets | object | `{"enabled":false,"resources":[]}` | Enable support for generic targets (ConfigMaps, Custom Resources). Warning: Using generic target. Make sure access policies and encryption are properly configured. When enabled, this grants the controller permissions to create/update/delete ConfigMaps and optionally other resource types specified in generic.resources. |
 | genericTargets.enabled | bool | `false` | Enable generic target support |
