@@ -171,21 +171,21 @@ jobs:
           path: bin/k8s
           key: ${{ runner.os }}-envtest-${{env.KUBERNETES_VERSION}}
 
-      - name: Run Unit Tests (federation disabled)
+      - name: Run Unit Tests
         run: |
-          make test.no-federation
+          make test
 
-      - name: Publish Unit Test Coverage (federation disabled)
+      - name: Publish Unit Test Coverage
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          flags: unittests-nofederation
-          file: ./cover.nofederation.out
+          flags: unittests
+          file: ./cover.out
 
   publish-artifacts:
     needs: detect-noop
-    if: needs.detect-noop.outputs.noop != 'true'
+    if: needs.detect-noop.outputs.noop != 'true' && secrets.GHCR_USERNAME != ''
     uses: ./.github/workflows/esi-publish.yml
     permissions:
       contents: read  #actions/checkout
@@ -217,7 +217,7 @@ jobs:
 
   publish-public-artifacts:
     needs: detect-noop
-    if: needs.detect-noop.outputs.noop != 'true'
+    if: needs.detect-noop.outputs.noop != 'true' && secrets.GHCR_USERNAME != ''
     uses: ./.github/workflows/esi-publish.yml
     permissions:
       contents: read  #actions/checkout
