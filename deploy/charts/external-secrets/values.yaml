@@ -22,13 +22,6 @@ bitwarden-sdk-server:
 # -- Specifies the amount of historic ReplicaSets k8s should keep (see https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#clean-up-policy)
 revisionHistoryLimit: 10
 
-federation:
-  listen:
-    port: 8000
-  service:
-    enabled: true
-    port: 8000
-
 image:
   repository: us-central1-docker.pkg.dev/external-secrets-inc-registry/external/external-secrets
   pullPolicy: IfNotPresent

@@ -16,8 +16,8 @@
 
 // Copyright External Secrets Inc. All Rights Reserved
 
-// Package basic_auth implements basic authentication generator.
-package basic_auth
+// Package basicauth implements basic authentication generator.
+package basicauth
 
 import (
 	"context"

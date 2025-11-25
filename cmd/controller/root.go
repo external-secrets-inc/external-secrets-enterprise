@@ -35,8 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	idfedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/identity/v1alpha1"
-	fedv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/federation/v1alpha1"
 	reloaderv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/reloader/v1alpha1"
 	scanv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/scan/v1alpha1"
 	tgtv1alpha1 "github.com/external-secrets/external-secrets/apis/enterprise/targets/v1alpha1"
@@ -59,7 +57,6 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/cssmetrics"
 	"github.com/external-secrets/external-secrets/pkg/controllers/secretstore/ssmetrics"
-	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/federation"
 	reloadercontroller "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/reloader"
 	scanconsumer "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/consumer"
 	scanjob "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/scan/jobs"
@@ -68,7 +65,6 @@ import (
 	"github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow"
 	workflowapi "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/api"
 	workflowcommon "github.com/external-secrets/external-secrets/pkg/enterprise/controllers/workflow/common"
-	federationserver "github.com/external-secrets/external-secrets/pkg/enterprise/federation/server"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/generator/postgresql"
 	"github.com/external-secrets/external-secrets/pkg/enterprise/scheduler"
 	"github.com/external-secrets/external-secrets/runtime/feature"
@@ -90,8 +86,6 @@ var (
 	metricsKeyName                        string
 	healthzAddr                           string
 	controllerClass                       string
-	serverPort                            string
-	serverTLSPort                         string
 	workflowAPIPort                       string
 	enableLeaderElection                  bool
 	enableSecretsCache                    bool
@@ -99,7 +93,6 @@ var (
 	enableManagedSecretsCache             bool
 	enablePartialCache                    bool
 	enableWorkflowAPI                     bool
-	enableFederationTLS                   bool
 	concurrent                            int
 	port                                  int
 	clientQPS                             float32
@@ -124,7 +117,6 @@ var (
 	tlsCiphers                            string
 	tlsMinVersion                         string
 	sensitivePatterns                     []string
-	spireAgentSocketPath                  string
 	enableHTTP2                           bool
 	allowGenericTargets                   bool
 )
@@ -144,8 +136,6 @@ func init() {
 	utilruntime.Must(genv1alpha1.AddToScheme(scheme))
 
 	// external-secrets-enterprise schemes
-	utilruntime.Must(fedv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(idfedv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(wfv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(scanv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(tgtv1alpha1.AddToScheme(scheme))
@@ -423,59 +413,6 @@ var rootCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-		// Federation
-		if err = (&federation.AuthorizationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("Authorization"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "Authorization")
-			os.Exit(1)
-		}
-		if err = (&federation.KubernetesFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("KubernetesFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "KubernetesFederation")
-			os.Exit(1)
-		}
-		if err = (&federation.OktaFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("OktaFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "OktaFederation")
-			os.Exit(1)
-		}
-
-		if err = (&federation.PingIdentityFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("PingIdentityFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "PingIdentityFederation")
-			os.Exit(1)
-		}
-		if err = (&federation.SpiffeFederationController{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("SpiffeFederation"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "SpiffeFederation")
-			os.Exit(1)
-		}
-		if err = (&federation.AuthorizedIdentityReconciler{
-			Client: mgr.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("AuthorizedIdentity"),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr, controller.Options{}); err != nil {
-			setupLog.Error(err, errCreateController, "controller", "AuthorizedIdentity")
-			os.Exit(1)
-		}
-		handler := federationserver.NewHandler(externalSecretReconciler, serverPort, serverTLSPort, spireAgentSocketPath, enableFederationTLS)
-		go handler.SetupEcho(cmd.Context())
-
 		sched := scheduler.New(mgr.GetClient(), ctrl.Log.WithName("scheduler"))
 		if err := mgr.Add(sched); err != nil {
 			setupLog.Error(err, "unable to add scheduler")
@@ -563,8 +500,6 @@ func init() {
 	rootCmd.Flags().IntVar(&clientBurst, "client-burst", 100, "Maximum Burst allowed to be passed to rest.Client")
 	rootCmd.Flags().StringVar(&liveAddr, "live-addr", ":8082", "The address the live endpoint binds to.")
 	rootCmd.Flags().StringVar(&loglevel, "loglevel", "info", "loglevel to use, one of: debug, info, warn, error, dpanic, panic, fatal")
-	rootCmd.Flags().StringVar(&serverPort, "server-port", ":8000", "federation server port")
-	rootCmd.Flags().StringVar(&serverTLSPort, "server-tls-port", ":8001", "federation server TLS port")
 	rootCmd.Flags().StringVar(&workflowAPIPort, "workflow-api-port", ":8080", "workflow API server port")
 	rootCmd.Flags().BoolVar(&enableWorkflowAPI, "enable-workflow-api", false, "Enable workflow API server")
 	rootCmd.Flags().StringVar(&zapTimeEncoding, "zap-time-encoding", "epoch", "Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')")
@@ -581,8 +516,6 @@ func init() {
 	rootCmd.Flags().BoolVar(&enableGeneratorState, "enable-generator-state", true, "Whether the Controller should manage GeneratorState")
 	rootCmd.Flags().BoolVar(&enableExtendedMetricLabels, "enable-extended-metric-labels", false, "Enable recommended kubernetes annotations as labels in metrics.")
 	rootCmd.Flags().StringSliceVar(&sensitivePatterns, "workflow-sensitive-patterns", []string{}, "Comma-separated list of regular expressions to match sensitive data in workflow outputs")
-	rootCmd.Flags().StringVar(&spireAgentSocketPath, "spire-agent-socket-path", "unix:///tmp/spire-agent/public/api.sock", "Path to the Spiffe agent socket")
-	rootCmd.Flags().BoolVar(&enableFederationTLS, "enable-federation-tls", false, "Enable federation server TLS")
 
 	rootCmd.Flags().BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics server")

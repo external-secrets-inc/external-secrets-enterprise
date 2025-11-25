@@ -63,8 +63,6 @@ var (
 	RabbitMQGeneratorKind = reflect.TypeOf(RabbitMQ{}).Name()
 	// BasicAuthKind is the type name of the Basic Auth generator.
 	BasicAuthKind = reflect.TypeOf(BasicAuth{}).Name()
-	// FederationKind is the type name of the Federation generator.
-	FederationKind = reflect.TypeOf(Federation{}).Name()
 	// SSHKind is the type name of the SSH generator.
 	SSHKind = reflect.TypeOf(SSH{}).Name()
 	// Neo4jKind is the type name of the Neo4j generator.
@@ -75,6 +73,8 @@ var (
 	PostgreSQLKind = reflect.TypeOf(PostgreSQL{}).Name()
 	// OpenAIKind is the type name of the OpenAI generator.
 	OpenAIKind = reflect.TypeOf(OpenAI{}).Name()
+	// FederationKind is the type name of the Federation generator.
+	FederationKind = reflect.TypeOf(Federation{}).Name()
 )
 
 func init() {

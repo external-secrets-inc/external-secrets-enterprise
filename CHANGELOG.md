@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+- Federation controllers/server, CRDs, services, and samples have been removed from the core chart/binary; deploy federation via the external federation-server chart. The federation generator remains in core.
+
 ## [1.24.0](https://github.com/external-secrets-inc/external-secrets-enterprise/compare/v1.23.1...v1.24.0) (2025-10-28)
 
 
